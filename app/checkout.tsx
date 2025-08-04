@@ -63,7 +63,7 @@ const CheckoutScreen = () => {
           <View className="flex-row items-center gap-4">
             <ImageBackground
               className="h-6 w-10 bg-contain"
-              source={require('./assets/mastercard.png')} // Replace with actual local path or use URI
+              source={require('../assets/mastercard.png')} // Replace with actual local path or use URI
               resizeMode="contain"
             />
             <Text className="text-[#171311] text-base flex-1 truncate">MasterCard ...1234</Text>
