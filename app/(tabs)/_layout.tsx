@@ -1,6 +1,6 @@
 // app/(tabs)/_layout.js
 import { Tabs } from 'expo-router';
-import { Home, Search, PlusSquare, Heart, User } from 'lucide-react-native';
+import { Home, Search, PlusSquare, Heart, User, ChartColumnStackedIcon, SquareStack, ListStartIcon } from 'lucide-react-native';
 
 export default function TabsLayout() {
   return (
@@ -48,6 +48,24 @@ export default function TabsLayout() {
         name="profile"
         options={{
           tabBarIcon: ({ color, size, focused }) => <User color={color} />,
+        }}
+      />
+      <Tabs.Screen 
+        name="listings"
+        options={{
+          tabBarIcon: ({ color, size, focused }) => <ListStartIcon color={color} />,
+        }}
+      />
+      <Tabs.Screen 
+        name="sellerDashboard"
+        options={{
+          tabBarIcon: ({ color, size, focused }) => <ChartColumnStackedIcon color={color} />,
+        }}
+      />
+      <Tabs.Screen 
+        name="catalog"
+        options={{
+          tabBarIcon: ({ color, size, focused }) => <SquareStack color={color} />,
         }}
       />
     </Tabs>
