@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "markt_mobile",
-    "slug": "markt_mobile",
+    "name": "Markt Commerce",
+    "slug": "markt",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
