@@ -1,4 +1,5 @@
 import React from "react";
+import { useRouter, Link } from "expo-router";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 
 export default function LoginScreen() {
@@ -26,9 +27,13 @@ export default function LoginScreen() {
           />
         </View>
 
-        <Text className="text-[#826869] text-sm font-normal text-center underline pb-3 pt-1">
-          Forgot Password?
-        </Text>
+        <Link href={
+          "/forgotPassword"
+        }>
+          <Text className="text-[#826869] text-sm font-normal text-center underline pb-3 pt-1">
+            Forgot Password?
+          </Text>
+        </Link>
 
         <TouchableOpacity className="w-full h-12 bg-[#e9b8ba] rounded-full justify-center items-center">
           <Text className="text-[#171212] text-base font-bold tracking-[0.015em]">

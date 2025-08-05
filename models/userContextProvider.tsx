@@ -7,10 +7,9 @@ interface User {
   id: string;
   name: string;
   email: string;
-  // add more fields as needed
 }
 
-interface UserContextType {
+export interface UserContextType {
   user: User | null;
   role: UserRole;
   setUser: (user: User | null) => void;

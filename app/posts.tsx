@@ -74,7 +74,7 @@ const posts = () => {
     
           <View className="flex justify-end items-end mt-8 mb-5">
             <TouchableOpacity className="flex-row items-center gap-2 px-6 py-3 rounded-full bg-[#e2ad9c]">
-              <Text className="text-[#171312] text-base font-bold">＋</Text>
+              <Text className="text-[#171312] text-base font-bold">+</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

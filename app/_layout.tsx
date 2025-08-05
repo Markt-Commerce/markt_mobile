@@ -1,8 +1,7 @@
 // app/_layout.js
 import { Stack } from 'expo-router';
 import "../global.css"
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { UserProvider } from '../models/userContextProvider';
+import { UserProvider, useUser, UserContextType } from '../models/userContextProvider';
 
 export default function RootLayout() {
   return (
@@ -13,8 +12,10 @@ export default function RootLayout() {
 }
 
 export function AppStack() {
-  if (AsyncStorage.getItem('first-timer') === null) {
-    
+
+  const user: UserContextType | null = useUser()
+
+  if (user.user === null) {
     return <Stack screenOptions={{ headerShown: false }} initialRouteName="introduction" />;
   }
   return <Stack screenOptions={{ headerShown: false }} />;
