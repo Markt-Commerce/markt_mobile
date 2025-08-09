@@ -1,8 +1,24 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { ArrowLeft } from "lucide-react-native";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const schema = z.object({
+  username: z.string().min(6, "Username is required"),
+  password: z.string().min(8, "Password is required and should be 8 characters long").regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/, "Password must contain at least one uppercase letter, one lowercase letter, and one number"),
+});
 
 export default function SignupScreen() {
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(schema),
+  });
+
   return (
     <View className="flex-1 bg-white justify-center items-center px-4">
       <View className="w-full max-w-[480px]">
