@@ -9,6 +9,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.1",
     "@react-native-async-storage/async-storage": "2.1.2",
     "expo": "~53.0.20",
     "expo-constants": "~17.1.7",
@@ -20,11 +21,13 @@
     "nativewind": "^4.1.23",
     "prettier-plugin-tailwindcss": "^0.5.11",
     "react": "19.0.0",
+    "react-hook-form": "^7.62.0",
     "react-native": "0.79.5",
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "^5.4.0",
     "react-native-screens": "~4.11.1",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "zod": "^4.0.14"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

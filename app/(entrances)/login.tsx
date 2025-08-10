@@ -1,8 +1,51 @@
 import React from "react";
 import { useRouter, Link } from "expo-router";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import { z } from "zod";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginUser } from "../../services/sections/auth"; // Adjust the import path as necessary
+import { AccountType } from "../../models/auth"; // Adjust the import path as necessary
+import { useUser } from "../../models/userContextProvider";
+
+const schema = z.object({
+  email: z.string().min(1, "Email is required"),
+  password: z.string().min(1, "Password is required"),
+});
 
 export default function LoginScreen() {
+
+  const [userType, setUserType] = React.useState<AccountType>("buyer");
+
+  const onsubmit = async (data: z.infer<typeof schema>) => {
+    try {
+      const userData = await loginUser({
+        email: data.email,
+        password: data.password,
+        account_type: userType,
+      })
+      console.log("Login successful:", userData);
+      useUser().setUser({
+        id: userData.id,
+        name: userData.username,
+        email: userData.email,
+      }); //store user data in context
+    }
+    catch (error) {
+      console.error("Login failed:", error);
+    }
+
+  }
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm({
+    resolver: zodResolver(schema),
+    mode: "onChange"
+  });
+
   return (
     <View className="flex-1 bg-white justify-center items-center px-4">
       <View className="w-full max-w-[480px]">
@@ -11,20 +54,36 @@ export default function LoginScreen() {
         </Text>
 
         <View className="flex flex-wrap items-end gap-4 py-3">
-          <TextInput
-            placeholder="Username"
-            placeholderTextColor="#826869"
-            className="form-input w-full rounded-xl text-[#171212] bg-[#f4f1f1] h-14 px-4 text-base font-normal"
-          />
+        {errors.email && <Text className="text-[#e9242a] text-sm font-normal">{errors.email.message}</Text>}
+          <Controller control={control} name="email" render={({ field: { onChange, onBlur, value }})=>{
+            return (
+              <TextInput
+                onChange={onChange}
+                onBlur={onBlur}
+                value={value}
+                placeholder="Email"
+                placeholderTextColor="#826869"
+                className="form-input w-full rounded-xl text-[#171212] bg-[#f4f1f1] h-14 px-4 text-base font-normal"
+              />
+            );
+          }} />
         </View>
 
         <View className="flex flex-wrap items-end gap-4 py-3">
-          <TextInput
-            placeholder="Password"
-            placeholderTextColor="#826869"
-            secureTextEntry
-            className="form-input w-full rounded-xl text-[#171212] bg-[#f4f1f1] h-14 px-4 text-base font-normal"
-          />
+        {errors.password && <Text className="text-[#e9242a] text-sm font-normal">{errors.password.message}</Text>}
+          <Controller control={control} name="password" render={({ field: { onChange, onBlur, value }})=>{
+            return (
+              <TextInput
+                onChange={onChange}
+                onBlur={onBlur}
+                value={value}
+                placeholder="Password"
+                placeholderTextColor="#826869"
+                secureTextEntry
+                className="form-input w-full rounded-xl text-[#171212] bg-[#f4f1f1] h-14 px-4 text-base font-normal"
+              />
+            );
+          }} />
         </View>
 
         <Link href={
@@ -35,7 +94,27 @@ export default function LoginScreen() {
           </Text>
         </Link>
 
-        <TouchableOpacity className="w-full h-12 bg-[#e9b8ba] rounded-full justify-center items-center">
+
+        <View className="flex flex-row justify-between items-center py-3">
+          <TouchableOpacity onPress={() => setUserType("buyer")}>
+            <Text className={`text-[#171212] text-sm font-normal ${userType === "buyer" ? "font-bold" : ""}`}>
+              Buyer
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setUserType("seller")}>
+            <Text className={`text-[#171212] text-sm font-normal ${userType === "seller" ? "font-bold" : ""}`}>
+              Seller
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity className="w-full h-12 bg-[#e9b8ba] rounded-full justify-center items-center" 
+        onPress={handleSubmit(onsubmit)} 
+        disabled={!isValid}
+        style={{
+          backgroundColor: isValid ? '#e9b8ba' : '#f4f1f1',
+        }}
+        >
           <Text className="text-[#171212] text-base font-bold tracking-[0.015em]">
             Login
           </Text>
