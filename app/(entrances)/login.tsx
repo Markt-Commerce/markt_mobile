@@ -4,8 +4,8 @@ import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { z } from "zod";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginUser } from "../../services/sections/auth"; // Adjust the import path as necessary
-import { AccountType } from "../../models/auth"; // Adjust the import path as necessary
+import { loginUser } from "../../services/sections/auth";
+import { AccountType } from "../../models/auth"; 
 import { useUser } from "../../models/userContextProvider";
 
 const schema = z.object({
@@ -15,14 +15,12 @@ const schema = z.object({
 
 export default function LoginScreen() {
 
-  const [userType, setUserType] = React.useState<AccountType>("buyer");
-
   const onsubmit = async (data: z.infer<typeof schema>) => {
     try {
       const userData = await loginUser({
         email: data.email,
         password: data.password,
-        account_type: userType,
+        account_type: useUser().role || "buyer", // default to Buyer if not set
       })
       console.log("Login successful:", userData);
       useUser().setUser({
@@ -96,13 +94,13 @@ export default function LoginScreen() {
 
 
         <View className="flex flex-row justify-between items-center py-3">
-          <TouchableOpacity onPress={() => setUserType("buyer")}>
-            <Text className={`text-[#171212] text-sm font-normal ${userType === "buyer" ? "font-bold" : ""}`}>
+          <TouchableOpacity onPress={() => useUser().setRole("buyer")}>
+            <Text className={`text-[#171212] text-sm font-normal ${useUser().role === "buyer" ? "font-bold" : ""}`}>
               Buyer
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setUserType("seller")}>
-            <Text className={`text-[#171212] text-sm font-normal ${userType === "seller" ? "font-bold" : ""}`}>
+          <TouchableOpacity onPress={() => useUser().setRole("buyer")}>
+            <Text className={`text-[#171212] text-sm font-normal ${useUser().role === "seller" ? "font-bold" : ""}`}>
               Seller
             </Text>
           </TouchableOpacity>
