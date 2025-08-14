@@ -8,10 +8,10 @@ import { Input } from "../../components/inputs";
 import { useUser } from "../../models/userContextProvider";
 import { AccountType } from "../../models/auth";
 import { useRouter } from "expo-router";
-import { useRegData } from "../../models/signupSteps";
+import { register,useRegData } from "../../models/signupSteps";
 
 const schema = z.object({
-  username: z.string().min(6, "Username is required"),
+  username: z.string().min(3, "Username is required"),
   password: z.string().min(8, "Password is required and should be 8 characters long").regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/, "Password must contain at least one uppercase letter, one lowercase letter, and one number"),
   email: z.email("Invalid email address"),
 });
@@ -19,6 +19,8 @@ const schema = z.object({
 export default function SignupScreen() {
 
   const { setUser, setRole, role } = useUser();
+  const { regData, setRegData } = useRegData();
+  
   const router = useRouter();
   const {
     control,
@@ -26,6 +28,7 @@ export default function SignupScreen() {
     formState: { errors, isValid },
   } = useForm({
     resolver: zodResolver(schema),
+    mode: "onChange"
   });
 
   const setUserRole = (role: AccountType) => {
@@ -35,7 +38,13 @@ export default function SignupScreen() {
   const onSubmit = async (data: z.infer<typeof schema>) => {
     try {
       //setUserRole();
-      router.push("/entrances/userdet");
+      setRegData(register(regData, {
+        email: data.email,
+        username: data.username,
+        password: data.password,
+        account_type: role || "buyer", // default to Buyer if not set
+      }))
+      router.push("/userdet");
     } catch (error) {
       console.error("Signup failed:", error);
     }
@@ -68,7 +77,7 @@ export default function SignupScreen() {
               Buyer
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setRole("buyer")}>
+          <TouchableOpacity onPress={() => setRole("seller")}>
             <Text className={`text-[#171212] text-sm font-normal ${role === "seller" ? "font-bold" : ""}`}>
               Seller
             </Text>
@@ -79,17 +88,15 @@ export default function SignupScreen() {
           Already have an account? Log in
         </Text>
 
-        <TouchableOpacity className="w-full h-12 bg-[#e9b8ba] rounded-full justify-center items-center" disabled={!isValid}
+        <TouchableOpacity className="w-full h-12 bg-[#e9242a] rounded-full justify-center items-center" disabled={!isValid}
         style={{
-          backgroundColor: isValid ? '#e9b8ba' : '#f4f1f1',
+          backgroundColor: isValid ? 'bg-[#e9242a]' : '#f4f1f1',
         }} onPress={handleSubmit(onSubmit)}>
           <Text className="text-[#171212] text-base font-bold tracking-[0.015em]">
             Sign up
           </Text>
         </TouchableOpacity>
       </View>
-
-      <View className="h-5 bg-white" />
     </View>
   );
 }

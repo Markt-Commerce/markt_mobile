@@ -25,7 +25,7 @@ export function Input({
           <Controller control={control} name={name!} render={({ field: { onChange, onBlur, value }})=>{
             return (
               <TextInput
-                onChange={onChange}
+                onChangeText={onChange}
                 onBlur={onBlur}
                 value={value}
                 placeholder={placeholder}

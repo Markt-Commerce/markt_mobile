@@ -1,10 +1,37 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import { ArrowLeft, Image as ImageIcon } from "lucide-react-native";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Input } from "../../components/inputs";
+import { useUser } from "../../models/userContextProvider";
+import { AccountType } from "../../models/auth";
+import { useRouter } from "expo-router";
+import { register,useRegData } from "../../models/signupSteps";
+
+const schema = z.object({
+  name: z.string().min(1, "Name is required"),
+});
 
 export default function UserInfoScreen() {
+
+  const { setUser, setRole, role } = useUser();
+  const { regData, setRegData } = useRegData();
+  
+  const router = useRouter();
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm({
+    resolver: zodResolver(schema),
+    mode: "onChange"
+  });
+
+
   return (
-    <ScrollView className="flex-1 bg-white justify-between">
+    <ScrollView className="flex-1 bg-white">
       <View>
         {/* Header */}
         <View className="flex flex-row items-center bg-white p-4 pb-2 justify-between">
