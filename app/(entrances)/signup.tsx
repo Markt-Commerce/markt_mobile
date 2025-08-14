@@ -23,7 +23,7 @@ export default function SignupScreen() {
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid},
+    formState: { errors, isValid },
   } = useForm({
     resolver: zodResolver(schema),
   });
@@ -79,7 +79,6 @@ export default function SignupScreen() {
           Already have an account? Log in
         </Text>
 
-        //goes to the next signup screen
         <TouchableOpacity className="w-full h-12 bg-[#e9b8ba] rounded-full justify-center items-center" disabled={!isValid}
         style={{
           backgroundColor: isValid ? '#e9b8ba' : '#f4f1f1',
