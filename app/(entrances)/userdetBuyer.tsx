@@ -54,12 +54,14 @@ export default function UserInfoScreen() {
 
         {/* Profile Photo */}
         <Text className="text-[#181111] text-lg font-bold px-4 pb-2 pt-4">Profile photo</Text>
-        <View className="flex flex-row items-center gap-4 px-4 min-h-14">
-          <View className="flex items-center justify-center rounded-lg bg-[#f4f0f0] size-10">
-            <ImageIcon size={24} color="#181111" />
-          </View>
-          <Text className="text-[#181111] text-base flex-1 truncate">Upload photo</Text>
-        </View>
+            <View className="flex flex-row items-center gap-4 px-4 min-h-14">
+                <View className="flex items-center justify-center rounded-lg bg-[#f4f0f0] size-10">
+                    <ImageIcon size={24} color="#181111" />
+                </View>
+                <TouchableOpacity className="h-8 px-1 justify-center items-center">
+                    <Text className="text-[#181111] text-sm font-medium">Upload</Text>
+                </TouchableOpacity>
+            </View>
 
         {/* Interests */}
         <Text className="text-[#181111] text-lg font-bold px-4 pb-2 pt-4">Interests</Text>

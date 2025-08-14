@@ -1,4 +1,4 @@
-import React from "react";
+import React, { use } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { ArrowLeft } from "lucide-react-native";
 import { useForm, Controller } from "react-hook-form";
@@ -44,7 +44,8 @@ export default function SignupScreen() {
         password: data.password,
         account_type: role || "buyer", // default to Buyer if not set
       }))
-      router.push("/userdet");
+      if(role === "buyer") router.push("/userdetBuyer");
+      else router.push("/userdetSeller");
     } catch (error) {
       console.error("Signup failed:", error);
     }
@@ -55,7 +56,7 @@ export default function SignupScreen() {
       <View className="w-full max-w-[480px]">
         <View className="flex-row items-center justify-between pb-2">
           <View className="size-12 justify-center">
-            <ArrowLeft color="#171212" size={24} />
+            <ArrowLeft color="#171212" size={24} onPress={router.back}/>
           </View>
           <Text className="text-[#171212] text-lg font-bold text-center pr-12 flex-1">
             Sign up
