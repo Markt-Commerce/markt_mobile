@@ -21,9 +21,9 @@ export const useRegData = () => {
 };
 
 
-export interface SignupStepOne extends Pick<RegisterRequest, 'email' | 'password' | 'username' |'account_type'> {}
+export interface SignupStepOne extends Pick<RegisterRequest, 'email' | 'password' |'account_type'> {}
 
-export interface SignupStepTwo extends Pick<RegisterRequest,  'phone_number' | 'buyer_data' | 'seller_data'> {}
+export interface SignupStepTwo extends Pick<RegisterRequest,  'phone_number' | 'username'  | 'buyer_data' | 'seller_data'> {}
 
 //export interface SignupStepThree extends SignupStep, Pick<RegisterRequest, > {}
 

@@ -9,10 +9,27 @@ import { useUser } from "../../models/userContextProvider";
 import { AccountType } from "../../models/auth";
 import { router, useRouter } from "expo-router";
 import { register,useRegData } from "../../models/signupSteps";
-import { Image as ImageIcon } from "lucide-react-native";
 
 const ShopInformationScreen = () => {
     const router = useRouter();
+
+    const { setUser, setRole, role } = useUser();
+    const { regData, setRegData } = useRegData();
+
+    const schema = z.object({
+        shopName: z.string().min(1, "Shop name is required"),
+        shopDescription: z.string().min(1, "Shop description is required"),
+        directions: z.string().min(1, "Directions are required"),
+    });
+
+    const {
+        control,
+        handleSubmit,
+        formState: { errors, isValid },
+    } = useForm({
+        resolver: zodResolver(schema),
+        mode: "onChange"
+    });
     return (
         <ScrollView className="flex-1 bg-white" contentContainerStyle={{ justifyContent: "space-between" }}>
         {/* Header */}
@@ -33,17 +50,6 @@ const ShopInformationScreen = () => {
                 placeholder="Enter shop name"
                 placeholderTextColor="#886364"
             />
-            </View>
-
-            {/* Profile Photo */}
-            <Text className="text-[#181111] text-lg font-bold px-4 pb-2 pt-4">Profile photo</Text>
-            <View className="flex flex-row items-center gap-4 px-4 min-h-14">
-                <View className="flex items-center justify-center rounded-lg bg-[#f4f0f0] size-10">
-                    <ImageIcon size={24} color="#181111" />
-                </View>
-                <TouchableOpacity className="h-8 px-1 justify-center items-center">
-                    <Text className="text-[#181111] text-sm font-medium">Upload</Text>
-                </TouchableOpacity>
             </View>
 
             {/* Shop Description */}

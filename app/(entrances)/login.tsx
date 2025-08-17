@@ -80,7 +80,6 @@ export default function LoginScreen() {
           </Text>
         </Link>
 
-
         <View className="flex-row bg-gray-200 rounded-full p-1">
           <TouchableOpacity
             onPress={() => setRole("buyer")}
@@ -125,7 +124,6 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-
         <TouchableOpacity className="w-full h-12 bg-[#e9242a] rounded-full justify-center items-center" 
         onPress={handleSubmit(onsubmit)} 
         disabled={!isValid}
@@ -139,7 +137,9 @@ export default function LoginScreen() {
         </TouchableOpacity>
       </View>
 
-      <View className="h-5 bg-white" />
+      <Text className="text-[#826869] text-sm font-normal text-center underline pb-3 pt-1" onPress={() => router.navigate("/signup")}>
+          Don't have an account? Sign up
+        </Text>
     </View>
   );
 }
