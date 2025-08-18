@@ -12,7 +12,9 @@ import { register,useRegData } from "../../models/signupSteps";
 import * as ImagePicker from "expo-image-picker";
 
 const schema = z.object({
-  name: z.string().min(1, "Name is required"),
+  Buyername: z.string().min(1, "Name is required"),
+  username: z.string().min(1, "Username is required"),
+  phone_number: z.string().min(1, "Phone number is required")
 });
 
 export default function UserInfoScreen() {
@@ -53,11 +55,32 @@ export default function UserInfoScreen() {
           </View>
         </View>
 
+         {/* Username */}
+         <View className="flex-1 flex-col min-w-[160px] mb-4">
+          <Text className="text-[#181111] text-base font-medium pb-2">Username</Text>
+          <TextInput
+            className="bg-[#f4f0f0] rounded-xl p-4 text-[#181111] text-base"
+            placeholder="Enter username"
+            placeholderTextColor="#886364"
+          />
+        </View>
+
+        {/* Phone Number */}
+        <View className="flex-1 flex-col min-w-[160px] mb-4">
+          <Text className="text-[#181111] text-base font-medium pb-2">Phone Number</Text>
+          <TextInput
+            className="bg-[#f4f0f0] rounded-xl p-4 text-[#181111] text-base"
+            placeholder="Enter phone number"
+            placeholderTextColor="#886364"
+            keyboardType="phone-pad"
+          />
+        </View>
+
       {/* Save button */}
       <View>
         <View className="flex px-4 py-3">
           <TouchableOpacity className="flex h-12 flex-1 items-center justify-center rounded-full bg-[#e9242a] px-5">
-            <Text className="text-white text-base font-bold tracking-[0.015em] truncate">Save</Text>
+            <Text className="text-white text-base font-bold tracking-[0.015em] truncate">Next</Text>
           </TouchableOpacity>
         </View>
         <View className="h-5 bg-white" />
