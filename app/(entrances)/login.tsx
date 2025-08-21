@@ -43,6 +43,7 @@ export default function LoginScreen() {
     catch (error) {
       console.error("Login failed:", error);
       setError("Login failed." + (error instanceof Error ? ` ${error.message}` : ""));
+      //router.push("/"); // redirect to login page on error
     }
 
   }
