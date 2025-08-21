@@ -11,7 +11,7 @@ export async function request<T>(url: string, options: RequestInit): Promise<T> 
   });
   if (!res.ok) {
     const errorBody = await res.json();
-    throw new Error(errorBody.message || 'Request failed');
+    throw new Error(errorBody.message || `Request failed with status ${res.status}`);
   }
   return res.json();
 }

@@ -43,7 +43,10 @@ export default function UserInfoScreen() {
     };
 
     // Update regData with the new user information
-    setRegData(register(regData, userData));
+    const updatedRegData = register(regData, userData)
+    // remove seller data from regData
+    delete updatedRegData.seller_data;
+    setRegData(updatedRegData);
 
     // send the user data to the backend here
     // may move this later to a another signup step

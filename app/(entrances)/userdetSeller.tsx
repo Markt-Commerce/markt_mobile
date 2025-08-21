@@ -63,6 +63,8 @@ const ShopInformationScreen = () => {
 
     //update regData with the new shop information
     const updatedRegData = register(regData, shopData);
+    //remove any fields related to buyer data
+    delete updatedRegData.buyer_data;
     setRegData(updatedRegData);
 
     console.log("Submitting user data:", regData);
