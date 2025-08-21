@@ -104,7 +104,7 @@ const ShopInformationScreen = () => {
 
         {/* Phone Number */}
         {errors.phoneNumber && <Text className="text-[#e9242a] text-sm font-normal">{errors.phoneNumber.message}</Text>}
-        <Input placeholder="Enter phone number" control={control} name="phoneNumber" errors={errors} keyboardType="phone-pad"> </Input>
+        <Input placeholder="Enter phone number" control={control} name="phoneNumber" errors={errors}> </Input>
 
         {/* Shop Description */}
         {errors.shopDescription && <Text className="text-[#e9242a] text-sm font-normal">{errors.shopDescription.message}</Text>}
@@ -133,7 +133,7 @@ const ShopInformationScreen = () => {
       </View>
 
       {/* Save button */}
-      <Button onPress={handleSubmit(handleSubmitForm)} disabled={!isValid} />
+      <Button onPress={handleSubmit(handleSubmitForm)} disabled={!isValid} text="Next"/>
 
       <CategoryAddition
         visible={modalVisible}

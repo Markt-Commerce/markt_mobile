@@ -3,12 +3,12 @@ import React from 'react'
 
 const Button = ({
     onPress,
-    disabled = false
-}:TouchableOpacityProps) => {
+    disabled = false,
+    text = "Next"
+}:TouchableOpacityProps & {text?: string}) => {
   return (
-    <View>
         <View className="flex px-4 py-3">
-          <TouchableOpacity className="flex h-12 flex-1 items-center justify-center rounded-full bg-[#e9242a] px-5" 
+          <TouchableOpacity className="flex h-12 items-center justify-center rounded-full bg-[#e9242a] px-5" 
           onPress={onPress}
           disabled={disabled}
           style={{
@@ -21,8 +21,6 @@ const Button = ({
             }}>Next</Text>
           </TouchableOpacity>
         </View>
-        <View className="h-5 bg-white" />
-      </View>
   )
 }
 

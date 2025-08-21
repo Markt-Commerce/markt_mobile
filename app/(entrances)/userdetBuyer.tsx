@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input } from "../../components/inputs";
 import { useUser } from "../../models/userContextProvider";
-import { AccountType } from "../../models/auth";
 import { registerUser } from "../../services/sections/auth";
 import { useRouter } from "expo-router";
 import { SignupStepTwo, register,useRegData } from "../../models/signupSteps";
@@ -83,10 +82,10 @@ export default function UserInfoScreen() {
 
         {/* Phone Number */}
         {errors.phone_number && <Text className="text-[#e9242a] text-sm font-normal">{errors.phone_number.message}</Text>}
-        <Input placeholder="Enter phone number" control={control} name="phone_number" errors={errors} keyboardType="phone-pad"> </Input>
+        <Input placeholder="Enter phone number" control={control} name="phone_number" errors={errors}> </Input>
 
       {/* Save button */}
-      <Button onPress={handleSubmit(handleSubmitForm)} disabled={!isValid} />
+      <Button onPress={handleSubmit(handleSubmitForm)} disabled={!isValid} text="Next"/>
       </View>
     </ScrollView>
   );

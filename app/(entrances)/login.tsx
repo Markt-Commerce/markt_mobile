@@ -37,6 +37,8 @@ export default function LoginScreen() {
         name: userData.username,
         email: userData.email,
       }); //store user data in context
+      //navigate to the home page
+      router.push("/");
     }
     catch (error) {
       console.error("Login failed:", error);
@@ -126,13 +128,12 @@ export default function LoginScreen() {
         </View>
 
         {/* Save button */}
-      <Button onPress={handleSubmit(onsubmit)} disabled={!isValid} />
-
+      <Button onPress={handleSubmit(onsubmit)} disabled={!isValid} text="Login"/>
       </View>
 
       <Text className="text-[#826869] text-sm font-normal text-center underline pb-3 pt-1" onPress={() => router.navigate("/signup")}>
           Don't have an account? Sign up
-        </Text>
+      </Text>
     </View>
   );
 }
