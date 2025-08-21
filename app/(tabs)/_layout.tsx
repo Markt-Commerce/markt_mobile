@@ -27,12 +27,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="shop"
-        options={{
-          tabBarIcon: ({ color, size, focused }) => <Search color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="post"
         options={{
           tabBarIcon: ({ color, size, focused }) => <PlusSquare  color={color} />,
@@ -60,12 +54,6 @@ export default function TabsLayout() {
         name="sellerDashboard"
         options={{
           tabBarIcon: ({ color, size, focused }) => <ChartColumnStackedIcon color={color} />,
-        }}
-      />
-      <Tabs.Screen 
-        name="catalog"
-        options={{
-          tabBarIcon: ({ color, size, focused }) => <SquareStack color={color} />,
         }}
       />
     </Tabs>

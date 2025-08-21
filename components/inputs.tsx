@@ -18,7 +18,9 @@ export function Input({
   value,
   onChangeText,
   errors,
-  control
+  control,
+  multiline = false,
+  keyboardType = "default",
 }: InputProps) {
   return (
     <View className="flex flex-wrap items-end gap-2 py-3">
@@ -32,6 +34,8 @@ export function Input({
                 placeholderTextColor="#826869"
                 secureTextEntry={secureTextEntry}
                 className="form-input w-full rounded-xl text-[#171212] bg-[#f4f1f1] h-14 px-4 text-base font-normal"
+                multiline={multiline}
+                keyboardType={keyboardType}
               />
             );
           }} />

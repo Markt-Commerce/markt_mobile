@@ -7,6 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { loginUser } from "../../services/sections/auth";
 import { AccountType } from "../../models/auth"; 
 import { useUser } from "../../models/userContextProvider";
+import { Input } from "../../components/inputs";
+import Button from "../../components/button";
 
 const schema = z.object({
   email: z.string().min(1, "Email is required"),
@@ -15,22 +17,32 @@ const schema = z.object({
 
 export default function LoginScreen() {
 
+  const router = useRouter();
+  const { role, setRole, setUser } = useUser();
+
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
   const onsubmit = async (data: z.infer<typeof schema>) => {
     try {
       const userData = await loginUser({
         email: data.email,
         password: data.password,
-        account_type: useUser().role || "buyer", // default to Buyer if not set
+        account_type: role || "buyer", // default to Buyer if not set
       })
-      console.log("Login successful:", userData);
-      useUser().setUser({
+      setError(null); // clear any previous errors
+      console.log("Login successful:", userData);//remember to clear this later
+      setUser({
         id: userData.id,
         name: userData.username,
         email: userData.email,
       }); //store user data in context
+      //navigate to the home page
+      router.push("/");
     }
     catch (error) {
       console.error("Login failed:", error);
+      setError("Login failed." + (error instanceof Error ? ` ${error.message}` : ""));
     }
 
   }
@@ -51,37 +63,16 @@ export default function LoginScreen() {
           Welcome back
         </Text>
 
-        <View className="flex flex-wrap items-end gap-4 py-3">
+        { error && <Text className="text-[#e9242a] text-sm font-normal text-center">{error}</Text> }
+
+        <View className="flex gap-4 py-3">
         {errors.email && <Text className="text-[#e9242a] text-sm font-normal">{errors.email.message}</Text>}
-          <Controller control={control} name="email" render={({ field: { onChange, onBlur, value }})=>{
-            return (
-              <TextInput
-                onChange={onChange}
-                onBlur={onBlur}
-                value={value}
-                placeholder="Email"
-                placeholderTextColor="#826869"
-                className="form-input w-full rounded-xl text-[#171212] bg-[#f4f1f1] h-14 px-4 text-base font-normal"
-              />
-            );
-          }} />
+          <Input placeholder="Email" control={control} name="email" errors={errors} />
         </View>
 
-        <View className="flex flex-wrap items-end gap-4 py-3">
+        <View className="flex gap-4 py-3">
         {errors.password && <Text className="text-[#e9242a] text-sm font-normal">{errors.password.message}</Text>}
-          <Controller control={control} name="password" render={({ field: { onChange, onBlur, value }})=>{
-            return (
-              <TextInput
-                onChange={onChange}
-                onBlur={onBlur}
-                value={value}
-                placeholder="Password"
-                placeholderTextColor="#826869"
-                secureTextEntry
-                className="form-input w-full rounded-xl text-[#171212] bg-[#f4f1f1] h-14 px-4 text-base font-normal"
-              />
-            );
-          }} />
+        <Input placeholder="Password" control={control} name="password" errors={errors} secureTextEntry={true} />
         </View>
 
         <Link href={
@@ -92,34 +83,57 @@ export default function LoginScreen() {
           </Text>
         </Link>
 
-
-        <View className="flex flex-row justify-between items-center py-3">
-          <TouchableOpacity onPress={() => useUser().setRole("buyer")}>
-            <Text className={`text-[#171212] text-sm font-normal ${useUser().role === "buyer" ? "font-bold" : ""}`}>
+        <View className="flex-row bg-gray-200 rounded-full p-1">
+          <TouchableOpacity
+            onPress={() => setRole("buyer")}
+            style={{
+              flex: 1,
+              backgroundColor: role === "buyer" ? '#e9242a' : 'transparent',
+              borderTopLeftRadius: 25,
+              borderBottomLeftRadius: 25,
+              paddingVertical: 8,
+              alignItems: 'center',
+            }}
+          >
+            <Text
+              style={{
+                color: role === "buyer" ? '#fff' : '#171212',
+                fontWeight: role === "buyer" ? 'bold' : 'normal',
+              }}
+            >
               Buyer
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => useUser().setRole("buyer")}>
-            <Text className={`text-[#171212] text-sm font-normal ${useUser().role === "seller" ? "font-bold" : ""}`}>
+
+          <TouchableOpacity
+            onPress={() => setRole("seller")}
+            style={{
+              flex: 1,
+              backgroundColor: role === "seller" ? '#e9242a' : 'transparent',
+              borderTopRightRadius: 25,
+              borderBottomRightRadius: 25,
+              paddingVertical: 8,
+              alignItems: 'center',
+            }}
+          >
+            <Text
+              style={{
+                color: role === "seller" ? '#fff' : '#171212',
+                fontWeight: role === "seller" ? 'bold' : 'normal',
+              }}
+            >
               Seller
             </Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity className="w-full h-12 bg-[#e9b8ba] rounded-full justify-center items-center" 
-        onPress={handleSubmit(onsubmit)} 
-        disabled={!isValid}
-        style={{
-          backgroundColor: isValid ? '#e9b8ba' : '#f4f1f1',
-        }}
-        >
-          <Text className="text-[#171212] text-base font-bold tracking-[0.015em]">
-            Login
-          </Text>
-        </TouchableOpacity>
+        {/* Save button */}
+      <Button onPress={handleSubmit(onsubmit)} disabled={!isValid} text="Login"/>
       </View>
 
-      <View className="h-5 bg-white" />
+      <Text className="text-[#826869] text-sm font-normal text-center underline pb-3 pt-1" onPress={() => router.navigate("/signup")}>
+          Don't have an account? Sign up
+      </Text>
     </View>
   );
 }

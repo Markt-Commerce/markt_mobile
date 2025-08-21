@@ -9,7 +9,6 @@ const registerContext = createContext<{
 } | null>(null);
 
 
-//will also use later
 export const RegisterProvider = registerContext.Provider;
 
 export const useRegData = () => {
@@ -21,9 +20,9 @@ export const useRegData = () => {
 };
 
 
-export interface SignupStepOne extends Pick<RegisterRequest, 'email' | 'password' | 'username' |'account_type'> {}
+export interface SignupStepOne extends Pick<RegisterRequest, 'email' | 'password' |'account_type'> {}
 
-export interface SignupStepTwo extends Pick<RegisterRequest,  'phone_number' | 'buyer_data' | 'seller_data'> {}
+export interface SignupStepTwo extends Pick<RegisterRequest,  'phone_number' | 'username'  | 'buyer_data' | 'seller_data'> {}
 
 //export interface SignupStepThree extends SignupStep, Pick<RegisterRequest, > {}
 

@@ -43,3 +43,9 @@ export async function logoutUser(): Promise<void> {
     });
   }
   
+export async function sendVerificationEmail(email: string): Promise<void> {
+  await request<void>(`${BASE_URL}/users/email-verification/send`, {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
