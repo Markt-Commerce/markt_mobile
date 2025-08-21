@@ -9,7 +9,6 @@ const registerContext = createContext<{
 } | null>(null);
 
 
-//will also use later
 export const RegisterProvider = registerContext.Provider;
 
 export const useRegData = () => {

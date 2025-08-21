@@ -7,10 +7,10 @@ import { z } from "zod";
 import { Input } from "../../components/inputs";
 import { useUser } from "../../models/userContextProvider";
 import { AccountType } from "../../models/auth";
+import { registerUser } from "../../services/sections/auth";
 import { useRouter } from "expo-router";
-import { register,useRegData } from "../../models/signupSteps";
-import * as ImagePicker from "expo-image-picker";
-
+import { SignupStepTwo, register,useRegData } from "../../models/signupSteps";
+import  Button  from "../../components/button"
 const schema = z.object({
   Buyername: z.string().min(1, "Name is required"),
   username: z.string().min(1, "Username is required"),
@@ -32,6 +32,32 @@ export default function UserInfoScreen() {
     mode: "onChange"
   });
 
+  const handleSubmitForm = async (data: z.infer<typeof schema>) => {
+    const userData:SignupStepTwo = {
+      buyer_data: {
+        buyername: data.Buyername,
+        shipping_address:{} //would be determined later
+      },
+      username: data.username,
+      phone_number: data.phone_number,
+    };
+
+    // Update regData with the new user information
+    setRegData(register(regData, userData));
+
+    // send the user data to the backend here
+    // may move this later to a another signup step
+
+    console.log("Submitting user data:", regData);
+    try {
+      const userRegResult = await registerUser(regData)
+      console.log("Registration successful:", userRegResult);
+      router.push("/index");
+    } catch (error) {
+        console.error("Registration failed:", error);
+    }
+  }
+
 
   return (
     <ScrollView className="flex-1 bg-white">
@@ -45,46 +71,19 @@ export default function UserInfoScreen() {
         </View>
 
         {/* Name input */}
-        <View className="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-          <View className="flex flex-col min-w-40 flex-1">
-            <TextInput
-              placeholder="Name"
-              placeholderTextColor="#886364"
-              className="form-input w-full flex-1 rounded-xl text-[#181111] bg-[#f4f0f0] h-14 px-4 text-base"
-            />
-          </View>
-        </View>
+        {errors.Buyername && <Text className="text-[#e9242a] text-sm font-normal">{errors.Buyername.message}</Text>}
+        <Input placeholder="Name" control={control} name="Buyername" errors={errors}> </Input>
 
          {/* Username */}
-         <View className="flex-1 flex-col min-w-[160px] mb-4">
-          <Text className="text-[#181111] text-base font-medium pb-2">Username</Text>
-          <TextInput
-            className="bg-[#f4f0f0] rounded-xl p-4 text-[#181111] text-base"
-            placeholder="Enter username"
-            placeholderTextColor="#886364"
-          />
-        </View>
+        {errors.username && <Text className="text-[#e9242a] text-sm font-normal">{errors.username.message}</Text>}
+        <Input placeholder="Enter username" control={control} name="username" errors={errors}> </Input>
 
         {/* Phone Number */}
-        <View className="flex-1 flex-col min-w-[160px] mb-4">
-          <Text className="text-[#181111] text-base font-medium pb-2">Phone Number</Text>
-          <TextInput
-            className="bg-[#f4f0f0] rounded-xl p-4 text-[#181111] text-base"
-            placeholder="Enter phone number"
-            placeholderTextColor="#886364"
-            keyboardType="phone-pad"
-          />
-        </View>
+        {errors.phone_number && <Text className="text-[#e9242a] text-sm font-normal">{errors.phone_number.message}</Text>}
+        <Input placeholder="Enter phone number" control={control} name="phone_number" errors={errors} keyboardType="phone-pad"> </Input>
 
       {/* Save button */}
-      <View>
-        <View className="flex px-4 py-3">
-          <TouchableOpacity className="flex h-12 flex-1 items-center justify-center rounded-full bg-[#e9242a] px-5">
-            <Text className="text-white text-base font-bold tracking-[0.015em] truncate">Next</Text>
-          </TouchableOpacity>
-        </View>
-        <View className="h-5 bg-white" />
-      </View>
+      <Button onPress={handleSubmit(handleSubmitForm)} disabled={!isValid} />
       </View>
     </ScrollView>
   );

@@ -5,11 +5,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useUser } from "../../models/userContextProvider";
-import { useRegData } from "../../models/signupSteps";
+import { SignupStepTwo, register, useRegData } from "../../models/signupSteps";
 import { getAllCategories } from "../../services/sections/categories";
 import { Category } from "../../models/categories";
 import { useRouter } from "expo-router";
 import { CategoryAddition }  from "../../components/categoryAddition";
+import { registerUser } from "../../services/sections/auth";
+import { Input } from "../../components/inputs";
+import Button from "../../components/button";
 
 const ShopInformationScreen = () => {
   const { setUser, setRole, role } = useUser();
@@ -25,7 +28,6 @@ const ShopInformationScreen = () => {
     shopName: z.string().min(1, "Shop name is required"),
     userName: z.string().min(1, "Username is required"),
     shopDescription: z.string().min(1, "Shop description is required"),
-    directions: z.string().min(1, "Directions are required"),
     phoneNumber: z.string().min(1, "Phone number is required"),
   });
 
@@ -41,11 +43,39 @@ const ShopInformationScreen = () => {
             setCategories(cats);
         } catch (error) {
             console.error("Failed to fetch categories:", error);
-            // Handle error appropriately, e.g., show a message to the user in the UI 
+            //Todo: handle error appropriately, e.g., show a message to the user in the UI 
         }
     }
     fetchCategories();
   }, []);
+
+  const handleSubmitForm = async (data: z.infer<typeof schema>) => {
+    const shopData:SignupStepTwo = {
+      username: data.userName,
+      phone_number: data.phoneNumber,
+      seller_data: {
+      policies:{},// would be determined later
+      description: data.shopDescription,
+      shop_name: data.shopName,
+      category_ids: selectedCategories.map(c => c.id),
+    }
+    };
+
+    //update regData with the new shop information
+    const updatedRegData = register(regData, shopData);
+    setRegData(updatedRegData);
+
+    console.log("Submitting user data:", regData);
+
+    // send the user data to the backend here
+    // may move this later to a another signup step
+    try {
+        const userRegResult = await registerUser(regData)
+        router.push("/index");
+    } catch (error) {
+        console.error("Registration failed:", error);
+    }
+  }
 
   const removeCategory = (id: Number) => {
     setSelectedCategories(prev => prev.filter(c => c.id !== id));
@@ -63,51 +93,25 @@ const ShopInformationScreen = () => {
 
       {/* Form Fields */}
       <View className="px-4 py-3 flex flex-wrap max-w-[480px]">
-        {/* Shop Name */}
-        <View className="flex-1 flex-col min-w-[160px] mb-4">
-          <Text className="text-[#181111] text-base font-medium pb-2">Shop Name</Text>
-          <TextInput
-            className="bg-[#f4f0f0] rounded-xl p-4 text-[#181111] text-base"
-            placeholder="Enter shop name"
-            placeholderTextColor="#886364"
-          />
-        </View>
+        {errors.shopName && <Text className="text-[#e9242a] text-sm font-normal">{errors.shopName.message}</Text>}
+        <Input placeholder="Enter shop name" control={control} name="shopName" errors={errors}> </Input>
 
         {/* Username */}
-        <View className="flex-1 flex-col min-w-[160px] mb-4">
-          <Text className="text-[#181111] text-base font-medium pb-2">Username</Text>
-          <TextInput
-            className="bg-[#f4f0f0] rounded-xl p-4 text-[#181111] text-base"
-            placeholder="Enter username"
-            placeholderTextColor="#886364"
-          />
-        </View>
+        {errors.userName && <Text className="text-[#e9242a] text-sm font-normal">{errors.userName.message}</Text>}
+        <Input placeholder="Enter username" control={control} name="userName" errors={errors}> </Input>
 
         {/* Phone Number */}
-        <View className="flex-1 flex-col min-w-[160px] mb-4">
-          <Text className="text-[#181111] text-base font-medium pb-2">Phone Number</Text>
-          <TextInput
-            className="bg-[#f4f0f0] rounded-xl p-4 text-[#181111] text-base"
-            placeholder="Enter phone number"
-            placeholderTextColor="#886364"
-            keyboardType="phone-pad"
-          />
-        </View>
+        {errors.phoneNumber && <Text className="text-[#e9242a] text-sm font-normal">{errors.phoneNumber.message}</Text>}
+        <Input placeholder="Enter phone number" control={control} name="phoneNumber" errors={errors} keyboardType="phone-pad"> </Input>
 
         {/* Shop Description */}
-        <View className="flex-1 flex-col min-w-[160px] mb-4">
-          <Text className="text-[#181111] text-base font-medium pb-2">Shop Description</Text>
-          <TextInput
-            className="bg-[#f4f0f0] rounded-xl p-4 text-[#181111] text-base min-h-[144px]"
-            placeholder="Enter shop description"
-            placeholderTextColor="#886364"
-            multiline
-          />
-        </View>
+        {errors.shopDescription && <Text className="text-[#e9242a] text-sm font-normal">{errors.shopDescription.message}</Text>}
+        <Input placeholder="Enter shop description" control={control} name="shopDescription" errors={errors} multiline> </Input>
 
         {/* Product Categories */}
         <Text className="text-[#181111] text-lg font-bold px-4 pb-2 pt-4">Product Categories</Text>
 
+        {/* Note/Todo: This should probably be added to a separate component, since it could be reused */}
         <View className="flex-row flex-wrap gap-3 p-3 pr-4">
           {selectedCategories.map(cat => (
             <View key={cat.id.toString()} className="flex-row items-center bg-[#f4f0f0] rounded-full px-3 py-1">
@@ -124,34 +128,10 @@ const ShopInformationScreen = () => {
             <Text className="text-white text-sm font-bold">+ Add Categories</Text>
           </TouchableOpacity>
         </View>
-
-        {/* How to Get to Our Shop */}
-        <View className="flex-1 flex-col min-w-[160px] mb-4">
-          <Text className="text-[#181111] text-base font-medium pb-2">How to Get to Our Shop</Text>
-          <TextInput
-            className="bg-[#f4f0f0] rounded-xl p-4 text-[#181111] text-base min-h-[144px]"
-            placeholder="Directions to shop"
-            placeholderTextColor="#886364"
-            multiline
-          />
-        </View>
       </View>
 
-      {/* Save Button */}
-      <View className="px-4 py-3">
-        <TouchableOpacity className="bg-[#e9242a] rounded-full h-12 px-5 flex-1 justify-center items-center" 
-        disabled={!isValid}
-        style={{
-            backgroundColor: isValid ? '#e9242a' : '#f4f1f1',
-          }}
-          >
-          <Text  className="text-white text-base font-bold tracking-[0.015em]"
-          style={{
-            color: isValid ? '#ffffff' : '#886364',
-          }}
-          >Next</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Save button */}
+      <Button onPress={handleSubmit(handleSubmitForm)} disabled={!isValid} />
 
       <CategoryAddition
         visible={modalVisible}

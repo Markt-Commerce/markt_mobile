@@ -8,6 +8,7 @@ import { loginUser } from "../../services/sections/auth";
 import { AccountType } from "../../models/auth"; 
 import { useUser } from "../../models/userContextProvider";
 import { Input } from "../../components/inputs";
+import Button from "../../components/button";
 
 const schema = z.object({
   email: z.string().min(1, "Email is required"),
@@ -124,17 +125,9 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity className="w-full h-12 bg-[#e9242a] rounded-full justify-center items-center" 
-        onPress={handleSubmit(onsubmit)} 
-        disabled={!isValid}
-        style={{
-          backgroundColor: isValid ? '#e9242a' : '#f4f1f1',
-        }}
-        >
-          <Text className="text-[white] text-base font-bold tracking-[0.015em]">
-            Login
-          </Text>
-        </TouchableOpacity>
+        {/* Save button */}
+      <Button onPress={handleSubmit(onsubmit)} disabled={!isValid} />
+
       </View>
 
       <Text className="text-[#826869] text-sm font-normal text-center underline pb-3 pt-1" onPress={() => router.navigate("/signup")}>

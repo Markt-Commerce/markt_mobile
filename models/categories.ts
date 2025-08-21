@@ -1,6 +1,6 @@
 export interface Category{
     children: Category[],
-    id: Number,
+    id: number,
     image_url: string,
     name: string,
     slug: string
