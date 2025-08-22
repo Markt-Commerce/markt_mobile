@@ -10,11 +10,11 @@ import { BASE_URL,request } from '../api';
  * @returns 
  */
 export async function registerUser(data: RegisterRequest): Promise<AuthUser> {
-  const res = await request<ApiResponse<AuthUser>>(`${BASE_URL}/users/register`, {
+  const res = await request<AuthUser>(`${BASE_URL}/users/register`, {
     method: 'POST',
     body: JSON.stringify(data),
   });
-  return res.data!;
+  return res;
 }
 
 
@@ -25,11 +25,11 @@ export async function registerUser(data: RegisterRequest): Promise<AuthUser> {
  * @returns 
  */
 export async function loginUser(data: LoginRequest): Promise<AuthUser> {
-  const res = await request<ApiResponse<AuthUser>>(`${BASE_URL}/users/login`, {
+  const res = await request<AuthUser>(`${BASE_URL}/users/login`, {
     method: 'POST',
     body: JSON.stringify(data),
   });
-  return res.data!;
+  return res;
 }
 
 /**
@@ -43,6 +43,13 @@ export async function logoutUser(): Promise<void> {
     });
   }
   
+/**
+ * This function sends a verification email to the user.
+ * It is typically used during the registration process
+ * to verify the user's email address.
+ * @param email The email address to send the verification to
+ * @returns 
+ */
 export async function sendVerificationEmail(email: string): Promise<void> {
   await request<void>(`${BASE_URL}/users/email-verification/send`, {
     method: 'POST',

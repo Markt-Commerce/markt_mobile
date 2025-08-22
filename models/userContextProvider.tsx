@@ -4,8 +4,7 @@ import React, { createContext, useState, useContext, ReactNode } from 'react';
 type UserRole = 'buyer' | 'seller' | null;
 
 interface User {
-  id: string;
-  name: string;
+  account_type: UserRole; // 'buyer' or 'seller'
   email: string;
 }
 

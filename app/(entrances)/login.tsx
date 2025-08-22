@@ -5,7 +5,6 @@ import { z } from "zod";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginUser } from "../../services/sections/auth";
-import { AccountType } from "../../models/auth"; 
 import { useUser } from "../../models/userContextProvider";
 import { Input } from "../../components/inputs";
 import Button from "../../components/button";
@@ -33,9 +32,8 @@ export default function LoginScreen() {
       setError(null); // clear any previous errors
       console.log("Login successful:", userData);//remember to clear this later
       setUser({
-        id: userData.id,
-        name: userData.username,
         email: userData.email,
+        account_type: userData.account_type,
       }); //store user data in context
       //navigate to the home page
       router.push("/");

@@ -25,6 +25,7 @@ export interface LoginRequest {
   account_type: AccountType;
 }
 
+//will discuss with backend team about this. There is currently no standardized response format in the backend
 export interface ApiResponse<T = unknown> {
   code: number;
   status: string;
@@ -46,4 +47,5 @@ export interface AuthUser {
   current_role: string;
   created_at: string;
   updated_at: string;
+  account_type: AccountType;
 }
