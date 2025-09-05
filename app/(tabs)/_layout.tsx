@@ -76,3 +76,9 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+
+//seller: feed, orders, profile,
+//buyer: feed, orders, profile, 
+
+//seller top tab: post, chat, shop
+//buyer top tab: post, cart, chat

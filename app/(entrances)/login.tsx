@@ -32,7 +32,7 @@ export default function LoginScreen() {
       setError(null); // clear any previous errors
       console.log("Login successful:", userData);//remember to clear this later
       setUser({
-        email: userData.email,
+        email: userData.email.toLowerCase(),
         account_type: userData.account_type,
       }); //store user data in context
       //navigate to the home page
