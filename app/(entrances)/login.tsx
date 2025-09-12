@@ -5,7 +5,7 @@ import { z } from "zod";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginUser } from "../../services/sections/auth";
-import { useUser } from "../../models/userContextProvider";
+import { useUser } from "../../hooks/userContextProvider";
 import { Input } from "../../components/inputs";
 import Button from "../../components/button";
 

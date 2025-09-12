@@ -1,183 +1,210 @@
 import React from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
-import {
-  ArrowLeft,
-} from 'lucide-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, Dimensions } from 'react-native';
+import { LineChart } from 'react-native-chart-kit';
+import { Search, ArrowBigDown as CaretDown } from 'lucide-react-native';
+
+// Seller Dashboard — React Native (Expo) + NativeWind + lucide-react-native
+// This file uses `className` (NativeWind) for styling and `lucide-react-native` for icons
+// Make sure your project has NativeWind and lucide-react-native installed and configured.
+
+const { width: screenWidth } = Dimensions.get('window');
 
 export default function SellerDashboard() {
-  return (
-    <ScrollView className="flex-1 bg-white" contentContainerStyle={{ paddingBottom: 20 }}>
-      {/* Header */}
-      <View className="flex-row items-center justify-between bg-white px-4 py-2 pb-1">
-        <ArrowLeft color="#171312" size={24} />
-        <Text className="text-[#171312] text-lg font-bold text-center flex-1 pr-12">
-          Seller Dashboard
-        </Text>
-      </View>
+  const chartWidth = Math.min(screenWidth - 32, 800);
 
-      {/* Overview */}
-      <Text className="text-[#171312] text-[22px] font-bold px-4 pt-5 pb-3">Overview</Text>
-      <View className="flex-row flex-wrap gap-4 px-4">
-        {[
-          { label: 'Total Earnings', value: '$12,500', growth: '+15%' },
-          { label: 'Sales This Month', value: '350', growth: '+8%' },
-          { label: 'Top Product', value: 'Handmade Leather Wallet', growth: '+20%' },
-        ].map((item, idx) => (
-          <View key={idx} className="bg-[#f4f2f1] flex-1 min-w-[158px] rounded-xl p-6 gap-2">
-            <Text className="text-base font-medium text-[#171312]">{item.label}</Text>
-            <Text className="text-2xl font-bold text-[#171312]">{item.value}</Text>
-            <Text className="text-base font-medium text-[#07880b]">{item.growth}</Text>
-          </View>
-        ))}
-      </View>
+  const salesData = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    datasets: [{ data: [30, 45, 28, 80, 99, 70], strokeWidth: 3 }],
+  };
 
-      {/* Sales Trends */}
-      <Text className="text-[#171312] text-[22px] font-bold px-4 pt-5 pb-3">Sales Trends</Text>
-      <View className="px-4 py-6">
-        <View className="border border-[#e4dfdd] rounded-xl p-6 gap-2">
-          <Text className="text-base font-medium text-[#171312]">Monthly Sales</Text>
-          <Text className="text-[32px] font-bold text-[#171312] truncate">$3,200</Text>
-          <View className="flex-row gap-1">
-            <Text className="text-base text-[#826f68]">Last 6 Months</Text>
-            <Text className="text-base font-medium text-[#07880b]">+12%</Text>
-          </View>
+  const stats = [
+    { title: 'Total Revenue', value: '$12,345' },
+    { title: 'Total Orders', value: '567' },
+    { title: 'Avg. Order Value', value: '$21.75' },
+    { title: 'Active Listings', value: '123' },
+  ];
 
-          {/* Graph Placeholder */}
-          <View className="h-[180px] justify-center items-center py-4 relative overflow-hidden rounded-xl">
-            <LinearGradient
-              colors={['#f4f2f1', 'transparent']}
-              className="absolute w-full h-full"
-              start={{ x: 0.5, y: 0 }}
-              end={{ x: 0.5, y: 1 }}
-            />
-            <Text className="text-[#826f68]">[Graph Placeholder]</Text>
-          </View>
+  const recentOrders = [
+    { name: 'Ava Bennett', id: '123456', amount: '$25.00' },
+    { name: 'Owen Carter', id: '789012', amount: '$30.00' },
+    { name: 'Chloe Clark', id: '345678', amount: '$15.00' },
+    { name: 'Noah Harper', id: '901234', amount: '$40.00' },
+  ];
 
-          <View className="flex-row justify-around">
-            {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map((month) => (
-              <Text
-                key={month}
-                className="text-[13px] font-bold text-[#826f68] tracking-[0.015em]"
-              >
-                {month}
-              </Text>
-            ))}
-          </View>
-        </View>
-      </View>
+  const topProducts = [
+    { name: 'Product A', sales: 100, revenue: '$1,000', image: 'https://via.placeholder.com/80' },
+    { name: 'Product B', sales: 80, revenue: '$800', image: 'https://via.placeholder.com/80' },
+    { name: 'Product C', sales: 60, revenue: '$600', image: 'https://via.placeholder.com/80' },
+  ];
 
-      {/* Top Products */}
-      <Text className="text-[#171312] text-[22px] font-bold px-4 pt-5 pb-3">Top Products</Text>
-      {[
-        {
-          tag: 'Best Seller',
-          name: 'Handmade Leather Wallet',
-          sold: '120 sold this month',
-          img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAUmgT0vU7dsYtvnXhPDNLkjVwYVj70ILYjScVbWD5Jwe7w91xZJNAMGvtjQUhBXXCmCOcmekZqRrgXbKiBjCvwugREzNnU1maZvBpc2LT3Rd8m79091i9Apyvalm_pG2Sk0sEXWau0UMinSUvDBeLWn_meA3MtLihYGh5Z559TxnBsIHS-dotKx8hEVgb_pqjYU6DU_rG_FxqBj_6QI1vUG5KEaKO8oHjnh2TX8_ntuusijws_YIVhAWEDxX8x8OhTE0z_Fc2Urw',
-        },
-        {
-          tag: 'Popular',
-          name: 'Artisan Soap Set',
-          sold: '85 sold this month',
-          img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDaUVpird74wxAdCGZPvhm4F3hEj5U36SrbVXmWTYl-0mNM9Y0Mkm3jejDULz29jv9zMM4FQupuX98PVYIlFYfz13yM-d3iUPV9_HL469JlRXV9bPJztcZ-GqtWE-O6Y4PUZ9rIL-Fl2Clr4ShxXY_SPaEQGAI2DQk7TA3ZSXVaOX6qHsmhg8NjuJgtUUezoiuXOLOzM2Rws1xdzGnllOkfIgh2nLhRxMU-bdHXWQUQl4TlEFHNHyLWm-kcsXuiCVxwKMbTBH6ZVA',
-        },
-      ].map((product, index) => (
-        <View key={index} className="flex-row gap-4 px-4 pb-4">
-          <View className="flex-1 gap-4">
-            <View className="gap-1">
-              <Text className="text-sm text-[#826f68]">{product.tag}</Text>
-              <Text className="text-base font-bold text-[#171312]">{product.name}</Text>
-              <Text className="text-sm text-[#826f68]">{product.sold}</Text>
-            </View>
-            <TouchableOpacity className="rounded-full bg-[#f4f2f1] h-8 px-4 justify-center items-center w-fit">
-              <Text className="text-sm text-[#171312] font-medium">View Product</Text>
-            </TouchableOpacity>
-          </View>
-          <Image
-            source={{ uri: product.img }}
-            className="rounded-xl flex-1 aspect-video"
-            resizeMode="cover"
-          />
-        </View>
-      ))}
-    </ScrollView>
-  );
-}
-
-
-/**
- * 
- import React from "react";
-import { View, Text, TextInput, TouchableOpacity, ImageBackground } from "react-native";
-import { Search } from "lucide-react-native";
-import { ScrollView } from "react-native";
-
-export default function ListingsScreen() {
-  const listings = [
-    {
-      id: 1,
-      title: "Vintage Leather Jacket",
-      price: "$120",
-      image: "https://source.unsplash.com/random/800x600/?jacket"
-    },
-    {
-      id: 2,
-      title: "Mountain Bike",
-      price: "$300",
-      image: "https://source.unsplash.com/random/800x600/?bike"
-    },
-    {
-      id: 3,
-      title: "Gaming Console",
-      price: "$250",
-      image: "https://source.unsplash.com/random/800x600/?gaming"
-    },
-    {
-      id: 4,
-      title: "Bookshelf",
-      price: "$70",
-      image: "https://source.unsplash.com/random/800x600/?bookshelf"
-    },
+  const inventory = [
+    { name: 'Product F', status: 'Active', price: '$10', stock: 50 },
+    { name: 'Product G', status: 'Inactive', price: '$15', stock: 20 },
+    { name: 'Product H', status: 'Active', price: '$20', stock: 100 },
   ];
 
   return (
-    <View className="flex-1 bg-[#fcf8f8]">
-      <View className="px-4 pt-12 pb-3 bg-[#fcf8f8]">
-        <Text className="text-2xl font-bold text-[#1b0e0e]">Listings</Text>
+    <ScrollView className="bg-white min-h-screen" contentContainerStyle={{ paddingBottom: 40 }}>
+      <View className="flex-row items-center bg-white p-4 justify-between">
+        <Text className="text-[#171311] text-lg font-bold flex-1 text-center">Seller Dashboard</Text>
       </View>
 
-      <View className="flex-row items-center px-4 pb-3">
-        <View className="flex-row items-center bg-[#f3e7e8] flex-1 rounded-lg h-12 px-4">
-          <Search size={18} color="#994d51" />
-          <TextInput
-            placeholder="Search listings"
-            placeholderTextColor="#994d51"
-            className="ml-2 flex-1 text-[#1b0e0e] text-base"
-          />
-        </View>
-        <TouchableOpacity className="ml-3 h-12 px-4 rounded-lg bg-[#ea2832] justify-center items-center">
-          <Text className="text-sm text-[#fcf8f8] font-medium">Search</Text>
+      {/* Action buttons */}
+      <View className="flex-row justify-end px-4 py-3 gap-3">
+        <TouchableOpacity className="bg-[#f4f1f0] rounded-lg h-10 px-4 items-center justify-center">
+          <Text className="text-[#171311] text-sm font-bold">Date Range</Text>
+        </TouchableOpacity>
+        <TouchableOpacity className="bg-[#e26136] rounded-lg h-10 px-4 items-center justify-center">
+          <Text className="text-white text-sm font-bold">Export</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 px-4">
-        {listings.map((item) => (
-          <View key={item.id} className="mb-4 rounded-xl overflow-hidden bg-white shadow">
-            <ImageBackground
-              source={{ uri: item.image }}
-              className="h-48 w-full bg-cover"
-              imageStyle={{ borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
-            />
-            <View className="p-4">
-              <Text className="text-lg font-semibold text-[#1b0e0e]">{item.title}</Text>
-              <Text className="text-[#994d51] mt-1 font-medium">{item.price}</Text>
-            </View>
+      {/* Stats cards */}
+      <View className="flex-row flex-wrap gap-4 p-4">
+        {stats.map((s) => (
+          <View key={s.title} className="min-w-[158px] flex-1 flex-col gap-2 rounded-lg p-6 border border-[#e5dedc] bg-white">
+            <Text className="text-[#171311] text-base font-medium">{s.title}</Text>
+            <Text className="text-[#171311] text-2xl font-bold">{s.value}</Text>
           </View>
         ))}
-        <View className="h-6" />
-      </ScrollView>
-    </View>
+      </View>
+
+      {/* Secondary actions */}
+      <View className="flex-row justify-between px-4 py-2">
+        <TouchableOpacity className="bg-[#e26136] rounded-lg h-10 px-4 items-center justify-center">
+          <Text className="text-white text-sm font-bold">Create Product</Text>
+        </TouchableOpacity>
+        <TouchableOpacity className="bg-[#f4f1f0] rounded-lg h-10 px-4 items-center justify-center">
+          <Text className="text-[#171311] text-sm font-bold">Inventory</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Orders button */}
+      <View className="flex px-4 py-3 justify-end">
+        <TouchableOpacity className="bg-[#f4f1f0] rounded-lg h-10 px-4 items-center justify-center">
+          <Text className="text-[#171311] text-sm font-bold">Orders</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Sales trends */}
+      <View className="flex flex-wrap gap-4 px-4 py-6">
+        <View className="flex-1 min-w-72 flex-col gap-2">
+          <Text className="text-[#171311] text-base font-medium">Sales Trends</Text>
+          <Text className="text-[#171311] text-[32px] font-bold">$12,345</Text>
+          <View className="flex-row gap-1 items-center">
+            <Text className="text-[#876d64] text-base">Last 30 Days</Text>
+            <Text className="text-[#07880b] text-base font-medium">+15%</Text>
+          </View>
+
+          <View className="min-h-[180px] py-4">
+            <LineChart
+              data={salesData}
+              width={chartWidth}
+              height={148}
+              chartConfig={{
+                backgroundGradientFrom: '#f4f1f0',
+                backgroundGradientTo: 'transparent',
+                color: (opacity = 1) => `rgba(135,109,100, ${opacity})`,
+                strokeWidth: 3,
+              }}
+              bezier
+              style={{ borderRadius: 12 }}
+            />
+
+            <View className="flex-row justify-around mt-2">
+              <Text className="text-[#876d64] text-[13px] font-bold">Jan</Text>
+              <Text className="text-[#876d64] text-[13px] font-bold">Feb</Text>
+              <Text className="text-[#876d64] text-[13px] font-bold">Mar</Text>
+              <Text className="text-[#876d64] text-[13px] font-bold">Apr</Text>
+              <Text className="text-[#876d64] text-[13px] font-bold">May</Text>
+              <Text className="text-[#876d64] text-[13px] font-bold">Jun</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Recent Orders */}
+      <Text className="text-[#171311] text-[22px] font-bold px-4 pb-3 pt-5">Recent Orders</Text>
+      {recentOrders.map((o) => (
+        <View key={o.id} className="flex-row items-center gap-4 bg-white px-4 min-h-[72px] py-2 justify-between">
+          <View className="flex flex-col justify-center">
+            <Text className="text-[#171311] text-base font-medium">{o.name}</Text>
+            <Text className="text-[#876d64] text-sm">Order ID: {o.id}</Text>
+          </View>
+          <Text className="text-[#171311] text-base">{o.amount}</Text>
+        </View>
+      ))}
+
+      {/* Top Products */}
+      <Text className="text-[#171311] text-[22px] font-bold px-4 pb-3 pt-5">Top Products</Text>
+      {topProducts.map((p) => (
+        <View key={p.name} className="flex-row items-center gap-4 bg-white px-4 min-h-[72px] py-2">
+          <Image source={{ uri: p.image }} className="w-14 h-14 rounded-lg" />
+          <View className="flex flex-col justify-center">
+            <Text className="text-[#171311] text-base font-medium">{p.name}</Text>
+            <Text className="text-[#876d64] text-sm">Total Sales: {p.sales}, Revenue: {p.revenue}</Text>
+          </View>
+        </View>
+      ))}
+
+      {/* Low Stock Alerts */}
+      <Text className="text-[#171311] text-[22px] font-bold px-4 pb-3 pt-5">Low Stock Alerts</Text>
+      <View className="flex gap-4 bg-white px-4 py-3 justify-between">
+        <View className="flex-1 flex-col justify-center">
+          <Text className="text-[#171311] text-base font-medium">Product D</Text>
+          <Text className="text-[#876d64] text-sm">Last Updated: 2024-01-15</Text>
+          <Text className="text-[#876d64] text-sm">Stock Left: 5</Text>
+        </View>
+        <Text className="text-[#171311]">Alert</Text>
+      </View>
+
+      <View className="flex gap-4 bg-white px-4 py-3 justify-between">
+        <View className="flex-1 flex-col justify-center">
+          <Text className="text-[#171311] text-base font-medium">Product E</Text>
+          <Text className="text-[#876d64] text-sm">Last Updated: 2024-01-10</Text>
+          <Text className="text-[#876d64] text-sm">Stock Left: 2</Text>
+        </View>
+        <Text className="text-[#171311]">Alert</Text>
+      </View>
+
+      {/* Inventory */}
+      <Text className="text-[#171311] text-[22px] font-bold px-4 pb-3 pt-5">Inventory</Text>
+      <View className="px-4 py-3">
+        <View className="flex-row items-stretch rounded-lg h-12 w-full overflow-hidden">
+          <View className="bg-[#f4f1f0] pl-4 items-center justify-center">
+            <Search size={20} color="#876d64" />
+          </View>
+          <TextInput placeholder="Search products" className="flex-1 bg-[#f4f1f0] px-4 text-[#171311]" />
+        </View>
+      </View>
+
+      <View className="flex gap-3 p-3 overflow-x-hidden">
+        <TouchableOpacity className="h-8 items-center justify-center rounded-lg bg-[#f4f1f0] pl-4 pr-2 flex-row gap-2">
+          <Text className="text-[#171311] text-sm font-medium">Status</Text>
+          <CaretDown size={16} color="#171311" />
+        </TouchableOpacity>
+      </View>
+
+      {inventory.map((it) => (
+        <View key={it.name} className="flex gap-4 bg-white px-4 py-3 justify-between flex-row items-center">
+          <View className="flex-1 flex-col justify-center">
+            <Text className="text-[#171311] text-base font-medium">{it.name}</Text>
+            <Text className="text-[#876d64] text-sm">Status: {it.status}</Text>
+            <Text className="text-[#876d64] text-sm">Price: {it.price}, Stock: {it.stock}</Text>
+          </View>
+          <TouchableOpacity className="bg-[#f4f1f0] px-4 py-2 rounded-lg">
+            <Text className="text-[#171311] text-sm font-medium">Edit</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
+
+      <View className="flex-row w-full items-center justify-center gap-3 py-5">
+        <View className="h-2 w-2 rounded-full bg-[#171311]" />
+        <View className="h-2 w-2 rounded-full bg-[#e5dedc]" />
+        <View className="h-2 w-2 rounded-full bg-[#e5dedc]" />
+      </View>
+
+      <View className="h-5 bg-white" />
+    </ScrollView>
   );
 }
- */ 

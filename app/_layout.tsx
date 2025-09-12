@@ -1,7 +1,7 @@
 // app/_layout.tsx
 import { Stack } from "expo-router";
 import "../global.css";
-import { UserProvider, useUser, UserContextType } from "../models/userContextProvider";
+import { UserProvider, useUser, UserContextType } from "../hooks/userContextProvider";
 import { RegisterProvider } from "../models/signupSteps";
 import { useState } from "react";
 import type { RegisterRequest } from "../models/auth";

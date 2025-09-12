@@ -1,91 +1,172 @@
 import React from "react";
-import { View, Text, Image, ScrollView, TouchableOpacity } from "react-native";
-import { ArrowLeft, ArrowRight } from "lucide-react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
+import {
+  ArrowLeft,
+  Bell,
+  Sun,
+  Globe,
+  User,
+  Lock,
+  CreditCard,
+  Truck,
+  Link as LinkIcon,
+  HelpCircle as Question,
+  FileText,
+  ShieldCheck,
+  Info,
+  ArrowRight,
+} from "lucide-react-native";
 
-export default function ProfileScreen() {
+export default function SettingsProfileScreen() {
   return (
     <ScrollView className="flex-1 bg-white">
       {/* Header */}
       <View className="flex-row items-center p-4 pb-2 justify-between">
         <ArrowLeft size={24} color="#171311" />
-        <Text className="text-[#171311] text-lg font-bold text-center pr-12">
-          Profile
+        <Text className="flex-1 text-center pr-12 text-lg font-bold text-[#171311]">
+          Profile & Settings
         </Text>
       </View>
 
-      {/* Profile Image & Info */}
-      <View className="p-4 items-center">
-        <View className="items-center gap-4">
-          <Image
-            source={{
-              uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuBV3jnY8apsheCMngH9NM_uxgSXDUvMIII2hb5QV1iTKkiE8G8c_VTE3v_ZPFd4IylwS13KbWuCYfGNiCFRrqqX7ae3wtC17_v_BPlZls7h30payQZwccwjuk0xKGfof45wQwSmsKyqsABNxgJT5zmQ9KjTuwTsxKNC04-uCd8Xt88awjdF5k7eRayAkSgjEQtm-GN931PnLZRntDF1N_18ZCBE-SGAoZ_roZ5ZVs5v3wkXXwkqgZcZkIsqzA3G3fnctkUcGP4e0A",
-            }}
-            className="rounded-full w-32 h-32 bg-center"
-          />
-          <View className="items-center">
-            <Text className="text-[22px] font-bold text-[#171311] text-center">
-              Sophia Carter
-            </Text>
-            <Text className="text-base text-[#876d64] text-center">
-              @sophia.carter
-            </Text>
-            <Text className="text-base text-[#876d64] text-center">
-              Joined 2021
-            </Text>
-          </View>
-        </View>
+      {/* Profile Section */}
+      <View className="items-center py-6">
+        <Image
+          source={{
+            uri: "https://via.placeholder.com/150",
+          }}
+          className="w-32 h-32 rounded-full"
+        />
+        <Text className="text-[22px] font-bold text-[#171311] mt-3">
+          Sophia Carter
+        </Text>
+        <Text className="text-base text-[#876d64]">@sophia.carter</Text>
+        <Text className="text-base text-[#876d64]">Joined 2021</Text>
       </View>
 
-      {/* Details Section */}
-      <Text className="text-lg font-bold text-[#171311] px-4 pt-4 pb-2">
+      {/* Profile Details */}
+      <Text className="px-4 pb-2 pt-4 text-lg font-bold text-[#171311]">
         Details
       </Text>
-
       {[
         { label: "Name", value: "Sophia Carter" },
         { label: "Username", value: "@sophia.carter" },
         { label: "Gender", value: "Female" },
         { label: "Location", value: "Los Angeles, CA" },
         { label: "Joined", value: "2021" },
-      ].map((item, index) => (
+      ].map((item, i) => (
         <TouchableOpacity
-          key={index}
-          className="flex-row justify-between items-center px-4 py-2 min-h-[72px]"
+          key={i}
+          className="flex-row justify-between items-center px-4 py-3 border-b border-gray-100"
         >
           <View>
             <Text className="text-base font-medium text-[#171311]">
               {item.label}
             </Text>
-            <Text className="text-sm text-[#876d64]">
-              {item.value}
+            <Text className="text-sm text-[#876d64]">{item.value}</Text>
+          </View>
+          <ArrowRight size={20} color="#171311" />
+        </TouchableOpacity>
+      ))}
+
+      {/* App Preferences */}
+      <Text className="px-4 pb-2 pt-4 text-lg font-bold text-[#171311]">
+        App Preferences
+      </Text>
+      {[
+        {
+          label: "Notifications",
+          desc: "Enable or disable notifications",
+          icon: Bell,
+        },
+        {
+          label: "Appearance",
+          desc: "Customize app theme",
+          icon: Sun,
+        },
+        {
+          label: "Language",
+          desc: "Manage language preferences",
+          icon: Globe,
+        },
+      ].map((item, i) => (
+        <TouchableOpacity
+          key={i}
+          className="flex-row justify-between items-center px-4 py-3 border-b border-gray-100"
+        >
+          <View className="flex-row items-center gap-3">
+            <View className="bg-[#f4f1f0] p-2 rounded-lg">
+              <item.icon size={20} color="#171311" />
+            </View>
+            <View>
+              <Text className="text-base font-medium text-[#171311]">
+                {item.label}
+              </Text>
+              <Text className="text-sm text-[#876d64]">{item.desc}</Text>
+            </View>
+          </View>
+          <ArrowRight size={20} color="#171311" />
+        </TouchableOpacity>
+      ))}
+
+      {/* Account Management */}
+      <Text className="px-4 pb-2 pt-4 text-lg font-bold text-[#171311]">
+        Account Management
+      </Text>
+      {[
+        { label: "Account Information", icon: User },
+        { label: "Change Password", icon: Lock },
+        { label: "Payment Methods", icon: CreditCard },
+        { label: "Shipping Addresses", icon: Truck },
+        { label: "Linked Accounts", icon: LinkIcon },
+      ].map((item, i) => (
+        <TouchableOpacity
+          key={i}
+          className="flex-row justify-between items-center px-4 py-3 border-b border-gray-100"
+        >
+          <View className="flex-row items-center gap-3">
+            <View className="bg-[#f4f1f0] p-2 rounded-lg">
+              <item.icon size={20} color="#171311" />
+            </View>
+            <Text className="text-base font-medium text-[#171311]">
+              {item.label}
             </Text>
           </View>
-          <ArrowRight size={24} color="#171311" />
+          <ArrowRight size={20} color="#171311" />
         </TouchableOpacity>
       ))}
 
-      {/* Settings Section */}
-      <Text className="text-lg font-bold text-[#171311] px-4 pt-4 pb-2">
-        Settings
+      {/* Support & Info */}
+      <Text className="px-4 pb-2 pt-4 text-lg font-bold text-[#171311]">
+        Support & Information
       </Text>
-
       {[
-        "Notifications",
-        "Privacy",
-        "Help"
-      ].map((label, index) => (
+        { label: "Help Center", icon: Question },
+        { label: "Terms of Service", icon: FileText },
+        { label: "Privacy Policy", icon: ShieldCheck },
+        { label: "About", icon: Info },
+      ].map((item, i) => (
         <TouchableOpacity
-          key={index}
-          className="flex-row justify-between items-center px-4 py-3 min-h-14"
+          key={i}
+          className="flex-row justify-between items-center px-4 py-3 border-b border-gray-100"
         >
-          <Text className="text-base text-[#171311] flex-1 truncate">
-            {label}
-          </Text>
-          <ArrowRight size={24} color="#171311" />
+          <View className="flex-row items-center gap-3">
+            <View className="bg-[#f4f1f0] p-2 rounded-lg">
+              <item.icon size={20} color="#171311" />
+            </View>
+            <Text className="text-base font-medium text-[#171311]">
+              {item.label}
+            </Text>
+          </View>
+          <ArrowRight size={20} color="#171311" />
         </TouchableOpacity>
       ))}
 
-      <View className="h-5 bg-white" />
+      {/* Logout Button */}
+      <View className="px-4 py-5">
+        <TouchableOpacity className="bg-[#f4f1f0] h-10 rounded-full justify-center items-center">
+          <Text className="text-[#171311] font-bold">Log Out</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }

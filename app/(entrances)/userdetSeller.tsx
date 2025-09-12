@@ -4,7 +4,7 @@ import { ArrowLeft, X } from "lucide-react-native";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useUser } from "../../models/userContextProvider";
+import { useUser } from "../../hooks/userContextProvider";
 import { SignupStepTwo, register, useRegData } from "../../models/signupSteps";
 import { getAllCategories } from "../../services/sections/categories";
 import { Category } from "../../models/categories";

@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input } from "../../components/inputs";
-import { useUser } from "../../models/userContextProvider";
+import { useUser } from "../../hooks/userContextProvider";
 import { AccountType } from "../../models/auth";
 import { useRouter } from "expo-router";
 import { register,useRegData } from "../../models/signupSteps";

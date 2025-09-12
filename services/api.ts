@@ -2,14 +2,28 @@ import { BaseError,MarshMellowError,NetworkError,APIError,BasicAPIError } from "
 
 export const BASE_URL = 'https://test.api.marktcommerce.com/api/v1';
 
-export async function request<T>(url: string, options: RequestInit): Promise<T> {
+export async function request<T = any>(path: string, opts: RequestInit = {}) {
+  const url = path.startsWith('http') ? path : `${BASE_URL}${path}`;
+  const headers: Record<string,string> = {
+    'Accept': 'application/json',
+    ...(opts.headers as Record<string,string> || {})
+  };
+
+  if (!(opts.body instanceof FormData)) {
+    headers['Content-Type'] = headers['Content-Type'] ?? 'application/json';
+  }
+
   const res = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
+    credentials: 'include', // session cookie auth
+    ...opts,
+    headers,
   });
+
+  if (res.status === 204) return undefined as unknown as T;
+
+  const text = await res.text();
+  let data: any = text ? JSON.parse(text) : undefined;
+
   if (!res.ok) {
     const errorBody = await res.json();
     if (errorBody.errors) {
@@ -27,5 +41,5 @@ export async function request<T>(url: string, options: RequestInit): Promise<T> 
     }
     throw new Error(errorBody.message || `Request failed with status ${res.status}`);
   }
-  return res.json();
+  return data as T;
 }

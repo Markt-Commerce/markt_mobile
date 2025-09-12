@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { ArrowLeft } from "lucide-react-native";
 import { useRouter } from "expo-router";
-import { useUser } from "../../models/userContextProvider";
+import { useUser } from "../../hooks/userContextProvider";
 import { sendVerificationEmail } from "../../services/sections/auth";
 import { register,useRegData } from "../../models/signupSteps";
 

@@ -1,7 +1,7 @@
 // app/(tabs)/_layout.js
 import { Tabs } from 'expo-router';
 import { Home, Search, PlusSquare, Heart, User, ChartColumnStackedIcon, SquareStack, ListStartIcon, Badge } from 'lucide-react-native';
-import { useUser } from '../../models/userContextProvider';
+import { useUser } from '../../hooks/userContextProvider';
 
 export default function TabsLayout() {
   const { role } = useUser();
