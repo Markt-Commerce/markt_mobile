@@ -1,6 +1,6 @@
 // app/(tabs)/_layout.js
 import { Tabs } from 'expo-router';
-import { Home, Search, PlusSquare, Heart, User, ChartColumnStackedIcon, SquareStack, ListStartIcon, Badge } from 'lucide-react-native';
+import { Home, Search, PlusSquare, Heart, User, ChartColumnStackedIcon, ListOrdered, SquareStack, ListStartIcon, Badge } from 'lucide-react-native';
 import { useUser } from '../../hooks/userContextProvider';
 
 export default function TabsLayout() {
@@ -26,12 +26,6 @@ export default function TabsLayout() {
         name="index"
         options={{
           tabBarIcon: ({ color, size, focused }) => <Home color={color} fill={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="post"
-        options={{
-          tabBarIcon: ({ color, size, focused }) => <PlusSquare  color={color} />,
         }}
       />
       <Tabs.Screen
@@ -61,12 +55,19 @@ export default function TabsLayout() {
         }}
       /> 
       <Tabs.Screen 
-        name="buyerRequests"
+        name="buyerOrders"
         options={{
-          tabBarIcon: ({ color, size, focused }) => <SquareStack color={color} />,
+          tabBarIcon: ({ color, size, focused }) => <ListOrdered color={color} />,
+          href: (role != 'buyer') ? null : undefined, // Hide this tab if the user is not a seller
+        }}
+      /> 
+      <Tabs.Screen 
+        name="sellerOrders"
+        options={{
+          tabBarIcon: ({ color, size, focused }) => <ListOrdered color={color} />,
           href: (role != 'seller') ? null : undefined, // Hide this tab if the user is not a seller
         }}
-      />
+      /> 
       <Tabs.Screen 
         name="shop"
         options={{

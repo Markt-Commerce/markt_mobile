@@ -102,23 +102,15 @@ export default function SellerDashboard() {
               width={chartWidth}
               height={148}
               chartConfig={{
-                backgroundGradientFrom: '#f4f1f0',
-                backgroundGradientTo: 'transparent',
-                color: (opacity = 1) => `rgba(135,109,100, ${opacity})`,
+                backgroundGradientFrom: '#ffffff',
+                backgroundGradientTo: '#ffffff',
+                color: () => `#e26136`,
                 strokeWidth: 3,
               }}
               bezier
               style={{ borderRadius: 12 }}
             />
-
-            <View className="flex-row justify-around mt-2">
-              <Text className="text-[#876d64] text-[13px] font-bold">Jan</Text>
-              <Text className="text-[#876d64] text-[13px] font-bold">Feb</Text>
-              <Text className="text-[#876d64] text-[13px] font-bold">Mar</Text>
-              <Text className="text-[#876d64] text-[13px] font-bold">Apr</Text>
-              <Text className="text-[#876d64] text-[13px] font-bold">May</Text>
-              <Text className="text-[#876d64] text-[13px] font-bold">Jun</Text>
-            </View>
+            
           </View>
         </View>
       </View>
