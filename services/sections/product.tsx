@@ -1,6 +1,6 @@
 // /services/productService.ts
 import { request, BASE_URL } from "../api";
-import { CreateProductRequest, ProductResponse } from "../../models/products";
+import { CreateProductRequest, ProductResponse, Product } from "../../models/products";
 import { ApiResponse } from "../../models/auth";
 
 /**
@@ -29,4 +29,15 @@ export async function getSellerProducts(sellerId: number, page = 1, per_page = 2
   // if wrapped in data.items
   const payload = (res as any).data ?? (res as any);
   return payload?.items ?? payload ?? [];
+}
+
+
+/**
+ *
+ */
+export async function getProductById(productId: string): Promise<Product> {
+  const res = await request<ApiResponse<Product>>(`${BASE_URL}/products/${productId}`, {
+    method: "GET",
+  });
+  return (res as any).data ?? (res as any);
 }

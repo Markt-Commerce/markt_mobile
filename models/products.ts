@@ -14,6 +14,94 @@ export interface Product {
     updated_at: string;
     in_stock: boolean;
   }
+
+  export interface ProductDetails {
+  average_rating: number;
+  weight: number;
+  status: string;
+  description: string;
+  review_count: number;
+  seller_id: number;
+  variants: Variant[];
+  created_at: string; // ISO date string
+  updated_at: string; // ISO date string
+  categories: string;
+  media_ids: number[];
+  id: string;
+  sku: string;
+  images: ProductImage[];
+  compare_at_price: number;
+  product_metadata: Record<string, string>;
+  barcode: string;
+  view_count: number;
+  cost_per_item: number;
+  seller: Seller;
+  price: number;
+  stock: number;
+  name: string;
+  tag_ids: number[];
+  category_ids: number[];
+}
+
+interface Variant {
+  name: string;
+  options: Record<string, string>;
+}
+
+interface Media {
+  original_url: string;
+  social_post_url: string;
+  thumbnail_url: string;
+  processing_status: string;
+  width: number;
+  mobile_url: string;
+  social_square_url: string;
+  original_filename: string;
+  variants: MediaVariant[];
+  file_size: number;
+  created_at: string;
+  updated_at: string;
+  tablet_url: string;
+  id: number;
+  alt_text: string;
+  background_removed: boolean;
+  mime_type: string;
+  duration: number;
+  height: number;
+  is_public: boolean;
+  social_story_url: string;
+  desktop_url: string;
+  media_type: string;
+  compression_quality: number;
+  storage_key: string;
+  user_id: string;
+  exif_data: Record<string, string>;
+  caption: string;
+}
+
+interface MediaVariant {
+  height: number;
+  format: string;
+  file_size: number;
+  variant_type: string;
+  quality: number;
+  id: number;
+  width: number;
+  processing_time: number;
+  url: string;
+  storage_key: string;
+}
+
+interface Seller {
+  average_rating: number;
+  shop_slug: string;
+  total_products: number;
+  verification_status: string;
+  shop_name: string;
+  id: number;
+  profile_picture_url: string;
+}
+
   
   export interface UpdateProductRequest {
     name?: string;
