@@ -6,7 +6,7 @@ import BottomSheet from "@gorhom/bottom-sheet";
 import { Link } from "expo-router";
 import { FeedItem } from "../../models/feed";
 import { getProducts, getPosts, getBuyerRequests } from "../../services/sections/feed";
-import { useUser } from "../../models/userContextProvider";
+import { useUser } from "../../hooks/userContextProvider";
 
 export default function FeedScreen() {
   const [feed, setFeed] = useState<FeedItem[]>([]);
