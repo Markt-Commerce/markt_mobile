@@ -2,6 +2,13 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "types": ["nativewind/types"]
+    "target": "es2018",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "types": ["nativewind/types"],
+    "lib": [      
+      "es2018",
+      "dom"
+    ]
   }
 }
