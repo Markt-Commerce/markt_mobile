@@ -1,4 +1,4 @@
-import React, { forwardRef, useMemo } from "react";
+import React from "react";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import { useForm, Controller } from "react-hook-form";
@@ -16,9 +16,9 @@ const requestSchema = z.object({
 
 export type RequestFormData = z.infer<typeof requestSchema>;
 
-const BuyerRequestFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: RequestFormData) => void }>(
+const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (data: RequestFormData) => void }>(
   ({ onSubmit }, ref) => {
-    const snapPoints = useMemo(() => ["50%", "85%"], []);
+    const snapPoints = React.useMemo(() => ["50%", "85%"], []);
     const { control, handleSubmit } = useForm<RequestFormData>({
       resolver: zodResolver(requestSchema),
       defaultValues: {
