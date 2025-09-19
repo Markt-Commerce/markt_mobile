@@ -118,7 +118,7 @@ export interface BuyerRequest {
   }
   
   export type FeedItem =
-    | { type: "product"; data: Product }
+    | { type: "product"; data: Product[] }
     | { type: "post"; data: Post }
     | { type: "request"; data: BuyerRequest };
   

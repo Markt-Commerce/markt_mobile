@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, forwardRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { useForm, Controller } from 'react-hook-form';
@@ -22,7 +22,8 @@ interface Props {
   onClose?: () => void;
 }
 
-const ProductFormBottomSheet: React.FC<Props> = ({ onSubmit, onClose }) => {
+const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: ProductFormData) => void }>(
+  ({ onSubmit }, ref) => {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['50%', '90%'], []);
 
@@ -44,7 +45,7 @@ const ProductFormBottomSheet: React.FC<Props> = ({ onSubmit, onClose }) => {
   };
 
   return (
-    <BottomSheet ref={bottomSheetRef} snapPoints={snapPoints} enablePanDownToClose onClose={onClose}>
+    <BottomSheet ref={bottomSheetRef} snapPoints={snapPoints} enablePanDownToClose>
       <ScrollView className="p-4">
         <Text className="text-lg font-bold mb-4">Create Product</Text>
 
@@ -121,6 +122,7 @@ const ProductFormBottomSheet: React.FC<Props> = ({ onSubmit, onClose }) => {
       </ScrollView>
     </BottomSheet>
   );
-};
+}
+);
 
 export default ProductFormBottomSheet;
