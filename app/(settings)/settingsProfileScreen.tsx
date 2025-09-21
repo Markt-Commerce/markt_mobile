@@ -5,29 +5,30 @@ import { ArrowLeft, ArrowRight, Bell, Sun, Globe, User, Lock, CreditCard, Truck,
 import { useUser } from '../../hooks/userContextProvider';
 import { request } from '../../services/api';
 import { useTheme } from '../../hooks/themeContext';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter, Link } from 'expo-router';	
 
 export default function SettingsProfileScreen() {
   const { user, setUser } = useUser();
   const { theme, setTheme, language, setLanguage } = useTheme();
-  const nav = useNavigation();
+  const nav = useRouter();
   const [notif, setNotif] = useState({ push: true, email: false, sms: true }); // mock
 
   const handleLogout = async () => {
     try {
       await request('/users/logout', { method: 'POST' });
       setUser(null);
-      nav.reset?.({ index: 0, routes: [{ name: 'Auth' as never }] });
+      nav.push('/(entrances)/login');
     } catch (err: any) {
       Alert.alert('Logout Failed', err.message || 'Try again');
     }
   };
 
+
   return (
     <ScrollView className="flex-1 bg-white">
       {/* Header */}
       <View className="flex-row items-center p-4 pb-2 justify-between">
-        <TouchableOpacity onPress={() => nav.goBack()}>
+        <TouchableOpacity onPress={() => nav.back()}>
           <ArrowLeft size={24} color="#171311" />
         </TouchableOpacity>
         <Text className="flex-1 text-center pr-12 text-lg font-bold text-[#171311]">Profile & Settings</Text>

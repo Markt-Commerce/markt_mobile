@@ -1,7 +1,7 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import { View, Text, FlatList, TouchableOpacity, Image, ImageBackground, ActivityIndicator } from "react-native";
 import { Plus, ShoppingCart, MessageCircle, Heart, Send, Star } from "lucide-react-native";
-import BottomSheet from "@gorhom/bottom-sheet";
+import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { Link } from "expo-router";
 import { FeedItem } from "../../models/feed";
 import { getProducts, getPosts, getBuyerRequests } from "../../services/sections/feed";
@@ -15,7 +15,8 @@ export default function FeedScreen() {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
 
-  const { user } = useUser();
+  const { role, setUser, user } = useUser();
+  const snapPoints = useMemo(() => ["30%"], []);
 
   // Bottom sheet refs
   const createMenuRef = useRef<BottomSheet>(null);
@@ -23,7 +24,10 @@ export default function FeedScreen() {
   const postFormRef = useRef<BottomSheet>(null);
   const requestFormRef = useRef<BottomSheet>(null);
 
-  const openMenu = () => createMenuRef.current?.expand();
+  const openMenu = () => {
+    console.log("Opening create menu");
+    createMenuRef.current?.expand();
+  }
   const closeMenu = () => createMenuRef.current?.close();
 
   const openForm = (form: "product" | "post" | "request") => {
@@ -103,7 +107,7 @@ export default function FeedScreen() {
         <View className="flex-row justify-between px-4 py-3">
           {products.map((product) => (
             <View key={product.id} className="w-[48%] pb-3">
-              <Link href={`/product/${product.id}`} asChild>
+              <Link href={`/productDetails/${product.id}`} asChild>
                 <TouchableOpacity>
                   <ImageBackground
                     source={{ uri: product.images?.[0]?.media?.original_url }}
@@ -131,7 +135,7 @@ export default function FeedScreen() {
     } else {
       const post = item.data;
       return (
-        <Link href={`/post/${post.id}`} asChild>
+        <Link href={`/postDetails/${post.id}`} asChild>
           <TouchableOpacity className="p-4 border-b border-gray-200">
             <View className="flex-row items-center mb-2">
               <Image source={{ uri: post.seller?.profile_picture_url }} className="w-10 h-10 rounded-full mr-2" />
@@ -174,30 +178,31 @@ export default function FeedScreen() {
       />
 
       {/* Create Menu Bottom Sheet */}
-      <BottomSheet ref={createMenuRef} index={-1} snapPoints={["30%"]} enablePanDownToClose>
-        <View className="p-4">
-          <Text className="text-lg font-bold mb-4">Create</Text>
-          {user?.account_type === "buyer" && (
+      <BottomSheet ref={createMenuRef} index={-1} snapPoints={snapPoints} enablePanDownToClose>
+        <BottomSheetView className="flex-1 p-4">
+        <Text className="text-lg font-bold mb-4">Create</Text>
+
+          {role === "buyer" && (
             <>
-              <TouchableOpacity onPress={() => openForm("request")} className="p-3 bg-[#e26136] rounded-lg mb-2">
-                <Text className="text-white text-center">Create Buyer Request</Text>
+              <TouchableOpacity onPress={() => openForm("request")} className="border-b border-gray-200 p-15">
+                <Text className="font-bold text-xl">Create Buyer Request</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => openForm("post")} className="p-3 bg-[#e26136] rounded-lg">
-                <Text className="text-white text-center">Create Post</Text>
+              <TouchableOpacity onPress={() => openForm("post")} className="border-b border-gray-200 p-15">
+                <Text className="font-bold text-xl">Create Post</Text>
               </TouchableOpacity>
             </>
           )}
-          {user?.account_type === "seller" && (
+          {role === "seller" && (
             <>
-              <TouchableOpacity onPress={() => openForm("product")} className="p-3 bg-[#e26136] rounded-lg mb-2">
-                <Text className="text-white text-center">Create Product</Text>
+              <TouchableOpacity onPress={() => openForm("product")} className="border-b border-gray-200 p-15">
+                <Text className="font-bold text-xl">Create Product</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => openForm("post")} className="p-3 bg-[#e26136] rounded-lg">
-                <Text className="text-white text-center">Create Post</Text>
+              <TouchableOpacity onPress={() => openForm("post")} className="border-b border-gray-200 p-15">
+                <Text className="font-bold text-xl">Create Post</Text>
               </TouchableOpacity>
             </>
           )}
-        </View>
+        </BottomSheetView>
       </BottomSheet>
 
       {/* Imported Bottom Sheets */}

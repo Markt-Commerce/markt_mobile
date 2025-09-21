@@ -25,53 +25,53 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          tabBarIcon: ({ color, size, focused }) => <Home color={color} fill={color} />,
+          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <Home color={color} fill={color} />,
         }}
       />
       <Tabs.Screen
         name="orders"
         options={{
-          tabBarIcon: ({ color, size, focused }) => <Heart color={color} />,
+          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <Heart color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          tabBarIcon: ({ color, size, focused }) => <User color={color} />,
+          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <User color={color} />,
         }}
       />
       <Tabs.Screen 
         name="listings"
         options={{
-          tabBarIcon: ({ color, size, focused }) => <ListStartIcon color={color} />,
+          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <ListStartIcon color={color} />,
           href: (role != 'seller') ? null : undefined, // Hide this tab if the user is not a seller
         }}
       />
       <Tabs.Screen 
         name="sellerDashboard"
         options={{
-          tabBarIcon: ({ color, size, focused }) => <ChartColumnStackedIcon color={color} />,
+          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <ChartColumnStackedIcon color={color} />,
           href: (role != 'seller') ? null : undefined, // Hide this tab if the user is not a seller
         }}
       /> 
       <Tabs.Screen 
         name="buyerOrders"
         options={{
-          tabBarIcon: ({ color, size, focused }) => <ListOrdered color={color} />,
+          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <ListOrdered color={color} />,
           href: (role != 'buyer') ? null : undefined, // Hide this tab if the user is not a seller
         }}
       /> 
       <Tabs.Screen 
         name="sellerOrders"
         options={{
-          tabBarIcon: ({ color, size, focused }) => <ListOrdered color={color} />,
+          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <ListOrdered color={color} />,
           href: (role != 'seller') ? null : undefined, // Hide this tab if the user is not a seller
         }}
       /> 
       <Tabs.Screen 
         name="shop"
         options={{
-          tabBarIcon: ({ color, size, focused }) => <Badge color={color} />,
+          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <Badge color={color} />,
         }}
       />
     </Tabs>

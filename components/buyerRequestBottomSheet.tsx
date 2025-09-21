@@ -1,5 +1,5 @@
 import React from "react";
-import BottomSheet from "@gorhom/bottom-sheet";
+import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -33,8 +33,8 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (d
 
     return (
       <BottomSheet ref={ref} index={-1} snapPoints={snapPoints} enablePanDownToClose>
-        <ScrollView className="p-4">
-          <Text className="text-lg font-bold mb-3">Create Buyer Request</Text>
+        <BottomSheetScrollView>
+        <Text className="text-lg font-bold mb-3">Create Buyer Request</Text>
 
           {/* Title */}
           <Text className="mb-1">Title</Text>
@@ -83,10 +83,10 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (d
             )}
           />
 
-          <TouchableOpacity className="bg-[#e26136] p-3 rounded" onPress={handleSubmit(onSubmit)}>
+          <TouchableOpacity className="bg-[#E94C2A] p-3 rounded" onPress={handleSubmit(onSubmit)}>
             <Text className="text-white text-center">Create Request</Text>
           </TouchableOpacity>
-        </ScrollView>
+        </BottomSheetScrollView>
       </BottomSheet>
     );
   }

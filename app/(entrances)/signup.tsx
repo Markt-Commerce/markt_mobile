@@ -72,11 +72,11 @@ export default function SignupScreen() {
         </View>
 
         <View className="flex gap-4 py-3">
-          {errors.email && <Text className="text-[#e9242a] text-sm font-normal">{errors.email.message}</Text>}
+          {errors.email && <Text className="text-[#E94C2A] text-sm font-normal">{errors.email.message}</Text>}
           <Input placeholder="Email" control={control} name="email" errors={errors}> </Input>
-          {errors.password && <Text className="text-[#e9242a] text-sm font-normal">{errors.password.message}</Text>}
+          {errors.password && <Text className="text-[#E94C2A] text-sm font-normal">{errors.password.message}</Text>}
           <Input placeholder="Password" control={control} name="password" errors={errors} secureTextEntry={true}></Input>
-          {errors.confirmPassword && <Text className="text-[#e9242a] text-sm font-normal">{errors.confirmPassword.message}</Text>}
+          {errors.confirmPassword && <Text className="text-[#E94C2A] text-sm font-normal">{errors.confirmPassword.message}</Text>}
           <Input placeholder="Confirm Password" control={control} name="confirmPassword" errors={errors} secureTextEntry={true}></Input>
         </View>
 
@@ -97,9 +97,9 @@ export default function SignupScreen() {
           Already have an account? Log in
         </Text>
 
-        <TouchableOpacity className="w-full h-12 bg-[#e9242a] rounded-full justify-center items-center" disabled={!isValid}
+        <TouchableOpacity className="w-full h-12 bg-[#E94C2A] rounded-full justify-center items-center" disabled={!isValid}
         style={{
-          backgroundColor: isValid ? '#e9242a' : '#f4f1f1',
+          backgroundColor: isValid ? '#E94C2A' : '#f4f1f1',
         }} onPress={handleSubmit(onSubmit)}>
           <Text className="text-[#171212] text-base font-bold tracking-[0.015em]"
           style={{

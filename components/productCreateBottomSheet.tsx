@@ -1,6 +1,6 @@
 import React, { useRef, useMemo, forwardRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
-import BottomSheet from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -45,8 +45,8 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: Produc
   };
 
   return (
-    <BottomSheet ref={bottomSheetRef} snapPoints={snapPoints} enablePanDownToClose>
-      <ScrollView className="p-4">
+    <BottomSheet ref={ref} index={-1} snapPoints={snapPoints} enablePanDownToClose>
+      <BottomSheetScrollView className="p-4">
         <Text className="text-lg font-bold mb-4">Create Product</Text>
 
         {/* Name */}
@@ -115,11 +115,11 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: Produc
         {/* Submit Button */}
         <TouchableOpacity
           onPress={handleSubmit(submitForm)}
-          className="bg-blue-600 p-3 rounded mt-4"
+          className="bg-[#e94c2a] p-3 rounded mt-4"
         >
           <Text className="text-white text-center font-bold">Create Product</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </BottomSheetScrollView>
     </BottomSheet>
   );
 }

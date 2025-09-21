@@ -31,7 +31,6 @@ export async function getPosts(page = 1, perPage = 10): Promise<Post[]> {
     `${BASE_URL}/socials/posts?page=${page}&per_page=${perPage}`,
     { method: "GET" }
   );
-    console.log("Fetched posts:", res);
   return res.items;
 }
 
@@ -40,6 +39,5 @@ export async function getBuyerRequests(page = 1, perPage = 5): Promise<BuyerRequ
       `${BASE_URL}/requests?page=${page}&per_page=${perPage}`,
       { method: "GET" }
     );
-    console.log("Fetched buyer requests:", res);
     return res.items;
   }

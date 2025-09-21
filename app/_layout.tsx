@@ -5,6 +5,7 @@ import { UserProvider, useUser, UserContextType } from "../hooks/userContextProv
 import { RegisterProvider } from "../models/signupSteps";
 import { useState } from "react";
 import type { RegisterRequest } from "../models/auth";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function RootLayout() {
   // Temporary regData state until you move this into entrances/_layout.tsx
@@ -19,11 +20,13 @@ export default function RootLayout() {
   });
 
   return (
-    <UserProvider>
-      <RegisterProvider value={{ regData, setRegData }}>
-        <AppStack />
-      </RegisterProvider>
-    </UserProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <UserProvider>
+        <RegisterProvider value={{ regData, setRegData }}>
+          <AppStack />
+        </RegisterProvider>
+      </UserProvider>
+    </GestureHandlerRootView>
   );
 }
 

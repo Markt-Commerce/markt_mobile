@@ -15,92 +15,103 @@ export interface Product {
     in_stock: boolean;
   }
 
-  export interface ProductDetails {
-  average_rating: number;
-  weight: number;
-  status: string;
-  description: string;
-  review_count: number;
-  seller_id: number;
-  variants: Variant[];
-  created_at: string; // ISO date string
-  updated_at: string; // ISO date string
-  categories: string;
-  media_ids: number[];
-  id: string;
-  sku: string;
-  images: ProductImage[];
-  compare_at_price: number;
-  product_metadata: Record<string, string>;
-  barcode: string;
-  view_count: number;
-  cost_per_item: number;
-  seller: Seller;
-  price: number;
-  stock: number;
-  name: string;
-  tag_ids: number[];
-  category_ids: number[];
-}
 
-interface Variant {
-  name: string;
-  options: Record<string, string>;
-}
+  export interface ProductDetail {
+    id: string;
+    name: string;
+    description: string;
+    sku: string;
+    barcode: string;
+    status: string;
+    average_rating: number;
+    review_count: number;
+    weight: number;
+    seller_id: number;
+    created_at: string;
+    updated_at: string;
+    categories: string;
+    media_ids: number[];
+    compare_at_price: number;
+    cost_per_item: number;
+    price: number;
+    stock: number;
+    view_count: number;
+    tag_ids: number[];
+    category_ids: number[];
+    product_metadata: Record<string, string>;
+    variants: Variant[];
+    images: ProductImage[];
+    seller: Seller;
+  }
+  
+  export interface Variant {
+    name: string;
+    options: Record<string, string>;
+  }
+  
+  export interface ProductImage {
+    id: number;
+    media_id: number;
+    alt_text: string;
+    is_featured: boolean;
+    sort_order: number;
+    product_id: string;
+    media: Media;
+  }
 
-interface Media {
-  original_url: string;
-  social_post_url: string;
-  thumbnail_url: string;
-  processing_status: string;
-  width: number;
-  mobile_url: string;
-  social_square_url: string;
-  original_filename: string;
-  variants: MediaVariant[];
-  file_size: number;
-  created_at: string;
-  updated_at: string;
-  tablet_url: string;
-  id: number;
-  alt_text: string;
-  background_removed: boolean;
-  mime_type: string;
-  duration: number;
-  height: number;
-  is_public: boolean;
-  social_story_url: string;
-  desktop_url: string;
-  media_type: string;
-  compression_quality: number;
-  storage_key: string;
-  user_id: string;
-  exif_data: Record<string, string>;
-  caption: string;
-}
-
-interface MediaVariant {
-  height: number;
-  format: string;
-  file_size: number;
-  variant_type: string;
-  quality: number;
-  id: number;
-  width: number;
-  processing_time: number;
-  url: string;
-  storage_key: string;
-}
-
-interface Seller {
-  average_rating: number;
-  shop_slug: string;
-  total_products: number;
-  verification_status: string;
-  shop_name: string;
-  id: number;
-  profile_picture_url: string;
-}
+  export interface Media {
+    id: number;
+    user_id: string;
+    media_type: string;
+    original_url: string;
+    thumbnail_url: string;
+    tablet_url: string;
+    mobile_url: string;
+    desktop_url: string;
+    social_post_url: string;
+    social_square_url: string;
+    social_story_url: string;
+    original_filename: string;
+    caption: string;
+    mime_type: string;
+    exif_data: Record<string, string>;
+    variants: MediaVariant[];
+    width: number;
+    height: number;
+    duration: number;
+    is_public: boolean;
+    background_removed: boolean;
+    processing_status: string;
+    compression_quality: number;
+    storage_key: string;
+    file_size: number;
+    created_at: string;
+    updated_at: string;
+  }
+  
+  export interface MediaVariant {
+    id: number;
+    url: string;
+    format: string;
+    variant_type: string;
+    quality: number;
+    width: number;
+    height: number;
+    file_size: number;
+    processing_time: number;
+    storage_key: string;
+  }
+  
+  export interface Seller {
+    id: number;
+    shop_name: string;
+    shop_slug: string;
+    profile_picture_url: string;
+    average_rating: number;
+    total_products: number;
+    verification_status: string;
+  }
+  
 
   
   export interface UpdateProductRequest {
@@ -149,47 +160,6 @@ export interface ProductImageMediaVariant {
   width?: number;
   storage_key?: string;
   variant_type?: string;
-}
-
-export interface ProductImageMedia {
-  processing_status?: string;
-  mobile_url?: string;
-  desktop_url?: string;
-  user_id?: string;
-  width?: number;
-  tablet_url?: string;
-  file_size?: number;
-  caption?: string;
-  id?: number;
-  social_story_url?: string;
-  mime_type?: string;
-  created_at?: string;
-  duration?: number;
-  alt_text?: string;
-  media_type?: string;
-  original_url?: string;
-  social_post_url?: string;
-  compression_quality?: number;
-  height?: number;
-  exif_data?: Record<string, any>;
-  thumbnail_url?: string;
-  variants?: ProductImageMediaVariant[];
-  is_public?: boolean;
-  background_removed?: boolean;
-  updated_at?: string;
-  social_square_url?: string;
-  storage_key?: string;
-  original_filename?: string;
-}
-
-export interface ProductImage {
-  media_id?: number;
-  is_featured?: boolean;
-  product_id?: string;
-  id?: number;
-  sort_order?: number;
-  media?: ProductImageMedia;
-  alt_text?: string;
 }
 
 export interface Category {

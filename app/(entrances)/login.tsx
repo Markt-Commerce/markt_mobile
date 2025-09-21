@@ -87,7 +87,7 @@ export default function LoginScreen() {
             onPress={() => setRole("buyer")}
             style={{
               flex: 1,
-              backgroundColor: role === "buyer" ? '#e9242a' : 'transparent',
+              backgroundColor: role === "buyer" ? '#E94C2A' : 'transparent',
               borderTopLeftRadius: 25,
               borderBottomLeftRadius: 25,
               paddingVertical: 8,
@@ -108,7 +108,7 @@ export default function LoginScreen() {
             onPress={() => setRole("seller")}
             style={{
               flex: 1,
-              backgroundColor: role === "seller" ? '#e9242a' : 'transparent',
+              backgroundColor: role === "seller" ? '#E94C2A' : 'transparent',
               borderTopRightRadius: 25,
               borderBottomRightRadius: 25,
               paddingVertical: 8,
@@ -130,7 +130,7 @@ export default function LoginScreen() {
       <Button onPress={handleSubmit(onsubmit)} disabled={!isValid} text="Login"/>
       </View>
 
-      <Text className="text-[#826869] text-sm font-normal text-center underline pb-3 pt-1" onPress={() => router.navigate("/signup")}>
+      <Text className="text-[#E94C2A] text-sm font-normal text-center underline pb-3 pt-1" onPress={() => router.navigate("/signup")}>
           Don't have an account? Sign up
       </Text>
     </View>

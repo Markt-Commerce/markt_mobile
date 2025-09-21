@@ -1,5 +1,5 @@
 import React, { forwardRef, useMemo } from "react";
-import BottomSheet from "@gorhom/bottom-sheet";
+import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -31,7 +31,7 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
 
     return (
       <BottomSheet ref={ref} index={-1} snapPoints={snapPoints} enablePanDownToClose>
-        <ScrollView className="p-4">
+        <BottomSheetScrollView className="p-4">
           <Text className="text-lg font-bold mb-3">Create Post</Text>
 
           {/* Caption */}
@@ -64,10 +64,10 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
             )}
           />
 
-          <TouchableOpacity className="bg-[#e26136] p-3 rounded" onPress={handleSubmit(onSubmit)}>
+          <TouchableOpacity className="bg-[#E94C2A] p-3 rounded" onPress={handleSubmit(onSubmit)}>
             <Text className="text-white text-center">Create Post</Text>
           </TouchableOpacity>
-        </ScrollView>
+        </BottomSheetScrollView>
       </BottomSheet>
     );
   }
