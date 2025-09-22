@@ -34,10 +34,10 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <Heart color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="profile"
+      <Tabs.Screen 
+        name="shop"
         options={{
-          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <User color={color} />,
+          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <Badge color={color} />,
         }}
       />
       <Tabs.Screen 
@@ -68,10 +68,10 @@ export default function TabsLayout() {
           href: (role != 'seller') ? null : undefined, // Hide this tab if the user is not a seller
         }}
       /> 
-      <Tabs.Screen 
-        name="shop"
+      <Tabs.Screen
+        name="profile"
         options={{
-          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <Badge color={color} />,
+          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <User color={color} />,
         }}
       />
     </Tabs>
