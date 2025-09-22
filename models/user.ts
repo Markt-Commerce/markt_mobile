@@ -9,6 +9,12 @@ export interface BuyerProfile {
     category_ids: number[];
     description: string;
   }
+
+  export interface UserAuthType{
+    email: string;
+    password: string;
+    userType: "buyer" | "seller";
+  }
   
   export interface UpdateProfileRequest {
     username?: string;
