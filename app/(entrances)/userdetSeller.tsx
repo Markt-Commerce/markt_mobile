@@ -13,7 +13,7 @@ import { CategoryAddition }  from "../../components/categoryAddition";
 import { registerUser } from "../../services/sections/auth";
 import { Input } from "../../components/inputs";
 import Button from "../../components/button";
-import * as SecureStore from 'expo-secure-store';
+//import * as SecureStore from 'expo-secure-store';
 
 const ShopInformationScreen = () => {
   const { setUser, setRole, role } = useUser();
@@ -75,11 +75,11 @@ const ShopInformationScreen = () => {
     try {
         const userRegResult = await registerUser(regData)
         //store user in secure store
-        await SecureStore.setItemAsync('user', JSON.stringify({
+        /* await SecureStore.setItemAsync('user', JSON.stringify({
           email: regData.email,
           password: regData.password,
           userType: regData.account_type,
-        }));
+        })); */
         setUser({
           email: userRegResult.email.toLowerCase(),
           account_type: userRegResult.account_type,

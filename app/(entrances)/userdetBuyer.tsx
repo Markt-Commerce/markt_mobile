@@ -10,7 +10,7 @@ import { registerUser } from "../../services/sections/auth";
 import { useRouter } from "expo-router";
 import { SignupStepTwo, register,useRegData } from "../../models/signupSteps";
 import  Button  from "../../components/button"
-import * as SecureStore from 'expo-secure-store';
+//import * as SecureStore from 'expo-secure-store';
 
 const schema = z.object({
   Buyername: z.string().min(1, "Name is required"),
@@ -56,11 +56,11 @@ export default function UserInfoScreen() {
     try {
       const userRegResult = await registerUser(regData)
       //store user in secure store
-      await SecureStore.setItemAsync('user', JSON.stringify({
+      /* await SecureStore.setItemAsync('user', JSON.stringify({
         email: regData.email,
         password: regData.password,
         userType: regData.account_type,
-      }));
+      })); */
       setUser({
         email: userRegResult.email.toLowerCase(),
         account_type: userRegResult.account_type,

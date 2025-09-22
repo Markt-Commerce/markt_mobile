@@ -6,7 +6,7 @@ import { RegisterProvider } from "../models/signupSteps";
 import { useState } from "react";
 import type { RegisterRequest } from "../models/auth";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import * as SecureStore from 'expo-secure-store';
+//import * as SecureStore from 'expo-secure-store';
 import { UserAuthType } from "../models/user";
 import { loginUser } from "../services/sections/auth";
 
@@ -38,24 +38,23 @@ export default function RootLayout() {
 
 export async function AppStack() {
   //get the user from secure store and set it to the user context
-  const userData:UserAuthType = JSON.parse(await SecureStore.getItemAsync('user') || 'null') as UserAuthType;
+  //const userData:UserAuthType = JSON.parse(await SecureStore.getItemAsync('user') || 'null') as UserAuthType;
   
-  //we would check this later in useEffect
-  //const user: UserContextType | null = useUser();
+  const user: UserContextType | null = useUser();
 
-  if (userData === null) {
+  if (user === null) {
     return <Stack screenOptions={{ headerShown: false }} initialRouteName="introduction" />;
   }
 
 
 
-  const loggedIn = await loginUser({email: userData.email, password: userData.password, account_type: userData.userType});
-  if (!loggedIn) {
+  //const loggedIn = await loginUser({email: userData.email, password: userData.password, account_type: userData.userType});
+  /* if (!loggedIn) {
     return <Stack screenOptions={{ headerShown: false }} initialRouteName="entrances/login" />;
-  }
+  } */
 
   
   //store user in context
-  SecureStore.setItemAsync('user', JSON.stringify(userData));
+  //SecureStore.setItemAsync('user', JSON.stringify(userData));
   return <Stack screenOptions={{ headerShown: false }} />;
 }

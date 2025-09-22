@@ -8,7 +8,7 @@ import { loginUser } from "../../services/sections/auth";
 import { useUser } from "../../hooks/userContextProvider";
 import { Input } from "../../components/inputs";
 import Button from "../../components/button";
-import * as SecureStore from 'expo-secure-store';
+//import * as SecureStore from 'expo-secure-store';
 
 const schema = z.object({
   email: z.string().min(1, "Email is required"),
@@ -39,11 +39,11 @@ export default function LoginScreen() {
       //navigate to the home page
 
       //store user in secure store
-      await SecureStore.setItemAsync('user', JSON.stringify({
+      /* await SecureStore.setItemAsync('user', JSON.stringify({
         email: data.email,
         password: data.password,
         userType: role || "buyer",
-      }));
+      })); */
       
       router.push("/");
     }
@@ -51,7 +51,7 @@ export default function LoginScreen() {
       console.error("Login failed:", error);
       setError("Login failed." + (error instanceof Error ? ` ${error.message}` : ""));
       //work on adding cleanup for failed login attempts
-      SecureStore.deleteItemAsync('user');
+      //SecureStore.deleteItemAsync('user');
       setUser(null);
       //router.push("/"); // redirect to login page on error
     }
