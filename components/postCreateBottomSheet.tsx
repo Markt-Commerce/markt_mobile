@@ -4,6 +4,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-nativ
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "./inputs";
 
 const postSchema = z.object({
   caption: z.string().max(1000, "Caption too long").optional(),
@@ -34,35 +35,7 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
         <BottomSheetScrollView className="p-4">
           <Text className="text-lg font-bold mb-3">Create Post</Text>
 
-          {/* Caption */}
-          <Text className="mb-1">Caption</Text>
-          <Controller
-            name="caption"
-            control={control}
-            render={({ field }) => (
-              <TextInput
-                className="border rounded p-2 mb-3"
-                placeholder="Write a caption..."
-                value={field.value}
-                onChangeText={field.onChange}
-                multiline
-              />
-            )}
-          />
 
-          {/* Category IDs */}
-          <Text className="mb-1">Categories</Text>
-          <Controller
-            name="category_ids"
-            control={control}
-            render={({ field }) => (
-              <TextInput
-                className="border rounded p-2 mb-3"
-                placeholder="Enter category IDs (comma separated)"
-                onChangeText={(text) => field.onChange(text.split(",").map(Number))}
-              />
-            )}
-          />
 
           <TouchableOpacity className="bg-[#E94C2A] p-3 rounded" onPress={handleSubmit(onSubmit)}>
             <Text className="text-white text-center">Create Post</Text>

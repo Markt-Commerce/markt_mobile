@@ -141,7 +141,7 @@ export interface CreateProductRequest {
   stock?: number;
   price: number;
   category_ids?: number[];
-  media_ids?: number[]; // IDs from your media upload endpoint
+  media_ids?: number[]; // from media upload endpoint
   sku?: string;
   description?: string;
   name: string;
