@@ -4,6 +4,7 @@ import "../global.css";
 import { UserProvider, useUser, UserContextType } from "../hooks/userContextProvider";
 import { RegisterProvider } from "../models/signupSteps";
 import { useState } from "react";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import type { RegisterRequest } from "../models/auth";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 //import * as SecureStore from 'expo-secure-store';
@@ -26,6 +27,7 @@ export default function RootLayout() {
   // Persist user session on app load
   // Firstly, check if there is a stored user information in SecureStore
   return (
+    <SafeAreaProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <UserProvider>
         <RegisterProvider value={{ regData, setRegData }}>
@@ -33,6 +35,7 @@ export default function RootLayout() {
         </RegisterProvider>
       </UserProvider>
     </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
 
@@ -56,5 +59,6 @@ export async function AppStack() {
   
   //store user in context
   //SecureStore.setItemAsync('user', JSON.stringify(userData));
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <Stack  screenOptions={{ headerShown: false }} />);
 }
