@@ -15,7 +15,6 @@ export interface Product {
     in_stock: boolean;
   }
 
-
   export interface ProductDetail {
     id: string;
     name: string;
@@ -43,6 +42,7 @@ export interface Product {
     images: ProductImage[];
     seller: Seller;
   }
+
   
   export interface Variant {
     name: string;
