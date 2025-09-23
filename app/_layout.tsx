@@ -62,5 +62,6 @@ export function AppStack() {
   //store user in context
   //SecureStore.setItemAsync('user', JSON.stringify(userData));
   return (
-    <Stack  screenOptions={{ headerShown: false }} />);
+    <Stack  screenOptions={{ headerShown: false }} />
+    );
 }
