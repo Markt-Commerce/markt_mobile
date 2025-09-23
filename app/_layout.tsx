@@ -45,8 +45,9 @@ export function AppStack() {
   //const userData:UserAuthType = JSON.parse(await SecureStore.getItemAsync('user') || 'null') as UserAuthType;
   
   const user: UserContextType | null = useUser();
+  console.log("Current user in AppStack:", user);
 
-  if (user === null) {
+  if (user.user == null) {
     return <Stack screenOptions={{ headerShown: false }} initialRouteName="introduction" />;
   }
 
