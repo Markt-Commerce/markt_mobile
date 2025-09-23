@@ -48,7 +48,7 @@ const ShopInformationScreen = () => {
         }
     }
     fetchCategories();
-+ ++++++++ }, []);
+   }, []);
 
   const handleSubmitForm = async (data: z.infer<typeof schema>) => {
     const shopData:SignupStepTwo = {
