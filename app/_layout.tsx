@@ -5,11 +5,12 @@ import { UserProvider, useUser, UserContextType } from "../hooks/userContextProv
 import { RegisterProvider } from "../models/signupSteps";
 import { useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import type { RegisterRequest } from "../models/auth";
+import { RegisterRequest } from "../models/auth";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 //import * as SecureStore from 'expo-secure-store';
 import { UserAuthType } from "../models/user";
 import { loginUser } from "../services/sections/auth";
+import React from "react";
 
 export default function RootLayout() {
   // Temporary regData state until you move this into entrances/_layout.tsx
@@ -39,7 +40,7 @@ export default function RootLayout() {
   );
 }
 
-export async function AppStack() {
+export function AppStack() {
   //get the user from secure store and set it to the user context
   //const userData:UserAuthType = JSON.parse(await SecureStore.getItemAsync('user') || 'null') as UserAuthType;
   
