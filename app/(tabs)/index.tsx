@@ -9,11 +9,24 @@ import { useUser } from "../../hooks/userContextProvider";
 import ProductFormBottomSheet from "../../components/productCreateBottomSheet";
 import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BuyerRequestFormBottomSheet from "../../components/buyerRequestBottomSheet";
+import { createPost } from "../../services/sections/post";
+import { createProduct } from "../../services/sections/product";
+import { createBuyerRequest } from "../../services/sections/request";
+import { CreateProductRequest, PlaceholderProduct } from "../../models/products";
+import { Category } from "../../models/categories";
 
 export default function FeedScreen() {
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
+
+  //for create product
+  const [productCategories, setProductCategories] = useState<Category[]>([]);
+  const [productImages, setProductImages] = useState<string[]>([]);
+
+  //for create post
+  const [postCategories, setPostCategories] = useState<Category[]>([]);
+  const [postProducts, setPostProducts] = useState<PlaceholderProduct[]>([]);
 
   const { role, setUser, user } = useUser();
   const snapPoints = useMemo(() => ["30%"], []);
@@ -206,9 +219,34 @@ export default function FeedScreen() {
       </BottomSheet>
 
       {/* Imported Bottom Sheets */}
-      <ProductFormBottomSheet ref={productFormRef} onSubmit={async ()=> console.log("")}/>
-      <PostFormBottomSheet ref={postFormRef} onSubmit={()=> console.log("")}/>
-      <BuyerRequestFormBottomSheet ref={requestFormRef} onSubmit={()=> console.log("")}/>
+      <ProductFormBottomSheet ref={productFormRef} productCategories={productCategories} onSubmit={async (product) => {
+        try {
+          product.category_ids = productCategories.map((cat: any) => cat.id);
+          const newProduct = await createProduct(product as CreateProductRequest);
+          productFormRef.current?.close();
+        } catch (error) {
+          console.error("Error creating product:", error);
+        }
+      }}/>
+      <PostFormBottomSheet ref={postFormRef} productCategories={productCategories} products={postProducts} onSubmit={async (data) => {
+        try {
+          data.category_ids = postCategories.map((cat) => cat.id);
+          data.products = postProducts.map((prod) => { return { product_id: prod.id }; });
+          const newPost = await createPost(data);
+          //set feed later to show new post on top
+          postFormRef.current?.close();
+        } catch (error) {
+          console.error("Error creating post:", error);
+        }
+      }}/>
+      <BuyerRequestFormBottomSheet ref={requestFormRef} onSubmit={async(request) => {
+        try {
+          const newRequest = await createBuyerRequest(request);
+          requestFormRef.current?.close();
+        } catch (error) {
+          console.error("Error creating request:", error);
+        }
+      }}/>
     </View>
   );
 }

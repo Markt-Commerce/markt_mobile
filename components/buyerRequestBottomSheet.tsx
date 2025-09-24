@@ -4,6 +4,11 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-nativ
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "./inputs";
+import { Category } from "../models/categories";
+import { getAllCategories } from "../services/sections/categories";
+import { X } from "lucide-react-native";
+import CategoryAddition from "./categoryAddition";
 
 const requestSchema = z.object({
   title: z.string().min(1, "Title is required").max(150),
@@ -19,7 +24,8 @@ export type RequestFormData = z.infer<typeof requestSchema>;
 const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (data: RequestFormData) => void }>(
   ({ onSubmit }, ref) => {
     const snapPoints = React.useMemo(() => ["50%", "85%"], []);
-    const { control, handleSubmit } = useForm<RequestFormData>({
+
+    const { control, handleSubmit, formState: { errors } } = useForm<RequestFormData>({
       resolver: zodResolver(requestSchema),
       defaultValues: {
         title: "",
@@ -31,61 +37,77 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (d
       },
     });
 
+
+    //categories
+        const [modalVisible, setModalVisible] = React.useState(false);
+        const [categories, setCategories] = React.useState<Category[]>([]);
+        const [selectedCategories, setSelectedCategories] = React.useState<Category[]>([]);
+    
+        React.useEffect(() => {
+          async function fetchCategories() {
+            try {
+                const cats = await getAllCategories();
+                setCategories(cats);
+            } catch (error) {
+                console.error("Failed to fetch categories:", error);
+                //Todo: handle error appropriately, e.g., show a message to the user in the UI 
+            }
+          }
+          fetchCategories();
+        }, []);
+    
+        const removeCategory = (id: Number) => {
+          setSelectedCategories(prev => prev.filter(c => c.id !== id));
+        };
+
     return (
       <BottomSheet ref={ref} index={-1} snapPoints={snapPoints} enablePanDownToClose>
         <BottomSheetScrollView>
         <Text className="text-lg font-bold mb-3">Create Buyer Request</Text>
 
           {/* Title */}
-          <Text className="mb-1">Title</Text>
-          <Controller
-            name="title"
-            control={control}
-            render={({ field }) => (
-              <TextInput
-                className="border rounded p-2 mb-3"
-                placeholder="Request title"
-                value={field.value}
-                onChangeText={field.onChange}
-              />
-            )}
-          />
+          <Input name="title" control={control} placeholder="Title"></Input>
+          {errors && errors.title && <Text className="text-red-500">{errors.title.message}</Text>}
 
           {/* Description */}
-          <Text className="mb-1">Description</Text>
-          <Controller
-            name="description"
-            control={control}
-            render={({ field }) => (
-              <TextInput
-                className="border rounded p-2 mb-3"
-                placeholder="Request description"
-                multiline
-                value={field.value}
-                onChangeText={field.onChange}
-              />
-            )}
-          />
-
+          <Input name="description" control={control} placeholder="Description" multiline numberOfLines={4} style={{height: 100, textAlignVertical: 'top'}}></Input>
+          {errors && errors.description && <Text className="text-red-500">{errors.description.message}</Text>}
+          
           {/* Budget */}
-          <Text className="mb-1">Budget</Text>
-          <Controller
-            name="budget"
-            control={control}
-            render={({ field }) => (
-              <TextInput
-                className="border rounded p-2 mb-3"
-                placeholder="Budget"
-                keyboardType="numeric"
-                value={field.value?.toString()}
-                onChangeText={(text) => field.onChange(Number(text))}
-              />
-            )}
-          />
+          <Input name="budget" control={control} placeholder="Budget" keyboardType="numeric"></Input>
+          {errors && errors.budget && <Text className="text-red-500">{errors.budget.message}</Text>}
+
+          {/* Category IDs */}
+          <Text className="mb-1">Categories</Text>
+          <View className="flex-row flex-wrap gap-3 p-3 pr-4">
+            {selectedCategories.map(cat => (
+              <View key={cat.id.toString()} className="flex-row items-center bg-[#f4f0f0] rounded-full px-3 py-1">
+                <Text className="text-[#181111] text-sm font-medium mr-2">{cat.name}</Text>
+                <TouchableOpacity onPress={() => removeCategory(cat.id)}>
+                  <X size={16} color="#181111" />
+                </TouchableOpacity>
+              </View>
+            ))}
+            <TouchableOpacity
+              onPress={() => setModalVisible(true)}
+              className="bg-[#e9242a] rounded-full px-4 py-2 justify-center items-center"
+            >
+              <Text className="text-white text-sm font-bold">+ Add Categories</Text>
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity className="bg-[#E94C2A] p-3 rounded" onPress={handleSubmit(onSubmit)}>
             <Text className="text-white text-center">Create Request</Text>
           </TouchableOpacity>
+
+
+          <CategoryAddition
+            visible={modalVisible}
+            categories={categories}
+            parentSelectedCategories={selectedCategories}
+            onClose={() => setModalVisible(false)}
+            onConfirm={(selected) => setSelectedCategories(selected)}
+          />
         </BottomSheetScrollView>
       </BottomSheet>
     );

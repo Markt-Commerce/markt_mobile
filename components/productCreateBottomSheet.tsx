@@ -5,12 +5,10 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from './inputs';
-import { CreateProductRequest } from '../models/products'
 import { Category } from '../models/categories';
 import { CategoryAddition } from './categoryAddition';
 import { getAllCategories } from '../services/sections/categories';
 import { X } from 'lucide-react-native';
-import { createProduct } from '../services/sections/product';
 import InstagramGrid from './imagePicker';
 
 
@@ -40,10 +38,12 @@ type ProductFormData = z.infer<typeof productSchema>;
 interface Props {
   onSubmit: (data: ProductFormData) => Promise<void>;
   onClose?: () => void;
+  productCategories?: Category[];
+  productImages?: string[];
 }
 
-const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: ProductFormData) => void }>(
-  ({ onSubmit }, ref) => {
+const ProductFormBottomSheet = forwardRef<BottomSheet, Props>(
+  ({ onSubmit, onClose, productCategories, productImages }, ref) => {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['50%', '90%'], []);
 
@@ -71,21 +71,6 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: Produc
 
     const removeCategory = (id: Number) => {
     setSelectedCategories(prev => prev.filter(c => c.id !== id));
-  };
-
-  const submitForm = async (data: ProductFormData) => {
-    console.log("submitting form with data:", data);
-    data.category_ids = selectedCategories.map(c => c.id);
-    try {
-      const productCreated = await createProduct(data as CreateProductRequest);
-      console.log("Product created:", productCreated);
-      bottomSheetRef.current?.close();
-    } catch (error) {
-      console.error("Error creating product:", error);
-      // Handle error appropriately, e.g., show a message to the user in the UI
-      return;
-      
-    }
   };
 
   return (
@@ -134,7 +119,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: Produc
 
         {/* Note to add in area to upload images... A general image upload component */}
         <Text className="mb-1">Product Images</Text>
-        <InstagramGrid />
+        <InstagramGrid emptyPlaceholdersCount={3}/>
 
         {/* Optional forms*/}
         <Text className='text-md font-bold mt-4 mb-2'>Optional Details</Text>
@@ -166,7 +151,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: Produc
 
         {/* Submit Button */}
         <TouchableOpacity
-          onPress={handleSubmit(submitForm)}
+          onPress={handleSubmit(onSubmit)}
           className="bg-[#e94c2a] p-3 rounded mt-4"
         >
           <Text className="text-white text-center font-bold">Create Product</Text>
