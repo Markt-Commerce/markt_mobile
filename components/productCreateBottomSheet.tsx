@@ -11,26 +11,29 @@ import { CategoryAddition } from './categoryAddition';
 import { getAllCategories } from '../services/sections/categories';
 import { X } from 'lucide-react-native';
 import { createProduct } from '../services/sections/product';
+import InstagramGrid from './imagePicker';
+
 
 // Zod Schema for Validation
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required").max(200),
-  price: z.number().min(0, "Price must be non-negative"),
-  stock: z.number().min(0, "Stock must be non-negative"),
+  price: z.preprocess((val) => Number(val), z.number().min(0, "Price must be non-negative")),
+  stock: z.preprocess((val) => Number(val), z.number().min(0, "Stock must be non-negative")),
   description: z.string().max(2000).optional(),
   category_ids: z.array(z.number()).min(1, "Select at least one category"),
   media_ids: z.array(z.number()).optional(),
   barcode: z.string().max(100).optional(),
-  weight: z.number().min(0).optional(),
+  weight: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()),
   variants: z.array(z.object({
     name: z.string().min(1, "Variant name is required"),
   })).optional(),
   sku: z.string().max(100).optional(),
-  compare_at_price: z.number().min(0).optional(),
-  cost_per_item: z.number().min(0).optional(),
+  compare_at_price: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()),
+  cost_per_item: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()),
   status: z.enum(['active', 'inactive']).optional(),
   tag_ids: z.array(z.number()).optional(),
-})
+});
+
 
 type ProductFormData = z.infer<typeof productSchema>;
 
@@ -50,7 +53,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: Produc
   const [selectedCategories, setSelectedCategories] = React.useState<Category[]>([]);
 
   const { control, handleSubmit, formState: { errors } } = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema)
+    resolver: zodResolver(productSchema) as any,// Type 'ZodEffects<ZodObject<...>, ProductFormData, ProductFormData>' is not assignable to type 'Resolver<ProductFormData, any, undefined>'.
   });
 
   React.useEffect(() => {
@@ -71,9 +74,18 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: Produc
   };
 
   const submitForm = async (data: ProductFormData) => {
+    console.log("submitting form with data:", data);
     data.category_ids = selectedCategories.map(c => c.id);
-  const productCreated = await createProduct(data as CreateProductRequest);
-    bottomSheetRef.current?.close();
+    try {
+      const productCreated = await createProduct(data as CreateProductRequest);
+      console.log("Product created:", productCreated);
+      bottomSheetRef.current?.close();
+    } catch (error) {
+      console.error("Error creating product:", error);
+      // Handle error appropriately, e.g., show a message to the user in the UI
+      return;
+      
+    }
   };
 
   return (
@@ -102,6 +114,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: Produc
         {errors.description && <Text className="text-red-500 mb-2">{errors.description.message}</Text>}
 
         {/* Category IDs */}
+        <Text className="mb-1">Categories</Text>
         <View className="flex-row flex-wrap gap-3 p-3 pr-4">
           {selectedCategories.map(cat => (
             <View key={cat.id.toString()} className="flex-row items-center bg-[#f4f0f0] rounded-full px-3 py-1">
@@ -120,6 +133,8 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: Produc
         </View>
 
         {/* Note to add in area to upload images... A general image upload component */}
+        <Text className="mb-1">Product Images</Text>
+        <InstagramGrid />
 
         {/* Optional forms*/}
         <Text className='text-md font-bold mt-4 mb-2'>Optional Details</Text>
@@ -130,7 +145,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: Produc
 
         {/* Weight */}
         <Text className="mb-1">Weight (in grams)</Text>
-        <Input name='weight' placeholder='Weight' control={control} keyboardType='numeric'></Input>
+        <Input name='weight' placeholder='Weight' control={control} keyboardType='numeric' value='0'></Input>
         {errors.weight && <Text className="text-red-500 mb-2">{errors.weight.message}</Text>}
 
         {/* SKU */}
@@ -140,12 +155,12 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: Produc
 
         {/* Compare at Price */}
         <Text className="mb-1">Compare at Price</Text>
-        <Input name='compare_at_price' placeholder='Compare at Price' control={control} keyboardType='numeric'></Input>
+        <Input name='compare_at_price' placeholder='Compare at Price' control={control} keyboardType='numeric' value='0'></Input>
         {errors.compare_at_price && <Text className="text-red-500 mb-2">{errors.compare_at_price.message}</Text>}
 
         {/* Cost per Item */}
         <Text className="mb-1">Cost per Item</Text>
-        <Input name='cost_per_item' placeholder='Cost per Item' control={control} keyboardType='numeric'></Input>
+        <Input name='cost_per_item' placeholder='Cost per Item' control={control} keyboardType='numeric' value='0'></Input>
         {errors.cost_per_item && <Text className="text-red-500 mb-2">{errors.cost_per_item.message}</Text>}
         
 

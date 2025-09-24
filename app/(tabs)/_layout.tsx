@@ -41,13 +41,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen 
-        name="listings"
-        options={{
-          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <ListStartIcon color={color} />,
-          href: (role != 'seller') ? null : undefined, // Hide this tab if the user is not a seller
-        }}
-      />
-      <Tabs.Screen 
         name="sellerDashboard"
         options={{
           tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <ChartColumnStackedIcon color={color} />,
