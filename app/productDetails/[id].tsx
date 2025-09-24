@@ -5,10 +5,12 @@ import { useLocalSearchParams } from "expo-router";
 import { getProductById } from "../../services/sections/product";
 import { ProductDetail } from "../../models/products";
 import { ArrowLeft, ShoppingBag, ArrowBigDown } from "lucide-react-native";
+import { addToCart } from "../../services/sections/cart";
 
 
 export default function ProductDetails() {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
   const [openDetails, setOpenDetails] = useState<{ [key: string]: boolean }>({
     details: true,
     sizeFit: false,
@@ -88,7 +90,11 @@ export default function ProductDetails() {
 
       {/* Buttons */}
       <View className="flex-row justify-center gap-3 p-4">
-        <TouchableOpacity className="flex-1 bg-gray-200 rounded-lg h-10 justify-center items-center">
+        <TouchableOpacity className="flex-1 bg-gray-200 rounded-lg h-10 justify-center items-center" onPress={
+          ()  => {
+            addToCart({product_id: product.id,variant_id:0,quantity,...product});
+          }
+        }>
           <Text className="text-[#171311] font-bold">Add to Cart</Text>
         </TouchableOpacity>
         <TouchableOpacity className="flex-1 bg-[#e26136] rounded-lg h-10 justify-center items-center">
@@ -101,6 +107,26 @@ export default function ProductDetails() {
       <Text className="px-4 pt-1 pb-3 text-base text-[#171311]">sold by {product.seller.shop_name}</Text>
       {/* Note to work on a way to determine or get the currency type */}
       <Text className="px-4 pt-1 pb-3 text-base text-[#171311]">${product.price}</Text>
+
+      {/* Quantity Selection */}
+      <View className="px-4 py-2">
+        <Text className="text-[#171311] font-medium text-sm mb-2">Quantity</Text>
+        <View className="flex-row items-center gap-3">
+          <TouchableOpacity
+            onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+            className="bg-gray-200 h-8 w-8 rounded-lg justify-center items-center"
+          >
+            <Text className="text-[#171311] text-lg">-</Text>
+          </TouchableOpacity>
+          <Text className="text-[#171311] text-lg">{quantity}</Text>
+          <TouchableOpacity
+            onPress={() => product.stock && setQuantity((q) => Math.min(product.stock, q + 1))}
+            className="bg-gray-200 h-8 w-8 rounded-lg justify-center items-center"
+          >
+            <Text className="text-[#171311] text-lg">+</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {/* Collapsible Details */}
       {["details", "sizeFit", "composition", "delivery"].map((key) => (
