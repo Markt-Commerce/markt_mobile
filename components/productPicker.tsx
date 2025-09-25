@@ -86,7 +86,7 @@ export default function ProductPicker({
                     source={
                       item.image
                         ? { uri: item.image }
-                        : require("../assets/placeholder.png") // Make sure you have a placeholder image
+                        : require("../assets/icon.png") // Make sure you have a placeholder image
                     }
                     className="w-12 h-12 rounded-md bg-gray-300 mr-3"
                   />

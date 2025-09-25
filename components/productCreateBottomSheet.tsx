@@ -9,7 +9,7 @@ import { Category } from '../models/categories';
 import { CategoryAddition } from './categoryAddition';
 import { getAllCategories } from '../services/sections/categories';
 import { X } from 'lucide-react-native';
-import InstagramGrid from './imagePicker';
+import InstagramGrid, { InstagramGridProps } from './imagePicker';
 
 
 // Zod Schema for Validation
@@ -51,6 +51,9 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, Props>(
   const [modalVisible, setModalVisible] = React.useState(false);
   const [categories, setCategories] = React.useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = React.useState<Category[]>([]);
+
+  //images
+  const [Imagevalue, setImageValue] = React.useState<InstagramGridProps["value"]>(productImages ? productImages.map((uri, index) => ({ id: index.toString(), uri })) : []);
 
   const { control, handleSubmit, formState: { errors } } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema) as any,// Type 'ZodEffects<ZodObject<...>, ProductFormData, ProductFormData>' is not assignable to type 'Resolver<ProductFormData, any, undefined>'.
@@ -119,6 +122,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, Props>(
 
         {/* Note to add in area to upload images... A general image upload component */}
         <Text className="mb-1">Product Images</Text>
+        {Imagevalue?.length && Imagevalue.length > 0 && <Text className="text-neutral-500 mb-2">Long press on each image to remove it</Text>}
         <InstagramGrid emptyPlaceholdersCount={3}/>
 
         {/* Optional forms*/}
