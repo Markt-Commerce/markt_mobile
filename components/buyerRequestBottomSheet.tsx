@@ -9,6 +9,8 @@ import { Category } from "../models/categories";
 import { getAllCategories } from "../services/sections/categories";
 import { X } from "lucide-react-native";
 import CategoryAddition from "./categoryAddition";
+import InstagramGrid, { InstagramGridProps, PickedImage } from "./imagePicker";
+import { pickImage } from "../services/imageSelection";
 
 const requestSchema = z.object({
   title: z.string().min(1, "Title is required").max(150),
@@ -36,7 +38,9 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (d
         expires_at: "",
       },
     });
-
+    
+    //images 
+    const [images, setImages] = React.useState<PickedImage[]>([]);
 
     //categories
         const [modalVisible, setModalVisible] = React.useState(false);
@@ -95,6 +99,13 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (d
               <Text className="text-white text-sm font-bold">+ Add Categories</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Images Select */}
+          <Text className="mb-1">Images</Text>
+          <Text>{images.length} images Selected</Text>
+          <InstagramGrid emptyLabel="No images selected" emptyPlaceholdersCount={3} onChange={(data)=> setImages((prev)=>{
+            return [...prev, ...data.filter(d => !prev.find(p => p.id === d.id))];
+          })}/>
 
           <TouchableOpacity className="bg-[#E94C2A] p-3 rounded" onPress={handleSubmit(onSubmit)}>
             <Text className="text-white text-center">Create Request</Text>
