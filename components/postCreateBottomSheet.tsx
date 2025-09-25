@@ -119,6 +119,12 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
 
           {/* Products */}
           <Text className="mb-1">Tag Products</Text>
+          <TouchableOpacity
+            onPress={() => setProductVisible(true)}
+            className="bg-[#e9242a] rounded-full px-4 py-2 justify-center items-center mb-3"
+          >
+            <Text className="text-white text-sm font-bold">+ Tag Products</Text>
+          </TouchableOpacity>
           <ProductPicker 
             visible={productVisible} 
             products={productList}
