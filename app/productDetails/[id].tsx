@@ -1,7 +1,7 @@
 // app/product/[id].tsx
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, ScrollView, ActivityIndicator, TouchableOpacity, ImageBackground, Pressable } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { getProductById } from "../../services/sections/product";
 import { ProductDetail } from "../../models/products";
 import { ArrowLeft, ShoppingBag, ArrowBigDown } from "lucide-react-native";
@@ -17,6 +17,7 @@ export default function ProductDetails() {
     composition: false,
     delivery: false,
   });
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [product, setProduct] = useState<ProductDetail>();
 
@@ -24,7 +25,6 @@ export default function ProductDetails() {
     setOpenDetails((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const sizes = ["XS", "S", "M", "L", "XL"];
   const similarProducts = [
     {
       title: "Boho Chic",
@@ -65,7 +65,7 @@ export default function ProductDetails() {
       {/* Header */}
       <View className="flex-row items-center justify-between p-4 pb-2">
         <ArrowLeft color="#171311" size={24} />
-        <TouchableOpacity className="p-2">
+        <TouchableOpacity className="p-2" onPress={()=> router.navigate("/cart")}>
           <ShoppingBag color="#171311" size={24} />
         </TouchableOpacity>
       </View>
@@ -174,9 +174,11 @@ export default function ProductDetails() {
         </View>
       </View>
       <View className="px-4 py-3 flex-row justify-end">
+        <Link href={`/shop/${product.seller.id}`} asChild>
         <TouchableOpacity className="bg-gray-200 h-10 rounded-lg px-4 justify-center items-center">
           <Text className="text-[#171311] font-bold">View Shop</Text>
         </TouchableOpacity>
+        </Link>
       </View>
 
       {/* Similar Products */}
