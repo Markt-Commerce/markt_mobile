@@ -71,3 +71,33 @@ export async function verifyEmail(email: string, code: string): Promise<string> 
   });
   return res.message;
 }
+
+/**
+ *  This function sends a password reset email to the user.
+ *  It is used when a user forgets their password and needs to reset it.
+ * @param email The email address to send the password reset link to
+ * @returns 
+ */
+export async function sendPasswordResetEmail(email: string): Promise<void> {
+  await request<void>(`${BASE_URL}/users/password-reset`, {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+/**
+ * This function resets the user's password using a verification code.
+ * It is used after the user has requested a password reset and received a code via email.
+ * @param email The email address associated with the account
+ * @param code The verification code sent to the email
+ * @param newPassword The new password to set for the account
+ * @param confirmNewPassword The confirmation of the new password
+ * @returns 
+ */
+export async function resetPassword(email: string, code: string, newPassword: string): Promise<string> {
+  const res = await request<{message: string}>(`${BASE_URL}/users/password-reset/confirm`, {
+    method: 'POST',
+    body: JSON.stringify({ email, code:code, new_password: newPassword }),
+  });
+  return res.message;
+}
