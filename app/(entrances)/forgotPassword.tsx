@@ -73,11 +73,11 @@ const forgotPassword = () => {
         { emailSent && <Text className="text-[#34A853] text-sm font-normal text-center pb-3 pt-1">
           Verification code sent! Please check your email.
         </Text>}
-        <Button title={ emailSent ? "Resend Code" : "Send Verification Code"} onPress={getPasswordVerificationCode} disabled={ (emailInitiationStarted && !emailSent)} />
+        <Button color={"#e9242a"} title={ emailSent ? "Resend Code" : "Send Verification Code"} onPress={getPasswordVerificationCode} disabled={ (emailInitiationStarted && !emailSent)} />
         <Input placeholder="Verification Code" control={control} name="code" errors={errors} />
         <Input placeholder="New Password" control={control} name="newPassword" errors={errors} secureTextEntry={true} />
         <Input placeholder="Confirm New Password" control={control} name="confirmNewPassword" errors={errors} secureTextEntry={true} />
-        <Button title="Reset Password" onPress={handleSubmit(onSubmit)} disabled={!isValid || !emailSent} />
+        <Button color={"#e9242a"} title="Reset Password" onPress={handleSubmit(onSubmit)} disabled={!isValid || !emailSent} />
       </View>
     </View>
   )
