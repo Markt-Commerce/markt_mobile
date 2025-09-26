@@ -18,17 +18,11 @@ export default function SignupScreen() {
   const schema = z.object({
     password: z.string().min(8, "Password is required and should be 8 characters long").regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/, "Password must contain at least one uppercase letter, one lowercase letter, and one number"),
     confirmPassword: z.string().min(8, "Please re-enter your password"),
-    email: z.email("Invalid email address"),
-  }).refine((data) => data.password === data.confirmPassword, {
+    email: z.string().email("Invalid email address"),
+  }).refine(data => data.password === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
-    when(payload) { 
-      return schema 
-        .pick({ password: true, confirmPassword: true }) 
-        .safeParse(payload.value).success; 
-    },  
   });
-  
   const router = useRouter();
   const {
     control,

@@ -21,15 +21,13 @@ export async function request<T = any>(path: string, opts: RequestInit = {}) {
 
   if (res.status === 204) return undefined as unknown as T;
 
-  const text = await res.text();
-  let data: any = text ? JSON.parse(text) : undefined;
+  const data = await res.json().catch(() => null);
 
   if (!res.ok) {
-    const errorBody = await res.json();
-    if (errorBody.errors) {
+    if (data?.errors) {
       // Handle MarshMellowError type
       const marshmallowError: MarshMellowError = {
-        errors: errorBody.errors,
+        errors: data.errors,
         status: res.status.toString(),
         code: res.status,
       };
@@ -39,7 +37,7 @@ export async function request<T = any>(path: string, opts: RequestInit = {}) {
         .join('; ');
       throw new Error(errorMessages || `Request failed with status ${res.status}`);
     }
-    throw new Error(errorBody.message || `Request failed with status ${res.status}`);
+    throw new Error(data?.message || `Request failed with status ${res.status}`);
   }
   return data as T;
 }

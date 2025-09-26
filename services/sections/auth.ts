@@ -56,3 +56,18 @@ export async function sendVerificationEmail(email: string): Promise<void> {
     body: JSON.stringify({ email }),
   });
 }
+
+
+/** * This function verifies the email using a code sent to the user's email address.
+ * It is used to confirm that the user has access to the provided email.
+ * @param email The email address to verify
+ * @param code The verification code sent to the email
+ * @returns 
+ */
+export async function verifyEmail(email: string, code: string): Promise<string> {
+  const res = await request<{message: string}>(`${BASE_URL}/users/email-verification/verify`, {
+    method: 'POST',
+    body: JSON.stringify({ email, verification_code:code }),
+  });
+  return res.message;
+}
