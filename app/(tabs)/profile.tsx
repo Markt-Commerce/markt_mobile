@@ -19,13 +19,19 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 
+// NOTE: When real user data, I'll uncomment the next line and the lines inside the commented blocks below.
+// import { useUser } from "../../hooks/userContextProvider";
+
 export default function SettingsProfileScreen() {
   const nav = useRouter();
+
+  // const { user } = useUser(); // <-- Real user from your provider
+
   const [notificationsOn, setNotificationsOn] = useState(true);
   const [appearance, setAppearance] = useState<"light" | "dark">("light");
   const [language, setLanguage] = useState<"EN" | "FR">("EN");
 
-  // Small helpers
+  // Helpers
   const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
     <View className="w-full max-w-[640px] self-center px-4">
       <Text className="px-1 pt-6 pb-2 text-xs font-semibold uppercase tracking-wider text-[#8e7a74]">
@@ -73,6 +79,47 @@ export default function SettingsProfileScreen() {
     </TouchableOpacity>
   );
 
+  // ---------- Profile Data (placeholders + commented real-data usage) ----------
+  // Fallback Unsplash avatar. When you have real data, use the commented line below it.
+  const avatarUri =
+    // user?.profile_picture_url ?? // <-- use real avatar when available
+    "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=320&q=80&crop=faces,entropy";
+
+  const displayName =
+    // user?.full_name ?? // <-- e.g., `${user?.first_name} ${user?.last_name}`
+    "Sophia Carter";
+
+  const usernameText =
+    // user?.username ? `@${user.username}` : ""
+    "@sophia.carter";
+
+  const joinedYear =
+    // user?.created_at ? String(new Date(user.created_at).getFullYear()) : "" // <-- compute from real created_at
+    "2021";
+
+  // Details (mark editable ones pressable; read-only ones not)
+  const details = [
+    { label: "Name", value: displayName, pressable: true, onPress: () => {/* nav.push('/edit/name') */} },
+    { label: "Username", value: usernameText, pressable: true, onPress: () => {/* nav.push('/edit/username') */} },
+    {
+      label: "Gender",
+      value:
+        // user?.gender ?? // <-- real gender string
+        "Female",
+      pressable: true,
+      onPress: () => {/* nav.push('/edit/gender') */},
+    },
+    {
+      label: "Location",
+      value:
+        // user?.location ?? // <-- real location
+        "Los Angeles, CA",
+      pressable: true,
+      onPress: () => {/* nav.push('/edit/location') */},
+    },
+    { label: "Joined", value: joinedYear, pressable: false },
+  ];
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView
@@ -93,33 +140,46 @@ export default function SettingsProfileScreen() {
         {/* Profile */}
         <View className="w-full max-w-[640px] self-center px-4">
           <View className="items-center rounded-2xl border border-[#efe9e7] bg-white px-5 py-6">
+            <Image source={{ uri: avatarUri }} className="w-28 h-28 rounded-full" />
+            {/* --- When real user data is available ---
             <Image
-              source={{
-                uri:
-                  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=320&q=80&crop=faces,entropy",
-              }}
+              source={{ uri: user?.profile_picture_url ?? avatarUri }}
               className="w-28 h-28 rounded-full"
             />
-            <Text className="text-[20px] font-bold text-[#171311] mt-3">Sophia Carter</Text>
-            <Text className="text-sm text-[#876d64]">@sophia.carter</Text>
-            <Text className="text-sm text-[#876d64]">Joined 2021</Text>
+            --- end real-user block --- */}
+            <Text className="text-[20px] font-bold text-[#171311] mt-3">{displayName}</Text>
+            {/* --- When real user data is available ---
+            <Text className="text-[20px] font-bold text-[#171311] mt-3">
+              {user?.full_name ?? displayName}
+            </Text>
+            --- end real-user block --- */}
+
+            {usernameText ? <Text className="text-sm text-[#876d64]">{usernameText}</Text> : null}
+            {/* --- When real user data is available ---
+            {user?.username ? (
+              <Text className="text-sm text-[#876d64]">@{user.username}</Text>
+            ) : null}
+            --- end real-user block --- */}
+
+            <Text className="text-sm text-[#876d64]">Joined {joinedYear}</Text>
+            {/* --- When real user data is available ---
+            {user?.created_at && (
+              <Text className="text-sm text-[#876d64]">
+                Joined {new Date(user.created_at).getFullYear()}
+              </Text>
+            )}
+            --- end real-user block --- */}
           </View>
         </View>
 
         {/* Details */}
         <Section title="Details">
-          {[
-            { label: "Name", value: "Sophia Carter", pressable: true },
-            { label: "Username", value: "@sophia.carter", pressable: true },
-            { label: "Gender", value: "Female", pressable: true },
-            { label: "Location", value: "Los Angeles, CA", pressable: true },
-            { label: "Joined", value: "2021", pressable: false },
-          ].map((item, i, arr) => (
+          {details.map((item, i) => (
             <Row
               key={i}
-              onPress={item.pressable ? () => {} : undefined}
+              onPress={item.pressable ? item.onPress : undefined}
               showChevron={!!item.pressable}
-              last={i === arr.length - 1}
+              last={i === details.length - 1}
             >
               <View>
                 <Text className="text-base font-medium text-[#171311]">{item.label}</Text>
@@ -131,12 +191,13 @@ export default function SettingsProfileScreen() {
 
         {/* App Preferences */}
         <Section title="App Preferences">
+          {/* Notifications */}
           <Row
             trailing={
               <Switch
                 value={notificationsOn}
                 onValueChange={setNotificationsOn}
-                thumbColor={notificationsOn ? "#ffffff" : "#ffffff"}
+                thumbColor="#ffffff"
                 trackColor={{ false: "#d8d1ce", true: "#e26136" }}
               />
             }
@@ -150,21 +211,12 @@ export default function SettingsProfileScreen() {
             </View>
           </Row>
 
-          {/* Appearance: segmented pills (no chevron) */}
+          {/* Appearance */}
           <Row
             trailing={
               <View className="flex-row items-center bg-[#f5f2f1] rounded-full p-1">
-                <Pill
-                  label="Light"
-                  active={appearance === "light"}
-                  onPress={() => setAppearance("light")}
-                />
-                <Pill
-                  label="Dark"
-                  active={appearance === "dark"}
-                  onPress={() => setAppearance("dark")}
-                  className="ml-1"
-                />
+                <Pill label="Light" active={appearance === "light"} onPress={() => setAppearance("light")} />
+                <Pill label="Dark" active={appearance === "dark"} onPress={() => setAppearance("dark")} className="ml-1" />
               </View>
             }
           >
@@ -177,7 +229,7 @@ export default function SettingsProfileScreen() {
             </View>
           </Row>
 
-          {/* Language: segmented pills (no chevron) */}
+          {/* Language */}
           <Row
             last
             trailing={
@@ -197,18 +249,23 @@ export default function SettingsProfileScreen() {
           </Row>
         </Section>
 
-        {/* Account Management (actionable → chevrons kept) */}
+        {/* Account Management (actionable → chevrons) */}
         <Section title="Account Management">
           {[
-            { label: "Account Information", icon: User },
-            { label: "Change Password", icon: Lock },
-            { label: "Payment Methods", icon: CreditCard },
-            { label: "Shipping Addresses", icon: Truck },
-            { label: "Linked Accounts", icon: LinkIcon },
+            { label: "Account Information", icon: User, route: "/account/info" },
+            { label: "Change Password", icon: Lock, route: "/account/change-password" },
+            { label: "Payment Methods", icon: CreditCard, route: "/account/payments" },
+            { label: "Shipping Addresses", icon: Truck, route: "/account/addresses" },
+            { label: "Linked Accounts", icon: LinkIcon, route: "/account/linked" },
           ].map((item, i, arr) => {
             const Icon = item.icon;
             return (
-              <Row key={i} onPress={() => {}} showChevron last={i === arr.length - 1}>
+              <Row
+                key={i}
+                onPress={() => nav.push(item.route as any)}
+                showChevron
+                last={i === arr.length - 1}
+              >
                 <View className="bg-[#f4f1f0] p-2 rounded-lg">
                   <Icon size={20} color="#171311" />
                 </View>
@@ -218,17 +275,22 @@ export default function SettingsProfileScreen() {
           })}
         </Section>
 
-        {/* Support & Information (actionable → chevrons kept) */}
+        {/* Support & Information (actionable → chevrons) */}
         <Section title="Support & Information">
           {[
-            { label: "Help Center", icon: Question },
-            { label: "Terms of Service", icon: FileText },
-            { label: "Privacy Policy", icon: ShieldCheck },
-            { label: "About", icon: Info },
+            { label: "Help Center", icon: Question, route: "/support/help" },
+            { label: "Terms of Service", icon: FileText, route: "/support/terms" },
+            { label: "Privacy Policy", icon: ShieldCheck, route: "/support/privacy" },
+            { label: "About", icon: Info, route: "/support/about" },
           ].map((item, i, arr) => {
             const Icon = item.icon;
             return (
-              <Row key={i} onPress={() => {}} showChevron last={i === arr.length - 1}>
+              <Row
+                key={i}
+                onPress={() => nav.push(item.route as any)}
+                showChevron
+                last={i === arr.length - 1}
+              >
                 <View className="bg-[#f4f1f0] p-2 rounded-lg">
                   <Icon size={20} color="#171311" />
                 </View>
@@ -240,7 +302,11 @@ export default function SettingsProfileScreen() {
 
         {/* Logout */}
         <View className="w-full max-w-[640px] self-center px-4 pt-4 pb-6">
-          <TouchableOpacity className="bg-[#f4f1f0] h-11 rounded-full justify-center items-center" activeOpacity={0.85}>
+          <TouchableOpacity
+            className="bg-[#f4f1f0] h-11 rounded-full justify-center items-center"
+            activeOpacity={0.85}
+            onPress={() => {/* add your logout handler here */}}
+          >
             <Text className="text-[#171311] font-semibold">Log Out</Text>
           </TouchableOpacity>
         </View>
