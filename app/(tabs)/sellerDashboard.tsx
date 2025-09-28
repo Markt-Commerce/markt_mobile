@@ -1,8 +1,17 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, Dimensions } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Image,
+  Dimensions,
+  Animated,
+  Easing,
+} from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { Search, ArrowBigDown as CaretDown } from 'lucide-react-native';
-import { AlertTriangle } from 'lucide-react-native';
+import { Search, ArrowBigDown as CaretDown, AlertTriangle } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -29,10 +38,29 @@ export default function SellerDashboard() {
     { name: 'Noah Harper', id: '901234', amount: '$40.00' },
   ];
 
+  // Swapped placeholder images for crisp Unsplash tech gadgets
   const topProducts = [
-    { name: 'Product A', sales: 100, revenue: '$1,000', image: 'https://via.placeholder.com/80' },
-    { name: 'Product B', sales: 80, revenue: '$800', image: 'https://via.placeholder.com/80' },
-    { name: 'Product C', sales: 60, revenue: '$600', image: 'https://via.placeholder.com/80' },
+    {
+      name: 'Product A',
+      sales: 100,
+      revenue: '$1,000',
+      image:
+        'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=160&h=160&q=80',
+    },
+    {
+      name: 'Product B',
+      sales: 80,
+      revenue: '$800',
+      image:
+        'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=160&h=160&q=80',
+    },
+    {
+      name: 'Product C',
+      sales: 60,
+      revenue: '$600',
+      image:
+        'https://images.unsplash.com/photo-1512499617640-c2f999098c53?auto=format&fit=crop&w=160&h=160&q=80',
+    },
   ];
 
   const inventory = [
@@ -40,6 +68,49 @@ export default function SellerDashboard() {
     { name: 'Product G', status: 'Inactive', price: '$15', stock: 20 },
     { name: 'Product H', status: 'Active', price: '$20', stock: 100 },
   ];
+
+  // Subtle pulsing accent bar used in Low Stock Alerts
+  const LeftAccentPulse = () => {
+    const opacity = useRef(new Animated.Value(0.5)).current;
+
+    useEffect(() => {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(opacity, {
+            toValue: 1,
+            duration: 900,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacity, {
+            toValue: 0.5,
+            duration: 900,
+            easing: Easing.in(Easing.quad),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      loop.start();
+      return () => loop.stop();
+    }, [opacity]);
+
+    return (
+      <View style={{ width: 4, backgroundColor: '#e26136', position: 'relative' }}>
+        <Animated.View
+          style={{
+            position: 'absolute',
+            top: -6,
+            bottom: -6,
+            left: -4,
+            right: -4,
+            backgroundColor: '#e26136',
+            opacity,
+            borderRadius: 8,
+          }}
+        />
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -162,66 +233,52 @@ export default function SellerDashboard() {
           </View>
         </View>
 
-        {/* Low Stock Alerts (red-accented) */}
-          <View className="px-4 pt-6">
-            <Text className="text-[#171311] text-[18px] font-extrabold px-1 pb-2">
-              Low Stock Alerts
-            </Text>
+        {/* Low Stock Alerts (pulsing red-accent) */}
+        <View className="px-4 pt-6">
+          <Text className="text-[#171311] text-[18px] font-extrabold px-1 pb-2">Low Stock Alerts</Text>
 
-            <View className="rounded-2xl bg-[#fff5f3] border border-[#ffd9d2] overflow-hidden">
-              {[
-                { name: 'Product D', last: '2024-01-15', stock: 5 },
-                { name: 'Product E', last: '2024-01-10', stock: 2 },
-              ].map((a, idx, arr) => (
-                <View
-                  key={a.name}
-                  className={`flex-row items-stretch ${idx < arr.length - 1 ? 'border-b border-[#ffd9d2]' : ''}`}
-                >
-                  {/* Left accent bar */}
-                  <View className="w-1 bg-[#e26136]" />
+          <View className="rounded-2xl bg-[#fff5f3] border border-[#ffd9d2] overflow-hidden">
+            {[
+              { name: 'Product D', last: '2024-01-15', stock: 5 },
+              { name: 'Product E', last: '2024-01-10', stock: 2 },
+            ].map((a, idx, arr) => (
+              <View
+                key={a.name}
+                className={`flex-row items-stretch ${idx < arr.length - 1 ? 'border-b border-[#ffd9d2]' : ''}`}
+              >
+                {/* Left accent bar  */}
+                <LeftAccentPulse />
 
-                  {/* Content */}
-                  <View className="flex-1 flex-row items-center justify-between px-4 py-3">
-                    <View className="flex-1 pr-3">
-                      <View className="flex-row items-center gap-2">
-                        <AlertTriangle size={16} color="#b51f08" />
-                        <Text className="text-[#b51f08] text-[13px] font-semibold">
-                          Low stock
-                        </Text>
-                      </View>
-
-                      <Text className="text-[#171311] text-base font-medium mt-1">
-                        {a.name}
-                      </Text>
-                      <Text className="text-[#8a6c66] text-xs mt-0.5">
-                        Last Updated: {a.last}
-                      </Text>
-                      <Text className="text-[#8a6c66] text-xs">
-                        Stock Left: {a.stock}
-                      </Text>
-
-                      {/* Visual urgency bar (UI only) */}
-                      <View className="mt-2 h-2 rounded-full bg-[#ffe6e1] overflow-hidden">
-                        <View
-                          // purely visual: cap at 100%
-                          style={{ width: `${Math.min(a.stock, 20) * 5}%` }}
-                          className="h-2 bg-[#e26136]"
-                        />
-                      </View>
+                {/* Content */}
+                <View className="flex-1 flex-row items-center justify-between px-4 py-3">
+                  <View className="flex-1 pr-3">
+                    <View className="flex-row items-center gap-2">
+                      <AlertTriangle size={16} color="#b51f08" />
+                      <Text className="text-[#b51f08] text-[13px] font-semibold">Low stock</Text>
                     </View>
 
-                    {/* Badge */}
-                    <View className="rounded-full px-3 py-1 bg-[#ffe9e6] border border-[#ffcdc4]">
-                      <Text className="text-[#b51f08] text-[12px] font-semibold">
-                        Action needed
-                      </Text>
+                    <Text className="text-[#171311] text-base font-medium mt-1">{a.name}</Text>
+                    <Text className="text-[#8a6c66] text-xs mt-0.5">Last Updated: {a.last}</Text>
+                    <Text className="text-[#8a6c66] text-xs">Stock Left: {a.stock}</Text>
+
+                    {/* Visual urgency bar*/}
+                    <View className="mt-2 h-2 rounded-full bg-[#ffe6e1] overflow-hidden">
+                      <View
+                        style={{ width: `${Math.min(a.stock, 20) * 5}%` }}
+                        className="h-2 bg-[#e26136]"
+                      />
                     </View>
                   </View>
-                </View>
-              ))}
-            </View>
-          </View>
 
+                  {/* Badge */}
+                  <View className="rounded-full px-3 py-1 bg-[#ffe9e6] border border-[#ffcdc4]">
+                    <Text className="text-[#b51f08] text-[12px] font-semibold">Action needed</Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
 
         {/* Inventory search + filters */}
         <View className="px-4 pt-6">
