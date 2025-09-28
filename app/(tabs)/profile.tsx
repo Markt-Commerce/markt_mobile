@@ -80,9 +80,8 @@ export default function SettingsProfileScreen() {
   );
 
   // ---------- Profile Data (placeholders + commented real-data usage) ----------
-  // Fallback Unsplash avatar. When you have real data, use the commented line below it.
   const avatarUri =
-    // user?.profile_picture_url ?? // <-- use real avatar when available
+    // user?.profile_picture_url ?? 
     "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=320&q=80&crop=faces,entropy";
 
   const displayName =
@@ -94,7 +93,7 @@ export default function SettingsProfileScreen() {
     "@sophia.carter";
 
   const joinedYear =
-    // user?.created_at ? String(new Date(user.created_at).getFullYear()) : "" // <-- compute from real created_at
+    // user?.created_at ? String(new Date(user.created_at).getFullYear()) : ""
     "2021";
 
   // Details (mark editable ones pressable; read-only ones not)
@@ -112,7 +111,7 @@ export default function SettingsProfileScreen() {
     {
       label: "Location",
       value:
-        // user?.location ?? // <-- real location
+        // user?.location ?? 
         "Los Angeles, CA",
       pressable: true,
       onPress: () => {/* nav.push('/edit/location') */},

@@ -1,81 +1,111 @@
-import { useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+// app/emailVerification.tsx (or your chosen route path)
+import React from "react";
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
 import { ArrowLeft } from "lucide-react-native";
 import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useUser } from "../../hooks/userContextProvider";
-import { sendVerificationEmail } from "../../services/sections/auth";
-import { register,useRegData } from "../../models/signupSteps";
+import { useRegData } from "../../models/signupSteps";
+// import { verifyEmailCode, registerUser } from "../services/sections/auth"; // <- when backend is ready
 
-const EmailVerification = () => {
+export default function EmailVerification() {
   const router = useRouter();
-  const { regData, setRegData } = useRegData();
+  const { setUser } = useUser();
+  const { regData } = useRegData();
 
-  const [verificationCodeSent, setVerificationCodeSent] = useState(false);
+  const [code, setCode] = React.useState("");
 
-  const handleSendVerificationCode = async () => {
-    try {
-      if (!regData?.email) {
-        console.error("User email is not available.");
-        return;
-      }
-      await sendVerificationEmail(regData.email);
-      setVerificationCodeSent(true);
-    } catch (error) {
-      console.error("Failed to send verification code:", error);
-    }
+  const canContinue = code.length === 4; // any 4 digits for now
+  const NEXT_ROUTE = "/"; // change if your next screen differs
+
+  const handleVerify = async () => {
+    if (!canContinue) return;
+
+
+    // Navigate immediately
+    router.replace(NEXT_ROUTE);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // REAL VERIFY (commented until backend is ready)
+    // NOTE: prefer sending the fresh `regData` from memory; do NOT rely on stale copies.
+    //
+    // try {
+    //   // 1) Verify the code
+    //   await verifyEmailCode({ email: regData.email, code });
+    //
+    //   // 2) Optionally finalize registration if your API needs it
+    //   // const userRegResult = await registerUser(regData);
+    //   // setUser({
+    //   //   email: userRegResult.email.toLowerCase(),
+    //   //   account_type: userRegResult.account_type,
+    //   //   username: userRegResult.username,
+    //   //   full_name: userRegResult.full_name,
+    //   //   profile_picture_url: userRegResult.profile_picture_url,
+    //   //   created_at: userRegResult.created_at,
+    //   // });
+    //   // router.replace(NEXT_ROUTE);
+    // } catch (err) {
+    //   // If verification fails, show a message and keep user here
+    //   console.error("Verification failed:", err);
+    // }
+    // ─────────────────────────────────────────────────────────────────────────
   };
 
   return (
-    <View className="flex-1 bg-white px-4">
-      {/* Header */}
-      <View className="flex flex-row items-center bg-white p-4 pb-2 justify-between">
-        <ArrowLeft color="#181111" size={24} onPress={() => router.back()} />
-        <Text className="text-[#181111] text-lg font-bold text-center flex-1 pr-12">
-          Email Verification
-        </Text>
-      </View>
+    <SafeAreaView className="flex-1 bg-white">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
+      >
+        <View className="flex-row items-center p-4 pb-2 justify-between">
+          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <ArrowLeft size={24} color="#171311" />
+          </TouchableOpacity>
+          <Text className="flex-1 text-center pr-12 text-lg font-bold text-[#171311]">Verify Email</Text>
+        </View>
 
-      {/* Content */}
-      <View className="flex-1 justify-center items-center">
-        {!verificationCodeSent ? (
-          <>
-            <Text className="text-[#171212] text-[28px] font-bold leading-tight text-center pb-3 pt-5">
-              Verify Your Email
+        <View className="flex-1 items-center justify-center px-6">
+          <View className="w-full max-w-[420px] rounded-2xl border border-[#efe9e7] bg-white px-5 py-6">
+            <Text className="text-base text-[#171311] font-semibold">Enter 4-digit code</Text>
+            <Text className="text-xs text-[#8e7a74] mt-1">
+              We sent a code to {regData?.email || "your email"}.
             </Text>
-            <Text className="text-[#171212] text-base text-center pb-6">
-              Send a verification code to your email address to verify your account.
-            </Text>
+
+            <TextInput
+              value={code}
+              onChangeText={(t) => setCode(t.replace(/[^0-9]/g, "").slice(0, 4))}
+              keyboardType="number-pad"
+              maxLength={4}
+              className="mt-4 text-center text-[28px] tracking-[12px] h-14 rounded-xl bg-[#f5f2f1] text-[#171311]"
+              placeholder="••••"
+              placeholderTextColor="#b8aca8"
+            />
+
             <TouchableOpacity
-              className="bg-[#e9242a] rounded-full px-5 py-3"
-              onPress={handleSendVerificationCode}
+              disabled={!canContinue}
+              onPress={handleVerify}
+              className="mt-6 h-12 rounded-full items-center justify-center"
+              style={{ backgroundColor: canContinue ? "#E94C2A" : "#f0e9e7" }}
+              activeOpacity={0.9}
             >
-              <Text className="text-white text-base font-bold">
-                Send Verification Code
+              <Text className="text-base font-bold" style={{ color: canContinue ? "#fff" : "#9a8a85" }}>
+                Continue
               </Text>
             </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <Text className="text-[#171212] text-[28px] font-bold leading-tight text-center pb-3 pt-5">
-              Verification Code Sent
-            </Text>
-            <Text className="text-[#171212] text-base text-center pb-6">
-              A verification code has been sent to your email address. Please
-              check your inbox.
-            </Text>
+
             <TouchableOpacity
-              className="bg-[#e9242a] rounded-full px-5 py-3"
-              onPress={handleSendVerificationCode}
+              onPress={() => {/* resend handler later */}}
+              className="mt-3 items-center"
+              activeOpacity={0.8}
             >
-              <Text className="text-white text-base font-bold">
-                Resend Verification Code
-              </Text>
+              <Text className="text-sm text-[#E94C2A] underline">Resend code</Text>
             </TouchableOpacity>
-          </>
-        )}
-      </View>
-    </View>
+          </View>
+        </View>
+
+        <View className="h-6" />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
-};
-
-export default EmailVerification;
+}
