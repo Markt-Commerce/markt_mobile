@@ -66,7 +66,7 @@ export default function UserInfoScreen() {
         account_type: userRegResult.account_type,
       }); //store user data in context
       console.log("Registration successful:", userRegResult);
-      router.push("/");
+      router.push("/emailVerification");
     } catch (error) {
         console.error("Registration failed:", error);
     }
