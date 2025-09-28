@@ -33,7 +33,7 @@ export async function request<T = any>(path: string, opts: RequestInit = {}) {
       };
       //combine all the errors in marshmallowError.errors.json into a single error message
       const errorMessages = Object.entries(marshmallowError.errors.json)
-        .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+        .map(([field, messages]) => `${field}: ${messages}`)
         .join('; ');
       throw new Error(errorMessages || `Request failed with status ${res.status}`);
     }

@@ -2,6 +2,7 @@ import React, { useMemo, useRef } from "react";
 import { View, Text, FlatList, TouchableOpacity, Image } from "react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { Trash2 } from "lucide-react-native";
+import { ProductResponse } from "../models/products";
 
 type Product = {
   id: string;
@@ -12,11 +13,11 @@ type Product = {
 
 type Props = {
   visible: boolean;
-  products: Product[];
+  products: ProductResponse[];
   onClose: () => void;
   onSelect: (p: Product) => void;
   onRemove?: (p: Product) => void;
-  selectedProducts: Product[];
+  selectedProducts: ProductResponse[];
 };
 
 export default function ProductPicker({
@@ -29,7 +30,7 @@ export default function ProductPicker({
 }: Props) {
   
   const sheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ["40%", "80%", "100%"], []);
+  const snapPoints = useMemo(() => ["60%", "100%"], []);
 
   if (!visible) return null;
 
@@ -84,8 +85,8 @@ export default function ProductPicker({
                 >
                   <Image
                     source={
-                      item.image
-                        ? { uri: item.image }
+                      item.images?.[0]?.media?.mobile_url
+                        ? { uri: item.images?.[0]?.media?.mobile_url }
                         : require("../assets/icon.png") // Make sure you have a placeholder image
                     }
                     className="w-12 h-12 rounded-md bg-gray-300 mr-3"

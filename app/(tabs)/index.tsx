@@ -27,6 +27,10 @@ export default function FeedScreen() {
   //for create post
   const [postCategories, setPostCategories] = useState<Category[]>([]);
   const [postProducts, setPostProducts] = useState<PlaceholderProduct[]>([]);
+  const [postImages, setpostImages] = useState<string[]>([]);
+
+  //for request
+  const [requestImages, setRequestImages] = useState<string[]>([]);
 
   const { role, setUser, user } = useUser();
   const snapPoints = useMemo(() => ["30%"], []);
@@ -68,7 +72,7 @@ export default function FeedScreen() {
         }
         newItems = groupedProducts.map((group) => ({ type: "product", data: group }));
       } else if (fetchType === "post") {
-        const posts = await getPosts(page, 5);
+        const posts = await getPosts(page, 7);
         newItems = posts.map((p) => ({ type: "post", data: p }));
       } else {
         const requests = await getBuyerRequests(page, 5);
@@ -221,25 +225,24 @@ export default function FeedScreen() {
       {/* Imported Bottom Sheets */}
       <ProductFormBottomSheet ref={productFormRef} productCategories={productCategories} onSubmit={async (product) => {
         try {
-          product.category_ids = productCategories.map((cat: any) => cat.id);
           const newProduct = await createProduct(product as CreateProductRequest);
           productFormRef.current?.close();
         } catch (error) {
           console.error("Error creating product:", error);
         }
       }}/>
-      <PostFormBottomSheet ref={postFormRef} productCategories={productCategories} products={postProducts} onSubmit={async (data) => {
+      <PostFormBottomSheet ref={postFormRef} productCategories={productCategories} products={postProducts} postImages={postImages} onSubmit={async (data) => {
         try {
-          data.category_ids = postCategories.map((cat) => cat.id);
           data.products = postProducts.map((prod) => { return { product_id: prod.id }; });
           const newPost = await createPost(data);
+          console.log("post: ",newPost)
           //set feed later to show new post on top
           postFormRef.current?.close();
         } catch (error) {
           console.error("Error creating post:", error);
         }
       }}/>
-      <BuyerRequestFormBottomSheet ref={requestFormRef} onSubmit={async(request) => {
+      <BuyerRequestFormBottomSheet ref={requestFormRef} requestImages={requestImages} onSubmit={async(request) => {
         try {
           const newRequest = await createBuyerRequest(request);
           requestFormRef.current?.close();

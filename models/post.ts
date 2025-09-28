@@ -3,7 +3,7 @@
 
 export interface CreatePostRequest {
     products?: { product_id: string }[];
-    status?: "draft" | "published" | string;
+    status?: "published"| "draft" | string;
     tags?: string[];
     category_ids?: number[];
     media_ids?: number[];
