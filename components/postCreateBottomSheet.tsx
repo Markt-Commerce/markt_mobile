@@ -21,6 +21,7 @@ const postSchema = z.object({
   category_ids: z.array(z.number()).min(1, "Select at least one category").optional(),
   media_ids: z.array(z.number()).optional(),
   products: z.array(z.object({ product_id: z.string() })).optional(),
+  status: z.string().default("active").optional()
 });
 
 export type PostFormData = z.infer<typeof postSchema>;
@@ -34,9 +35,12 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
     // images state: store PickedImage[] from InstagramGrid
     const [Imagevalue, setImageValue] = React.useState<InstagramGridProps["value"]>(postImages ? postImages.map((uri, index) => ({ id: index.toString(), uri })) : []);
 
+    //draft or active
+    const [postStatus, setPostStatus] = useState<"active" | "draft">("active")
+
     const snapPoints = useMemo(() => ["50%", "85%"], []);
     const { control, handleSubmit, formState: { errors } } = useForm<PostFormData>({
-      resolver: zodResolver(postSchema)
+      resolver: zodResolver(postSchema) as any
     });
 
     //categories
@@ -60,6 +64,7 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
       const payload = {
         ...data,
         category_ids,
+        status: postStatus,
         products: currentProducts.map((val)=>{
           return {product_id:val}
         })
@@ -181,10 +186,11 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
 
 
           {/* Submit Button */}
-          <TouchableOpacity className="bg-[#E94C2A] p-3 rounded" onPress={handleSubmit(handleLocalSubmit)}>
+          <TouchableOpacity className="bg-[#E94C2A] p-3 rounded" onPress={
+              handleSubmit(handleLocalSubmit)
+          }>
             <Text className="text-white text-center">Create Post</Text>
           </TouchableOpacity>
-
 
           <CategoryAddition
             visible={modalVisible}

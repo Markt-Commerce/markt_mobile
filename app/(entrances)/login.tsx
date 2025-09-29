@@ -54,7 +54,7 @@ export default function LoginScreen() {
         email: userData.email.toLowerCase(),
         account_type: userData.account_type,
       });
-      router.push("/");
+      router.replace("/");
     }
     catch (error) {
       //console.error("Login failed:", error);

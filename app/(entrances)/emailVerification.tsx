@@ -1,26 +1,25 @@
-// app/emailVerification.tsx (or your chosen route path)
-import React from "react";
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
+import { useState } from "react";
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
 import { ArrowLeft } from "lucide-react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useUser } from "../../hooks/userContextProvider";
-import { useRegData } from "../../models/signupSteps";
 import { sendVerificationEmail, verifyEmail } from "../../services/sections/auth";
 import { register,useRegData } from "../../models/signupSteps";
 import React from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { z } from "zod";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "../../components/inputs";
+
+
 const EmailVerification = () => {
-
+  
   const router = useRouter();
-  const { setUser } = useUser();
-  const { regData } = useRegData();
+  const { regData, setRegData } = useRegData();
 
-  const [code, setCode] = React.useState("");
+  const [verificationCodeSent, setVerificationCodeSent] = useState(false);
 
   const schema = z.object({
     code: z.string().min(6, "Verification code must be 6 characters long").max(6, "Verification code must be 6 characters long"),
@@ -56,7 +55,7 @@ const EmailVerification = () => {
       const verificationResult = verifyEmail(regData.email, data.code);
       if(!verificationResult) throw new Error("Verification failed");
       console.log("Email verified successfully:", verificationResult);
-      router.replace("/"); // Navigate to home or another appropriate screen after verification
+      router.push("/"); // Navigate to home or another appropriate screen after verification
     }
     catch(error){
       console.error("Email verification failed:", error);
@@ -70,48 +69,33 @@ const EmailVerification = () => {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
       >
-        <View className="flex-row items-center p-4 pb-2 justify-between">
-          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <ArrowLeft size={24} color="#171311" />
-          </TouchableOpacity>
-          <Text className="flex-1 text-center pr-12 text-lg font-bold text-[#171311]">Verify Email</Text>
-        </View>
+    <View className="flex-1 bg-white px-4">
+      {/* Header */}
+      <View className="flex flex-row items-center bg-white p-4 pb-2 justify-between">
+        <ArrowLeft color="#181111" size={24} onPress={() => router.back()} />
+        <Text className="text-[#181111] text-lg font-bold text-center flex-1 pr-12">
+          Email Verification
+        </Text>
+      </View>
 
-        <View className="flex-1 items-center justify-center px-6">
-          <View className="w-full max-w-[420px] rounded-2xl border border-[#efe9e7] bg-white px-5 py-6">
-            <Text className="text-base text-[#171311] font-semibold">Enter 4-digit code</Text>
-            <Text className="text-xs text-[#8e7a74] mt-1">
-              We sent a code to {regData?.email || "your email"}.
+      {/* Content */}
+      <View className="flex-1 justify-center items-center">
+        {!verificationCodeSent ? (
+          <>
+            <Text className="text-[#171212] text-[28px] font-bold leading-tight text-center pb-3 pt-5">
+              Verify Your Email
             </Text>
-
-            <TextInput
-              value={code}
-              onChangeText={(t) => setCode(t.replace(/[^0-9]/g, "").slice(0, 4))}
-              keyboardType="number-pad"
-              maxLength={4}
-              className="mt-4 text-center text-[28px] tracking-[12px] h-14 rounded-xl bg-[#f5f2f1] text-[#171311]"
-              placeholder="••••"
-              placeholderTextColor="#b8aca8"
-            />
-
+            <Text className="text-[#171212] text-base text-center pb-6">
+              Send a verification code to your email address to verify your account.
+            </Text>
             <TouchableOpacity
-              disabled={!canContinue}
-              onPress={handleVerify}
-              className="mt-6 h-12 rounded-full items-center justify-center"
-              style={{ backgroundColor: canContinue ? "#E94C2A" : "#f0e9e7" }}
-              activeOpacity={0.9}
+              className="bg-[#e9242a] rounded-full px-5 py-3"
+              onPress={handleSendVerificationCode}
             >
-              <Text className="text-base font-bold" style={{ color: canContinue ? "#fff" : "#9a8a85" }}>
-                Continue
+              <Text className="text-white text-base font-bold">
+                Send Verification Code
               </Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {/* resend handler later */}}
-              className="mt-3 items-center"
-              activeOpacity={0.8}
-            >
-              <Text className="text-sm text-[#E94C2A] underline">Resend code</Text>
           </>
         ) : (
           <>
@@ -132,11 +116,13 @@ const EmailVerification = () => {
                 Submit Code
               </Text>
             </TouchableOpacity>
-          </View>
-        </View>
-
-        <View className="h-6" />
-      </KeyboardAvoidingView>
+          </>
+        )}
+      </View>
+    </View>
+    </KeyboardAvoidingView>
     </SafeAreaView>
   );
-}
+};
+
+export default EmailVerification;

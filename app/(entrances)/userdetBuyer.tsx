@@ -13,7 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input } from "../../components/inputs";
 import { useUser } from "../../hooks/userContextProvider";
-// import { registerUser } from "../../services/sections/auth"; // <-- keep this import when you’re ready to call the API
+import { registerUser } from "../../services/sections/auth";
 import { useRouter } from "expo-router";
 import { SignupStepTwo, register, useRegData } from "../../models/signupSteps";
 import Button from "../../components/button";
@@ -77,25 +77,7 @@ export default function UserInfoScreen() {
       router.push("/emailVerification");
     } catch (error) {
         console.error("Registration failed:", error);
-    }
   }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // REAL API (commented until your backend step is ready)
-    // Tiny logic note: send `updatedRegData` (fresh) instead of stale `regData`.
-    //
-    // try {
-    //   const userRegResult = await registerUser(updatedRegData);
-    //   setUser({
-    //     email: userRegResult.email.toLowerCase(),
-    //     account_type: userRegResult.account_type,
-    //   });
-    //   // If you prefer to navigate only after success, move `router.push(NEXT_ROUTE)` here.
-    // } catch (error) {
-    //   console.error("Registration failed:", error);
-    //   // Optionally show a toast and keep the user on this page to correct inputs.
-    // }
-    // ─────────────────────────────────────────────────────────────────────────
   };
 
   const Label = ({ children }: { children: React.ReactNode }) => (

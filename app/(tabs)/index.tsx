@@ -313,6 +313,6 @@ export default function FeedScreen() {
           console.error("Error creating request:", error);
         }
       }}/>
-    </View>
+    </SafeAreaView>
   );
 }
