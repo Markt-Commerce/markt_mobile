@@ -1,6 +1,6 @@
 // /services/productService.ts
 import { request, BASE_URL } from "../api";
-import { CreateProductRequest, ProductResponse, Product } from "../../models/products";
+import { CreateProductRequest, ProductResponse, Product, ProductDetail } from "../../models/products";
 import { ApiResponse } from "../../models/auth";
 
 /**
@@ -35,8 +35,8 @@ export async function getSellerProducts(sellerId: number, page = 1, per_page = 2
 /**
  *
  */
-export async function getProductById(productId: string): Promise<Product> {
-  const res = await request<ApiResponse<Product>>(`${BASE_URL}/products/${productId}`, {
+export async function getProductById(productId: string): Promise<ProductDetail> {
+  const res = await request<ApiResponse<ProductDetail>>(`${BASE_URL}/products/${productId}`, {
     method: "GET",
   });
   return (res as any).data ?? (res as any);
