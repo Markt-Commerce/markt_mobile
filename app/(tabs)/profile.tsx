@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
+import React, { useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Image, Switch } from "react-native";
 import {
   ArrowLeft,
   Bell,
@@ -16,157 +16,300 @@ import {
   Info,
   ArrowRight,
 } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+
+// NOTE: When real user data, I'll uncomment the next line and the lines inside the commented blocks below.
+// import { useUser } from "../../hooks/userContextProvider";
 
 export default function SettingsProfileScreen() {
+  const nav = useRouter();
+
+  // const { user } = useUser(); // <-- Real user from your provider
+
+  const [notificationsOn, setNotificationsOn] = useState(true);
+  const [appearance, setAppearance] = useState<"light" | "dark">("light");
+  const [language, setLanguage] = useState<"EN" | "FR">("EN");
+
+  // Helpers
+  const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+    <View className="w-full max-w-[640px] self-center px-4">
+      <Text className="px-1 pt-6 pb-2 text-xs font-semibold uppercase tracking-wider text-[#8e7a74]">
+        {title}
+      </Text>
+      <View className="rounded-2xl border border-[#efe9e7] bg-white overflow-hidden">{children}</View>
+    </View>
+  );
+
+  const Row: React.FC<{
+    children: React.ReactNode;
+    onPress?: () => void;
+    showChevron?: boolean;
+    last?: boolean;
+    trailing?: React.ReactNode;
+  }> = ({ children, onPress, showChevron, last, trailing }) => {
+    const Comp = onPress ? TouchableOpacity : View;
+    return (
+      <Comp
+        onPress={onPress as any}
+        activeOpacity={0.7}
+        className={`flex-row items-center justify-between px-4 py-4 ${last ? "" : "border-b border-[#f3efed]"}`}
+      >
+        <View className="flex-row items-center gap-3">{children}</View>
+        <View className="flex-row items-center gap-2">
+          {trailing}
+          {showChevron ? <ArrowRight size={18} color="#7a6963" /> : null}
+        </View>
+      </Comp>
+    );
+  };
+
+  const Pill: React.FC<{ active?: boolean; label: string; onPress?: () => void; className?: string }> = ({
+    active,
+    label,
+    onPress,
+    className,
+  }) => (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.8}
+      className={`px-3 py-1.5 rounded-full ${active ? "bg-[#e26136]" : "bg-[#f5f2f1]"} ${className ?? ""}`}
+    >
+      <Text className={active ? "text-white" : "text-[#171311]"}>{label}</Text>
+    </TouchableOpacity>
+  );
+
+  // ---------- Profile Data (placeholders + commented real-data usage) ----------
+  const avatarUri =
+    // user?.profile_picture_url ?? 
+    "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=320&q=80&crop=faces,entropy";
+
+  const displayName =
+    // user?.full_name ?? // <-- e.g., `${user?.first_name} ${user?.last_name}`
+    "Sophia Carter";
+
+  const usernameText =
+    // user?.username ? `@${user.username}` : ""
+    "@sophia.carter";
+
+  const joinedYear =
+    // user?.created_at ? String(new Date(user.created_at).getFullYear()) : ""
+    "2021";
+
+  // Details (mark editable ones pressable; read-only ones not)
+  const details = [
+    { label: "Name", value: displayName, pressable: true, onPress: () => {/* nav.push('/edit/name') */} },
+    { label: "Username", value: usernameText, pressable: true, onPress: () => {/* nav.push('/edit/username') */} },
+    {
+      label: "Gender",
+      value:
+        // user?.gender ?? // <-- real gender string
+        "Female",
+      pressable: true,
+      onPress: () => {/* nav.push('/edit/gender') */},
+    },
+    {
+      label: "Location",
+      value:
+        // user?.location ?? 
+        "Los Angeles, CA",
+      pressable: true,
+      onPress: () => {/* nav.push('/edit/location') */},
+    },
+    { label: "Joined", value: joinedYear, pressable: false },
+  ];
+
   return (
-    <ScrollView className="flex-1 bg-white">
-      {/* Header */}
-      <View className="flex-row items-center p-4 pb-2 justify-between">
-        <ArrowLeft size={24} color="#171311" />
-        <Text className="flex-1 text-center pr-12 text-lg font-bold text-[#171311]">
-          Profile & Settings
-        </Text>
-      </View>
+    <SafeAreaView className="flex-1 bg-white">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 24 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View className="flex-row items-center p-4 pb-2 justify-between">
+          <TouchableOpacity onPress={() => nav.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <ArrowLeft size={24} color="#171311" />
+          </TouchableOpacity>
+          <Text className="flex-1 text-center pr-12 text-lg font-bold text-[#171311]">
+            Profile & Settings
+          </Text>
+        </View>
 
-      {/* Profile Section */}
-      <View className="items-center py-6">
-        <Image
-          source={{
-            uri: "https://via.placeholder.com/150",
-          }}
-          className="w-32 h-32 rounded-full"
-        />
-        <Text className="text-[22px] font-bold text-[#171311] mt-3">
-          Sophia Carter
-        </Text>
-        <Text className="text-base text-[#876d64]">@sophia.carter</Text>
-        <Text className="text-base text-[#876d64]">Joined 2021</Text>
-      </View>
-
-      {/* Profile Details */}
-      <Text className="px-4 pb-2 pt-4 text-lg font-bold text-[#171311]">
-        Details
-      </Text>
-      {[
-        { label: "Name", value: "Sophia Carter" },
-        { label: "Username", value: "@sophia.carter" },
-        { label: "Gender", value: "Female" },
-        { label: "Location", value: "Los Angeles, CA" },
-        { label: "Joined", value: "2021" },
-      ].map((item, i) => (
-        <TouchableOpacity
-          key={i}
-          className="flex-row justify-between items-center px-4 py-3 border-b border-gray-100"
-        >
-          <View>
-            <Text className="text-base font-medium text-[#171311]">
-              {item.label}
+        {/* Profile */}
+        <View className="w-full max-w-[640px] self-center px-4">
+          <View className="items-center rounded-2xl border border-[#efe9e7] bg-white px-5 py-6">
+            <Image source={{ uri: avatarUri }} className="w-28 h-28 rounded-full" />
+            {/* --- When real user data is available ---
+            <Image
+              source={{ uri: user?.profile_picture_url ?? avatarUri }}
+              className="w-28 h-28 rounded-full"
+            />
+            --- end real-user block --- */}
+            <Text className="text-[20px] font-bold text-[#171311] mt-3">{displayName}</Text>
+            {/* --- When real user data is available ---
+            <Text className="text-[20px] font-bold text-[#171311] mt-3">
+              {user?.full_name ?? displayName}
             </Text>
-            <Text className="text-sm text-[#876d64]">{item.value}</Text>
-          </View>
-          <ArrowRight size={20} color="#171311" />
-        </TouchableOpacity>
-      ))}
+            --- end real-user block --- */}
 
-      {/* App Preferences */}
-      <Text className="px-4 pb-2 pt-4 text-lg font-bold text-[#171311]">
-        App Preferences
-      </Text>
-      {[
-        {
-          label: "Notifications",
-          desc: "Enable or disable notifications",
-          icon: Bell,
-        },
-        {
-          label: "Appearance",
-          desc: "Customize app theme",
-          icon: Sun,
-        },
-        {
-          label: "Language",
-          desc: "Manage language preferences",
-          icon: Globe,
-        },
-      ].map((item, i) => (
-        <TouchableOpacity
-          key={i}
-          className="flex-row justify-between items-center px-4 py-3 border-b border-gray-100"
-        >
-          <View className="flex-row items-center gap-3">
+            {usernameText ? <Text className="text-sm text-[#876d64]">{usernameText}</Text> : null}
+            {/* --- When real user data is available ---
+            {user?.username ? (
+              <Text className="text-sm text-[#876d64]">@{user.username}</Text>
+            ) : null}
+            --- end real-user block --- */}
+
+            <Text className="text-sm text-[#876d64]">Joined {joinedYear}</Text>
+            {/* --- When real user data is available ---
+            {user?.created_at && (
+              <Text className="text-sm text-[#876d64]">
+                Joined {new Date(user.created_at).getFullYear()}
+              </Text>
+            )}
+            --- end real-user block --- */}
+          </View>
+        </View>
+
+        {/* Details */}
+        <Section title="Details">
+          {details.map((item, i) => (
+            <Row
+              key={i}
+              onPress={item.pressable ? item.onPress : undefined}
+              showChevron={!!item.pressable}
+              last={i === details.length - 1}
+            >
+              <View>
+                <Text className="text-base font-medium text-[#171311]">{item.label}</Text>
+                <Text className="text-sm text-[#876d64]">{item.value}</Text>
+              </View>
+            </Row>
+          ))}
+        </Section>
+
+        {/* App Preferences */}
+        <Section title="App Preferences">
+          {/* Notifications */}
+          <Row
+            trailing={
+              <Switch
+                value={notificationsOn}
+                onValueChange={setNotificationsOn}
+                thumbColor="#ffffff"
+                trackColor={{ false: "#d8d1ce", true: "#e26136" }}
+              />
+            }
+          >
             <View className="bg-[#f4f1f0] p-2 rounded-lg">
-              <item.icon size={20} color="#171311" />
+              <Bell size={20} color="#171311" />
             </View>
             <View>
-              <Text className="text-base font-medium text-[#171311]">
-                {item.label}
-              </Text>
-              <Text className="text-sm text-[#876d64]">{item.desc}</Text>
+              <Text className="text-base font-medium text-[#171311]">Notifications</Text>
+              <Text className="text-sm text-[#876d64]">Enable or disable notifications</Text>
             </View>
-          </View>
-          <ArrowRight size={20} color="#171311" />
-        </TouchableOpacity>
-      ))}
+          </Row>
 
-      {/* Account Management */}
-      <Text className="px-4 pb-2 pt-4 text-lg font-bold text-[#171311]">
-        Account Management
-      </Text>
-      {[
-        { label: "Account Information", icon: User },
-        { label: "Change Password", icon: Lock },
-        { label: "Payment Methods", icon: CreditCard },
-        { label: "Shipping Addresses", icon: Truck },
-        { label: "Linked Accounts", icon: LinkIcon },
-      ].map((item, i) => (
-        <TouchableOpacity
-          key={i}
-          className="flex-row justify-between items-center px-4 py-3 border-b border-gray-100"
-        >
-          <View className="flex-row items-center gap-3">
+          {/* Appearance */}
+          <Row
+            trailing={
+              <View className="flex-row items-center bg-[#f5f2f1] rounded-full p-1">
+                <Pill label="Light" active={appearance === "light"} onPress={() => setAppearance("light")} />
+                <Pill label="Dark" active={appearance === "dark"} onPress={() => setAppearance("dark")} className="ml-1" />
+              </View>
+            }
+          >
             <View className="bg-[#f4f1f0] p-2 rounded-lg">
-              <item.icon size={20} color="#171311" />
+              <Sun size={20} color="#171311" />
             </View>
-            <Text className="text-base font-medium text-[#171311]">
-              {item.label}
-            </Text>
-          </View>
-          <ArrowRight size={20} color="#171311" />
-        </TouchableOpacity>
-      ))}
+            <View>
+              <Text className="text-base font-medium text-[#171311]">Appearance</Text>
+              <Text className="text-sm text-[#876d64]">Customize app theme</Text>
+            </View>
+          </Row>
 
-      {/* Support & Info */}
-      <Text className="px-4 pb-2 pt-4 text-lg font-bold text-[#171311]">
-        Support & Information
-      </Text>
-      {[
-        { label: "Help Center", icon: Question },
-        { label: "Terms of Service", icon: FileText },
-        { label: "Privacy Policy", icon: ShieldCheck },
-        { label: "About", icon: Info },
-      ].map((item, i) => (
-        <TouchableOpacity
-          key={i}
-          className="flex-row justify-between items-center px-4 py-3 border-b border-gray-100"
-        >
-          <View className="flex-row items-center gap-3">
+          {/* Language */}
+          <Row
+            last
+            trailing={
+              <View className="flex-row items-center bg-[#f5f2f1] rounded-full p-1">
+                <Pill label="EN" active={language === "EN"} onPress={() => setLanguage("EN")} />
+                <Pill label="FR" active={language === "FR"} onPress={() => setLanguage("FR")} className="ml-1" />
+              </View>
+            }
+          >
             <View className="bg-[#f4f1f0] p-2 rounded-lg">
-              <item.icon size={20} color="#171311" />
+              <Globe size={20} color="#171311" />
             </View>
-            <Text className="text-base font-medium text-[#171311]">
-              {item.label}
-            </Text>
-          </View>
-          <ArrowRight size={20} color="#171311" />
-        </TouchableOpacity>
-      ))}
+            <View>
+              <Text className="text-base font-medium text-[#171311]">Language</Text>
+              <Text className="text-sm text-[#876d64]">Manage language preferences</Text>
+            </View>
+          </Row>
+        </Section>
 
-      {/* Logout Button */}
-      <View className="px-4 py-5">
-        <TouchableOpacity className="bg-[#f4f1f0] h-10 rounded-full justify-center items-center">
-          <Text className="text-[#171311] font-bold">Log Out</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+        {/* Account Management (actionable → chevrons) */}
+        <Section title="Account Management">
+          {[
+            { label: "Account Information", icon: User, route: "/account/info" },
+            { label: "Change Password", icon: Lock, route: "/account/change-password" },
+            { label: "Payment Methods", icon: CreditCard, route: "/account/payments" },
+            { label: "Shipping Addresses", icon: Truck, route: "/account/addresses" },
+            { label: "Linked Accounts", icon: LinkIcon, route: "/account/linked" },
+          ].map((item, i, arr) => {
+            const Icon = item.icon;
+            return (
+              <Row
+                key={i}
+                onPress={() => nav.push(item.route as any)}
+                showChevron
+                last={i === arr.length - 1}
+              >
+                <View className="bg-[#f4f1f0] p-2 rounded-lg">
+                  <Icon size={20} color="#171311" />
+                </View>
+                <Text className="text-base font-medium text-[#171311]">{item.label}</Text>
+              </Row>
+            );
+          })}
+        </Section>
+
+        {/* Support & Information (actionable → chevrons) */}
+        <Section title="Support & Information">
+          {[
+            { label: "Help Center", icon: Question, route: "/support/help" },
+            { label: "Terms of Service", icon: FileText, route: "/support/terms" },
+            { label: "Privacy Policy", icon: ShieldCheck, route: "/support/privacy" },
+            { label: "About", icon: Info, route: "/support/about" },
+          ].map((item, i, arr) => {
+            const Icon = item.icon;
+            return (
+              <Row
+                key={i}
+                onPress={() => nav.push(item.route as any)}
+                showChevron
+                last={i === arr.length - 1}
+              >
+                <View className="bg-[#f4f1f0] p-2 rounded-lg">
+                  <Icon size={20} color="#171311" />
+                </View>
+                <Text className="text-base font-medium text-[#171311]">{item.label}</Text>
+              </Row>
+            );
+          })}
+        </Section>
+
+        {/* Logout */}
+        <View className="w-full max-w-[640px] self-center px-4 pt-4 pb-6">
+          <TouchableOpacity
+            className="bg-[#f4f1f0] h-11 rounded-full justify-center items-center"
+            activeOpacity={0.85}
+            onPress={() => {/* add your logout handler here */}}
+          >
+            <Text className="text-[#171311] font-semibold">Log Out</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

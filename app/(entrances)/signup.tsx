@@ -1,108 +1,286 @@
-import React, { use } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
-import { ArrowLeft } from "lucide-react-native";
-import { useForm, Controller } from "react-hook-form";
+import React from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from "react-native";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react-native";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input } from "../../components/inputs";
 import { useUser } from "../../hooks/userContextProvider";
 import { AccountType } from "../../models/auth";
 import { useRouter } from "expo-router";
-import { register,useRegData } from "../../models/signupSteps";
+import { register, useRegData } from "../../models/signupSteps";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function SignupScreen() {
-
-  const { setUser, setRole, role } = useUser();
-  const { regData, setRegData } = useRegData();
-
-  const schema = z.object({
-    password: z.string().min(8, "Password is required and should be 8 characters long").regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/, "Password must contain at least one uppercase letter, one lowercase letter, and one number"),
-    confirmPassword: z.string().min(8, "Please re-enter your password"),
+// --- Validation schema (fixed: standard refine; removed invalid 'when' option) ---
+const schema = z
+  .object({
     email: z.string().email("Invalid email address"),
-  }).refine(data => data.password === data.confirmPassword, {
+    password: z
+      .string()
+      .min(8, "Password is required and should be 8 characters long")
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/,
+        "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+      ),
+    confirmPassword: z.string().min(8, "Please re-enter your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
   });
+
+type FormValues = z.infer<typeof schema>;
+
+export default function SignupScreen() {
   const router = useRouter();
+  const { setRole, role } = useUser();
+  const { regData, setRegData } = useRegData();
+
   const {
     control,
     handleSubmit,
+    watch,
     formState: { errors, isValid },
-  } = useForm({
+  } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    mode: "onChange"
+    mode: "onChange",
   });
 
-  const setUserRole = (role: AccountType) => {
-    setRole(role);
-  }
+  // ---- UI-only enhancements (don’t affect your data flow) ----
+  const [showPwd, setShowPwd] = React.useState(false);
+  const [showConfirmPwd, setShowConfirmPwd] = React.useState(false);
 
-  const onSubmit = async (data: z.infer<typeof schema>) => {
+  const passwordValue = watch("password") || "";
+
+  // simple strength indicator: 0–3 bars based on your existing regex criteria (+length)
+  const strength = React.useMemo(() => {
+    let score = 0;
+    if (passwordValue.length >= 8) score++;
+    if (/[A-Z]/.test(passwordValue)) score++;
+    if (/[a-z]/.test(passwordValue)) score++;
+    if (/\d/.test(passwordValue)) score++;
+    // map 0..4 to 0..3 for 3 bars
+    return Math.min(3, Math.max(0, score - 1));
+  }, [passwordValue]);
+
+  const setUserRole = (r: AccountType) => setRole(r);
+
+  const onSubmit = async (data: FormValues) => {
     try {
-      //setUserRole();
-      setRegData(register(regData, {
-        email: data.email,
-        password: data.password,
-        account_type: role || "buyer", // default to Buyer if not set
-      }))
+      setRegData(
+        register(regData, {
+          email: data.email,
+          password: data.password,
+          account_type: role || "buyer", // default Buyer if not set
+        })
+      );
       if (role === "seller") router.navigate("/userdetSeller");
       else router.navigate("/userdetBuyer");
-      //router.navigate("/emailVerification"); would use this after clarifying the flow with the team
+      // router.navigate("/emailVerification"); // (use when flow is finalized)
     } catch (error) {
       console.error("Signup failed:", error);
     }
   };
 
-  return (
-    <View className="flex-1 bg-white justify-center items-center px-4">
-      <View className="w-full max-w-[480px]">
-        <View className="flex-row items-center justify-between pb-2">
-          <View className="size-12 justify-center">
-            <ArrowLeft color="#171212" size={24} onPress={router.back}/>
-          </View>
-          <Text className="text-[#171212] text-lg font-bold text-center pr-12 flex-1">
-            Sign up
-          </Text>
-        </View>
-
-        <View className="flex gap-4 py-3">
-          {errors.email && <Text className="text-[#E94C2A] text-sm font-normal">{errors.email.message}</Text>}
-          <Input placeholder="Email" control={control} name="email" errors={errors}> </Input>
-          {errors.password && <Text className="text-[#E94C2A] text-sm font-normal">{errors.password.message}</Text>}
-          <Input placeholder="Password" control={control} name="password" errors={errors} secureTextEntry={true}></Input>
-          {errors.confirmPassword && <Text className="text-[#E94C2A] text-sm font-normal">{errors.confirmPassword.message}</Text>}
-          <Input placeholder="Confirm Password" control={control} name="confirmPassword" errors={errors} secureTextEntry={true}></Input>
-        </View>
-
-        <View className="flex flex-row justify-between items-center py-3">
-          <TouchableOpacity onPress={() => setRole("buyer")}>
-            <Text className={`text-[#171212] text-sm font-normal ${role === "buyer" ? "font-bold" : ""}`}>
-              Buyer
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setRole("seller")}>
-            <Text className={`text-[#171212] text-sm font-normal ${role === "seller" ? "font-bold" : ""}`}>
-              Seller
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text className="text-[#826869] text-sm font-normal text-center underline pb-3 pt-1" onPress={() => router.navigate("/login")}>
-          Already have an account? Log in
+  // Segmented role pill
+  const RoleToggle = () => (
+    <View className="flex-row items-center rounded-full bg-[#f2efee] p-1">
+      <TouchableOpacity
+        onPress={() => setUserRole("buyer")}
+        accessibilityRole="button"
+        accessibilityState={{ selected: role === "buyer" }}
+        activeOpacity={0.85}
+        style={{ flex: 1 }}
+        className={`py-2 rounded-full items-center ${
+          role === "buyer" ? "bg-[#E94C2A]" : ""
+        }`}
+      >
+        <Text className={role === "buyer" ? "text-white font-semibold" : "text-[#171212] font-medium"}>
+          Buyer
         </Text>
-
-        <TouchableOpacity className="w-full h-12 bg-[#E94C2A] rounded-full justify-center items-center" disabled={!isValid}
-        style={{
-          backgroundColor: isValid ? '#E94C2A' : '#f4f1f1',
-        }} onPress={handleSubmit(onSubmit)}>
-          <Text className="text-[#171212] text-base font-bold tracking-[0.015em]"
-          style={{
-            color: isValid ? '#ffffff' : '#b0a7a7',
-          }}>
-            Sign up
-          </Text>
-        </TouchableOpacity>
-      </View>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => setUserRole("seller")}
+        accessibilityRole="button"
+        accessibilityState={{ selected: role === "seller" }}
+        activeOpacity={0.85}
+        style={{ flex: 1 }}
+        className={`py-2 rounded-full items-center ${
+          role === "seller" ? "bg-[#E94C2A]" : ""
+        }`}
+      >
+        <Text className={role === "seller" ? "text-white font-semibold" : "text-[#171212] font-medium"}>
+          Seller
+        </Text>
+      </TouchableOpacity>
     </View>
+  );
+
+  // tiny helper: bar for strength
+  const StrengthBar = ({ level }: { level: number }) => {
+    // 3 bars; fill up to `level`
+    const filled = ["#e4b7a9", "#e67e5f", "#E94C2A"];
+    return (
+      <View className="flex-row gap-1 mt-2">
+        {[0, 1, 2].map((i) => (
+          <View
+            key={i}
+            className="h-1.5 flex-1 rounded-full"
+            style={{ backgroundColor: i < level ? filled[i] : "#f0e9e7" }}
+          />
+        ))}
+      </View>
+    );
+  };
+
+  return (
+    <SafeAreaView className="flex-1 bg-white">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 16 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="w-full max-w-[480px]">
+            {/* Header */}
+            <View className="flex-row items-center justify-between pb-2">
+              <TouchableOpacity
+                onPress={() => router.back()}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                className="size-12 justify-center items-start"
+              >
+                <ArrowLeft color="#171212" size={24} />
+              </TouchableOpacity>
+              <Text className="text-[#171212] text-lg font-bold text-center pr-12 flex-1">Sign up</Text>
+            </View>
+
+            {/* Form */}
+            <View className="rounded-2xl border border-[#efe9e7] bg-white px-5 py-6 mt-2">
+              {/* Email */}
+              <View className="mb-4">
+                <Text className="mb-1 text-[13px] text-[#5f4f4f]">Email</Text>
+                {errors.email ? (
+                  <Text className="mb-1 text-xs text-[#E94C2A]">{errors.email.message as string}</Text>
+                ) : null}
+                <Input
+                  placeholder="you@example.com"
+                  control={control}
+                  name="email"
+                  errors={errors}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  textContentType="emailAddress"
+                />
+              </View>
+
+              {/* Password */}
+              <View className="mb-4">
+                <Text className="mb-1 text-[13px] text-[#5f4f4f]">Password</Text>
+                {errors.password ? (
+                  <Text className="mb-1 text-xs text-[#E94C2A]">{errors.password.message as string}</Text>
+                ) : (
+                  <Text className="mb-1 text-xs text-[#8e7a74]">
+                    At least 8 characters with upper, lower, and a number.
+                  </Text>
+                )}
+                <Input
+                  placeholder="Enter your password"
+                  control={control}
+                  name="password"
+                  errors={errors}
+                  secureTextEntry={!showPwd}
+                  textContentType="password"
+                />
+                {/* Show/Hide toggle (kept outside Input to avoid changing your component’s API) */}
+                <TouchableOpacity
+                  onPress={() => setShowPwd((v) => !v)}
+                  className="self-end mt-2 flex-row items-center"
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
+                  {showPwd ? <EyeOff size={16} color="#876d64" /> : <Eye size={16} color="#876d64" />}
+                  <Text className="ml-1 text-xs text-[#876d64]">{showPwd ? "Hide" : "Show"}</Text>
+                </TouchableOpacity>
+
+                {/* Strength meter */}
+                <StrengthBar level={strength} />
+              </View>
+
+              {/* Confirm Password */}
+              <View className="mb-2">
+                <Text className="mb-1 text-[13px] text-[#5f4f4f]">Confirm Password</Text>
+                {errors.confirmPassword ? (
+                  <Text className="mb-1 text-xs text-[#E94C2A]">
+                    {errors.confirmPassword.message as string}
+                  </Text>
+                ) : null}
+                <Input
+                  placeholder="Re-enter your password"
+                  control={control}
+                  name="confirmPassword"
+                  errors={errors}
+                  secureTextEntry={!showConfirmPwd}
+                  textContentType="password"
+                />
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPwd((v) => !v)}
+                  className="self-end mt-2 flex-row items-center"
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
+                  {showConfirmPwd ? <EyeOff size={16} color="#876d64" /> : <Eye size={16} color="#876d64" />}
+                  <Text className="ml-1 text-xs text-[#876d64]">{showConfirmPwd ? "Hide" : "Show"}</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Role selection */}
+              <View className="mt-6">
+                <Text className="mb-2 text-[13px] text-[#5f4f4f]">Create account as</Text>
+                <RoleToggle />
+              </View>
+
+              {/* CTA */}
+              <View className="mt-6">
+                <TouchableOpacity
+                  className="w-full h-12 rounded-full justify-center items-center"
+                  disabled={!isValid}
+                  style={{
+                    backgroundColor: isValid ? "#E94C2A" : "#f4f1f1",
+                  }}
+                  onPress={handleSubmit(onSubmit)}
+                >
+                  <Text
+                    className="text-base font-bold tracking-[0.015em]"
+                    style={{ color: isValid ? "#ffffff" : "#b0a7a7" }}
+                  >
+                    Sign up
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Alt nav */}
+              <View className="mt-5 items-center">
+                <Text className="text-[#171212] text-sm" onPress={() => router.navigate("/login")}>
+                  Already have an account? <Text className="text-[#E94C2A] underline">Log in</Text>
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* extra bottom space so the button never hugs the home indicator */}
+          <View className="h-6" />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

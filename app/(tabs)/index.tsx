@@ -9,6 +9,7 @@ import { useUser } from "../../hooks/userContextProvider";
 import ProductFormBottomSheet from "../../components/productCreateBottomSheet";
 import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BuyerRequestFormBottomSheet from "../../components/buyerRequestBottomSheet";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { createPost } from "../../services/sections/post";
 import { createProduct } from "../../services/sections/product";
 import { createBuyerRequest } from "../../services/sections/request";
@@ -44,7 +45,7 @@ export default function FeedScreen() {
   const openMenu = () => {
     console.log("Opening create menu");
     createMenuRef.current?.expand();
-  }
+  };
   const closeMenu = () => createMenuRef.current?.close();
 
   const openForm = (form: "product" | "post" | "request") => {
@@ -90,12 +91,12 @@ export default function FeedScreen() {
     loadFeed();
   }, []);
 
-  // Header Component
+  // Header Component (visuals only)
   const Header = () => (
-    <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
-      <Text className="text-xl font-bold text-[#111418]">Marketplace</Text>
-      <TouchableOpacity onPress={openMenu} className="p-2">
-        <Plus size={28} color="#111418" />
+    <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-[#f0e9e7]">
+      <Text className="text-xl font-extrabold text-[#111418]">Marketplace</Text>
+      <TouchableOpacity onPress={openMenu} className="p-2 rounded-full bg-[#f5f2f1]" hitSlop={{top:8,bottom:8,left:8,right:8}}>
+        <Plus size={22} color="#111418" />
       </TouchableOpacity>
     </View>
   );
@@ -104,75 +105,118 @@ export default function FeedScreen() {
     if (item.type === "request") {
       const req = item.data;
       return (
-        <View className="p-4 border-b border-gray-200">
-          <View className="flex-row items-center mb-2">
-            <Image source={{ uri: req.buyer.profile_picture_url }} className="w-10 h-10 rounded-full mr-2" />
-            <Text className="font-semibold text-[#111418]">{req.buyer.username}</Text>
+        <View className="px-4 pt-3">
+          <View className="rounded-2xl border border-[#efe9e7] bg-white p-4">
+            <View className="flex-row items-center mb-3">
+              <Image source={{ uri: req.buyer.profile_picture_url }} className="w-10 h-10 rounded-full mr-3" />
+              <View>
+                <Text className="font-semibold text-[#111418]">{req.buyer.username}</Text>
+                <Text className="text-xs text-[#876d64]">Buyer request</Text>
+              </View>
+            </View>
+
+            <Text className="font-bold text-[#111418] text-[16px] mb-1" numberOfLines={2}>
+              {req.title}
+            </Text>
+            <Text className="text-[#60758a] mb-3" numberOfLines={3}>
+              {req.description}
+            </Text>
+
+            <View className="flex-row items-center justify-between">
+              <View>
+                <Text className="text-sm text-[#e26136] font-semibold">Budget: ${req.budget}</Text>
+                <Text className="text-[11px] text-[#60758a]">Deadline: {new Date(req.deadline).toDateString()}</Text>
+              </View>
+              <TouchableOpacity className="px-3 py-2 bg-[#e26136] rounded-full">
+                <Text className="text-white text-sm font-semibold">Message Buyer</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <Text className="font-bold text-[#111418] mb-1">{req.title}</Text>
-          <Text className="text-[#60758a] mb-2">{req.description}</Text>
-          <Text className="text-sm text-[#e26136] font-semibold">Budget: ${req.budget}</Text>
-          <Text className="text-xs text-[#60758a]">Deadline: {new Date(req.deadline).toDateString()}</Text>
-          <TouchableOpacity className="mt-2 p-2 bg-[#e26136] rounded-lg">
-            <Text className="text-white text-center">Message Buyer</Text>
-          </TouchableOpacity>
         </View>
       );
     } else if (item.type === "product") {
       const products = item.data;
       return (
-        <View className="flex-row justify-between px-4 py-3">
-          {products.map((product) => (
-            <View key={product.id} className="w-[48%] pb-3">
-              <Link href={`/productDetails/${product.id}`} asChild>
-                <TouchableOpacity>
-                  <ImageBackground
-                    source={{ uri: product.images?.[0]?.media?.original_url }}
-                    className="aspect-square rounded-xl overflow-hidden"
-                    resizeMode="cover"
-                  />
-                  <Text className="text-base font-medium text-[#171311] mt-2">{product.name}</Text>
-                  <Text className="text-sm text-[#876d64]">{product.price}</Text>
-                </TouchableOpacity>
-              </Link>
-              <View className="flex-row justify-between mt-2">
-                <TouchableOpacity className="flex-row items-center gap-1">
-                  <ShoppingCart size={20} color="#60758a" />
-                  <Text>Add</Text>
-                </TouchableOpacity>
-                <TouchableOpacity className="flex-row items-center gap-1">
-                  <MessageCircle size={20} color="#60758a" />
-                  <Text>Chat</Text>
-                </TouchableOpacity>
+        <View className="px-4 pt-3">
+          <View className="flex-row justify-between gap-3">
+            {products.map((product) => (
+              <View key={product.id} className="w-[48%]">
+                <Link href={`/productDetails/${product.id}`} asChild>
+                  <TouchableOpacity activeOpacity={0.85}>
+                    <View className="rounded-2xl overflow-hidden border border-[#efe9e7] bg-white">
+                      <ImageBackground
+                        source={{ uri: product.images?.[0]?.media?.original_url }}
+                        className="w-full aspect-square"
+                        resizeMode="cover"
+                      >
+                        {/* price pill */}
+                        <View className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-1">
+                          <Text className="text-[12px] font-semibold text-[#111418]">
+                            {product.price}
+                          </Text>
+                        </View>
+                      </ImageBackground>
+
+                      <View className="px-3 pt-2 pb-3">
+                        <Text className="text-[14px] font-semibold text-[#171311]" numberOfLines={1}>
+                          {product.name}
+                        </Text>
+                        <View className="flex-row justify-between mt-2">
+                          <TouchableOpacity className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-[#f5f2f1]">
+                            <ShoppingCart size={16} color="#60758a" />
+                            <Text className="text-[12px] text-[#111418]">Add</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-[#f5f2f1]">
+                            <MessageCircle size={16} color="#60758a" />
+                            <Text className="text-[12px] text-[#111418]">Chat</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                </Link>
               </View>
-            </View>
-          ))}
+            ))}
+          </View>
         </View>
       );
     } else {
       const post = item.data;
       return (
         <Link href={`/postDetails/${post.id}`} asChild>
-          <TouchableOpacity className="p-4 border-b border-gray-200">
-            <View className="flex-row items-center mb-2">
-              <Image source={{ uri: post.seller?.profile_picture_url }} className="w-10 h-10 rounded-full mr-2" />
-              <Text className="font-semibold text-[#111418]">{post.seller?.shop_name}</Text>
-            </View>
-            <Text className="mb-2">{post.caption}</Text>
-            {post.social_media[0]?.media?.original_url && (
-              <Image source={{ uri: post.social_media[0].media.original_url }} className="w-full h-48 rounded-lg" />
-            )}
-            <View className="flex-row justify-between mt-2">
-              <View className="flex-row items-center gap-2">
-                <Heart size={20} color="#60758a" />
-                <Text>{post.like_count}</Text>
+          <TouchableOpacity activeOpacity={0.85} className="px-4 pt-3">
+            <View className="rounded-2xl border border-[#efe9e7] bg-white p-4">
+              <View className="flex-row items-center mb-3">
+                <Image source={{ uri: post.seller?.profile_picture_url }} className="w-10 h-10 rounded-full mr-3" />
+                <View>
+                  <Text className="font-semibold text-[#111418]">{post.seller?.shop_name}</Text>
+                  <Text className="text-xs text-[#876d64]">Shop post</Text>
+                </View>
               </View>
-              <View className="flex-row items-center gap-2">
-                <MessageCircle size={20} color="#60758a" />
-                <Text>{post.comment_count}</Text>
+
+              {post.caption ? (
+                <Text className="mb-3 text-[#111418]" numberOfLines={3}>{post.caption}</Text>
+              ) : null}
+
+              {post.social_media[0]?.media?.original_url && (
+                <Image
+                  source={{ uri: post.social_media[0].media.original_url }}
+                  className="w-full h-56 rounded-xl"
+                />
+              )}
+
+              <View className="flex-row justify-between mt-3">
+                <View className="flex-row items-center gap-2">
+                  <Heart size={18} color="#60758a" />
+                  <Text className="text-[#111418]">{post.like_count}</Text>
+                </View>
+                <View className="flex-row items-center gap-2">
+                  <MessageCircle size={18} color="#60758a" />
+                  <Text className="text-[#111418]">{post.comment_count}</Text>
+                </View>
+                <Send size={18} color="#60758a" />
+                <Star size={18} color="#60758a" />
               </View>
-              <Send size={20} color="#60758a" />
-              <Star size={20} color="#60758a" />
             </View>
           </TouchableOpacity>
         </Link>
@@ -181,7 +225,7 @@ export default function FeedScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white">
       <FlatList
         data={feed}
         keyExtractor={(_, idx) => idx.toString()}
@@ -190,32 +234,51 @@ export default function FeedScreen() {
         onEndReachedThreshold={0.5}
         ListHeaderComponent={<Header />}
         stickyHeaderIndices={[0]}
-        ListFooterComponent={loading ? <ActivityIndicator size="large" color="#e26136" /> : null}
+        ListFooterComponent={
+          loading ? (
+            <View className="py-5">
+              <ActivityIndicator size="large" color="#e26136" />
+            </View>
+          ) : null
+        }
+        ListEmptyComponent={
+          !loading ? (
+            <View className="items-center justify-center py-16">
+              <Text className="text-[#171311] font-semibold text-base">No items yet</Text>
+              <Text className="text-[#876d64] text-sm mt-1">Pull up to load more or create something new.</Text>
+            </View>
+          ) : null
+        }
         contentContainerStyle={{ paddingBottom: 20 }}
       />
 
-      {/* Create Menu Bottom Sheet */}
+      {/* Create Menu Bottom Sheet (visual tweaks only) */}
       <BottomSheet ref={createMenuRef} index={-1} snapPoints={snapPoints} enablePanDownToClose>
         <BottomSheetView className="flex-1 p-4">
-        <Text className="text-lg font-bold mb-4">Create</Text>
+          <Text className="text-lg font-extrabold mb-2 text-[#111418]">Create</Text>
 
+          {/* kept your role gating & onPress handlers exactly the same */}
           {role === "buyer" && (
             <>
-              <TouchableOpacity onPress={() => openForm("request")} className="border-b border-gray-200 p-15">
-                <Text className="font-bold text-xl">Create Buyer Request</Text>
+              <TouchableOpacity onPress={() => openForm("request")} className="border-b border-[#f0e9e7] py-4" hitSlop={{top:8,bottom:8,left:8,right:8}}>
+                <Text className="font-semibold text-[16px] text-[#171311]">Create Buyer Request</Text>
+                <Text className="text-xs text-[#876d64]">Describe what you need and your budget.</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => openForm("post")} className="border-b border-gray-200 p-15">
-                <Text className="font-bold text-xl">Create Post</Text>
+              <TouchableOpacity onPress={() => openForm("post")} className="border-b border-[#f0e9e7] py-4" hitSlop={{top:8,bottom:8,left:8,right:8}}>
+                <Text className="font-semibold text-[16px] text-[#171311]">Create Post</Text>
+                <Text className="text-xs text-[#876d64]">Share updates, photos, or deals.</Text>
               </TouchableOpacity>
             </>
           )}
           {role === "seller" && (
             <>
-              <TouchableOpacity onPress={() => openForm("product")} className="border-b border-gray-200 p-15">
-                <Text className="font-bold text-xl">Create Product</Text>
+              <TouchableOpacity onPress={() => openForm("product")} className="border-b border-[#f0e9e7] py-4" hitSlop={{top:8,bottom:8,left:8,right:8}}>
+                <Text className="font-semibold text-[16px] text-[#171311]">Create Product</Text>
+                <Text className="text-xs text-[#876d64]">Add a new item to your shop.</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => openForm("post")} className="border-b border-gray-200 p-15">
-                <Text className="font-bold text-xl">Create Post</Text>
+              <TouchableOpacity onPress={() => openForm("post")} className="border-b border-[#f0e9e7] py-4" hitSlop={{top:8,bottom:8,left:8,right:8}}>
+                <Text className="font-semibold text-[16px] text-[#171311]">Create Post</Text>
+                <Text className="text-xs text-[#876d64]">Share updates, photos, or deals.</Text>
               </TouchableOpacity>
             </>
           )}

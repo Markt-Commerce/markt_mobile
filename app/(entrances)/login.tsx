@@ -1,13 +1,21 @@
 import React from "react";
 import { useRouter, Link } from "expo-router";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from "react-native";
 import { z } from "zod";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginUser } from "../../services/sections/auth";
 import { useUser } from "../../hooks/userContextProvider";
 import { Input } from "../../components/inputs";
 import Button from "../../components/button";
+import { SafeAreaView } from "react-native-safe-area-context";
 //import * as SecureStore from 'expo-secure-store';
 import { useRegData } from "../../models/signupSteps";
 
@@ -17,7 +25,6 @@ const schema = z.object({
 });
 
 export default function LoginScreen() {
-
   const router = useRouter();
   const { role, setRole, setUser } = useUser();
   const { setRegData } = useRegData();
@@ -25,28 +32,28 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm({
+    resolver: zodResolver(schema),
+    mode: "onChange",
+  });
+
   const onsubmit = async (data: z.infer<typeof schema>) => {
     try {
+      setIsLoading(true);
       const userData = await loginUser({
         email: data.email,
         password: data.password,
-        account_type: role || "buyer", // default to Buyer if not set
-      })
-      setError(null); // clear any previous errors
-      console.log("Login successful:", userData);//remember to clear this later
+        account_type: role || "buyer",
+      });
+      setError(null);
       setUser({
         email: userData.email.toLowerCase(),
         account_type: userData.account_type,
-      }); //store user data in context
-      //navigate to the home page
-
-      //store user in secure store
-      /* await SecureStore.setItemAsync('user', JSON.stringify({
-        email: data.email,
-        password: data.password,
-        userType: role || "buyer",
-      })); */
-      
+      });
       router.push("/");
     }
     catch (error) {
@@ -74,98 +81,169 @@ export default function LoginScreen() {
       //work on adding cleanup for failed login attempts
       //SecureStore.deleteItemAsync('user');
       setUser(null);
-      //router.push("/"); // redirect to login page on error
+    } finally {
+      setIsLoading(false);
     }
-
-  }
-
-  const {
-    control,
-    handleSubmit,
-    formState: { errors, isValid },
-  } = useForm({
-    resolver: zodResolver(schema),
-    mode: "onChange"
-  });
+  };
 
   return (
-    <View className="flex-1 bg-white justify-center items-center px-4">
-      <View className="w-full max-w-[480px]">
-        <Text className="text-[#171212] text-[28px] font-bold leading-tight text-center pb-3 pt-5">
-          Welcome back
-        </Text>
+    <SafeAreaView className="flex-1 bg-white">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
+      >
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: 20,
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Panel */}
+          <View className="w-full max-w-[480px] rounded-2xl bg-white border border-[#f0e9e7] px-5 py-6">
+            {/* Header */}
+            <View className="mb-4 items-center">
+              <Text className="text-[#171212] text-[14px] opacity-60">
+                Welcome back
+              </Text>
+              <Text className="text-[#171212] text-[24px] font-extrabold leading-tight">
+                Sign in to your account
+              </Text>
+            </View>
 
-        { error && <Text className="text-[#e9242a] text-sm font-normal text-center">{error}</Text> }
+            {/* Error banner */}
+            {error ? (
+              <View className="mb-4 rounded-xl bg-[#ffe8e9] px-3 py-3">
+                <Text className="text-[#b0161a] text-sm">{error}</Text>
+              </View>
+            ) : null}
 
-        <View className="flex gap-4 py-3">
-        {errors.email && <Text className="text-[#e9242a] text-sm font-normal">{errors.email.message}</Text>}
-          <Input placeholder="Email" control={control} name="email" errors={errors} />
-        </View>
+            {/* Email */}
+            <View className="mb-4">
+              <Text className="mb-1 text-[13px] text-[#5f4f4f]">Email</Text>
+              <Input
+                placeholder="Enter your email"
+                control={control}
+                name="email"
+                errors={errors}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                textContentType="emailAddress"
+              />
+              {errors.email ? (
+                <Text className="mt-1 text-xs text-[#e9242a]">
+                  {errors.email.message as string}
+                </Text>
+              ) : null}
+            </View>
 
-        <View className="flex gap-4 py-3">
-        {errors.password && <Text className="text-[#e9242a] text-sm font-normal">{errors.password.message}</Text>}
-        <Input placeholder="Password" control={control} name="password" errors={errors} secureTextEntry={true} />
-        </View>
+            {/* Password */}
+            <View className="mb-2">
+              <Text className="mb-1 text-[13px] text-[#5f4f4f]">Password</Text>
+              <Input
+                placeholder="Enter your password"
+                control={control}
+                name="password"
+                errors={errors}
+                secureTextEntry
+                textContentType="password"
+              />
+              {errors.password ? (
+                <Text className="mt-1 text-xs text-[#e9242a]">
+                  {errors.password.message as string}
+                </Text>
+              ) : null}
+            </View>
 
-        <Link href={
-          "/forgotPassword"
-        }>
-          <Text className="text-[#826869] text-sm font-normal text-center underline pb-3 pt-1">
-            Forgot Password?
-          </Text>
-        </Link>
+            {/* Forgot password */}
+            <View className="items-end">
+              <Link href="/forgotPassword">
+                <Text className="text-[#826869] text-sm underline">
+                  Forgot Password?
+                </Text>
+              </Link>
+            </View>
 
-        <View className="flex-row bg-gray-200 rounded-full p-1">
-          <TouchableOpacity
-            onPress={() => setRole("buyer")}
-            style={{
-              flex: 1,
-              backgroundColor: role === "buyer" ? '#E94C2A' : 'transparent',
-              borderTopLeftRadius: 25,
-              borderBottomLeftRadius: 25,
-              paddingVertical: 8,
-              alignItems: 'center',
-            }}
-          >
-            <Text
-              style={{
-                color: role === "buyer" ? '#fff' : '#171212',
-                fontWeight: role === "buyer" ? 'bold' : 'normal',
-              }}
-            >
-              Buyer
-            </Text>
-          </TouchableOpacity>
+            {/* Role toggle */}
+            <View className="mt-6">
+              <Text className="mb-2 text-[13px] text-[#5f4f4f]">Continue as</Text>
+              <View className="flex-row items-center rounded-full bg-[#f2efee] p-1">
+                <TouchableOpacity
+                  onPress={() => setRole("buyer")}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: role === "buyer" }}
+                  style={{
+                    flex: 1,
+                    backgroundColor: role === "buyer" ? "#E94C2A" : "transparent",
+                    borderRadius: 999,
+                    paddingVertical: 10,
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: role === "buyer" ? "#fff" : "#171212",
+                      fontWeight: role === "buyer" ? "700" : "500",
+                    }}
+                  >
+                    Buyer
+                  </Text>
+                </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => setRole("seller")}
-            style={{
-              flex: 1,
-              backgroundColor: role === "seller" ? '#E94C2A' : 'transparent',
-              borderTopRightRadius: 25,
-              borderBottomRightRadius: 25,
-              paddingVertical: 8,
-              alignItems: 'center',
-            }}
-          >
-            <Text
-              style={{
-                color: role === "seller" ? '#fff' : '#171212',
-                fontWeight: role === "seller" ? 'bold' : 'normal',
-              }}
-            >
-              Seller
-            </Text>
-          </TouchableOpacity>
-        </View>
+                <TouchableOpacity
+                  onPress={() => setRole("seller")}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: role === "seller" }}
+                  style={{
+                    flex: 1,
+                    backgroundColor: role === "seller" ? "#E94C2A" : "transparent",
+                    borderRadius: 999,
+                    paddingVertical: 10,
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: role === "seller" ? "#fff" : "#171212",
+                      fontWeight: role === "seller" ? "700" : "500",
+                    }}
+                  >
+                    Seller
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
 
-        {/* Save button */}
-      <Button onPress={handleSubmit(onsubmit)} disabled={!isValid} text="Login"/>
-      </View>
+            {/* Submit */}
+            <View className="mt-6">
+              <Button
+                onPress={handleSubmit(onsubmit)}
+                disabled={!isValid || isLoading}
+                text={isLoading ? "Signing in..." : "Login"}
+              />
+            </View>
 
-      <Text className="text-[#E94C2A] text-sm font-normal text-center underline pb-3 pt-1" onPress={() => router.navigate("/signup")}>
-          Don't have an account? Sign up
-      </Text>
-    </View>
+            {/* Sign up */}
+            <View className="mt-5 items-center">
+              <Text
+                className="text-[#171212] text-sm"
+                onPress={() => router.navigate("/signup")}
+              >
+                Don’t have an account?{" "}
+                <Text className="text-[#E94C2A] underline">Sign up</Text>
+              </Text>
+            </View>
+          </View>
+
+          {/* Small bottom spacer so the centered panel never kisses the home indicator */}
+          <View className="h-6" />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
