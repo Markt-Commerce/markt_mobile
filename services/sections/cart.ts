@@ -26,9 +26,40 @@ export async function clearCart(): Promise<void> {
   });
 }
 
+export async function deleteCartItem(id:number) {
+  await request<void>(`${BASE_URL}/cart/items/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function updateCartItem(id:number,data:{ quantity: number}): Promise<UpdateCartItemResponse> {
+  const res = await request<ApiResponse<UpdateCartItemResponse>>(`${BASE_URL}/cart/items/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  return res.data!;
+}
+
 // Add item to cart
 export async function addToCart(data: AddToCartRequest): Promise<AddToCartResponse> {
   const res = await request<ApiResponse<AddToCartResponse>>(`${BASE_URL}/cart/add`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return res.data!;
+}
+
+
+//get cart summary
+export async function getCartSummary() {
+  const res = await request<ApiResponse<CartSummary>>(`${BASE_URL}/cart/summary`, {
+    method: "GET",
+  });
+  return res.data!;
+}
+
+export async function checkoutCart(data:CheckoutRequest) {
+  const res = await request<ApiResponse<void>>(`${BASE_URL}/cart/checkout`, {
     method: "POST",
     body: JSON.stringify(data),
   });
