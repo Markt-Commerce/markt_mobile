@@ -1,13 +1,11 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {View,Text,ScrollView,FlatList,ActivityIndicator,TouchableOpacity,TextInput,Image} from "react-native";
-import {  ArrowLeft,  Heart,  MessageCircle,  Send,  Image as ImageIcon, X} from "lucide-react-native";
+import {  ArrowLeft,  Heart,  MessageCircle,  Send,  Image as ImageIcon, X, SendHorizonal} from "lucide-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { getPostById, getPostComments, likePost } from "../../services/sections/post";
 import { CommentItem, CommentResponse, PostDetails } from "../../models/post";
 
 
-
-// --- Component Definitions ---
 
 // Helper component for comment rendering
 const SingleCommentComponent = React.memo(({ comment }: { comment: CommentItem }) => {
@@ -271,9 +269,16 @@ export default function PostDetailsScreen() {
                 </View>
               </View>
             </View>
+            <View>
+              <TouchableOpacity 
+                className="flex items-center justify-center p-1.5"
+                onPress={() => console.log("add a comment")}
+                >
+                <SendHorizonal color="#000000" size={20}/>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-        {/* The last div acts as bottom padding in the original HTML */}
         <View className="h-5 bg-white"></View>
       </View>
     </View>

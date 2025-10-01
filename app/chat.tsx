@@ -1,22 +1,12 @@
 // /screens/ChatScreen.tsx
 import React, { useEffect, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  Image,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-} from "react-native";
+import { View, Text, FlatList, Image, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from "react-native";
 import { ArrowLeft, Phone, Image as ImageIcon, Camera, Send as SendIcon, ThumbsUp } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import chatSocket from "../services/chatSock";
 import { getRoomMessages, markRoomRead, sendMessageREST, sendProductMessageMock, addReaction, removeReaction } from "../services/sections/chat";
 import { ChatMessage } from "../models/chat";
+import { addToCart } from "../services/sections/cart";
 
 type Props = {
   route: { params: { roomId: number; otherUser?: { username?: string; profile_picture?: string } } };
@@ -311,7 +301,7 @@ export default function ChatScreen({ route, navigation }: Props) {
     if (!productId) return Alert.alert("Missing product id");
     // implement addToCart using your cart service
     try {
-      // await addToCart({ product_id: productId, variant_id: 0, quantity: 1 });
+      await addToCart({ product_id: productId, variant_id: 0, quantity: 1 });
       Alert.alert("Added to cart", `Product ${productId} added to cart (mock).`);
     } catch (e) {
       Alert.alert("Error", "Could not add to cart.");
