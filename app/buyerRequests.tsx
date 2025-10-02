@@ -1,5 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { ArrowLeft, ChevronDown, User } from 'lucide-react-native';
+import React from 'react';
 
 const buyers = [
   {

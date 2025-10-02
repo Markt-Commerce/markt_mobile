@@ -57,8 +57,28 @@ export default function UserInfoScreen() {
     delete updatedRegData.seller_data; // ensure we’re on the buyer path
     setRegData(updatedRegData);
 
-    // ✅ Navigate to NEXT step immediately so the flow continues
-    router.push(NEXT_ROUTE);
+    // send the user data to the backend here
+    // may move this later to a another signup step
+
+    console.log("Submitting user data:", regData);
+    try {
+      const userRegResult = await registerUser(regData)
+      //store user in secure store
+      /* await SecureStore.setItemAsync('user', JSON.stringify({
+        email: regData.email,
+        password: regData.password,
+        userType: regData.account_type,
+      })); */
+      setUser({
+        email: userRegResult.email.toLowerCase(),
+        account_type: userRegResult.account_type,
+      }); //store user data in context
+      console.log("Registration successful:", userRegResult);
+      router.push("/emailVerification");
+    } catch (error) {
+        console.error("Registration failed:", error);
+    }
+  }
 
     // ─────────────────────────────────────────────────────────────────────────
     // REAL API (commented until your backend step is ready)

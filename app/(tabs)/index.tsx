@@ -10,11 +10,28 @@ import ProductFormBottomSheet from "../../components/productCreateBottomSheet";
 import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BuyerRequestFormBottomSheet from "../../components/buyerRequestBottomSheet";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { createPost } from "../../services/sections/post";
+import { createProduct } from "../../services/sections/product";
+import { createBuyerRequest } from "../../services/sections/request";
+import { CreateProductRequest, PlaceholderProduct } from "../../models/products";
+import { Category } from "../../models/categories";
 
 export default function FeedScreen() {
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
+
+  //for create product
+  const [productCategories, setProductCategories] = useState<Category[]>([]);
+  const [productImages, setProductImages] = useState<string[]>([]);
+
+  //for create post
+  const [postCategories, setPostCategories] = useState<Category[]>([]);
+  const [postProducts, setPostProducts] = useState<PlaceholderProduct[]>([]);
+  const [postImages, setpostImages] = useState<string[]>([]);
+
+  //for request
+  const [requestImages, setRequestImages] = useState<string[]>([]);
 
   const { role, setUser, user } = useUser();
   const snapPoints = useMemo(() => ["30%"], []);
@@ -56,7 +73,7 @@ export default function FeedScreen() {
         }
         newItems = groupedProducts.map((group) => ({ type: "product", data: group }));
       } else if (fetchType === "post") {
-        const posts = await getPosts(page, 5);
+        const posts = await getPosts(page, 7);
         newItems = posts.map((p) => ({ type: "post", data: p }));
       } else {
         const requests = await getBuyerRequests(page, 5);
@@ -268,10 +285,34 @@ export default function FeedScreen() {
         </BottomSheetView>
       </BottomSheet>
 
-      {/* Imported Bottom Sheets (unchanged logic) */}
-      <ProductFormBottomSheet ref={productFormRef} onSubmit={async ()=> console.log("")}/>
-      <PostFormBottomSheet ref={postFormRef} onSubmit={()=> console.log("")}/>
-      <BuyerRequestFormBottomSheet ref={requestFormRef} onSubmit={()=> console.log("")}/>
-    </SafeAreaView>
+      {/* Imported Bottom Sheets */}
+      <ProductFormBottomSheet ref={productFormRef} productCategories={productCategories} onSubmit={async (product) => {
+        try {
+          const newProduct = await createProduct(product as CreateProductRequest);
+          productFormRef.current?.close();
+        } catch (error) {
+          console.error("Error creating product:", error);
+        }
+      }}/>
+      <PostFormBottomSheet ref={postFormRef} productCategories={productCategories} products={postProducts} postImages={postImages} onSubmit={async (data) => {
+        try {
+          data.products = postProducts.map((prod) => { return { product_id: prod.id }; });
+          const newPost = await createPost(data);
+          console.log("post: ",newPost)
+          //set feed later to show new post on top
+          postFormRef.current?.close();
+        } catch (error) {
+          console.error("Error creating post:", error);
+        }
+      }}/>
+      <BuyerRequestFormBottomSheet ref={requestFormRef} requestImages={requestImages} onSubmit={async(request) => {
+        try {
+          const newRequest = await createBuyerRequest(request);
+          requestFormRef.current?.close();
+        } catch (error) {
+          console.error("Error creating request:", error);
+        }
+      }}/>
+    </View>
   );
 }

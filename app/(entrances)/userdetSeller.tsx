@@ -84,7 +84,7 @@ const ShopInformationScreen = () => {
           email: userRegResult.email.toLowerCase(),
           account_type: userRegResult.account_type,
         });
-        router.push("/");
+        router.push("/emailVerification");
     } catch (error) {
         console.error("Registration failed:", error);
     }

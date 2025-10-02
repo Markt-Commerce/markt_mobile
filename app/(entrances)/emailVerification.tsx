@@ -6,50 +6,62 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useUser } from "../../hooks/userContextProvider";
 import { useRegData } from "../../models/signupSteps";
-// import { verifyEmailCode, registerUser } from "../services/sections/auth"; // <- when backend is ready
+import { sendVerificationEmail, verifyEmail } from "../../services/sections/auth";
+import { register,useRegData } from "../../models/signupSteps";
+import React from "react";
 
-export default function EmailVerification() {
+import { z } from "zod";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "../../components/inputs";
+const EmailVerification = () => {
+
   const router = useRouter();
   const { setUser } = useUser();
   const { regData } = useRegData();
 
   const [code, setCode] = React.useState("");
 
-  const canContinue = code.length === 4; // any 4 digits for now
-  const NEXT_ROUTE = "/"; // change if your next screen differs
+  const schema = z.object({
+    code: z.string().min(6, "Verification code must be 6 characters long").max(6, "Verification code must be 6 characters long"),
+  });
 
-  const handleVerify = async () => {
-    if (!canContinue) return;
+  type FormData = z.infer<typeof schema>;
 
+  const { control, handleSubmit, formState: { errors, isValid } } = useForm({
+    resolver: zodResolver(schema),
+    mode: "onChange"
+  });
 
-    // Navigate immediately
-    router.replace(NEXT_ROUTE);
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // REAL VERIFY (commented until backend is ready)
-    // NOTE: prefer sending the fresh `regData` from memory; do NOT rely on stale copies.
-    //
-    // try {
-    //   // 1) Verify the code
-    //   await verifyEmailCode({ email: regData.email, code });
-    //
-    //   // 2) Optionally finalize registration if your API needs it
-    //   // const userRegResult = await registerUser(regData);
-    //   // setUser({
-    //   //   email: userRegResult.email.toLowerCase(),
-    //   //   account_type: userRegResult.account_type,
-    //   //   username: userRegResult.username,
-    //   //   full_name: userRegResult.full_name,
-    //   //   profile_picture_url: userRegResult.profile_picture_url,
-    //   //   created_at: userRegResult.created_at,
-    //   // });
-    //   // router.replace(NEXT_ROUTE);
-    // } catch (err) {
-    //   // If verification fails, show a message and keep user here
-    //   console.error("Verification failed:", err);
-    // }
-    // ─────────────────────────────────────────────────────────────────────────
+  const handleSendVerificationCode = async () => {
+    try {
+      if (!regData?.email) {
+        console.error("User email is not available.");
+        return;
+      }
+      await sendVerificationEmail(regData.email);
+      setVerificationCodeSent(true);
+    } catch (error) {
+      console.error("Failed to send verification code:", error);
+    }
   };
+
+  const handleSubmitCode = (data: FormData) => {
+    // Handle code submission and verification here
+    try{
+      if (!regData?.email) {
+        console.error("User email is not available.");
+        return;
+      }
+      const verificationResult = verifyEmail(regData.email, data.code);
+      if(!verificationResult) throw new Error("Verification failed");
+      console.log("Email verified successfully:", verificationResult);
+      router.replace("/"); // Navigate to home or another appropriate screen after verification
+    }
+    catch(error){
+      console.error("Email verification failed:", error);
+    }
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -100,6 +112,25 @@ export default function EmailVerification() {
               activeOpacity={0.8}
             >
               <Text className="text-sm text-[#E94C2A] underline">Resend code</Text>
+          </>
+        ) : (
+          <>
+            <Text className="text-[#171212] text-[28px] font-bold leading-tight text-center pb-3 pt-5">
+              Verification Code Sent
+            </Text>
+            <Text className="text-[#171212] text-base text-center pb-6">
+              A verification code has been sent to your email address. Please
+              check your inbox and enter the code below.
+            </Text>
+            <Input placeholder="Verification Code" control={control} name="code" errors={errors} />
+            {errors.code && <Text className="text-[#e9242a] text-sm font-normal">{errors.code.message}</Text>}
+            <TouchableOpacity
+              className="bg-[#e9242a] rounded-full px-5 py-3"
+              onPress={handleSubmit(handleSubmitCode)}
+            >
+              <Text className="text-white text-base font-bold">
+                Submit Code
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
