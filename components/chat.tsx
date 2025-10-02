@@ -8,12 +8,12 @@ import { getRoomMessages, markRoomRead, sendMessageREST, sendProductMessageMock,
 import { ChatMessage } from "../models/chat";
 import { addToCart } from "../services/sections/cart";
 
-type Props = {
-  route: { params: { roomId: number; otherUser?: { username?: string; profile_picture?: string } } };
+export type ChatProps = {
+  route: { params: { roomId: number; otherUser?: { username?: string; profile_picture?: string, user_id: string } } };
   navigation: any;
 };
 
-export default function ChatScreen({ route, navigation }: Props) {
+export default function ChatScreen({ route, navigation }: ChatProps) {
   const { roomId, otherUser } = route.params;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,21 +23,6 @@ export default function ChatScreen({ route, navigation }: Props) {
   const [page, setPage] = useState(1);
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
-  useEffect(() => {
-    navigation.setOptions({
-      title: otherUser?.username ?? "Chat",
-      headerLeft: () => (
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ paddingLeft: 12 }}>
-          <ArrowLeft size={22} color="#1b0e0e" />
-        </TouchableOpacity>
-      ),
-      headerRight: () => (
-        <TouchableOpacity onPress={() => { /* phone action */ }} style={{ paddingRight: 12 }}>
-          <Phone size={22} color="#1b0e0e" />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, otherUser]);
 
   // load messages (first page)
   useEffect(() => {

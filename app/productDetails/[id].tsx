@@ -1,5 +1,5 @@
 // app/product/[id].tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { View, Text, Image, ScrollView, ActivityIndicator, TouchableOpacity, ImageBackground, Pressable, FlatList } from "react-native";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { getProductById } from "../../services/sections/product";
@@ -9,6 +9,9 @@ import { addToCart } from "../../services/sections/cart";
 import { getRecommendedProducts } from "../../services/sections/feed";
 import { Product } from "../../models/feed";
 import { SafeAreaView } from "react-native-safe-area-context";
+import BottomSheet from "@gorhom/bottom-sheet";
+import QuickChatBottomSheet from "../../components/quickChatBottomSheet";
+import { useUser } from "../../hooks/userContextProvider";
 
 
 export default function ProductDetails() {
@@ -21,26 +24,29 @@ export default function ProductDetails() {
     delivery: false,
   });
   const router = useRouter();
+  const {user, role} = useUser();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [product, setProduct] = useState<ProductDetail>();
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
+  const ChatBottomSheetRef = useRef<BottomSheet>(null);
 
   const toggleDetail = (key: string) => {
     setOpenDetails((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const [similarProducts, setSimilarProducts] = useState<Product[]>([])
+  const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
 
-  const getOtherProducts = async ()=>{
+
+  const getOtherProducts = async () => {
     try {
-    const products = await getRecommendedProducts(page);
-    setSimilarProducts((prev)=>[...prev,...products])
-  }
-  catch (err) {
-    //todo: work on displaying errors to users
-    console.error("Failed to fetch product:", err);
-  }
+      const products = await getRecommendedProducts(page);
+      setSimilarProducts((prev)=>[...prev,...products])
+    }
+    catch (err) {
+      //todo: work on displaying errors to users
+      console.error("Failed to fetch product:", err);
+    }
   }
 
   const fetchProduct = async (id: string) => {
@@ -96,15 +102,21 @@ const addProductToCart = async (product:ProductDetail)=>{
         >
         </ImageBackground>
 
-        {/* Buttons */}
-        <View className="flex-row justify-center gap-3 p-4">
-          <TouchableOpacity className="flex-1 bg-gray-200 rounded-lg h-10 justify-center items-center" onPress={() => addProductToCart(product)}>
-            <Text className="text-[#171311] font-bold">Add to Cart</Text>
-          </TouchableOpacity>
-          <TouchableOpacity className="flex-1 bg-[#e26136] rounded-lg h-10 justify-center items-center" onPress={()=>router.push("/chat")}>
-            <Text className="text-white font-bold">Message Seller</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Buttons: Only active if user is a buyer*/}
+        {
+          role == "buyer" &&
+          (
+            <View className="flex-row justify-center gap-3 p-4">
+              <TouchableOpacity className="flex-1 bg-gray-200 rounded-lg h-10 justify-center items-center" onPress={() => addProductToCart(product)}>
+                <Text className="text-[#171311] font-bold">Add to Cart</Text>
+              </TouchableOpacity>
+              <TouchableOpacity className="flex-1 bg-[#e26136] rounded-lg h-10 justify-center items-center" onPress={()=> ChatBottomSheetRef.current?.expand()}>
+                <Text className="text-white font-bold">Message Seller</Text>
+              </TouchableOpacity>
+            </View>
+          )
+        }
+
 
         {/* Product Info */}
         <Text className="px-4 pt-4 text-lg font-bold text-[#171311]">{product.name}</Text>
@@ -254,6 +266,8 @@ const addProductToCart = async (product:ProductDetail)=>{
         ) : null
       }
     />
+
+    <QuickChatBottomSheet sheetRef={ChatBottomSheetRef} sellerId={product.seller_id.toString()} buyerId={user?.user_id?.toString() || ""}/>
   </SafeAreaView>
 );
 

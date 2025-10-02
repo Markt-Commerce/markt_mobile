@@ -43,7 +43,6 @@ export default function FeedScreen() {
   const requestFormRef = useRef<BottomSheet>(null);
 
   const openMenu = () => {
-    console.log("Opening create menu");
     createMenuRef.current?.expand();
   };
   const closeMenu = () => createMenuRef.current?.close();

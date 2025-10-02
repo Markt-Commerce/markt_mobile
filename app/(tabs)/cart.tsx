@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
-import { getCart, updateCartItem, deleteCartItem, getCartSummary, checkoutCart } from "../services/sections/cart";
-import { Cart, CartItem, CartSummary, CheckoutRequest } from "../models/cart";
+import { getCart, updateCartItem, deleteCartItem, getCartSummary, checkoutCart } from "../../services/sections/cart";
+import { Cart, CartItem, CartSummary, CheckoutRequest } from "../../models/cart";
 
 export default function CartScreen() {
   const [cart, setCart] = useState<Cart | null>(null);
