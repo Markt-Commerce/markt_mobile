@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native'
 import React, { useEffect, useMemo, useState } from 'react'
-import BottomSheet from '@gorhom/bottom-sheet'
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet'
 import ChatScreen, {ChatProps} from './chat'
 import { createOrGetRoom } from '../services/sections/chat'
 import { ChatRoomLite } from '../models/chat'
@@ -48,12 +48,12 @@ export default function QuickChatBottomSheet({
 
     return (
         <BottomSheet ref={sheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose>
-            <View className="flex-1 p-2">
+            <BottomSheetView className="flex-1 p-2">
                 <ChatScreen
                     route={{ params: chatRouteParams }}
                     navigation={null}
                 />
-            </View>
+            </BottomSheetView>
         </BottomSheet>
     );
 }

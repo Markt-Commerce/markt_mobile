@@ -6,7 +6,7 @@ type UserRole = 'buyer' | 'seller' | null;
 interface User {
   account_type: UserRole; // 'buyer' or 'seller'
   email: string;
-  user_id?: number;
+  user_id?: string;
 }
 
 export interface UserContextType {

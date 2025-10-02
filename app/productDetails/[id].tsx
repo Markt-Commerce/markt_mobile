@@ -52,6 +52,7 @@ export default function ProductDetails() {
   const fetchProduct = async (id: string) => {
   try {
     const product = await getProductById(id);
+    console.log("product: ", product)
     setProduct(product);
   }
   catch (err) {
