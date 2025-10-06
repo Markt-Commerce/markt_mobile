@@ -1,37 +1,59 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Image, Switch } from "react-native";
-import {
-  ArrowLeft,
-  Bell,
-  Sun,
-  Globe,
-  User,
-  Lock,
-  CreditCard,
-  Truck,
-  Link as LinkIcon,
-  HelpCircle as Question,
-  FileText,
-  ShieldCheck,
-  Info,
-  ArrowRight,
-} from "lucide-react-native";
+import { ArrowLeft, Bell, Sun, Globe, User, Lock, CreditCard, Truck, Link as LinkIcon, HelpCircle as Question, FileText, ShieldCheck, Info, ArrowRight } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-
-// NOTE: When real user data, I'll uncomment the next line and the lines inside the commented blocks below.
-// import { useUser } from "../../hooks/userContextProvider";
+import { useUser } from "../../hooks/userContextProvider";
+import {getUserProfile, updateBuyerProfile, updateSellerProfile, updateUserProfile} from "../../services/sections/profile"
+import { UserProfile } from "../../models/profile";
 
 export default function SettingsProfileScreen() {
   const nav = useRouter();
 
-  // const { user } = useUser(); // <-- Real user from your provider
+  const { user } = useUser();
 
   const [notificationsOn, setNotificationsOn] = useState(true);
   const [appearance, setAppearance] = useState<"light" | "dark">("light");
   const [language, setLanguage] = useState<"EN" | "FR">("EN");
 
-  // Helpers
+  const [profileData, setProfileData] = useState<UserProfile>();
+
+  //get and set api functions.
+  const getUserData = async () => {
+    try {
+      const result = await getUserProfile();
+      setProfileData(result)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+  const setUserData = async () => {
+    try {
+      
+    } catch (error) {
+      console.error(error)
+    }
+  }
+  const getBuyerData = async () => {
+    try {
+      
+    } catch (error) {
+      console.error(error)
+    }
+  }
+  const getsellerData = async () => {
+    try {
+      
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  useEffect(()=>{
+    getUserProfile()
+  },[user])
+
+  //Helper Components
   const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
     <View className="w-full max-w-[640px] self-center px-4">
       <Text className="px-1 pt-6 pb-2 text-xs font-semibold uppercase tracking-wider text-[#8e7a74]">
@@ -81,33 +103,20 @@ export default function SettingsProfileScreen() {
 
   // ---------- Profile Data (placeholders + commented real-data usage) ----------
   const avatarUri =
-    // user?.profile_picture_url ?? 
+     profileData?.profile_picture_url ?? 
     "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=320&q=80&crop=faces,entropy";
 
-  const displayName =
-    // user?.full_name ?? // <-- e.g., `${user?.first_name} ${user?.last_name}`
-    "Sophia Carter";
+  const displayName = user?.account_type === "buyer" ? profileData?.buyer_account.buyername : user?.account_type === "seller" ? profileData?.seller_account.shop_name : "Guest";
 
-  const usernameText =
-    // user?.username ? `@${user.username}` : ""
-    "@sophia.carter";
+  const usernameText = `@${profileData?.username}`;
 
   const joinedYear =
-    // user?.created_at ? String(new Date(user.created_at).getFullYear()) : ""
-    "2021";
+    profileData?.created_at ? String(new Date(profileData.created_at).getFullYear()) : "now maybe";
 
   // Details (mark editable ones pressable; read-only ones not)
   const details = [
     { label: "Name", value: displayName, pressable: true, onPress: () => {/* nav.push('/edit/name') */} },
     { label: "Username", value: usernameText, pressable: true, onPress: () => {/* nav.push('/edit/username') */} },
-    {
-      label: "Gender",
-      value:
-        // user?.gender ?? // <-- real gender string
-        "Female",
-      pressable: true,
-      onPress: () => {/* nav.push('/edit/gender') */},
-    },
     {
       label: "Location",
       value:
@@ -116,7 +125,6 @@ export default function SettingsProfileScreen() {
       pressable: true,
       onPress: () => {/* nav.push('/edit/location') */},
     },
-    { label: "Joined", value: joinedYear, pressable: false },
   ];
 
   return (
@@ -140,34 +148,11 @@ export default function SettingsProfileScreen() {
         <View className="w-full max-w-[640px] self-center px-4">
           <View className="items-center rounded-2xl border border-[#efe9e7] bg-white px-5 py-6">
             <Image source={{ uri: avatarUri }} className="w-28 h-28 rounded-full" />
-            {/* --- When real user data is available ---
-            <Image
-              source={{ uri: user?.profile_picture_url ?? avatarUri }}
-              className="w-28 h-28 rounded-full"
-            />
-            --- end real-user block --- */}
             <Text className="text-[20px] font-bold text-[#171311] mt-3">{displayName}</Text>
-            {/* --- When real user data is available ---
-            <Text className="text-[20px] font-bold text-[#171311] mt-3">
-              {user?.full_name ?? displayName}
-            </Text>
-            --- end real-user block --- */}
 
             {usernameText ? <Text className="text-sm text-[#876d64]">{usernameText}</Text> : null}
-            {/* --- When real user data is available ---
-            {user?.username ? (
-              <Text className="text-sm text-[#876d64]">@{user.username}</Text>
-            ) : null}
-            --- end real-user block --- */}
 
             <Text className="text-sm text-[#876d64]">Joined {joinedYear}</Text>
-            {/* --- When real user data is available ---
-            {user?.created_at && (
-              <Text className="text-sm text-[#876d64]">
-                Joined {new Date(user.created_at).getFullYear()}
-              </Text>
-            )}
-            --- end real-user block --- */}
           </View>
         </View>
 
