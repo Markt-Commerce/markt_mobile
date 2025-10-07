@@ -322,7 +322,7 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
         keyExtractor={(it) => String(it.id)}
         renderItem={renderMessage}
         onEndReachedThreshold={0.2}
-        onEndReached={loadMore}
+        //onEndReached={loadMore}
         contentContainerStyle={{ paddingVertical: 8 }}
       />
 

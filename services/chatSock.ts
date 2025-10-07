@@ -8,9 +8,10 @@ import {
   OfflineQueueItem,
   TypingUpdate,
 } from "../models/chat";
+import { BASE_URL } from "./api";
 
 const CHAT_NAMESPACE = "/chat";
-const SOCKET_URL = `${process.env.EXPO_PUBLIC_API_URL ?? ""}${CHAT_NAMESPACE}`;
+const SOCKET_URL = "https://test.api.marktcommerce.com/api/v1/chat";
 
 // STORAGE & QUEUE
 const OFFLINE_QUEUE_KEY = "markt.chat.offlineQueue";

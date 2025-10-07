@@ -17,6 +17,7 @@ import { useUser } from "../../hooks/userContextProvider";
 export default function ProductDetails() {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [addedToCart, setAddedToCart] = useState<boolean>(false);
   const [openDetails, setOpenDetails] = useState<{ [key: string]: boolean }>({
     details: true,
     sizeFit: false,
@@ -52,7 +53,6 @@ export default function ProductDetails() {
   const fetchProduct = async (id: string) => {
   try {
     const product = await getProductById(id);
-    console.log("product: ", product)
     setProduct(product);
   }
   catch (err) {
@@ -64,7 +64,7 @@ export default function ProductDetails() {
 const addProductToCart = async (product:ProductDetail)=>{
   try {
       const res = await addToCart({product_id: product.id,variant_id:0,quantity});
-      console.log("done adding to cart")
+      setAddedToCart(true);
     } catch (error) {
       console.error("couldn't add to cart: ", error)
     }
@@ -108,8 +108,15 @@ const addProductToCart = async (product:ProductDetail)=>{
           role == "buyer" &&
           (
             <View className="flex-row justify-center gap-3 p-4">
-              <TouchableOpacity className="flex-1 bg-gray-200 rounded-lg h-10 justify-center items-center" onPress={() => addProductToCart(product)}>
-                <Text className="text-[#171311] font-bold">Add to Cart</Text>
+              <TouchableOpacity className="flex-1 rounded-lg h-10 justify-center items-center" disabled={addedToCart}
+              style={{
+                    backgroundColor: addedToCart ? "#178b1fff" : "#e2e2e2ff",
+                  }} 
+              onPress={() => addProductToCart(product)}>
+                <Text className="text-[#171311] font-bold"
+                style={{
+                    color: addedToCart ? "#ffffff" : "#171311",
+                  }}>{!addedToCart ? "Add to Cart" : "Added"}</Text>
               </TouchableOpacity>
               <TouchableOpacity className="flex-1 bg-[#e26136] rounded-lg h-10 justify-center items-center" onPress={()=> ChatBottomSheetRef.current?.expand()}>
                 <Text className="text-white font-bold">Message Seller</Text>
@@ -268,9 +275,10 @@ const addProductToCart = async (product:ProductDetail)=>{
       }
     />
 
-    <QuickChatBottomSheet sheetRef={ChatBottomSheetRef} sellerId={product.seller_id.toString()} buyerId={user?.user_id?.toString() || ""}/>
+    <QuickChatBottomSheet sheetRef={ChatBottomSheetRef} sellerId={product.seller_user.id} buyerId={user?.user_id?.toString() || ""}/>
   </SafeAreaView>
 );
+
 
 }
 

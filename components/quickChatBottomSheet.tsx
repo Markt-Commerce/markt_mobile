@@ -28,7 +28,6 @@ export default function QuickChatBottomSheet({
     useEffect(() => {
         const fetchRoomData = async () => {
             try {
-                console.log("seller id: ", sellerId, "buyer_id: ",buyerId)
                 const result = await createOrGetRoom({
                     seller_id: sellerId,
                     buyer_id: buyerId
@@ -39,11 +38,10 @@ export default function QuickChatBottomSheet({
             }
         };
         fetchRoomData();
-    }, [roomData]);
+    }, [sellerId,buyerId]);
 
     const chatRouteParams = {
         roomId: roomData?.id || 0,
-        // otherUser can be added here if needed, e.g. otherUser: { username, profile_picture, user_id }
     };
 
     return (

@@ -29,44 +29,32 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <Home color={color} fill={color} />,
         }}
       />
-      <Tabs.Screen
-        name="orders"
-        options={{
-          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <Heart color={color} />,
-        }}
-      />
-      {/* <Tabs.Screen 
-        name="shop"
-        options={{
-          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <Badge color={color} />,
-        }}
-      /> */}
       <Tabs.Screen 
         name="sellerDashboard"
         options={{
           tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <ChartColumnStackedIcon color={color} />,
-          href: (role != 'seller') ? null : undefined, // Hide this tab if the user is not a seller
+          href: (role != 'seller') ? null : undefined,
         }}
       /> 
       <Tabs.Screen 
         name="cart"
         options={{
           tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <ShoppingBasket color={color} />,
-          href: (role != 'buyer') ? null : undefined, // Hide this tab if the user is not a seller
+          href: (role != 'buyer') ? null : undefined,
         }}
       /> 
       <Tabs.Screen 
         name="buyerOrders"
         options={{
           tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <ListOrdered color={color} />,
-          href: (role != 'buyer') ? null : undefined, // Hide this tab if the user is not a seller
+          href: (role != 'buyer') ? null : undefined, 
         }}
       /> 
       <Tabs.Screen 
         name="sellerOrders"
         options={{
           tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <ListOrdered color={color} />,
-          href: (role != 'seller') ? null : undefined, // Hide this tab if the user is not a seller
+          href: (role != 'seller') ? null : undefined,
         }}
       /> 
       <Tabs.Screen
@@ -78,9 +66,3 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
-
-//seller: feed, orders, profile,
-//buyer: feed, orders, profile, 
-
-//seller top tab: post, chat, shop
-//buyer top tab: post, cart, chat
