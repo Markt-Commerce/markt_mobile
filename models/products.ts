@@ -41,6 +41,7 @@ export interface Product {
     variants: Variant[];
     images: ProductImage[];
     seller: Seller;
+    seller_user:SellerUser;
   }
 
   
@@ -110,6 +111,12 @@ export interface Product {
     average_rating: number;
     total_products: number;
     verification_status: string;
+  }
+
+  interface SellerUser{
+    id: string;
+    profile_picture: string; 
+    username: string;
   }
   
 export interface PlaceholderProduct {

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
-import { View, Text, FlatList, TouchableOpacity, Image, ImageBackground, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, Image, ImageBackground, ActivityIndicator, Pressable } from "react-native";
 import { Plus, ShoppingCart, MessageCircle, Heart, Send, Star } from "lucide-react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { Link } from "expo-router";
@@ -10,7 +10,7 @@ import ProductFormBottomSheet from "../../components/productCreateBottomSheet";
 import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BuyerRequestFormBottomSheet from "../../components/buyerRequestBottomSheet";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { createPost } from "../../services/sections/post";
+import { createPost,likePost } from "../../services/sections/post";
 import { createProduct } from "../../services/sections/product";
 import { createBuyerRequest } from "../../services/sections/request";
 import { CreateProductRequest, PlaceholderProduct } from "../../models/products";
@@ -43,7 +43,6 @@ export default function FeedScreen() {
   const requestFormRef = useRef<BottomSheet>(null);
 
   const openMenu = () => {
-    console.log("Opening create menu");
     createMenuRef.current?.expand();
   };
   const closeMenu = () => createMenuRef.current?.close();
@@ -90,6 +89,10 @@ export default function FeedScreen() {
   useEffect(() => {
     loadFeed();
   }, []);
+
+
+  //social functions
+
 
   // Header Component (visuals only)
   const Header = () => (
@@ -187,10 +190,10 @@ export default function FeedScreen() {
           <TouchableOpacity activeOpacity={0.85} className="px-4 pt-3">
             <View className="rounded-2xl border border-[#efe9e7] bg-white p-4">
               <View className="flex-row items-center mb-3">
-                <Image source={{ uri: post.seller?.profile_picture_url }} className="w-10 h-10 rounded-full mr-3" />
+                <Image source={{ uri: post.user?.profile_picture_url }} className="w-10 h-10 rounded-full mr-3" />
                 <View>
-                  <Text className="font-semibold text-[#111418]">{post.seller?.shop_name}</Text>
-                  <Text className="text-xs text-[#876d64]">Shop post</Text>
+                  <Text className="font-semibold text-[#111418]">{post.user?.username}</Text> {/* Ask the backend to provide the actual name i.e shop or buyer name to include here */}
+                  <Text className="text-xs text-[#876d64]">Post</Text>
                 </View>
               </View>
 
@@ -206,16 +209,26 @@ export default function FeedScreen() {
               )}
 
               <View className="flex-row justify-between mt-3">
-                <View className="flex-row items-center gap-2">
+                <Pressable className="flex-row items-center gap-2" onPress={async ()=>{
+                  console.log("liking")
+                  try {
+                    //work on this later... liking should be toggled for each post
+                    const res = await likePost(post.id);
+                    post.like_count++;
+                  } catch (error) {
+                   console.error("unable to like this post") 
+                  }
+                }}>
                   <Heart size={18} color="#60758a" />
                   <Text className="text-[#111418]">{post.like_count}</Text>
-                </View>
-                <View className="flex-row items-center gap-2">
+                </Pressable>
+                <Pressable className="flex-row items-center gap-2">
                   <MessageCircle size={18} color="#60758a" />
                   <Text className="text-[#111418]">{post.comment_count}</Text>
-                </View>
-                <Send size={18} color="#60758a" />
-                <Star size={18} color="#60758a" />
+                </Pressable>
+                <Pressable>
+                  <Send size={18} color="#60758a" />
+                </Pressable>
               </View>
             </View>
           </TouchableOpacity>
@@ -252,12 +265,10 @@ export default function FeedScreen() {
         contentContainerStyle={{ paddingBottom: 20 }}
       />
 
-      {/* Create Menu Bottom Sheet (visual tweaks only) */}
       <BottomSheet ref={createMenuRef} index={-1} snapPoints={snapPoints} enablePanDownToClose>
         <BottomSheetView className="flex-1 p-4">
           <Text className="text-lg font-extrabold mb-2 text-[#111418]">Create</Text>
 
-          {/* kept your role gating & onPress handlers exactly the same */}
           {role === "buyer" && (
             <>
               <TouchableOpacity onPress={() => openForm("request")} className="border-b border-[#f0e9e7] py-4" hitSlop={{top:8,bottom:8,left:8,right:8}}>

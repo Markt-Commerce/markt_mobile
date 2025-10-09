@@ -107,7 +107,8 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
     React.useEffect(() => {
       async function fetchProducts() {
         try {
-          const products = await getSellerProducts(user?.user_id || 0); //assuming user_id is available in user context
+          //work on this later. user_id is a string. Might bring up a Nan if we don't check properly
+          const products = await getSellerProducts(Number(user?.user_id) || 0); //ensure user_id is a number
           setProductList(products);
         } catch (error) {
           console.error("Failed to fetch products:", error);

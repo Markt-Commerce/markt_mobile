@@ -1,29 +1,19 @@
 // /screens/ChatScreen.tsx
 import React, { useEffect, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  Image,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-} from "react-native";
-import { ArrowLeft, Phone, Image as ImageIcon, Camera, Send as SendIcon, ThumbsUp } from "lucide-react-native";
+import { View, Text, FlatList, Image, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from "react-native";
+import { ArrowLeft, Phone, Image as ImageIcon, Camera, Send as SendIcon, ThumbsUp, ShoppingBag } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import chatSocket from "../services/chatSock";
 import { getRoomMessages, markRoomRead, sendMessageREST, sendProductMessageMock, addReaction, removeReaction } from "../services/sections/chat";
 import { ChatMessage } from "../models/chat";
+import { addToCart } from "../services/sections/cart";
 
-type Props = {
-  route: { params: { roomId: number; otherUser?: { username?: string; profile_picture?: string } } };
+export type ChatProps = {
+  route: { params: { roomId: number; otherUser?: { username?: string; profile_picture?: string, user_id: string } } };
   navigation: any;
 };
 
-export default function ChatScreen({ route, navigation }: Props) {
+export default function ChatScreen({ route, navigation }: ChatProps) {
   const { roomId, otherUser } = route.params;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,21 +23,6 @@ export default function ChatScreen({ route, navigation }: Props) {
   const [page, setPage] = useState(1);
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
-  useEffect(() => {
-    navigation.setOptions({
-      title: otherUser?.username ?? "Chat",
-      headerLeft: () => (
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ paddingLeft: 12 }}>
-          <ArrowLeft size={22} color="#1b0e0e" />
-        </TouchableOpacity>
-      ),
-      headerRight: () => (
-        <TouchableOpacity onPress={() => { /* phone action */ }} style={{ paddingRight: 12 }}>
-          <Phone size={22} color="#1b0e0e" />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, otherUser]);
 
   // load messages (first page)
   useEffect(() => {
@@ -56,6 +31,7 @@ export default function ChatScreen({ route, navigation }: Props) {
       setLoading(true);
       try {
         const res = await getRoomMessages(roomId, 1, 50);
+        console.log("room id", roomId)
         if (!mounted) return;
         setMessages(res.messages ?? []);
         setPage(2);
@@ -139,7 +115,6 @@ export default function ChatScreen({ route, navigation }: Props) {
       // add optimistic message to UI
       const temp: ChatMessage = {
         id: `c_${client_id}`,
-        client_id,
         room_id: roomId,
         sender_id: "ME",
         content,
@@ -185,7 +160,6 @@ export default function ChatScreen({ route, navigation }: Props) {
 
       const temp: ChatMessage = {
         id: `c_${client_id}`,
-        client_id,
         room_id: roomId,
         sender_id: "ME",
         content: uploadedUrl,
@@ -311,7 +285,7 @@ export default function ChatScreen({ route, navigation }: Props) {
     if (!productId) return Alert.alert("Missing product id");
     // implement addToCart using your cart service
     try {
-      // await addToCart({ product_id: productId, variant_id: 0, quantity: 1 });
+      await addToCart({ product_id: productId, variant_id: 0, quantity: 1 });
       Alert.alert("Added to cart", `Product ${productId} added to cart (mock).`);
     } catch (e) {
       Alert.alert("Error", "Could not add to cart.");
@@ -347,7 +321,7 @@ export default function ChatScreen({ route, navigation }: Props) {
         keyExtractor={(it) => String(it.id)}
         renderItem={renderMessage}
         onEndReachedThreshold={0.2}
-        onEndReached={loadMore}
+        //onEndReached={loadMore}
         contentContainerStyle={{ paddingVertical: 8 }}
       />
 
@@ -374,7 +348,7 @@ export default function ChatScreen({ route, navigation }: Props) {
             <Camera color="#994d51" size={20} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => { /* open product picker */ handleSendProduct("PRD_001"); }} style={{ padding: 8 }}>
-            <Text style={{ color: "#994d51", fontWeight: "600" }}>Product</Text>
+            <ShoppingBag color="#994d51" size={20} />
           </TouchableOpacity>
         </View>
 

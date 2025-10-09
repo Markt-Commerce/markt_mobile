@@ -53,6 +53,7 @@ export default function LoginScreen() {
       setUser({
         email: userData.email.toLowerCase(),
         account_type: userData.account_type,
+        user_id: userData.id
       });
       router.replace("/");
     }

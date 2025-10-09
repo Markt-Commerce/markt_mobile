@@ -1,6 +1,6 @@
 // /services/chatApi.ts
 import { request, BASE_URL } from "../api";
-import { ChatMessage, RoomListResponse, MessagesResponse, OfferPayload } from "../../models/chat";
+import { ChatMessage, RoomListResponse, MessagesResponse, OfferPayload, ChatRoomLite } from "../../models/chat";
 
 /**
  * Get user's rooms (paginated)
@@ -12,7 +12,7 @@ export async function getRooms(page = 1, per_page = 20): Promise<RoomListRespons
   return res!;
 }
 
-/**s
+/**
  * Create or get a room with buyer/seller/product/request
  */
 export async function createOrGetRoom(payload: {
@@ -20,8 +20,8 @@ export async function createOrGetRoom(payload: {
   seller_id?: string;
   product_id?: string;
   request_id?: string;
-}): Promise<{ id: number; buyer_id: string; seller_id: string; product_id?: string; request_id?: string }> {
-  const res = await request<any>(`${BASE_URL}/chats/rooms`, {
+}): Promise<ChatRoomLite> {
+  const res = await request<ChatRoomLite>(`${BASE_URL}/chats/rooms`, {
     method: "POST",
     body: JSON.stringify(payload),
   });

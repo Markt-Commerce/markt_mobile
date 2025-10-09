@@ -1,6 +1,6 @@
 // /services/postService.ts
 import { request, BASE_URL } from "../api";
-import { CreatePostRequest, PostResponse } from "../../models/post";
+import { CommentResponse, CreatePostRequest, PostDetails, PostResponse } from "../../models/post";
 import { ApiResponse } from "../../models/auth";
 
 /**
@@ -10,6 +10,27 @@ export async function createPost(payload: CreatePostRequest): Promise<PostRespon
   const res = await request<ApiResponse<PostResponse>>(`${BASE_URL}/socials/posts`, {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+  return (res as any).data ?? (res as any);
+}
+
+export async function likePost(postId:string) {
+  const res = await request<ApiResponse<PostResponse>>(`${BASE_URL}/socials/posts/${postId}/like`, {
+    method: "POST"
+  });
+  return (res as any).data ?? (res as any);
+}
+
+export async function getPostById(postId:string):Promise<PostDetails>{
+  const res = await request<ApiResponse<PostDetails>>(`${BASE_URL}/socials/posts/${postId}`, {
+    method: "GET"
+  });
+  return (res as any).data ?? (res as any);
+}
+
+export async function getPostComments(postId:string, page: number):Promise<CommentResponse> {
+  const res = await request<ApiResponse<CommentResponse>>(`${BASE_URL}/socials/posts/${postId}/comments`, {
+    method: "GET"
   });
   return (res as any).data ?? (res as any);
 }
