@@ -190,10 +190,10 @@ export default function FeedScreen() {
           <TouchableOpacity activeOpacity={0.85} className="px-4 pt-3">
             <View className="rounded-2xl border border-[#efe9e7] bg-white p-4">
               <View className="flex-row items-center mb-3">
-                <Image source={{ uri: post.seller?.profile_picture_url }} className="w-10 h-10 rounded-full mr-3" />
+                <Image source={{ uri: post.user?.profile_picture_url }} className="w-10 h-10 rounded-full mr-3" />
                 <View>
-                  <Text className="font-semibold text-[#111418]">{post.seller?.shop_name}</Text>
-                  <Text className="text-xs text-[#876d64]">Shop post</Text>
+                  <Text className="font-semibold text-[#111418]">{post.user?.username}</Text> {/* Ask the backend to provide the actual name i.e shop or buyer name to include here */}
+                  <Text className="text-xs text-[#876d64]">Post</Text>
                 </View>
               </View>
 
