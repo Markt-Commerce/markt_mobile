@@ -112,7 +112,7 @@ export default function PostDetailsScreen() {
       {/* User Info: change to user once done in the backend to allow all users to post */}
       <View className="flex flex-row gap-4 bg-white px-4 min-h-[72px] py-2">
         <Image
-          source={{ uri: post.seller.profile_picture_url }}
+          source={{ uri: post.seller.profile_picture_url || "https://i.pravatar.cc/150?img=7" }}
           className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-14 w-fit"
         />
         <View className="flex flex-col justify-center">

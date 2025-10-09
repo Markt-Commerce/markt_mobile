@@ -80,7 +80,7 @@ const addProductToCart = async (product:ProductDetail)=>{
   <SafeAreaView className="flex-1 bg-white">
     <FlatList
       data={similarProducts}
-      keyExtractor={(item) => item.id.toString()}
+      keyExtractor={(item) => item.id.toString()+Math.random().toString()}
       ListHeaderComponent={
         <>
 

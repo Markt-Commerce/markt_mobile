@@ -265,12 +265,10 @@ export default function FeedScreen() {
         contentContainerStyle={{ paddingBottom: 20 }}
       />
 
-      {/* Create Menu Bottom Sheet (visual tweaks only) */}
       <BottomSheet ref={createMenuRef} index={-1} snapPoints={snapPoints} enablePanDownToClose>
         <BottomSheetView className="flex-1 p-4">
           <Text className="text-lg font-extrabold mb-2 text-[#111418]">Create</Text>
 
-          {/* kept your role gating & onPress handlers exactly the same */}
           {role === "buyer" && (
             <>
               <TouchableOpacity onPress={() => openForm("request")} className="border-b border-[#f0e9e7] py-4" hitSlop={{top:8,bottom:8,left:8,right:8}}>

@@ -156,9 +156,8 @@ class ChatSocket {
     message_type: MessageType,
     content: string,
     message_data?: Record<string, any> | null
-  ): Promise<string /*client_id*/> {
-    const client_id = uuid();
-    const payload = { room_id, message: content, message_type, message_data, client_id };
+  ): Promise<void /*client_id*/> {
+    const payload = { room_id, message: content, message_type, message_data };
 
     if (this.connected) {
       // try with ack first, fallback to fire-and-forget
@@ -180,9 +179,9 @@ class ChatSocket {
         setTimeout(() => { if (!resolved) resolve(); }, 9000);
       });
     } else {
-      await this.queue({ event: "message", payload, client_id });
+      await this.queue({ event: "message", payload });
     }
-    return client_id;
+    //return client_id;
   }
 
   // convenience wrappers
@@ -207,15 +206,13 @@ class ChatSocket {
   }
 
   // ===== Offers =====
-  async sendOffer(data: OfferPayload): Promise<string /*client_id*/> {
-    const client_id = uuid();
-    const payload = { ...data, client_id };
+  async sendOffer(data: OfferPayload): Promise<void /*client_id*/> {
+    const payload = { ...data};
     if (this.connected) {
       this.socket?.emit("send_offer", payload);
     } else {
-      await this.queue({ event: "send_offer", payload, client_id });
+      await this.queue({ event: "send_offer", payload });
     }
-    return client_id;
   }
 
   async respondToOffer(data: OfferResponsePayload): Promise<void> {

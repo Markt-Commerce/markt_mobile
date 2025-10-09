@@ -95,7 +95,7 @@ export interface CreatePostRequest {
     average_rating: number;
     shop_name: string;
     verification_status: "unverified" | "verified";
-    profile_picture_url: string;
+    profile_picture_url?: string;
     shop_slug: string;
     id: number;
     total_products: number;

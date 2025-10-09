@@ -1,7 +1,7 @@
 // /screens/ChatScreen.tsx
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from "react-native";
-import { ArrowLeft, Phone, Image as ImageIcon, Camera, Send as SendIcon, ThumbsUp } from "lucide-react-native";
+import { ArrowLeft, Phone, Image as ImageIcon, Camera, Send as SendIcon, ThumbsUp, ShoppingBag } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import chatSocket from "../services/chatSock";
 import { getRoomMessages, markRoomRead, sendMessageREST, sendProductMessageMock, addReaction, removeReaction } from "../services/sections/chat";
@@ -31,6 +31,7 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
       setLoading(true);
       try {
         const res = await getRoomMessages(roomId, 1, 50);
+        console.log("room id", roomId)
         if (!mounted) return;
         setMessages(res.messages ?? []);
         setPage(2);
@@ -114,7 +115,6 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
       // add optimistic message to UI
       const temp: ChatMessage = {
         id: `c_${client_id}`,
-        client_id,
         room_id: roomId,
         sender_id: "ME",
         content,
@@ -160,7 +160,6 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
 
       const temp: ChatMessage = {
         id: `c_${client_id}`,
-        client_id,
         room_id: roomId,
         sender_id: "ME",
         content: uploadedUrl,
@@ -349,7 +348,7 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
             <Camera color="#994d51" size={20} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => { /* open product picker */ handleSendProduct("PRD_001"); }} style={{ padding: 8 }}>
-            <Text style={{ color: "#994d51", fontWeight: "600" }}>Product</Text>
+            <ShoppingBag color="#994d51" size={20} />
           </TouchableOpacity>
         </View>
 
