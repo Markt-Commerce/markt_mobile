@@ -1,73 +1,73 @@
-import React, { useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Image,
-  Dimensions,
-  Animated,
-  Easing,
-} from 'react-native';
+import React, { useRef, useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, Dimensions, Animated, Easing, } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { Search, ArrowBigDown as CaretDown, AlertTriangle } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getSellerAnalyticsOverview, getSellerAnalyticsTimeseries } from '../../services/sections/analytics';
+import { getSellerProducts } from '../../services/sections/product';
+import { getSellerOrders } from '../../services/sections/orders';
+import { SellerAnalyticsOverview, SellerAnalyticsTimeseries } from '../../models/analytics';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function SellerDashboard() {
   const chartWidth = Math.min(screenWidth - 32, 800);
 
+  //mock
   const salesData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
     datasets: [{ data: [30, 45, 28, 80, 99, 70], strokeWidth: 3 }],
   };
+  //real
+  const [analyticsTimeseries, setAnalyticsTimeseries] = useState<SellerAnalyticsTimeseries | null>(null);
 
+  //mock
   const stats = [
     { title: 'Total Revenue', value: '$12,345' },
     { title: 'Total Orders', value: '567' },
     { title: 'Avg. Order Value', value: '$21.75' },
     { title: 'Active Listings', value: '123' },
   ];
+  //real
+  const [analyticsOverview, setAnalyticsOverview] = useState<SellerAnalyticsOverview | null>(null);
 
+  //mock
   const recentOrders = [
     { name: 'Ava Bennett', id: '123456', amount: '$25.00' },
     { name: 'Owen Carter', id: '789012', amount: '$30.00' },
     { name: 'Chloe Clark', id: '345678', amount: '$15.00' },
     { name: 'Noah Harper', id: '901234', amount: '$40.00' },
   ];
+  //real
+  const [sellerRecentOrders, setSellerRecentOrders] = useState<any[]>([]);
 
-  // Swapped placeholder images for crisp Unsplash tech gadgets
-  const topProducts = [
-    {
-      name: 'Product A',
-      sales: 100,
-      revenue: '$1,000',
-      image:
-        'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=160&h=160&q=80',
-    },
-    {
-      name: 'Product B',
-      sales: 80,
-      revenue: '$800',
-      image:
-        'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=160&h=160&q=80',
-    },
-    {
-      name: 'Product C',
-      sales: 60,
-      revenue: '$600',
-      image:
-        'https://images.unsplash.com/photo-1512499617640-c2f999098c53?auto=format&fit=crop&w=160&h=160&q=80',
-    },
-  ];
-
+  //mock
   const inventory = [
     { name: 'Product F', status: 'Active', price: '$10', stock: 50 },
     { name: 'Product G', status: 'Inactive', price: '$15', stock: 20 },
     { name: 'Product H', status: 'Active', price: '$20', stock: 100 },
   ];
+  //real
+  const [sellerInventory, setSellerInventory] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchData =async () => {
+      try {
+        const analyticsOverviewData = await getSellerAnalyticsOverview(30);
+        setAnalyticsOverview(analyticsOverviewData);
+        const analyticsTimeseriesData = await getSellerAnalyticsTimeseries({
+          bucket: "month",
+          start_date: "2023-01-01",
+          end_date: "2024-01-01",
+          metric: "sales"
+        })
+        setAnalyticsTimeseries(analyticsTimeseriesData);
+      } catch (error) {
+        console.error('Error fetching seller dashboard data:', error);
+      }
+    };
+    fetchData();
+  }, [])
 
   // Subtle pulsing accent bar used in Low Stock Alerts
   const LeftAccentPulse = () => {
@@ -212,7 +212,7 @@ export default function SellerDashboard() {
         </View>
 
         {/* Top Products card */}
-        <View className="px-4 pt-6">
+        {/* <View className="px-4 pt-6">
           <Text className="text-[#171311] text-[18px] font-extrabold px-1 pb-2">Top Products</Text>
           <View className="rounded-2xl border border-[#e5dedc] bg-white overflow-hidden">
             {topProducts.map((p, idx) => (
@@ -231,7 +231,7 @@ export default function SellerDashboard() {
               </View>
             ))}
           </View>
-        </View>
+        </View> */}
 
         {/* Low Stock Alerts (pulsing red-accent) */}
         <View className="px-4 pt-6">
