@@ -30,8 +30,8 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
     (async () => {
       setLoading(true);
       try {
+        console.log("Loading messages for room", roomId);
         const res = await getRoomMessages(roomId, 1, 50);
-        console.log("room id", roomId)
         if (!mounted) return;
         setMessages(res.messages ?? []);
         setPage(2);

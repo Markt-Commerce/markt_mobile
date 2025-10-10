@@ -32,6 +32,7 @@ export default function QuickChatBottomSheet({
                     seller_id: sellerId,
                     buyer_id: buyerId
                 });
+                console.log("fetched or created room: ", result);
                 setRoomData(result)
             } catch (error) {
                 console.error("could not get the chat data ", error);
