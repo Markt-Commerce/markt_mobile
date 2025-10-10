@@ -12,10 +12,9 @@ import {
  * @returns User profile data
  */
 export async function getUserProfile(): Promise<UserProfile> {
-  const res = await request<UserProfile>(`${BASE_URL}/api/v1/users/profile`, {
+  const res = await request<UserProfile>(`${BASE_URL}/users/profile`, {
     method: 'GET',
   });
-  console.log(res)
   return res;
 }
 
@@ -25,7 +24,7 @@ export async function getUserProfile(): Promise<UserProfile> {
  * @returns Updated user profile
  */
 export async function updateUserProfile(data: UpdateProfileRequest): Promise<UserProfile> {
-  const res = await request<UserProfile>(`${BASE_URL}/api/v1/users/profile`, {
+  const res = await request<UserProfile>(`${BASE_URL}/users/profile`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
@@ -38,7 +37,7 @@ export async function updateUserProfile(data: UpdateProfileRequest): Promise<Use
  * @returns Updated user profile
  */
 export async function updateBuyerProfile(data: UpdateBuyerProfileRequest): Promise<UserProfile> {
-  const res = await request<UserProfile>(`${BASE_URL}/api/v1/users/profile/buyer`, {
+  const res = await request<UserProfile>(`${BASE_URL}/users/profile/buyer`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
@@ -51,7 +50,7 @@ export async function updateBuyerProfile(data: UpdateBuyerProfileRequest): Promi
  * @returns Updated user profile
  */
 export async function updateSellerProfile(data: UpdateSellerProfileRequest): Promise<UserProfile> {
-  const res = await request<UserProfile>(`${BASE_URL}/api/v1/users/profile/seller`, {
+  const res = await request<UserProfile>(`${BASE_URL}/users/profile/seller`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });

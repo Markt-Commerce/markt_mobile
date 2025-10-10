@@ -10,7 +10,7 @@ import { UserProfile } from "../../models/profile";
 export default function SettingsProfileScreen() {
   const nav = useRouter();
 
-  const { user } = useUser();
+  const { user, role } = useUser();
 
   const [notificationsOn, setNotificationsOn] = useState(true);
   const [appearance, setAppearance] = useState<"light" | "dark">("light");
@@ -22,16 +22,10 @@ export default function SettingsProfileScreen() {
   const getUserData = async () => {
     try {
       const result = await getUserProfile();
-      setProfileData(result)
+      setProfileData(result);
+      console.log("result ",result)
     } catch (error) {
-      console.error(error)
-    }
-  }
-  const setUserData = async () => {
-    try {
-      
-    } catch (error) {
-      console.error(error)
+      console.error(error);
     }
   }
   const getBuyerData = async () => {
@@ -50,7 +44,7 @@ export default function SettingsProfileScreen() {
   }
 
   useEffect(()=>{
-    getUserProfile()
+    getUserData()
   },[user])
 
   //Helper Components
@@ -101,30 +95,8 @@ export default function SettingsProfileScreen() {
     </TouchableOpacity>
   );
 
-  // ---------- Profile Data (placeholders + commented real-data usage) ----------
-  const avatarUri =
-     profileData?.profile_picture_url ?? 
-    "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=320&q=80&crop=faces,entropy";
-
-  const displayName = user?.account_type === "buyer" ? profileData?.buyer_account.buyername : user?.account_type === "seller" ? profileData?.seller_account.shop_name : "Guest";
-
-  const usernameText = `@${profileData?.username}`;
-
-  const joinedYear =
-    profileData?.created_at ? String(new Date(profileData.created_at).getFullYear()) : "now maybe";
-
   // Details (mark editable ones pressable; read-only ones not)
   const details = [
-    { label: "Name", value: displayName, pressable: true, onPress: () => {/* nav.push('/edit/name') */} },
-    { label: "Username", value: usernameText, pressable: true, onPress: () => {/* nav.push('/edit/username') */} },
-    {
-      label: "Location",
-      value:
-        // user?.location ?? 
-        "Los Angeles, CA",
-      pressable: true,
-      onPress: () => {/* nav.push('/edit/location') */},
-    },
   ];
 
   return (
@@ -146,32 +118,15 @@ export default function SettingsProfileScreen() {
 
         {/* Profile */}
         <View className="w-full max-w-[640px] self-center px-4">
-          <View className="items-center rounded-2xl border border-[#efe9e7] bg-white px-5 py-6">
-            <Image source={{ uri: avatarUri }} className="w-28 h-28 rounded-full" />
-            <Text className="text-[20px] font-bold text-[#171311] mt-3">{displayName}</Text>
-
-            {usernameText ? <Text className="text-sm text-[#876d64]">{usernameText}</Text> : null}
-
-            <Text className="text-sm text-[#876d64]">Joined {joinedYear}</Text>
+          <View className="flex-row align-center rounded-2xl border border-[#efe9e7] bg-white px-5 py-6">
+            <Image source={{ uri: profileData?.profile_picture_url ?? "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=320&q=80&crop=faces,entropy" }} className="w-28 h-28 rounded-full" />
+            <View className="pl-5 justify-center flex-1">
+              <Text className="text-[20px] font-bold text-[#171311] mt-3">{role === "buyer" ? profileData?.buyer_account.buyername : role === "seller" ? profileData?.seller_account.shop_name : "Guest"}</Text>
+              <Text className="text-sm text-[#876d64]">@{profileData?.username ?? "unavailable"} | {role}</Text>
+              <Text className="text-sm text-[#876d64]">Joined {profileData?.created_at ? String(new Date(profileData.created_at).getFullYear()) : "now maybe"}</Text>
+            </View>
           </View>
         </View>
-
-        {/* Details */}
-        <Section title="Details">
-          {details.map((item, i) => (
-            <Row
-              key={i}
-              onPress={item.pressable ? item.onPress : undefined}
-              showChevron={!!item.pressable}
-              last={i === details.length - 1}
-            >
-              <View>
-                <Text className="text-base font-medium text-[#171311]">{item.label}</Text>
-                <Text className="text-sm text-[#876d64]">{item.value}</Text>
-              </View>
-            </Row>
-          ))}
-        </Section>
 
         {/* App Preferences */}
         <Section title="App Preferences">
