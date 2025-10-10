@@ -4,6 +4,7 @@ import "../global.css";
 import { UserProvider, useUser, UserContextType } from "../hooks/userContextProvider";
 import { RegisterProvider } from "../models/signupSteps";
 import { ToastProvider } from "../components/ToastProvider";
+import { ThemeProvider} from "../components/themeProvider";
 import { useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { RegisterRequest } from "../models/auth";
@@ -30,6 +31,7 @@ export default function RootLayout() {
   // Firstly, check if there is a stored user information in SecureStore
   return (
     <SafeAreaProvider>
+    <ThemeProvider>
     <ToastProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <UserProvider>
@@ -39,6 +41,7 @@ export default function RootLayout() {
       </UserProvider>
     </GestureHandlerRootView>
     </ToastProvider>
+    </ThemeProvider>
     </SafeAreaProvider>
   );
 }
