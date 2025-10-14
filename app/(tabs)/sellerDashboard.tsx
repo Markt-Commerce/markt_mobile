@@ -53,17 +53,24 @@ export default function SellerDashboard() {
   useEffect(() => {
     const fetchData =async () => {
       try {
+        const date = new Date();
+        const fromDate = (new Date(date.getFullYear() - 1, date.getMonth(), 1)).toISOString();
+        const toDate = (new Date()).toISOString();
+        console.log("fromDate: ", fromDate, " toDate: ", toDate);
         const analyticsOverviewData = await getSellerAnalyticsOverview(30);
+        console.log("analyticsOverviewData: ", analyticsOverviewData)
         setAnalyticsOverview(analyticsOverviewData);
         const analyticsTimeseriesData = await getSellerAnalyticsTimeseries({
           bucket: "month",
-          start_date: "2023-01-01",
-          end_date: "2024-01-01",
+          start_date: fromDate,
+          end_date: toDate,
           metric: "sales"
         })
+        console.log("analyticsTimeseriesData: ", analyticsTimeseriesData)
         setAnalyticsTimeseries(analyticsTimeseriesData);
       } catch (error) {
         console.error('Error fetching seller dashboard data:', error);
+        //later we would show the error on the UI using a toasts
       }
     };
     fetchData();

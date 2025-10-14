@@ -9,7 +9,7 @@ import { BASE_URL, request } from '../api';
  */
 export async function getSellerStartCards(): Promise<SellerStartCardsResponse> {
   const res = await request<SellerStartCardsResponse>(
-    `${BASE_URL}/api/v1/users/sellers/start-cards`
+    `${BASE_URL}/users/sellers/start-cards`
   );
   return res;
 }
@@ -23,7 +23,7 @@ export async function getSellerStartCards(): Promise<SellerStartCardsResponse> {
  */
 export async function getSellerAnalyticsOverview(windowDays: number = 30): Promise<SellerAnalyticsOverview> {
   const res = await request<SellerAnalyticsOverview>(
-    `${BASE_URL}/api/v1/users/sellers/analytics/overview?window_days=${windowDays}`
+    `${BASE_URL}/users/sellers/analytics/overview?window_days=${windowDays}`
   );
   return res;
 }
@@ -41,9 +41,12 @@ export async function getSellerAnalyticsTimeseries(params: {
   end_date: string;
   metric: 'sales' | 'orders' | 'views' | 'conversion';
 }): Promise<SellerAnalyticsTimeseries> {
-  const query = new URLSearchParams(params).toString();
+  const query = "" + Object.entries(params)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join('&');
+    console.log("query: ", query);
   const res = await request<SellerAnalyticsTimeseries>(
-    `${BASE_URL}/api/v1/users/sellers/analytics/timeseries?${query}`
+    `${BASE_URL}/users/sellers/analytics/timeseries?${query}`
   );
   return res;
 }
