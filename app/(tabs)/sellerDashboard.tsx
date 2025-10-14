@@ -7,28 +7,19 @@ import { getSellerAnalyticsOverview, getSellerAnalyticsTimeseries } from '../../
 import { getSellerProducts } from '../../services/sections/product';
 import { getSellerOrders } from '../../services/sections/orders';
 import { SellerAnalyticsOverview, SellerAnalyticsTimeseries } from '../../models/analytics';
+import { ProductResponse } from '../../models/products';
+import { OrderItem } from '../../models/orders';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function SellerDashboard() {
   const chartWidth = Math.min(screenWidth - 32, 800);
 
-  //mock
-  const salesData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [{ data: [30, 45, 28, 80, 99, 70], strokeWidth: 3 }],
-  };
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
   //real
   const [analyticsTimeseries, setAnalyticsTimeseries] = useState<SellerAnalyticsTimeseries | null>(null);
 
-  //mock
-  const stats = [
-    { title: 'Total Revenue', value: '$12,345' },
-    { title: 'Total Orders', value: '567' },
-    { title: 'Avg. Order Value', value: '$21.75' },
-    { title: 'Active Listings', value: '123' },
-  ];
-  //real
   const [analyticsOverview, setAnalyticsOverview] = useState<SellerAnalyticsOverview | null>(null);
 
   //mock
@@ -39,16 +30,10 @@ export default function SellerDashboard() {
     { name: 'Noah Harper', id: '901234', amount: '$40.00' },
   ];
   //real
-  const [sellerRecentOrders, setSellerRecentOrders] = useState<any[]>([]);
+  const [sellerRecentOrders, setSellerRecentOrders] = useState<OrderItem[]>([]);
 
-  //mock
-  const inventory = [
-    { name: 'Product F', status: 'Active', price: '$10', stock: 50 },
-    { name: 'Product G', status: 'Inactive', price: '$15', stock: 20 },
-    { name: 'Product H', status: 'Active', price: '$20', stock: 100 },
-  ];
   //real
-  const [sellerInventory, setSellerInventory] = useState<any[]>([]);
+  const [sellerInventory, setSellerInventory] = useState<ProductResponse[]>([]);
 
   useEffect(() => {
     const fetchData =async () => {
@@ -56,25 +41,26 @@ export default function SellerDashboard() {
         const date = new Date();
         const fromDate = (new Date(date.getFullYear() - 1, date.getMonth(), 1)).toISOString();
         const toDate = (new Date()).toISOString();
-        console.log("fromDate: ", fromDate, " toDate: ", toDate);
         const analyticsOverviewData = await getSellerAnalyticsOverview(30);
-        console.log("analyticsOverviewData: ", analyticsOverviewData)
         setAnalyticsOverview(analyticsOverviewData);
         const analyticsTimeseriesData = await getSellerAnalyticsTimeseries({
-          bucket: "month",
+          bucket: "month",//only get by month for now, we can add an option for the user to select by day, week or month later
           start_date: fromDate,
           end_date: toDate,
           metric: "sales"
         })
-        console.log("analyticsTimeseriesData: ", analyticsTimeseriesData)
         setAnalyticsTimeseries(analyticsTimeseriesData);
+        const ordersData = await getSellerOrders(1,5);// TODO: ask backend team to add an endpoint to get recent orders
+        setSellerRecentOrders(ordersData.items);
+        const productsData = await getSellerProducts(1,20);
+        setSellerInventory(productsData);
       } catch (error) {
         console.error('Error fetching seller dashboard data:', error);
         //later we would show the error on the UI using a toasts
       }
     };
     fetchData();
-  }, [])
+  }, []);
 
   // Subtle pulsing accent bar used in Low Stock Alerts
   const LeftAccentPulse = () => {
@@ -139,15 +125,30 @@ export default function SellerDashboard() {
 
         {/* Stats cards */}
         <View className="flex-row flex-wrap gap-4 p-4">
-          {stats.map((s) => (
-            <View
-              key={s.title}
-              className="min-w-[158px] flex-1 rounded-2xl p-5 border border-[#e5dedc] bg-white"
-            >
-              <Text className="text-[#6f5d57] text-xs font-semibold uppercase tracking-wider">{s.title}</Text>
-              <Text className="text-[#171311] text-2xl font-extrabold mt-1">{s.value}</Text>
-            </View>
-          ))}
+          <View
+            className="min-w-[158px] flex-1 rounded-2xl p-5 border border-[#e5dedc] bg-white"
+          >
+            <Text className="text-[#6f5d57] text-xs font-semibold uppercase tracking-wider">Product Views</Text>
+            <Text className="text-[#171311] text-2xl font-extrabold mt-1">{analyticsOverview?.views_30d || 0}</Text>
+          </View>
+          <View
+            className="min-w-[158px] flex-1 rounded-2xl p-5 border border-[#e5dedc] bg-white"
+          >
+            <Text className="text-[#6f5d57] text-xs font-semibold uppercase tracking-wider">Total Orders</Text>
+            <Text className="text-[#171311] text-2xl font-extrabold mt-1">{analyticsOverview?.orders_30d || 0}</Text>
+          </View>
+          <View
+            className="min-w-[158px] flex-1 rounded-2xl p-5 border border-[#e5dedc] bg-white"
+          >
+            <Text className="text-[#6f5d57] text-xs font-semibold uppercase tracking-wider">Total Revenue</Text>
+            <Text className="text-[#171311] text-2xl font-extrabold mt-1">{analyticsOverview?.revenue_30d || 0}</Text>
+          </View>
+          <View
+            className="min-w-[158px] flex-1 rounded-2xl p-5 border border-[#e5dedc] bg-white"
+          >
+            <Text className="text-[#6f5d57] text-xs font-semibold uppercase tracking-wider">Conversions</Text>
+            <Text className="text-[#171311] text-2xl font-extrabold mt-1">{analyticsOverview?.conversion_30d || 0}</Text>
+          </View>
         </View>
 
         {/* Secondary actions */}
@@ -168,6 +169,7 @@ export default function SellerDashboard() {
         </View>
 
         {/* Sales trends card */}
+        {/* Check and work on this section later */}
         <View className="px-4 py-4">
           <View className="rounded-2xl border border-[#e5dedc] bg-white p-4">
             <Text className="text-[#171311] text-base font-semibold">Sales Trends</Text>
@@ -178,7 +180,13 @@ export default function SellerDashboard() {
             </View>
             <View className="py-4">
               <LineChart
-                data={salesData}
+                data={(analyticsTimeseries && analyticsTimeseries.series.length > 0) ? {
+                  labels: analyticsTimeseries.series.map(d => months[new Date(d.bucket_start).getMonth()]),
+                  datasets: [{ data: analyticsTimeseries.series.map(d => d.value), strokeWidth: 3 }]
+                } : {
+                  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                  datasets: [{ data: [0,0,0,0,0,0], strokeWidth: 3 }]
+                }}
                 width={chartWidth}
                 height={160}
                 chartConfig={{
@@ -202,20 +210,24 @@ export default function SellerDashboard() {
         {/* Recent Orders card */}
         <View className="px-4 pt-2">
           <Text className="text-[#171311] text-[18px] font-extrabold px-1 pb-2">Recent Orders</Text>
-          <View className="rounded-2xl border border-[#e5dedc] bg-white overflow-hidden">
-            {recentOrders.map((o, idx) => (
+          {sellerRecentOrders.length === 0 ? (
+            <Text className="text-[#876d64] text-sm px-1">No recent orders</Text>
+          ) : (
+            <View className="rounded-2xl border border-[#e5dedc] bg-white overflow-hidden">
+            {sellerRecentOrders.map((o, idx) => (
               <View
-                key={o.id}
+                key={idx}
                 className={`flex-row items-center justify-between px-4 py-3 ${idx < recentOrders.length - 1 ? 'border-b border-[#efe9e7]' : ''}`}
               >
                 <View>
-                  <Text className="text-[#171311] text-base font-medium">{o.name}</Text>
-                  <Text className="text-[#876d64] text-xs">Order ID: {o.id}</Text>
+                  <Text className="text-[#171311] text-base font-medium">{o.product?.name}</Text>
+                  <Text className="text-[#876d64] text-xs">Order ID: {o.price}</Text>
                 </View>
-                <Text className="text-[#171311] text-base font-semibold">{o.amount}</Text>
+                <Text className="text-[#171311] text-base font-semibold">{o.status}</Text>
               </View>
             ))}
           </View>
+          )}
         </View>
 
         {/* Top Products card */}
@@ -319,11 +331,14 @@ export default function SellerDashboard() {
 
         {/* Inventory list card */}
         <View className="px-4 pt-3">
-          <View className="rounded-2xl border border-[#e5dedc] bg-white overflow-hidden">
-            {inventory.map((it, idx) => (
+          {sellerInventory.length === 0 ? (
+            <Text className="text-[#876d64] text-sm px-1">No products in inventory</Text>
+          ) : (
+            <View className="rounded-2xl border border-[#e5dedc] bg-white overflow-hidden">
+            {sellerInventory.map((it, idx) => (
               <View
                 key={it.name}
-                className={`flex-row items-center justify-between px-4 py-3 ${idx < inventory.length - 1 ? 'border-b border-[#efe9e7]' : ''}`}
+                className={`flex-row items-center justify-between px-4 py-3 ${idx < sellerInventory.length - 1 ? 'border-b border-[#efe9e7]' : ''}`}
               >
                 <View className="flex-1">
                   <Text className="text-[#171311] text-base font-medium" numberOfLines={1}>{it.name}</Text>
@@ -336,6 +351,7 @@ export default function SellerDashboard() {
               </View>
             ))}
           </View>
+        )}
         </View>
 
         {/* Pager dots */}

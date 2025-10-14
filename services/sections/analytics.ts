@@ -44,7 +44,6 @@ export async function getSellerAnalyticsTimeseries(params: {
   const query = "" + Object.entries(params)
     .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
     .join('&');
-    console.log("query: ", query);
   const res = await request<SellerAnalyticsTimeseries>(
     `${BASE_URL}/users/sellers/analytics/timeseries?${query}`
   );
