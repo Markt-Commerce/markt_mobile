@@ -16,8 +16,8 @@ import { useUser } from "../../hooks/userContextProvider";
 import { Input } from "../../components/inputs";
 import Button from "../../components/button";
 import { SafeAreaView } from "react-native-safe-area-context";
-//import * as SecureStore from 'expo-secure-store';
 import { useRegData } from "../../models/signupSteps";
+import { useToast } from "../../components/ToastProvider"; 
 
 const schema = z.object({
   email: z.string().min(1, "Email is required"),
@@ -28,6 +28,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const { role, setRole, setUser } = useUser();
   const { setRegData } = useRegData();
+  const { show } = useToast();
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -49,39 +50,62 @@ export default function LoginScreen() {
         password: data.password,
         account_type: role || "buyer",
       });
+
       setError(null);
       setUser({
         email: userData.email.toLowerCase(),
         account_type: userData.account_type,
-        user_id: userData.id
+        user_id: userData.id,
       });
+
+      show({
+        variant: "success",
+        title: "Welcome back",
+        message: `Signed in as ${userData.email.toLowerCase()}`,
+      });
+
       router.replace("/");
-    }
-    catch (error) {
-      //console.error("Login failed:", error);
-      setError("Login failed." + (error instanceof Error ? ` ${error.message}` : ""));
-      console.log("Error type:", typeof error);
-      if (typeof error === "object" && error !== null && 'message' in error && typeof error.message === 'string') {
-        if (error.message.toLowerCase().includes("verify") && error.message.toLowerCase().includes("email")) {
-          //set regData with email and password
-          //this is not a very clean way of doing this but it works for now
-          //todo: I would talk to the backend team to see if we can get a code to determine the error type
-          //additionally I would set another state that could be used by email verification page to determine if the user just registered or is coming from login
-          setRegData({
-            email: data.email,
-            password: data.password,
-            account_type: role || "buyer",
-            username: "",
-            phone_number: "",
-          });
-          //navigate to email verification page
-          router.push("/emailVerification");
-          return;
-        }
+    } catch (error: any) {
+      const errMsg =
+        typeof error === "object" && error?.message
+          ? String(error.message)
+          : "Please try again.";
+
+      // If backend asks for email verification, route + info toast
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof (error as any).message === "string" &&
+        (error as any).message.toLowerCase().includes("verify") &&
+        (error as any).message.toLowerCase().includes("email")
+      ) {
+        setRegData({
+          email: data.email,
+          password: data.password,
+          account_type: role || "buyer",
+          username: "",
+          phone_number: "",
+        });
+
+        show({
+          variant: "info",
+          title: "Verify your email",
+          message: "We need to verify your email before you can sign in.",
+        });
+
+        router.push("/emailVerification");
+        return;
       }
-      //work on adding cleanup for failed login attempts
-      //SecureStore.deleteItemAsync('user');
+
+      setError("Login failed. " + errMsg);
       setUser(null);
+
+      show({
+        variant: "error",
+        title: "Login failed",
+        message: errMsg,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -108,9 +132,7 @@ export default function LoginScreen() {
           <View className="w-full max-w-[480px] rounded-2xl bg-white border border-[#f0e9e7] px-5 py-6">
             {/* Header */}
             <View className="mb-4 items-center">
-              <Text className="text-[#171212] text-[14px] opacity-60">
-                Welcome back
-              </Text>
+              <Text className="text-[#171212] text-[14px] opacity-60">Welcome back</Text>
               <Text className="text-[#171212] text-[24px] font-extrabold leading-tight">
                 Sign in to your account
               </Text>
@@ -164,9 +186,7 @@ export default function LoginScreen() {
             {/* Forgot password */}
             <View className="items-end">
               <Link href="/forgotPassword">
-                <Text className="text-[#826869] text-sm underline">
-                  Forgot Password?
-                </Text>
+                <Text className="text-[#826869] text-sm underline">Forgot Password?</Text>
               </Link>
             </View>
 
@@ -241,7 +261,6 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          {/* Small bottom spacer so the centered panel never kisses the home indicator */}
           <View className="h-6" />
         </ScrollView>
       </KeyboardAvoidingView>

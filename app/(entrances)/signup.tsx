@@ -17,6 +17,7 @@ import { AccountType } from "../../models/auth";
 import { useRouter } from "expo-router";
 import { register, useRegData } from "../../models/signupSteps";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useToast } from "../../components/ToastProvider"; // toaster
 
 // --- Validation schema (fixed: standard refine; removed invalid 'when' option) ---
 const schema = z
@@ -42,11 +43,11 @@ export default function SignupScreen() {
   const router = useRouter();
   const { setRole, role } = useUser();
   const { regData, setRegData } = useRegData();
+  const { show } = useToast(); // toast api
 
   const {
     control,
     handleSubmit,
-    watch,
     formState: { errors, isValid },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -57,23 +58,11 @@ export default function SignupScreen() {
   const [showPwd, setShowPwd] = React.useState(false);
   const [showConfirmPwd, setShowConfirmPwd] = React.useState(false);
 
-  const passwordValue = watch("password") || "";
-
-  // simple strength indicator: 0–3 bars based on your existing regex criteria (+length)
-  const strength = React.useMemo(() => {
-    let score = 0;
-    if (passwordValue.length >= 8) score++;
-    if (/[A-Z]/.test(passwordValue)) score++;
-    if (/[a-z]/.test(passwordValue)) score++;
-    if (/\d/.test(passwordValue)) score++;
-    // map 0..4 to 0..3 for 3 bars
-    return Math.min(3, Math.max(0, score - 1));
-  }, [passwordValue]);
-
   const setUserRole = (r: AccountType) => setRole(r);
 
   const onSubmit = async (data: FormValues) => {
     try {
+      // Persist signup details
       setRegData(
         register(regData, {
           email: data.email,
@@ -81,11 +70,26 @@ export default function SignupScreen() {
           account_type: role || "buyer", // default Buyer if not set
         })
       );
+
+      // Success toast
+      show({
+        variant: "success",
+        title: "Account details saved",
+        message: role === "seller" ? "Let’s set up your seller profile." : "Let’s set up your buyer profile.",
+      });
+
+      // Navigate to next step
       if (role === "seller") router.navigate("/userdetSeller");
       else router.navigate("/userdetBuyer");
       // router.navigate("/emailVerification"); // (use when flow is finalized)
-    } catch (error) {
+    } catch (error: any) {
+      // Error toast
       console.error("Signup failed:", error);
+      show({
+        variant: "error",
+        title: "Sign up failed",
+        message: error?.message || "Please check your details and try again.",
+      });
     }
   };
 
@@ -122,23 +126,6 @@ export default function SignupScreen() {
       </TouchableOpacity>
     </View>
   );
-
-  // tiny helper: bar for strength
-  const StrengthBar = ({ level }: { level: number }) => {
-    // 3 bars; fill up to `level`
-    const filled = ["#e4b7a9", "#e67e5f", "#E94C2A"];
-    return (
-      <View className="flex-row gap-1 mt-2">
-        {[0, 1, 2].map((i) => (
-          <View
-            key={i}
-            className="h-1.5 flex-1 rounded-full"
-            style={{ backgroundColor: i < level ? filled[i] : "#f0e9e7" }}
-          />
-        ))}
-      </View>
-    );
-  };
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -190,11 +177,7 @@ export default function SignupScreen() {
                 <Text className="mb-1 text-[13px] text-[#5f4f4f]">Password</Text>
                 {errors.password ? (
                   <Text className="mb-1 text-xs text-[#E94C2A]">{errors.password.message as string}</Text>
-                ) : (
-                  <Text className="mb-1 text-xs text-[#8e7a74]">
-                    At least 8 characters with upper, lower, and a number.
-                  </Text>
-                )}
+                ) : null}
                 <Input
                   placeholder="Enter your password"
                   control={control}
@@ -212,9 +195,6 @@ export default function SignupScreen() {
                   {showPwd ? <EyeOff size={16} color="#876d64" /> : <Eye size={16} color="#876d64" />}
                   <Text className="ml-1 text-xs text-[#876d64]">{showPwd ? "Hide" : "Show"}</Text>
                 </TouchableOpacity>
-
-                {/* Strength meter */}
-                <StrengthBar level={strength} />
               </View>
 
               {/* Confirm Password */}
