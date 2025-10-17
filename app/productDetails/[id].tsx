@@ -88,9 +88,9 @@ const addProductToCart = async (product:ProductDetail)=>{
         {/* Header */}
         <View className="flex-row items-center justify-between p-4 pb-2">
           <ArrowLeft color="#171311" size={24} />
-          <TouchableOpacity className="p-2" onPress={()=> router.navigate("/cart")}>
+          {role == "buyer" && <TouchableOpacity className="p-2" onPress={()=> router.navigate("/cart")}>
             <ShoppingBag color="#171311" size={24} />
-          </TouchableOpacity>
+          </TouchableOpacity>}
         </View>
 
         {/* Image Carousel */}

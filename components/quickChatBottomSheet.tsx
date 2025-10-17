@@ -27,7 +27,8 @@ export default function QuickChatBottomSheet({
 
     useEffect(() => {
         const fetchRoomData = async () => {
-            try {
+            if (!sellerId || !buyerId) return;
+            try { 
                 const result = await createOrGetRoom({
                     seller_id: sellerId,
                     buyer_id: buyerId
@@ -41,15 +42,11 @@ export default function QuickChatBottomSheet({
         fetchRoomData();
     }, [sellerId,buyerId]);
 
-    const chatRouteParams = {
-        roomId: roomData?.id || 0,
-    };
-
     return (
         <BottomSheet ref={sheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose>
             <BottomSheetView className="flex-1 p-2">
                 <ChatScreen
-                    route={{ params: chatRouteParams }}
+                    route={{ params: { roomId: roomData ? roomData.id : 0 } } }
                     navigation={null}
                 />
             </BottomSheetView>

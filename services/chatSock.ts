@@ -11,7 +11,7 @@ import {
 import { BASE_URL } from "./api";
 
 const CHAT_NAMESPACE = "/chat";
-const SOCKET_URL = "https://test.api.marktcommerce.com/api/v1/chat";
+const SOCKET_URL = "https://test.api.marktcommerce.com/chat";
 
 // STORAGE & QUEUE
 const OFFLINE_QUEUE_KEY = "markt.chat.offlineQueue";
@@ -47,14 +47,15 @@ class ChatSocket {
 
     this.socket = io(SOCKET_URL, {
       transports: ["websocket", "polling"],
-      withCredentials: true,          // session cookie auth
+      //withCredentials: true,          // session cookie auth
       reconnection: true,
       reconnectionAttempts: Infinity,
-      reconnectionDelay: 500,
+      reconnectionDelay: 5000,
       reconnectionDelayMax: 5000,
-      ackTimeout: 8000,               // socket.io v4 option (if available)
-      autoConnect: true,
-      path: "/socket.io",
+      //ackTimeout: 8000,               // socket.io v4 option (if available)
+      timeout: 20000,                 // connection timeout
+      //autoConnect: true,
+      forceNew: true
     });
 
     // server says hello

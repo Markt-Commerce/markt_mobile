@@ -7,6 +7,7 @@ import chatSocket from "../services/chatSock";
 import { getRoomMessages, markRoomRead, sendMessageREST, sendProductMessageMock, addReaction, removeReaction } from "../services/sections/chat";
 import { ChatMessage } from "../models/chat";
 import { addToCart } from "../services/sections/cart";
+import { useUser } from "../hooks/userContextProvider";
 
 export type ChatProps = {
   route: { params: { roomId: number; otherUser?: { username?: string; profile_picture?: string, user_id: string } } };
@@ -14,6 +15,7 @@ export type ChatProps = {
 };
 
 export default function ChatScreen({ route, navigation }: ChatProps) {
+  const {user, role} = useUser();
   const { roomId, otherUser } = route.params;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,13 +28,12 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
 
   // load messages (first page)
   useEffect(() => {
-    let mounted = true;
     (async () => {
       setLoading(true);
       try {
-        console.log("Loading messages for room", roomId);
+        if (!roomId || roomId === 0) return;
+        // fetch messages
         const res = await getRoomMessages(roomId, 1, 50);
-        if (!mounted) return;
         setMessages(res.messages ?? []);
         setPage(2);
         // mark read
@@ -41,10 +42,9 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
         console.error("Failed loading messages", e);
         Alert.alert("Error", "Could not load messages.");
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     })();
-    return () => { mounted = false; };
   }, [roomId]);
 
   // socket connection & listeners
@@ -55,7 +55,7 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
     const offTyping = chatSocket.onTyping(onTypingUpdate);
     const offStatus = chatSocket.onStatus((s) => {
       // optionally show connection status
-      // console.log("socket status", s);
+      console.log("socket status", s);
     });
 
     // join room
@@ -67,7 +67,6 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
       offStatus();
       chatSocket.leaveRoom(roomId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId]);
 
   function onSocketMessage(msg: ChatMessage) {
@@ -111,10 +110,10 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
 
     try {
       // try socket send first (chatSocket queues if offline)
-      const client_id = await chatSocket.sendText(roomId, content);
+      await chatSocket.sendText(roomId, content);
       // add optimistic message to UI
       const temp: ChatMessage = {
-        id: `c_${client_id}`,
+        id: `c_${user?.user_id || "0"}`,
         room_id: roomId,
         sender_id: "ME",
         content,
