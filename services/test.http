@@ -1,0 +1,12 @@
+# HTTP/1.1 POST https://test.api.marktcommerce.com/api/v1/login
+Content-Type: application/json
+
+{
+  "username": "amethystguitaristj@gmail.com",
+  "password": "TestPassword123!",
+  "account_type": "buyer"
+}
+
+
+#HTTP/1.1 GET https://test.api.marktcommerce.com/api/v1/chats/rooms/33/messages
+Content-Type: application/json
