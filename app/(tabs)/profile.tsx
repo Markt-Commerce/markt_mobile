@@ -1,36 +1,54 @@
 import React, { useState, useEffect } from "react";
-import { ScrollView, TouchableOpacity, Image, Switch, View } from "react-native";
-import {
-  ArrowLeft,
-  Bell,
-  Sun,
-  Globe,
-  User,
-  Lock,
-  CreditCard,
-  Truck,
-  Link as LinkIcon,
-  HelpCircle as Question,
-  FileText,
-  ShieldCheck,
-  Info,
-  ArrowRight,
-} from "lucide-react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, Switch } from "react-native";
+import { ArrowLeft, Bell, Sun, Globe, User, Lock, CreditCard, Truck, Link as LinkIcon, HelpCircle as Question, FileText, ShieldCheck, Info, ArrowRight } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-
+import { useUser } from "../../hooks/userContextProvider";
+import {getUserProfile, updateBuyerProfile, updateSellerProfile, updateUserProfile} from "../../services/sections/profile"
+import { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";    // <- simple context (no NativeWind)
 import { TView, TText } from "../../components/themed";       // <- Themed components (pick classes via context)
 import { useToast } from "../../components/ToastProvider";    // <- optional toast
 
 export default function SettingsProfileScreen() {
   const nav = useRouter();
+  const { user, role } = useUser();
   const { resolvedTheme, setTheme } = useTheme();
   const { show } = useToast();
 
   const [notificationsOn, setNotificationsOn] = useState(true);
   const [appearance, setAppearance] = useState<"light" | "dark">(resolvedTheme);
   const [language, setLanguage] = useState<"EN" | "FR">("EN");
+  const [profileData, setProfileData] = useState<UserProfile>();
+
+  //get and set api functions.
+  const getUserData = async () => {
+    try {
+      const result = await getUserProfile();
+      setProfileData(result);
+      console.log("result ",result)
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  const getBuyerData = async () => {
+    try {
+      
+    } catch (error) {
+      console.error(error)
+    }
+  }
+  const getsellerData = async () => {
+    try {
+      
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  useEffect(()=>{
+    getUserData()
+  },[user])
 
   useEffect(() => setAppearance(resolvedTheme), [resolvedTheme]);
 
@@ -112,13 +130,6 @@ export default function SettingsProfileScreen() {
     </TouchableOpacity>
   );
 
-  // ---------- Profile Data (placeholder) ----------
-  const avatarUri =
-    "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=320&q=80&crop=faces,entropy";
-  const displayName = "Sophia Carter";
-  const usernameText = "@sophia.carter";
-  const joinedYear = "2021";
-
   // ---------- Handlers ----------
   const chooseAppearance = (v: "light" | "dark") => {
     setAppearance(v);
@@ -159,27 +170,27 @@ export default function SettingsProfileScreen() {
               dark="bg-neutral-900 border-neutral-800"
               className="items-center rounded-2xl border px-5 py-6"
             >
-              <Image source={{ uri: avatarUri }} className="w-28 h-28 rounded-full" />
+              <Image source={{  uri: profileData?.profile_picture_url ?? "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=320&q=80&crop=faces,entropy" }} className="w-28 h-28 rounded-full" />
               <TText
                 light="text-[#171311]"
                 dark="text-neutral-100"
                 className="text-[20px] font-bold mt-3"
               >
-                {displayName}
+                {role === "buyer" ? profileData?.buyer_account.buyername : role === "seller" ? profileData?.seller_account.shop_name : "Guest"}
               </TText>
               <TText
                 light="text-[#876d64]"
                 dark="text-neutral-400"
                 className="text-sm"
               >
-                {usernameText}
+                @{profileData?.username ?? "unavailable"} | {role}
               </TText>
               <TText
                 light="text-[#876d64]"
                 dark="text-neutral-400"
                 className="text-sm"
               >
-                Joined {joinedYear}
+                Joined {profileData?.created_at ? String(new Date(profileData.created_at).getFullYear()) : "now maybe"}
               </TText>
             </TView>
           </View>
