@@ -320,7 +320,9 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
         renderItem={renderMessage}
         onEndReachedThreshold={0.2}
         //onEndReached={loadMore}
-        contentContainerStyle={{ paddingVertical: 8 }}
+        contentContainerStyle={{ paddingVertical: 8, paddingBottom: 12 }}
+        showsVerticalScrollIndicator={false}
+        inverted
       />
 
       {typingUser && <Text style={{ paddingHorizontal: 16, color: "#60758a" }}>{typingUser} is typing...</Text>}
