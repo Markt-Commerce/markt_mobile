@@ -11,7 +11,7 @@ import {
 import { BASE_URL } from "./api";
 
 const CHAT_NAMESPACE = "/chat";
-const SOCKET_URL = "https://test.api.marktcommerce.com/api/v1/chat";
+const SOCKET_URL = "https://test.api.marktcommerce.com/chat";
 
 // STORAGE & QUEUE
 const OFFLINE_QUEUE_KEY = "markt.chat.offlineQueue";
@@ -47,14 +47,15 @@ class ChatSocket {
 
     this.socket = io(SOCKET_URL, {
       transports: ["websocket", "polling"],
-      withCredentials: true,          // session cookie auth
+      //withCredentials: true,          // session cookie auth
       reconnection: true,
       reconnectionAttempts: Infinity,
-      reconnectionDelay: 500,
+      reconnectionDelay: 5000,
       reconnectionDelayMax: 5000,
-      ackTimeout: 8000,               // socket.io v4 option (if available)
-      autoConnect: true,
-      path: "/socket.io",
+      //ackTimeout: 8000,               // socket.io v4 option (if available)
+      timeout: 20000,                 // connection timeout
+      //autoConnect: true,
+      forceNew: true
     });
 
     // server says hello
@@ -125,8 +126,8 @@ class ChatSocket {
   }
 
   // ===== Rooms =====
-  joinRoom(room_id: number) {
-    this.socket?.emit("join_room", { room_id });
+  joinRoom(room_id: number, user_id: string) {
+    this.socket?.emit("join_room", { room_id, user_id });
   }
 
   leaveRoom(room_id: number) {
@@ -134,15 +135,15 @@ class ChatSocket {
   }
 
   // ===== Typing =====
-  typingStart(room_id: number) {
+  typingStart(room_id: number, user_id: string) {
     const last = this.typingGuards.get(room_id) ?? 0;
     if (now() - last < TYPING_DEBOUNCE_MS) return;
     this.typingGuards.set(room_id, now());
-    this.socket?.emit("typing_start", { room_id });
+    this.socket?.emit("typing_start", { room_id, user_id });
   }
 
-  typingStop(room_id: number) {
-    this.socket?.emit("typing_stop", { room_id });
+  typingStop(room_id: number, user_id: string) {
+    this.socket?.emit("typing_stop", { room_id, user_id });
   }
 
   // ===== Messages =====
@@ -155,54 +156,56 @@ class ChatSocket {
     room_id: number,
     message_type: MessageType,
     content: string,
+    user_id: string,
     message_data?: Record<string, any> | null
-  ): Promise<void /*client_id*/> {
-    const payload = { room_id, message: content, message_type, message_data };
+  ): Promise<boolean /*client_id*/> {
+    const payload = { room_id, message: content, message_type, user_id, message_data };
 
     if (this.connected) {
       // try with ack first, fallback to fire-and-forget
-      await new Promise<void>((resolve) => {
+      await new Promise<boolean>((resolve) => {
         let resolved = false;
         try {
           this.socket?.timeout?.(8000).emit("message", payload, () => {
             resolved = true;
-            resolve();
+            resolve(true);
           });
         } catch {
           // older socket.io-client w/o timeout()
           this.socket?.emit("message", payload);
           // resolve soon; queue drop will be handled by 'message_sent' or 'message' echo
           resolved = true;
-          resolve();
+          resolve(true);
         }
         // safety after 9s
-        setTimeout(() => { if (!resolved) resolve(); }, 9000);
+        setTimeout(() => { if (!resolved) resolve(false); }, 9000);
       });
     } else {
       await this.queue({ event: "message", payload });
+      return false;
     }
-    //return client_id;
+    return true;
   }
 
   // convenience wrappers
-  sendText(room_id: number, text: string) {
+  sendText(room_id: number, user_id:string, text: string) {
     // server validation caps are 1–1000; we trim client-side to be safe
     const trimmed = (text ?? "").slice(0, 1000);
-    return this.sendMessage(room_id, "text", trimmed, null);
+    return this.sendMessage(room_id, "text", trimmed, user_id, null);
   }
 
-  sendImage(room_id: number, url: string, mime = "image/jpeg", meta?: Record<string, any>) {
+  sendImage(room_id: number, user_id:string, url: string, mime = "image/jpeg", meta?: Record<string, any>) {
     if (!/^image\//.test(mime)) throw new Error("Invalid image mime");
-    return this.sendMessage(room_id, "image", url, { url, mime, ...meta });
+    return this.sendMessage(room_id, "image", url, user_id, { url, mime, ...meta });
   }
 
-  sendVideo(room_id: number, url: string, mime = "video/mp4", meta?: Record<string, any>) {
+  sendVideo(room_id: number, user_id:string, url: string, mime = "video/mp4", meta?: Record<string, any>) {
     if (!/^video\//.test(mime)) throw new Error("Invalid video mime");
-    return this.sendMessage(room_id, "video", url, { url, mime, ...meta });
+    return this.sendMessage(room_id, "video", url, user_id, { url, mime, ...meta });
   }
 
-  sendProduct(room_id: number, product_id: string, note?: string) {
-    return this.sendMessage(room_id, "product", note ?? "", { product_id });
+  sendProduct(room_id: number, user_id:string, product_id: string, note?: string) {
+    return this.sendMessage(room_id, "product", note ?? "", user_id, { product_id });
   }
 
   // ===== Offers =====

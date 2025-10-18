@@ -7,6 +7,7 @@ import chatSocket from "../services/chatSock";
 import { getRoomMessages, markRoomRead, sendMessageREST, sendProductMessageMock, addReaction, removeReaction } from "../services/sections/chat";
 import { ChatMessage } from "../models/chat";
 import { addToCart } from "../services/sections/cart";
+import { useUser } from "../hooks/userContextProvider";
 
 export type ChatProps = {
   route: { params: { roomId: number; otherUser?: { username?: string; profile_picture?: string, user_id: string } } };
@@ -14,6 +15,7 @@ export type ChatProps = {
 };
 
 export default function ChatScreen({ route, navigation }: ChatProps) {
+  const {user, role} = useUser();
   const { roomId, otherUser } = route.params;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,13 +28,13 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
 
   // load messages (first page)
   useEffect(() => {
-    let mounted = true;
     (async () => {
       setLoading(true);
       try {
+        if (!roomId || roomId === 0) return;
+        // fetch messages
         const res = await getRoomMessages(roomId, 1, 50);
-        console.log("room id", roomId)
-        if (!mounted) return;
+        console.log("loaded messages: ", res.messages[0]);
         setMessages(res.messages ?? []);
         setPage(2);
         // mark read
@@ -41,10 +43,9 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
         console.error("Failed loading messages", e);
         Alert.alert("Error", "Could not load messages.");
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     })();
-    return () => { mounted = false; };
   }, [roomId]);
 
   // socket connection & listeners
@@ -55,11 +56,11 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
     const offTyping = chatSocket.onTyping(onTypingUpdate);
     const offStatus = chatSocket.onStatus((s) => {
       // optionally show connection status
-      // console.log("socket status", s);
+      console.log("socket status", s);
     });
 
     // join room
-    chatSocket.joinRoom(roomId);
+    chatSocket.joinRoom(roomId, user?.user_id || "");
 
     return () => {
       offMsg();
@@ -67,7 +68,6 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
       offStatus();
       chatSocket.leaveRoom(roomId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId]);
 
   function onSocketMessage(msg: ChatMessage) {
@@ -111,18 +111,18 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
 
     try {
       // try socket send first (chatSocket queues if offline)
-      const client_id = await chatSocket.sendText(roomId, content);
+      const success = await chatSocket.sendText(roomId, user?.user_id || "", content);
       // add optimistic message to UI
       const temp: ChatMessage = {
-        id: `c_${client_id}`,
+        id: `c_${user?.user_id || "0"}`,
         room_id: roomId,
-        sender_id: "ME",
+        sender_id: user?.user_id || "",
         content,
         message_type: "text",
         message_data: null,
         is_read: false,
         created_at: new Date().toISOString(),
-        pending: true,
+        pending: !success,
       };
       setMessages(prev => [...prev, temp]);
       // scroll
@@ -155,13 +155,13 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
       const uploadedUrl = await uploadMediaMock(uri); // replace with real upload
       // send via socket
       const client_id = kind === "image"
-        ? await chatSocket.sendImage(roomId, uploadedUrl, mime, { localUri: uri })
-        : await chatSocket.sendVideo(roomId, uploadedUrl, mime, { localUri: uri });
+        ? await chatSocket.sendImage(roomId, uploadedUrl, mime, user?.user_id || "", { localUri: uri })
+        : await chatSocket.sendVideo(roomId, uploadedUrl, mime, user?.user_id || "", { localUri: uri });
 
       const temp: ChatMessage = {
         id: `c_${client_id}`,
         room_id: roomId,
-        sender_id: "ME",
+        sender_id: user?.user_id || "",
         content: uploadedUrl,
         message_type: kind === "image" ? "image" : "video",
         message_data: { url: uploadedUrl },
@@ -185,7 +185,7 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
       const mock = await sendProductMessageMock(roomId, product_id, `Product shared: ${product_id}`);
       setMessages(prev => [...prev, { ...mock, pending: false }]);
       // optionally also inform server via socket (chatSocket.sendProduct) — better if supported
-      await chatSocket.sendProduct(roomId, product_id, `Sharing product ${product_id}`);
+      await chatSocket.sendProduct(roomId, user?.user_id || "", product_id, `Sharing product ${product_id}`);
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch (e) {
       console.error("send product", e);
@@ -195,10 +195,8 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
     }
   }
 
-  // simple image upload mock - replace with your media API
+  // Todo: remember to replace with the backend media API
   async function uploadMediaMock(localUri: string): Promise<string> {
-    // In real: upload to S3 or media endpoint and return URL
-    // For now: return the localUri (works in development) or a placeholder URL
     return localUri;
   }
 
@@ -222,7 +220,7 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
 
   // render items
   function renderMessage({ item }: { item: ChatMessage }) {
-    const isMe = (item.sender_id === "ME" || item.sender_id === "me");
+    const isMe = (item.sender_id === user?.user_id || item.sender_id === user?.user_id?.toString());
     const time = new Date(item.created_at).toLocaleTimeString();
     return (
       <View style={{ padding: 8, flexDirection: "row", justifyContent: isMe ? "flex-end" : "flex-start" }}>
@@ -333,7 +331,7 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
             value={input}
             onChangeText={(t) => {
               setInput(t);
-              chatSocket.typingStart(roomId);
+              chatSocket.typingStart(roomId, user?.user_id || "");
             }}
             placeholder="Message..."
             placeholderTextColor="#994d51"
