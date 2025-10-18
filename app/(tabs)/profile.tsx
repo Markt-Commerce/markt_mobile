@@ -195,32 +195,6 @@ export default function SettingsProfileScreen() {
             </TView>
           </View>
 
-          {/* Details */}
-          <Section title="Details">
-            {[
-              { label: "Name", value: displayName, pressable: true, onPress: () => {} },
-              { label: "Username", value: usernameText, pressable: true, onPress: () => {} },
-              { label: "Gender", value: "Female", pressable: true, onPress: () => {} },
-              { label: "Location", value: "Los Angeles, CA", pressable: true, onPress: () => {} },
-              { label: "Joined", value: joinedYear, pressable: false },
-            ].map((item, i, arr) => (
-              <Row
-                key={i}
-                onPress={item.pressable ? item.onPress : undefined}
-                showChevron={!!item.pressable}
-                last={i === arr.length - 1}
-              >
-                <View>
-                  <TText light="text-[#171311]" dark="text-neutral-100" className="text-base font-medium">
-                    {item.label}
-                  </TText>
-                  <TText light="text-[#876d64]" dark="text-neutral-400" className="text-sm">
-                    {item.value}
-                  </TText>
-                </View>
-              </Row>
-            ))}
-          </Section>
 
           {/* App Preferences */}
           <Section title="App Preferences">
