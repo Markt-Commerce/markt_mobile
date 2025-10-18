@@ -49,8 +49,6 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, Props>(
       path: ["category_ids"]
     });
 
-
-  const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['50%', '90%'], []);
 
 

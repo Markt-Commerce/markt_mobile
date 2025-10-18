@@ -1,29 +1,21 @@
 // /screens/ChatScreen.tsx
 import React, { useEffect, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  Image,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-} from "react-native";
-import { ArrowLeft, Phone, Image as ImageIcon, Camera, Send as SendIcon, ThumbsUp } from "lucide-react-native";
+import { View, Text, FlatList, Image, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from "react-native";
+import { ArrowLeft, Phone, Image as ImageIcon, Camera, Send as SendIcon, ThumbsUp, ShoppingBag } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import chatSocket from "../services/chatSock";
 import { getRoomMessages, markRoomRead, sendMessageREST, sendProductMessageMock, addReaction, removeReaction } from "../services/sections/chat";
 import { ChatMessage } from "../models/chat";
+import { addToCart } from "../services/sections/cart";
+import { useUser } from "../hooks/userContextProvider";
 
-type Props = {
-  route: { params: { roomId: number; otherUser?: { username?: string; profile_picture?: string } } };
+export type ChatProps = {
+  route: { params: { roomId: number; otherUser?: { username?: string; profile_picture?: string, user_id: string } } };
   navigation: any;
 };
 
-export default function ChatScreen({ route, navigation }: Props) {
+export default function ChatScreen({ route, navigation }: ChatProps) {
+  const {user, role} = useUser();
   const { roomId, otherUser } = route.params;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,30 +25,16 @@ export default function ChatScreen({ route, navigation }: Props) {
   const [page, setPage] = useState(1);
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
-  useEffect(() => {
-    navigation.setOptions({
-      title: otherUser?.username ?? "Chat",
-      headerLeft: () => (
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ paddingLeft: 12 }}>
-          <ArrowLeft size={22} color="#1b0e0e" />
-        </TouchableOpacity>
-      ),
-      headerRight: () => (
-        <TouchableOpacity onPress={() => { /* phone action */ }} style={{ paddingRight: 12 }}>
-          <Phone size={22} color="#1b0e0e" />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, otherUser]);
 
   // load messages (first page)
   useEffect(() => {
-    let mounted = true;
     (async () => {
       setLoading(true);
       try {
+        if (!roomId || roomId === 0) return;
+        // fetch messages
         const res = await getRoomMessages(roomId, 1, 50);
-        if (!mounted) return;
+        console.log("loaded messages: ", res.messages[0]);
         setMessages(res.messages ?? []);
         setPage(2);
         // mark read
@@ -65,10 +43,9 @@ export default function ChatScreen({ route, navigation }: Props) {
         console.error("Failed loading messages", e);
         Alert.alert("Error", "Could not load messages.");
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     })();
-    return () => { mounted = false; };
   }, [roomId]);
 
   // socket connection & listeners
@@ -79,11 +56,11 @@ export default function ChatScreen({ route, navigation }: Props) {
     const offTyping = chatSocket.onTyping(onTypingUpdate);
     const offStatus = chatSocket.onStatus((s) => {
       // optionally show connection status
-      // console.log("socket status", s);
+      console.log("socket status", s);
     });
 
     // join room
-    chatSocket.joinRoom(roomId);
+    chatSocket.joinRoom(roomId, user?.user_id || "");
 
     return () => {
       offMsg();
@@ -91,7 +68,6 @@ export default function ChatScreen({ route, navigation }: Props) {
       offStatus();
       chatSocket.leaveRoom(roomId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId]);
 
   function onSocketMessage(msg: ChatMessage) {
@@ -135,19 +111,18 @@ export default function ChatScreen({ route, navigation }: Props) {
 
     try {
       // try socket send first (chatSocket queues if offline)
-      const client_id = await chatSocket.sendText(roomId, content);
+      const success = await chatSocket.sendText(roomId, user?.user_id || "", content);
       // add optimistic message to UI
       const temp: ChatMessage = {
-        id: `c_${client_id}`,
-        client_id,
+        id: `c_${user?.user_id || "0"}`,
         room_id: roomId,
-        sender_id: "ME",
+        sender_id: user?.user_id || "",
         content,
         message_type: "text",
         message_data: null,
         is_read: false,
         created_at: new Date().toISOString(),
-        pending: true,
+        pending: !success,
       };
       setMessages(prev => [...prev, temp]);
       // scroll
@@ -180,14 +155,13 @@ export default function ChatScreen({ route, navigation }: Props) {
       const uploadedUrl = await uploadMediaMock(uri); // replace with real upload
       // send via socket
       const client_id = kind === "image"
-        ? await chatSocket.sendImage(roomId, uploadedUrl, mime, { localUri: uri })
-        : await chatSocket.sendVideo(roomId, uploadedUrl, mime, { localUri: uri });
+        ? await chatSocket.sendImage(roomId, uploadedUrl, mime, user?.user_id || "", { localUri: uri })
+        : await chatSocket.sendVideo(roomId, uploadedUrl, mime, user?.user_id || "", { localUri: uri });
 
       const temp: ChatMessage = {
         id: `c_${client_id}`,
-        client_id,
         room_id: roomId,
-        sender_id: "ME",
+        sender_id: user?.user_id || "",
         content: uploadedUrl,
         message_type: kind === "image" ? "image" : "video",
         message_data: { url: uploadedUrl },
@@ -211,7 +185,7 @@ export default function ChatScreen({ route, navigation }: Props) {
       const mock = await sendProductMessageMock(roomId, product_id, `Product shared: ${product_id}`);
       setMessages(prev => [...prev, { ...mock, pending: false }]);
       // optionally also inform server via socket (chatSocket.sendProduct) — better if supported
-      await chatSocket.sendProduct(roomId, product_id, `Sharing product ${product_id}`);
+      await chatSocket.sendProduct(roomId, user?.user_id || "", product_id, `Sharing product ${product_id}`);
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch (e) {
       console.error("send product", e);
@@ -221,10 +195,8 @@ export default function ChatScreen({ route, navigation }: Props) {
     }
   }
 
-  // simple image upload mock - replace with your media API
+  // Todo: remember to replace with the backend media API
   async function uploadMediaMock(localUri: string): Promise<string> {
-    // In real: upload to S3 or media endpoint and return URL
-    // For now: return the localUri (works in development) or a placeholder URL
     return localUri;
   }
 
@@ -248,7 +220,7 @@ export default function ChatScreen({ route, navigation }: Props) {
 
   // render items
   function renderMessage({ item }: { item: ChatMessage }) {
-    const isMe = (item.sender_id === "ME" || item.sender_id === "me");
+    const isMe = (item.sender_id === user?.user_id || item.sender_id === user?.user_id?.toString());
     const time = new Date(item.created_at).toLocaleTimeString();
     return (
       <View style={{ padding: 8, flexDirection: "row", justifyContent: isMe ? "flex-end" : "flex-start" }}>
@@ -311,7 +283,7 @@ export default function ChatScreen({ route, navigation }: Props) {
     if (!productId) return Alert.alert("Missing product id");
     // implement addToCart using your cart service
     try {
-      // await addToCart({ product_id: productId, variant_id: 0, quantity: 1 });
+      await addToCart({ product_id: productId, variant_id: 0, quantity: 1 });
       Alert.alert("Added to cart", `Product ${productId} added to cart (mock).`);
     } catch (e) {
       Alert.alert("Error", "Could not add to cart.");
@@ -347,8 +319,10 @@ export default function ChatScreen({ route, navigation }: Props) {
         keyExtractor={(it) => String(it.id)}
         renderItem={renderMessage}
         onEndReachedThreshold={0.2}
-        onEndReached={loadMore}
-        contentContainerStyle={{ paddingVertical: 8 }}
+        //onEndReached={loadMore}
+        contentContainerStyle={{ paddingVertical: 8, paddingBottom: 12 }}
+        showsVerticalScrollIndicator={false}
+        inverted
       />
 
       {typingUser && <Text style={{ paddingHorizontal: 16, color: "#60758a" }}>{typingUser} is typing...</Text>}
@@ -359,7 +333,7 @@ export default function ChatScreen({ route, navigation }: Props) {
             value={input}
             onChangeText={(t) => {
               setInput(t);
-              chatSocket.typingStart(roomId);
+              chatSocket.typingStart(roomId, user?.user_id || "");
             }}
             placeholder="Message..."
             placeholderTextColor="#994d51"
@@ -374,7 +348,7 @@ export default function ChatScreen({ route, navigation }: Props) {
             <Camera color="#994d51" size={20} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => { /* open product picker */ handleSendProduct("PRD_001"); }} style={{ padding: 8 }}>
-            <Text style={{ color: "#994d51", fontWeight: "600" }}>Product</Text>
+            <ShoppingBag color="#994d51" size={20} />
           </TouchableOpacity>
         </View>
 

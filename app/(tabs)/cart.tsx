@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
-import { getCart, updateCartItem, deleteCartItem, getCartSummary, checkoutCart } from "../services/sections/cart";
-import { Cart, CartItem, CartSummary, CheckoutRequest } from "../models/cart";
+import { getCart, updateCartItem, deleteCartItem, getCartSummary, checkoutCart } from "../../services/sections/cart";
+import { Cart, CartItem, CartSummary, CheckoutRequest } from "../../models/cart";
 
 export default function CartScreen() {
   const [cart, setCart] = useState<Cart | null>(null);
@@ -85,11 +85,12 @@ export default function CartScreen() {
         <View key={item.id} className="flex-row items-center justify-between gap-4 px-4 py-2 min-h-[72px]">
           <View className="flex-row items-center gap-4">
             <Image
-              source={{ uri: item.product?.images?.[0]?.media?.mobile_url ?? "" }}
+              source={{ uri: item.product?.images?.[0]?.media?.original_url ?? "" }}
               className="w-14 h-14 rounded-lg bg-gray-200"
             />
             <View>
-              <Text className="text-[#171311] text-base font-medium">{item.product?.name}</Text>
+              {/* slicing the name incase it is longer than the screen size can contain */}
+              <Text className="text-[#171311] text-base font-medium">{item.product?.name.slice(0,20)}</Text>
               <Text className="text-[#876d64] text-sm">Variant #{item.variant_id}</Text>
             </View>
           </View>
