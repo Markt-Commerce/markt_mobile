@@ -2,6 +2,7 @@ import { BASE_URL,request } from "../api";
 import { ProductImageResponse,SocialPostMediaResponse, RequestImageResponse, MediaResponse } from "../../models/media";
 import { InstagramGridProps } from '../../components/imagePicker'
 import { Media } from "../../models/feed";
+import { Buffer } from 'buffer';
 
 /** 
  * Uploads an image
@@ -75,12 +76,64 @@ export async function attemptMultipleUpload(
         // ensure a filename exists; if not, derive from mime type
         const name = img.fileName ?? `upload.${mimeType.split('/')[1] || 'jpg'}`;
 
-        const requestBody = { uri: img.uri, name, type: mimeType };
-        console.log(requestBody);
-        formData.append('file', requestBody as any);
-        const result = await uploadImage(formData);
+        // Read the file as an ArrayBuffer/Blob and append that to FormData
+        const uri = img.uri || '';
+        let fileBlob: Blob | undefined;
+
+        try {
+          // Try to fetch the resource and convert to a Blob.
+          // This works for data: URIs, http(s) and many file URIs depending on environment.
+          console.log('fetching uri:', uri);
+          const response = await fetch(uri);
+          const arrayBuffer = await response.arrayBuffer();
+          //convert to base64
+          const base64 = Buffer.from(arrayBuffer).toString('base64');
+          fileBlob = new Blob([base64], { type: mimeType });
+        } catch (fetchErr) {
+          console.warn('Failed to fetch uri as blob:', uri, fetchErr);
+          // Fallback: if the image provides a base64 property, convert that to a Blob.
+          const b64 = (img as any).base64;
+          if (b64) {
+            // Remove possible data url prefix if present
+            const cleaned = b64.replace(/^data:.*;base64,/, '');
+            // atob may not exist in some environments; prefer global atob if present, otherwise use Buffer
+            let binaryString: string;
+            if (typeof atob === 'function') {
+              binaryString = atob(cleaned);
+            } else if (typeof Buffer !== 'undefined') {
+              binaryString = Buffer.from(cleaned, 'base64').toString('binary');
+            } else {
+              throw fetchErr; // rethrow original fetch error if no decoder available
+            }
+
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            fileBlob = new Blob([bytes], { type: mimeType });
+
+            console.log('created blob from base64, size:', fileBlob.size);
+          } else {
+            // If all else fails create an empty blob so the request won't crash (or rethrow if preferred)
+            fileBlob = new Blob([], { type: mimeType });
+          }
+        }
+
+        // Append the blob with filename to FormData
+        // In browsers FormData.append accepts (name, blob, filename)
+        // In some React Native environments this also works; if your RN environment expects { uri, name, type } revert accordingly.
+        formData.append('file', fileBlob, name);
+        // optional debug
+        console.log('appending file:', name, mimeType, 'size:', fileBlob.size);
         console.log(formData.getAll('file'));
-        return result
+        try {
+          const result = await uploadImage(formData);
+          return result;
+        } catch (error) {
+          console.error("Upload failed:", error);
+        }
+        //return result
       }) as Promise<MediaResponse>[]
     );
     return ImageResponse;

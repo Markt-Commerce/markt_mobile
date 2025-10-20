@@ -82,7 +82,7 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
       onSubmit(payload);
       console.log("all done, created post successfully")
     } catch (err) {
-      console.error("Create product failed:", err);
+      console.error("Create post failed:", err);
       // optionally: show UI feedback here
     }
   };
