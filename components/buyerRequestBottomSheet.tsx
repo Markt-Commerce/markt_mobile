@@ -11,6 +11,8 @@ import { X } from "lucide-react-native";
 import CategoryAddition from "./categoryAddition";
 import InstagramGrid, { InstagramGridProps, PickedImage } from "./imagePicker";
 import { pickImage } from "../services/imageSelection";
+import { uploadImage, attemptMultipleUpload } from "../services/sections/media";
+import { MediaResponse } from "../models/media";
 
 //temporary date parser to create an expiry date. This default expiry date would be seven days from when the request was first placed
 function getDateSevenDaysFromNow() {
@@ -74,30 +76,34 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (d
 
 
     const handleLocalSubmit = async (data: RequestFormData) => {
+    try{
       console.log("sending request")
-        try {
-          // ensure category_ids includes selectedCategories if not provided by form UI
-          const category_ids = (data && (data as any).category_ids && (data as any).category_ids.length > 0)
-            ? (data as any).category_ids
-            : selectedCategories.map(c => c.id);
-    
-          // prepare payload: keep form data, add category_ids (if we generated them) and add images
-          const payload = {
-            ...data,
-            category_ids,
-            // include raw image objects for parent to handle upload or attach to request body
-            //remember to work on this later
-            //images: Imagevalue ?? [],
-          };
-    
-          // call parent-provided onSubmit
-          await onSubmit(payload);
-          console.log("all done, created request successfully")
-        } catch (err) {
-          console.error("Create product failed:", err);
-          // optionally: show UI feedback here
-        }
+      const ImageResponse = await attemptMultipleUpload(Imagevalue);
+
+      const imageIds = ImageResponse.map((imgId)=>imgId.media.id)
+
+      // ensure category_ids includes selectedCategories if not provided by form UI
+      const category_ids = (data && (data as any).category_ids && (data as any).category_ids.length > 0)
+        ? (data as any).category_ids
+        : selectedCategories.map(c => c.id);
+
+      // prepare payload: keep form data, add category_ids (if we generated them) and add images
+      const payload = {
+        ...data,
+        category_ids,
+        // include raw image objects for parent to handle upload or attach to request body
+        //remember to work on this later
+        images: imageIds ?? [],
       };
+
+      // call parent-provided onSubmit
+      await onSubmit(payload);
+      console.log("all done, created request successfully")
+    } catch (err) {
+      console.error("Create product failed:", err);
+      // optionally: show UI feedback here
+    }
+  }
 
     return (
       <BottomSheet ref={ref} index={-1} snapPoints={snapPoints} enablePanDownToClose>
