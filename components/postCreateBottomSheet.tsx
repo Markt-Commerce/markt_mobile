@@ -75,7 +75,7 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
         }),
         // include raw image objects for parent to handle upload or attach to request body
         //remember to work on this later
-        images: imageIds ?? [],
+        media_ids: imageIds ?? [],
       };
 
       // call parent-provided onSubmit
