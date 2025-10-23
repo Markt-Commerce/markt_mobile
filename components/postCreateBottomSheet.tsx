@@ -14,6 +14,8 @@ import { getAllCategories } from "../services/sections/categories";
 import { X } from "lucide-react-native";
 import { getSellerProducts } from "../services/sections/product";
 import { PlaceholderProduct } from "../models/products";
+import { uploadImage, attemptMultipleUpload } from "../services/sections/media";
+import { MediaResponse } from "../models/media";
 
 const postSchema = z.object({
   caption: z.string().max(1000, "Caption too long").optional(),
@@ -55,6 +57,9 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
 
     const handleLocalSubmit = async (data: PostFormData) => {
     try {
+      const ImageResponse = await attemptMultipleUpload(Imagevalue);
+
+      const imageIds = ImageResponse.map((imgId)=>imgId.media.id)
       // ensure category_ids includes selectedCategories if not provided by form UI
       const category_ids = (data && (data as any).category_ids && (data as any).category_ids.length > 0)
         ? (data as any).category_ids
@@ -67,17 +72,17 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
         status: postStatus,
         products: currentProducts.map((val)=>{
           return {product_id:val}
-        })
+        }),
         // include raw image objects for parent to handle upload or attach to request body
         //remember to work on this later
-        //images: Imagevalue ?? [],
+        media_ids: imageIds ?? [],
       };
 
       // call parent-provided onSubmit
-      await onSubmit(payload);
+      onSubmit(payload);
       console.log("all done, created post successfully")
     } catch (err) {
-      console.error("Create product failed:", err);
+      console.error("Create post failed:", err);
       // optionally: show UI feedback here
     }
   };

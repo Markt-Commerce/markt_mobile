@@ -275,6 +275,7 @@ const addProductToCart = async (product:ProductDetail)=>{
       }
     />
 
+    {/* TODO: remember to add a guard clause for empty states */}
     <QuickChatBottomSheet sheetRef={ChatBottomSheetRef} sellerId={product.seller_user.id} buyerId={user?.user_id?.toString() || ""}/>
   </SafeAreaView>
 );

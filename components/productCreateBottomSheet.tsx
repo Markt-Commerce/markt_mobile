@@ -10,7 +10,8 @@ import { CategoryAddition } from './categoryAddition';
 import { getAllCategories } from '../services/sections/categories';
 import { X } from 'lucide-react-native';
 import InstagramGrid, { InstagramGridProps } from './imagePicker';
-
+import { uploadImage, attemptMultipleUpload } from '../services/sections/media';
+import { MediaResponse } from '../models/media';
 
 
 // Zod Schema for Validation
@@ -83,6 +84,9 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, Props>(
   const handleLocalSubmit = async (data: ProductFormData) => {
     try {
       //upload images first
+      const ImageResponse = await attemptMultipleUpload(Imagevalue);
+
+      const imageIds = ImageResponse.map((imgId)=>imgId.media.id)
 
       // ensure category_ids includes selectedCategories if not provided by form UI
       const category_ids = (data && (data as any).category_ids && (data as any).category_ids.length > 0)
@@ -97,9 +101,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, Props>(
       const payload = {
         ...data,
         category_ids,
-        // include raw image objects for parent to handle upload or attach to request body
-        // todo: remember to ask backend dev about this. It is a bit confusing
-        //media_ids: Imagevalue ?? [],
+        media_ids: imageIds ?? [],
       };
 
       // call parent-provided onSubmit

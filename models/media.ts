@@ -10,37 +10,67 @@ export interface MediaVariant {
     url: string;
     id: number;
   }
-  
-  export interface Media {
-    updated_at: string;
-    file_size: number;
-    mobile_url: string;
-    variants: MediaVariant[];
-    user_id: string;
-    media_type: string;
-    duration: number;
-    processing_status: string;
-    height: number;
-    tablet_url: string;
-    social_post_url: string;
-    original_filename: string;
-    is_public: boolean;
-    width: number;
-    alt_text: string;
-    storage_key: string;
-    background_removed: boolean;
-    compression_quality: number;
-    social_story_url: string;
-    caption: string;
-    social_square_url: string;
-    created_at: string;
-    desktop_url: string;
-    exif_data: Record<string, string>;
-    original_url: string;
-    thumbnail_url: string;
-    id: number;
-    mime_type: string;
-  }
+
+  export interface MediaVariant {
+  processing_time: number;
+  width: number;
+  height: number;
+  id: number;
+  url: string;
+  storage_key: string;
+  format: string;
+  file_size: number;
+  quality: number;
+  variant_type: string; // could be "original" | "compressed" | etc.
+}
+
+export interface ExifData {
+  [key: string]: string;
+}
+
+export interface Urls {
+  [key: string]: string;
+}
+
+export interface MediaResponse {
+  processing_time: number;
+  success: boolean;
+  message: string;
+  variants: MediaVariant[];
+  media: Media;
+  urls: Urls;
+}
+
+export interface Media {
+  social_square_url: string;
+  tablet_url: string;
+  duration: number;
+  social_story_url: string;
+  original_url: string;
+  height: number;
+  user_id: string;
+  processing_status: string;
+  is_public: boolean;
+  compression_quality: number;
+  mime_type: string;
+  media_type: string; // e.g. "image" | "video"
+  created_at: string; // ISO timestamp
+  exif_data: ExifData;
+  alt_text: string;
+  updated_at: string; // ISO timestamp
+  social_post_url: string;
+  original_filename: string;
+  file_size: number;
+  background_removed: boolean;
+  mobile_url: string;
+  width: number;
+  id: number;
+  desktop_url: string;
+  thumbnail_url: string;
+  storage_key: string;
+  variants: MediaVariant[];
+  caption: string;
+}
   
   export interface ProductImage {
     product_id: string;
