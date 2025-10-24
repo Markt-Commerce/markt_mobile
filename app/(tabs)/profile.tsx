@@ -26,23 +26,34 @@ export default function SettingsProfileScreen() {
     try {
       const result = await getUserProfile();
       setProfileData(result);
-      console.log("result ",result)
     } catch (error) {
-      console.error(error);
+      show({
+        variant: "error",
+        title: "Error getting profile data",
+        message: "There was an issue retrieving your profile information.",
+      })
     }
   }
   const getBuyerData = async () => {
     try {
       
     } catch (error) {
-      console.error(error)
+      show({
+        variant: "error",
+        title: "Error getting profile data",
+        message: "There was an issue retrieving your profile information.",
+      })
     }
   }
   const getsellerData = async () => {
     try {
       
     } catch (error) {
-      console.error(error)
+      show({
+        variant: "error",
+        title: "Error getting profile data",
+        message: "There was an issue retrieving your profile information.",
+      })
     }
   }
 

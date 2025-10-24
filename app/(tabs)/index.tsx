@@ -15,11 +15,13 @@ import { createProduct } from "../../services/sections/product";
 import { createBuyerRequest } from "../../services/sections/request";
 import { CreateProductRequest, PlaceholderProduct } from "../../models/products";
 import { Category } from "../../models/categories";
+import { useToast } from "../../components/ToastProvider";
 
 export default function FeedScreen() {
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
+  const { show } = useToast();
 
   //for create product
   const [productCategories, setProductCategories] = useState<Category[]>([]);
@@ -80,7 +82,11 @@ export default function FeedScreen() {
       }
       setFeed((prev) => [...prev, ...newItems]);
     } catch (err) {
-      console.error("Failed to fetch feed:", err);
+      show({
+        variant: "error",
+        title: "Error loading feed",
+        message: "There was a problem loading the feed. Please try again later."
+      })
     } finally {
       setLoading(false);
     }
@@ -300,28 +306,54 @@ export default function FeedScreen() {
       <ProductFormBottomSheet ref={productFormRef} productCategories={productCategories} onSubmit={async (product) => {
         try {
           const newProduct = await createProduct(product as CreateProductRequest);
+          show({
+            variant: "success",
+            title: "Product Created",
+            message: "Your product has been successfully created."
+          });
           productFormRef.current?.close();
         } catch (error) {
-          console.error("Error creating product:", error);
+          show({
+            variant: "error",
+            title: "Error creating product",
+            message: "There was a problem creating the product. Please try again later."
+          });
         }
       }}/>
       <PostFormBottomSheet ref={postFormRef} productCategories={productCategories} products={postProducts} postImages={postImages} onSubmit={async (data) => {
         try {
           data.products = postProducts.map((prod) => { return { product_id: prod.id }; });
           const newPost = await createPost(data);
-          console.log("post: ",newPost)
+          show({
+            variant: "success",
+            title: "Post Created",
+            message: "Your post has been successfully created."
+          });
           //set feed later to show new post on top
           postFormRef.current?.close();
         } catch (error) {
-          console.error("Error creating post:", error);
+          show({
+            variant: "error",
+            title: "Error creating post",
+            message: "There was a problem creating the post. Please try again later."
+          });
         }
       }}/>
       <BuyerRequestFormBottomSheet ref={requestFormRef} requestImages={requestImages} onSubmit={async(request) => {
         try {
           const newRequest = await createBuyerRequest(request);
+          show({
+            variant: "success",
+            title: "Request Created",
+            message: "Your request has been successfully created."
+          });
           requestFormRef.current?.close();
         } catch (error) {
-          console.error("Error creating request:", error);
+          show({
+            variant: "error",
+            title: "Error creating buyer request",
+            message: "There was a problem creating the buyer request. Please try again later."
+          });
         }
       }}/>
     </SafeAreaView>
