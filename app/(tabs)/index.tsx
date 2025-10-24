@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { View, Text, FlatList, TouchableOpacity, Image, ImageBackground, ActivityIndicator, Pressable } from "react-native";
-import { Plus, ShoppingCart, MessageCircle, Heart, Send, Star } from "lucide-react-native";
+import { Plus, ShoppingCart, MessageCircle, Heart, Send, Star, Bell } from "lucide-react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { FeedItem } from "../../models/feed";
 import { getProducts, getPosts, getBuyerRequests } from "../../services/sections/feed";
 import { useUser } from "../../hooks/userContextProvider";
@@ -16,10 +16,13 @@ import { createBuyerRequest } from "../../services/sections/request";
 import { CreateProductRequest, PlaceholderProduct } from "../../models/products";
 import { Category } from "../../models/categories";
 import { useToast } from "../../components/ToastProvider";
+import StartCards from "../../components/startCards";
 
 export default function FeedScreen() {
+  const router = useRouter();
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadedStartCards, setLoadedStartCards] = useState(false);
   const [page, setPage] = useState(1);
   const { show } = useToast();
 
@@ -62,10 +65,19 @@ export default function FeedScreen() {
 
     const options = ["product", "post"];
     if (user?.account_type === "seller") options.push("request");
-    const fetchType = options[Math.floor(Math.random() * options.length)];
+    let fetchType = options[Math.floor(Math.random() * options.length)];
+    if (!loadedStartCards) {
+      //start cards are only loaded once at the start of the feed
+      fetchType = "startCard";
+      setLoadedStartCards(true);
+    }
 
     try {
       let newItems: FeedItem[] = [];
+      if (fetchType === "startCard") {
+        //load start cards
+        newItems = [{ type: "startCard", data: [] }]; //start cards component can handle its own data fetching with population
+      }
       if (fetchType === "product") {
         const products = await getProducts(page, 6);
         const groupedProducts = [];
@@ -104,9 +116,14 @@ export default function FeedScreen() {
   const Header = () => (
     <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-[#f0e9e7]">
       <Text className="text-xl font-extrabold text-[#111418]">Marketplace</Text>
-      <TouchableOpacity onPress={openMenu} className="p-2 rounded-full bg-[#f5f2f1]" hitSlop={{top:8,bottom:8,left:8,right:8}}>
-        <Plus size={22} color="#111418" />
+      <View className="flex-row justify-between items-center">
+        <TouchableOpacity onPress={openMenu} className="p-2 rounded-full bg-[#f5f2f1] mx-1" hitSlop={{top:8,bottom:8,left:8,right:8}}>
+          <Plus size={22} color="#111418" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/notifications')} className="p-2 rounded-full bg-[#f5f2f1] mx-1" hitSlop={{top:8,bottom:8,left:8,right:8}}>
+          <Bell size={22} color="#111418" />
       </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -189,7 +206,7 @@ export default function FeedScreen() {
           </View>
         </View>
       );
-    } else {
+    } else if (item.type === "post"){
       const post = item.data;
       return (
         <Link href={`/postDetails/${post.id}`} asChild>
@@ -240,6 +257,9 @@ export default function FeedScreen() {
           </TouchableOpacity>
         </Link>
       );
+    }
+    else {
+      return <StartCards />;
     }
   };
 
