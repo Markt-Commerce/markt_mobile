@@ -57,7 +57,6 @@ const EmailVerification = () => {
         message: `We sent a 6-digit code to ${regData.email}.`,
       });
     } catch (error: any) {
-      console.error("Failed to send verification code:", error);
       show({
         variant: "error",
         title: "Couldn’t send code",
@@ -89,7 +88,6 @@ const EmailVerification = () => {
       });
       router.push("/"); // continue
     } catch (error: any) {
-      console.error("Email verification failed:", error);
       show({
         variant: "error",
         title: "Invalid or expired code",

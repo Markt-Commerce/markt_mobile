@@ -84,7 +84,6 @@ export default function SignupScreen() {
       // router.navigate("/emailVerification"); // (use when flow is finalized)
     } catch (error: any) {
       // Error toast
-      console.error("Signup failed:", error);
       show({
         variant: "error",
         title: "Sign up failed",

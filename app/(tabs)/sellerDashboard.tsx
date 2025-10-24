@@ -9,30 +9,20 @@ import { getSellerOrders } from '../../services/sections/orders';
 import { SellerAnalyticsOverview, SellerAnalyticsTimeseries } from '../../models/analytics';
 import { ProductResponse } from '../../models/products';
 import { OrderItem } from '../../models/orders';
+import { useToast } from '../../components/ToastProvider';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function SellerDashboard() {
+  const { show } = useToast();
+  //chart width
   const chartWidth = Math.min(screenWidth - 32, 800);
 
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-  //real
   const [analyticsTimeseries, setAnalyticsTimeseries] = useState<SellerAnalyticsTimeseries | null>(null);
-
   const [analyticsOverview, setAnalyticsOverview] = useState<SellerAnalyticsOverview | null>(null);
-
-  //mock
-  const recentOrders = [
-    { name: 'Ava Bennett', id: '123456', amount: '$25.00' },
-    { name: 'Owen Carter', id: '789012', amount: '$30.00' },
-    { name: 'Chloe Clark', id: '345678', amount: '$15.00' },
-    { name: 'Noah Harper', id: '901234', amount: '$40.00' },
-  ];
-  //real
   const [sellerRecentOrders, setSellerRecentOrders] = useState<OrderItem[]>([]);
-
-  //real
   const [sellerInventory, setSellerInventory] = useState<ProductResponse[]>([]);
 
   useEffect(() => {
@@ -55,7 +45,11 @@ export default function SellerDashboard() {
         const productsData = await getSellerProducts(1,20);
         setSellerInventory(productsData);
       } catch (error) {
-        console.error('Error fetching seller dashboard data:', error);
+        show({
+          variant: "error",
+          title: "Error loading dashboard data",
+          message: "There was an issue retrieving your seller dashboard information.",
+        })
         //later we would show the error on the UI using a toasts
       }
     };
@@ -217,7 +211,7 @@ export default function SellerDashboard() {
             {sellerRecentOrders.map((o, idx) => (
               <View
                 key={idx}
-                className={`flex-row items-center justify-between px-4 py-3 ${idx < recentOrders.length - 1 ? 'border-b border-[#efe9e7]' : ''}`}
+                className={`flex-row items-center justify-between px-4 py-3 ${idx < sellerRecentOrders.length - 1 ? 'border-b border-[#efe9e7]' : ''}`}
               >
                 <View>
                   <Text className="text-[#171311] text-base font-medium">{o.product?.name}</Text>
@@ -257,10 +251,7 @@ export default function SellerDashboard() {
           <Text className="text-[#171311] text-[18px] font-extrabold px-1 pb-2">Low Stock Alerts</Text>
 
           <View className="rounded-2xl bg-[#fff5f3] border border-[#ffd9d2] overflow-hidden">
-            {[
-              { name: 'Product D', last: '2024-01-15', stock: 5 },
-              { name: 'Product E', last: '2024-01-10', stock: 2 },
-            ].map((a, idx, arr) => (
+            {sellerInventory.filter((item)=> item.stock! < 5).map((a, idx, arr) => (
               <View
                 key={a.name}
                 className={`flex-row items-stretch ${idx < arr.length - 1 ? 'border-b border-[#ffd9d2]' : ''}`}
@@ -277,13 +268,13 @@ export default function SellerDashboard() {
                     </View>
 
                     <Text className="text-[#171311] text-base font-medium mt-1">{a.name}</Text>
-                    <Text className="text-[#8a6c66] text-xs mt-0.5">Last Updated: {a.last}</Text>
+                    <Text className="text-[#8a6c66] text-xs mt-0.5">Last Updated: {a.created_at}</Text>
                     <Text className="text-[#8a6c66] text-xs">Stock Left: {a.stock}</Text>
 
                     {/* Visual urgency bar*/}
                     <View className="mt-2 h-2 rounded-full bg-[#ffe6e1] overflow-hidden">
                       <View
-                        style={{ width: `${Math.min(a.stock, 20) * 5}%` }}
+                        style={{ width: `${Math.min(a.stock || 0, 20) * 5}%` }}
                         className="h-2 bg-[#e26136]"
                       />
                     </View>

@@ -2,12 +2,14 @@ import React, { useEffect, useState } from "react";
 import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { getCart, updateCartItem, deleteCartItem, getCartSummary, checkoutCart } from "../../services/sections/cart";
 import { Cart, CartItem, CartSummary, CheckoutRequest } from "../../models/cart";
+import { useToast } from "../../components/ToastProvider";
 
 export default function CartScreen() {
   const [cart, setCart] = useState<Cart | null>(null);
   const [summary, setSummary] = useState<CartSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const { show } = useToast();
 
   const fetchCart = async () => {
     try {
@@ -17,7 +19,11 @@ export default function CartScreen() {
       setCart(cartData);
       setSummary(summaryData);
     } catch (err) {
-      console.error("Failed to fetch cart:", err);
+      show({
+        variant: "error",
+        title: "Error loading cart",
+        message: "There was a problem fetching your cart. Please try again.",
+      });
     } finally {
       setLoading(false);
     }
@@ -42,11 +48,18 @@ export default function CartScreen() {
         notes: "Checkout from mobile app",
       };
       await checkoutCart(checkoutData);
-      alert("Checkout successful!");
+      show({
+        variant: "success",
+        title: "Checkout successful",
+        message: "Your order has been placed successfully.",
+      });
       fetchCart(); // reset cart
     } catch (err) {
-      console.error("Checkout failed:", err);
-      alert("Checkout failed. Try again.");
+      show({
+        variant: "error",
+        title: "Checkout failed",
+        message: "There was a problem during checkout. Please try again.",
+      });
     } finally {
       setProcessing(false);
     }

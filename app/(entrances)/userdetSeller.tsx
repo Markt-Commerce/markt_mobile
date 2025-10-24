@@ -49,10 +49,9 @@ const ShopInformationScreen = () => {
         const cats = await getAllCategories();
         setCategories(cats);
       } catch (error: any) {
-        console.error("Failed to fetch categories:", error);
         show({
           variant: "error",
-          title: "Couldn’t load categories",
+          title: "Could not load categories",
           message: "Please check your connection and try again.",
         });
       }

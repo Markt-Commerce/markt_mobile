@@ -1,11 +1,12 @@
-import { Button, StyleSheet, Text, View } from 'react-native'
+import { Button, Text, View } from 'react-native'
 import React, { useState } from 'react'
 import { Input } from '../../components/inputs';
 import { z } from 'zod';
-import { useController, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { sendPasswordResetEmail, resetPassword } from '../../services/sections/auth';
 import { useRouter } from 'expo-router';
+import { useToast } from '../../components/ToastProvider';
 
 const forgotPassword = () => {
 
@@ -13,6 +14,7 @@ const forgotPassword = () => {
   const [emailSent, setEmailSent] = useState(false);
 
   const router = useRouter();
+  const { show } = useToast();
 
   const schema = z.object({
     email: z.string().min(1, "Email is required").email("Invalid email address"),
@@ -43,7 +45,11 @@ const forgotPassword = () => {
         setEmailSent(true);
       }, 2000);
     } catch (error) {
-      console.error("Error sending password reset email:", error);
+      show({
+        variant: "error",
+        title: "counld not send reset email",
+        message: error instanceof Error ? error.message : "An unexpected error occurred",
+      });
     }
   }
 
@@ -52,11 +58,19 @@ const forgotPassword = () => {
     try {
       const result = await resetPassword(data.email, data.code || "", data.newPassword || "");
       if (result) {
-        console.log("Password reset successful");
+        show({
+          variant: "success",
+          title: "Password Reset Successful",
+          message: "Your password has been reset successfully. Please log in with your new password.",
+        });
         router.push("/login");
       }
     } catch (error) {
-      console.error("Error resetting password:", error);
+      show({
+        variant: "error",
+        title: "Error resetting password",
+        message: error instanceof Error ? error.message : "An unexpected error occurred",
+      });
     }
   }
 
@@ -85,5 +99,3 @@ const forgotPassword = () => {
 
 
 export default forgotPassword
-
-const styles = StyleSheet.create({})
