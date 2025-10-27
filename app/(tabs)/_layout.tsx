@@ -1,7 +1,7 @@
 // app/(tabs)/_layout.js
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, Search, PlusSquare, Heart, User, ChartColumnStackedIcon, ListOrdered, Badge, ShoppingBasket } from 'lucide-react-native';
+import { Home, Search, PlusSquare, Heart, User, ChartColumnStackedIcon, ListOrdered, Badge, ShoppingBasket, MessageCircle } from 'lucide-react-native';
 import { useUser } from '../../hooks/userContextProvider';
 
 export default function TabsLayout() {
@@ -43,6 +43,12 @@ export default function TabsLayout() {
           href: (role != 'buyer') ? null : undefined,
         }}
       /> 
+      <Tabs.Screen
+        name="messages"
+        options={{
+          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <MessageCircle color={color} />,
+        }}
+      />
       <Tabs.Screen 
         name="buyerOrders"
         options={{

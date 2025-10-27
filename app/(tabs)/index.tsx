@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { View, Text, FlatList, TouchableOpacity, Image, ImageBackground, ActivityIndicator, Pressable } from "react-native";
-import { Plus, ShoppingCart, MessageCircle, Heart, Send, Star, Bell } from "lucide-react-native";
+import { Plus, ShoppingCart, MessageCircle, Heart, Send, Star, Bell, Search } from "lucide-react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { Link, useRouter } from "expo-router";
 import { FeedItem } from "../../models/feed";
@@ -114,6 +114,7 @@ export default function FeedScreen() {
 
   // Header Component (visuals only)
   const Header = () => (
+    <>
     <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-[#f0e9e7]">
       <Text className="text-xl font-extrabold text-[#111418]">Marketplace</Text>
       <View className="flex-row justify-between items-center">
@@ -125,6 +126,17 @@ export default function FeedScreen() {
       </TouchableOpacity>
       </View>
     </View>
+    <View className="px-4 py-3 bg-white border-b border-[#f0e9e7]">
+      {/* search bar but like button that leads to search page */}
+      <TouchableOpacity onPress={() => router.push('/search')} className="p-2 rounded-full bg-[#f5f2f1] mx-1" hitSlop={{top:8,bottom:8,left:8,right:8}}>
+        {/* button that looks like a search bar */}
+        <View className="flex-row items-center bg-[#f5f2f1] rounded-full px-3 py-1">
+          <Search size={18} color="#886963" />
+          <Text className="text-[#886963] ml-2">What are you looking for?</Text>
+        </View>
+      </TouchableOpacity>
+    </View>
+    </>
   );
 
   const renderItem = ({ item }: { item: FeedItem }) => {
@@ -213,7 +225,7 @@ export default function FeedScreen() {
           <TouchableOpacity activeOpacity={0.85} className="px-4 pt-3">
             <View className="rounded-2xl border border-[#efe9e7] bg-white p-4">
               <View className="flex-row items-center mb-3">
-                <Image source={{ uri: post.user?.profile_picture_url }} className="w-10 h-10 rounded-full mr-3" />
+                <Image source={{ uri: post.user?.profile_picture_url.length > 0 ? post.user?.profile_picture_url : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" }} className="w-10 h-10 rounded-full mr-3" />
                 <View>
                   <Text className="font-semibold text-[#111418]">{post.user?.username}</Text> {/* Ask the backend to provide the actual name i.e shop or buyer name to include here */}
                   <Text className="text-xs text-[#876d64]">Post</Text>

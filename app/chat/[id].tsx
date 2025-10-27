@@ -7,7 +7,7 @@ export default function chat() {
 
   const { id } = useLocalSearchParams();
   return (
-    <View>
+    <View style={{flex:1}}>
       <ChatScreen route={{params: {
         roomId: Number(id as string)
       }}}

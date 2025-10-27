@@ -8,6 +8,7 @@ import { getRoomMessages, markRoomRead, sendMessageREST, sendProductMessageMock,
 import { ChatMessage } from "../models/chat";
 import { addToCart } from "../services/sections/cart";
 import { useUser } from "../hooks/userContextProvider";
+import { useRouter } from "expo-router";
 
 export type ChatProps = {
   route: { params: { roomId: number; otherUser?: { username?: string; profile_picture?: string, user_id: string } } };
@@ -24,6 +25,7 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
   const [typingUser, setTypingUser] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const listRef = useRef<FlatList<ChatMessage>>(null);
+  const router = useRouter();
 
 
   // load messages (first page)
@@ -319,10 +321,14 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
         keyExtractor={(it) => String(it.id)}
         renderItem={renderMessage}
         onEndReachedThreshold={0.2}
+        ListHeaderComponent={<View style={{ padding: 12 }}>
+          <ArrowLeft size={24} color="#171312" onPress={() => router.back()} />
+          <Text style={{ fontWeight: "bold" }}>Chat Messages</Text>
+          </View>}
         //onEndReached={loadMore}
         contentContainerStyle={{ paddingVertical: 8, paddingBottom: 12 }}
         showsVerticalScrollIndicator={false}
-        inverted
+        //inverted
       />
 
       {typingUser && <Text style={{ paddingHorizontal: 16, color: "#60758a" }}>{typingUser} is typing...</Text>}
