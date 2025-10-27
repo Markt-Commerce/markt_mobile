@@ -41,6 +41,7 @@ export interface Product {
     variants: Variant[];
     images: ProductImage[];
     seller: Seller;
+    seller_user:SellerUser;
   }
 
   
@@ -111,8 +112,19 @@ export interface Product {
     total_products: number;
     verification_status: string;
   }
-  
 
+  interface SellerUser{
+    id: string;
+    profile_picture: string; 
+    username: string;
+  }
+  
+export interface PlaceholderProduct {
+  id: string;
+  name: string;
+  price: number;
+  image?: string;
+}
   
   export interface UpdateProductRequest {
     name?: string;

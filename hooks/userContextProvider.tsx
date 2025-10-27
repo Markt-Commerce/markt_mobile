@@ -6,6 +6,7 @@ type UserRole = 'buyer' | 'seller' | null;
 interface User {
   account_type: UserRole; // 'buyer' or 'seller'
   email: string;
+  user_id?: string;
 }
 
 export interface UserContextType {
@@ -20,7 +21,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 //would add this in the main App component or a higher level component to provide the context to the app
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [role, setRole] = useState<UserRole>(null);
+  const [role, setRole] = useState<UserRole>('buyer');
 
   return (
     <UserContext.Provider value={{ user, role, setUser, setRole }}>

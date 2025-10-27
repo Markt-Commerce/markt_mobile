@@ -1,5 +1,6 @@
 import { TextInput, View, Text } from "react-native";
 import { Control, Controller, ControllerProps, FieldErrors, FieldValues } from "react-hook-form";
+import React from "react";
 
 interface InputProps extends React.ComponentProps<typeof TextInput> {
   name?: string; // made optional to allow for more flexible usage

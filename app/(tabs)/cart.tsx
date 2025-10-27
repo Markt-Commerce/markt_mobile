@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
-import { getCart, updateCartItem, deleteCartItem, getCartSummary, checkoutCart } from "../services/sections/cart";
-import { Cart, CartItem, CartSummary, CheckoutRequest } from "../models/cart";
+import { getCart, updateCartItem, deleteCartItem, getCartSummary, checkoutCart } from "../../services/sections/cart";
+import { Cart, CartItem, CartSummary, CheckoutRequest } from "../../models/cart";
+import { useToast } from "../../components/ToastProvider";
 
 export default function CartScreen() {
   const [cart, setCart] = useState<Cart | null>(null);
   const [summary, setSummary] = useState<CartSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const { show } = useToast();
 
   const fetchCart = async () => {
     try {
@@ -17,7 +19,11 @@ export default function CartScreen() {
       setCart(cartData);
       setSummary(summaryData);
     } catch (err) {
-      console.error("Failed to fetch cart:", err);
+      show({
+        variant: "error",
+        title: "Error loading cart",
+        message: "There was a problem fetching your cart. Please try again.",
+      });
     } finally {
       setLoading(false);
     }
@@ -42,11 +48,18 @@ export default function CartScreen() {
         notes: "Checkout from mobile app",
       };
       await checkoutCart(checkoutData);
-      alert("Checkout successful!");
+      show({
+        variant: "success",
+        title: "Checkout successful",
+        message: "Your order has been placed successfully.",
+      });
       fetchCart(); // reset cart
     } catch (err) {
-      console.error("Checkout failed:", err);
-      alert("Checkout failed. Try again.");
+      show({
+        variant: "error",
+        title: "Checkout failed",
+        message: "There was a problem during checkout. Please try again.",
+      });
     } finally {
       setProcessing(false);
     }
@@ -85,11 +98,12 @@ export default function CartScreen() {
         <View key={item.id} className="flex-row items-center justify-between gap-4 px-4 py-2 min-h-[72px]">
           <View className="flex-row items-center gap-4">
             <Image
-              source={{ uri: item.product?.images?.[0]?.media?.mobile_url ?? "" }}
+              source={{ uri: item.product?.images?.[0]?.media?.original_url ?? "" }}
               className="w-14 h-14 rounded-lg bg-gray-200"
             />
             <View>
-              <Text className="text-[#171311] text-base font-medium">{item.product?.name}</Text>
+              {/* slicing the name incase it is longer than the screen size can contain */}
+              <Text className="text-[#171311] text-base font-medium">{item.product?.name.slice(0,20)}</Text>
               <Text className="text-[#876d64] text-sm">Variant #{item.variant_id}</Text>
             </View>
           </View>

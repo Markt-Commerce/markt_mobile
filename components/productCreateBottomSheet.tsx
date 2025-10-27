@@ -1,17 +1,17 @@
 import React, { useRef, useMemo, forwardRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from './inputs';
-import { CreateProductRequest } from '../models/products'
 import { Category } from '../models/categories';
 import { CategoryAddition } from './categoryAddition';
 import { getAllCategories } from '../services/sections/categories';
 import { X } from 'lucide-react-native';
-import { createProduct } from '../services/sections/product';
-import InstagramGrid from './imagePicker';
+import InstagramGrid, { InstagramGridProps } from './imagePicker';
+import { uploadImage, attemptMultipleUpload } from '../services/sections/media';
+import { MediaResponse } from '../models/media';
 
 
 // Zod Schema for Validation
@@ -20,31 +20,36 @@ const productSchema = z.object({
   price: z.preprocess((val) => Number(val), z.number().min(0, "Price must be non-negative")),
   stock: z.preprocess((val) => Number(val), z.number().min(0, "Stock must be non-negative")),
   description: z.string().max(2000).optional(),
-  category_ids: z.array(z.number()).min(1, "Select at least one category"),
+  category_ids: z.array(z.number()).optional(),
   media_ids: z.array(z.number()).optional(),
   barcode: z.string().max(100).optional(),
-  weight: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()),
+  weight: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()).default(0.01),
   variants: z.array(z.object({
     name: z.string().min(1, "Variant name is required"),
   })).optional(),
   sku: z.string().max(100).optional(),
-  compare_at_price: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()),
-  cost_per_item: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()),
+  compare_at_price: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()).default(0.01),
+  cost_per_item: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()).default(0.01),
   status: z.enum(['active', 'inactive']).optional(),
   tag_ids: z.array(z.number()).optional(),
-});
-
+})
 
 type ProductFormData = z.infer<typeof productSchema>;
 
 interface Props {
-  onSubmit: (data: ProductFormData) => Promise<void>;
+  onSubmit: (data: ProductFormData | any) => Promise<void>; // allow extra fields (images) in payload
   onClose?: () => void;
+  productCategories?: Category[];
+  productImages?: string[];
 }
 
-const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: ProductFormData) => void }>(
-  ({ onSubmit }, ref) => {
-  const bottomSheetRef = useRef<BottomSheet>(null);
+const ProductFormBottomSheet = forwardRef<BottomSheet, Props>(
+  ({ onSubmit, onClose, productCategories, productImages }, ref) => {
+
+    productSchema.refine(()=> selectedCategories?.length ?? 0 > 0,{
+      path: ["category_ids"]
+    });
+
   const snapPoints = useMemo(() => ['50%', '90%'], []);
 
 
@@ -52,8 +57,11 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: Produc
   const [categories, setCategories] = React.useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = React.useState<Category[]>([]);
 
+  // images state: store PickedImage[] from InstagramGrid
+  const [Imagevalue, setImageValue] = React.useState<InstagramGridProps["value"]>(productImages ? productImages.map((uri, index) => ({ id: index.toString(), uri })) : []);
+
   const { control, handleSubmit, formState: { errors } } = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema) as any,// Type 'ZodEffects<ZodObject<...>, ProductFormData, ProductFormData>' is not assignable to type 'Resolver<ProductFormData, any, undefined>'.
+    resolver: zodResolver(productSchema) as any,
   });
 
   React.useEffect(() => {
@@ -63,7 +71,6 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: Produc
               setCategories(cats);
           } catch (error) {
               console.error("Failed to fetch categories:", error);
-              //Todo: handle error appropriately, e.g., show a message to the user in the UI 
           }
       }
       fetchCategories();
@@ -73,18 +80,36 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: Produc
     setSelectedCategories(prev => prev.filter(c => c.id !== id));
   };
 
-  const submitForm = async (data: ProductFormData) => {
-    console.log("submitting form with data:", data);
-    data.category_ids = selectedCategories.map(c => c.id);
+
+  const handleLocalSubmit = async (data: ProductFormData) => {
     try {
-      const productCreated = await createProduct(data as CreateProductRequest);
-      console.log("Product created:", productCreated);
-      bottomSheetRef.current?.close();
-    } catch (error) {
-      console.error("Error creating product:", error);
-      // Handle error appropriately, e.g., show a message to the user in the UI
-      return;
-      
+      //upload images first
+      const ImageResponse = await attemptMultipleUpload(Imagevalue);
+
+      const imageIds = ImageResponse.map((imgId)=>imgId.media.id)
+
+      // ensure category_ids includes selectedCategories if not provided by form UI
+      const category_ids = (data && (data as any).category_ids && (data as any).category_ids.length > 0)
+        ? (data as any).category_ids
+        : selectedCategories.map(c => c.id);
+
+      //server requires cost_per_item and compare_at_price to be equal or greater than 0.01
+      data.compare_at_price = data.compare_at_price ?? 0.01;
+      data.cost_per_item = data.cost_per_item ?? 0.01;
+
+      // prepare payload: keep form data, add category_ids (if we generated them) and add images
+      const payload = {
+        ...data,
+        category_ids,
+        media_ids: imageIds ?? [],
+      };
+
+      // call parent-provided onSubmit
+      await onSubmit(payload);
+      console.log("completed... all good")
+    } catch (err) {
+      console.error("Create product failed:", err);
+      // optionally: show UI feedback here
     }
   };
 
@@ -131,13 +156,17 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: Produc
             <Text className="text-white text-sm font-bold">+ Add Categories</Text>
           </TouchableOpacity>
         </View>
+        {errors.category_ids && <Text className="text-red-500 mb-2">{errors.category_ids.message}</Text>}
 
-        {/* Note to add in area to upload images... A general image upload component */}
+        {/* Product Images */}
         <Text className="mb-1">Product Images</Text>
-        <InstagramGrid />
+        {Imagevalue?.length && Imagevalue.length > 0 && <Text className="text-neutral-500 mb-2">Long press on each image to remove it</Text>}
+        {/* <<< IMPORTANT: pass value & onChange so we can receive images >>> */}
+        <InstagramGrid value={Imagevalue} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} />
 
         {/* Optional forms*/}
         <Text className='text-md font-bold mt-4 mb-2'>Optional Details</Text>
+
         {/* Barcode */}
         <Text className="mb-1">Barcode</Text>
         <Input name='barcode' placeholder='Barcode' control={control}></Input>
@@ -166,7 +195,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: Produc
 
         {/* Submit Button */}
         <TouchableOpacity
-          onPress={handleSubmit(submitForm)}
+          onPress={handleSubmit(handleLocalSubmit)} // call our merged submit handler
           className="bg-[#e94c2a] p-3 rounded mt-4"
         >
           <Text className="text-white text-center font-bold">Create Product</Text>

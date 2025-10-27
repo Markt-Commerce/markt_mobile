@@ -1,146 +1,139 @@
-import React, { useMemo, useState, useCallback } from "react";
-import { View, Text, FlatList, Pressable, StatusBar } from "react-native";
-import { Image } from "expo-image";
-import { ArrowLeft } from "lucide-react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+// app/ShopBySarah.tsx
+import React, { useEffect, useState} from "react";
+import { View, Text, ImageBackground, ScrollView, Image, TouchableOpacity } from "react-native";
+import { ArrowLeft, Share } from "lucide-react-native";
+import { useLocalSearchParams } from "expo-router";
+import { getSellerProducts } from "../../services/sections/product";
+import { getUserPublicProfile, getUserShopInfo } from "../../services/sections/users";
 
-type Item = { id: string | number; title: string; image: string };
+export default function Shop() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const [shop, setShop] = useState(null);
 
-export default function NicheDetailPage() {
-  const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string; name?: string; image?: string }>();
-
-  const nicheName = params.name || "Niche";
-  const nicheImage =
-    params.image ||
-    "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=60";
-
-  const [tab, setTab] = useState<"overview" | "items" | "creators">("overview");
-
-  const items: Item[] = useMemo(
-    () => [
-      { id: 1, title: `${nicheName} Pick #1`, image: "https://images.unsplash.com/photo-1520975661595-6453be3f7070?auto=format&fit=crop&w=1000&q=60" },
-      { id: 2, title: `${nicheName} Pick #2`, image: "https://images.unsplash.com/photo-1483982258113-b72862e6cff6?auto=format&fit=crop&w=1000&q=60" },
-      { id: 3, title: `${nicheName} Pick #3`, image: "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=60" },
-      { id: 4, title: `${nicheName} Pick #4`, image: "https://images.unsplash.com/photo-1470309864661-68328b2cd0a5?auto=format&fit=crop&w=1000&q=60" },
-      { id: 5, title: `${nicheName} Pick #5`, image: "https://images.unsplash.com/photo-1514996937319-344454492b37?auto=format&fit=crop&w=1000&q=60" },
-      { id: 6, title: `${nicheName} Pick #6`, image: "https://images.unsplash.com/photo-1520975693412-35ec29f3c7b3?auto=format&fit=crop&w=1000&q=60" },
-    ],
-    [nicheName]
-  );
-
-  const keyExtractor = useCallback((it: Item) => String(it.id), []);
-
-  const GridItem = useCallback(
-    ({ item }: { item: Item }) => (
-      <View style={{ width: "50%", padding: 8 }}>
-        <Pressable className="rounded-2xl overflow-hidden bg-neutral-100" android_ripple={{ color: "#00000022" }}>
-          <View className="relative" style={{ width: "100%", aspectRatio: 1 }}>
-            <Image
-              source={{ uri: item.image }}
-              className="absolute"
-              style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "100%", height: "100%" }}
-              contentFit="cover"
-              cachePolicy="memory-disk"
-              transition={200}
-            />
-          </View>
-          <View className="px-3 py-2">
-            <Text className="text-[#171312] font-semibold" numberOfLines={1}>
-              {item.title}
-            </Text>
-          </View>
-        </Pressable>
-      </View>
-    ),
-    []
-  );
-
-  const Header = (
-    <View>
-      <StatusBar barStyle="dark-content" />
-      <View className="flex-row items-center justify-between p-4 pb-2">
-        <Pressable onPress={() => router.back()} hitSlop={10} className="pr-2">
-          <ArrowLeft color="#171312" size={24} />
-        </Pressable>
-        <Text className="flex-1 text-center text-lg font-bold text-[#171312] pr-6">{nicheName}</Text>
-      </View>
-
-      {/* Hero */}
-      <View className="mx-4 rounded-2xl overflow-hidden bg-neutral-100">
-        <View className="relative" style={{ width: "100%", aspectRatio: 16 / 9 }}>
-          <Image
-            source={{ uri: nicheImage }}
-            className="absolute"
-            style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "100%", height: "100%" }}
-            contentFit="cover"
-            cachePolicy="memory-disk"
-            transition={200}
-          />
-        </View>
-      </View>
-
-      {/* Tabs */}
-      <View className="flex-row items-center justify-around mt-4 mx-4">
-        <Pressable onPress={() => setTab("overview")} className="px-3 py-2 rounded-full" android_ripple={{ color: "#00000011" }}>
-          <Text className={tab === "overview" ? "font-semibold text-[#171312]" : "text-neutral-500"}>Overview</Text>
-        </Pressable>
-        <Pressable onPress={() => setTab("items")} className="px-3 py-2 rounded-full" android_ripple={{ color: "#00000011" }}>
-          <Text className={tab === "items" ? "font-semibold text-[#171312]" : "text-neutral-500"}>Items</Text>
-        </Pressable>
-        <Pressable onPress={() => setTab("creators")} className="px-3 py-2 rounded-full" android_ripple={{ color: "#00000011" }}>
-          <Text className={tab === "creators" ? "font-semibold text-[#171312]" : "text-neutral-500"}>Creators</Text>
-        </Pressable>
-      </View>
-
-      {/* Overview content */}
-      {tab === "overview" && (
-        <View className="mx-4 mt-4">
-          <Text className="text-base text-neutral-700">
-            Explore curated content for <Text className="font-semibold">{nicheName}</Text>. Browse trending items,
-            discover creators, and follow updates.
-          </Text>
-          <View className="flex-row gap-2 mt-3">
-            <Pressable className="px-4 py-3 rounded-xl bg-black" android_ripple={{ color: "#ffffff22" }}>
-              <Text className="text-white font-semibold">Follow {nicheName}</Text>
-            </Pressable>
-            <Pressable className="px-4 py-3 rounded-xl bg-neutral-200" android_ripple={{ color: "#00000011" }} onPress={() => setTab("items")}>
-              <Text className="text-[#171312] font-semibold">Explore Items</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
-
-      {/* Items header */}
-      {tab !== "overview" && (
-        <View className="mx-4 mt-4 flex-row items-center justify-between">
-          <Text className="text-base text-neutral-600">Top picks</Text>
-        </View>
-      )}
-    </View>
-  );
+  useEffect(() => {
+    const fetchShopData = async () => {
+      try {
+        const profileData = await getUserShopInfo(id);
+        console.log("Fetched shop profile:", profileData);
+        //const sellerProducts = await getSellerProducts(id);
+        //setShop({ ...profileData, products: sellerProducts });
+      } catch (error) {
+        console.error("Error fetching shop data:", error);
+      } 
+    };
+    fetchShopData();
+  }, [id]);
 
   return (
-    <View className="flex-1 bg-white">
-      {tab === "overview" ? (
-        <FlatList
-          data={[]}
-          ListHeaderComponent={Header}
-          keyExtractor={() => "0"}
-          contentContainerStyle={{ paddingBottom: 24 }}
-          renderItem={() => null}
+    <ScrollView className="flex-1 bg-white" showsVerticalScrollIndicator={false}>
+
+      {/* Cover Image */}
+      <View className="px-4 py-3">
+        <ImageBackground
+          source={{
+            uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuBGc16JP6_OIzByauKbHb4NGeg7GP58-NEEsQEh8LaG2-foAXr0ZCtC6NiAVj0YigcNhPrlcni3LqIclo425kQ5WUVAJYzbb-hhh1rWREMqyuwhIVvanP48t9IuEoxzQpYeJyKlOTS2nCXgYtJzFf0nt9nIIt-G3nA-9LHLzVFwLB66KBwlvjwpfFw9h1govTzaZgH98IgXzgWgAeG8igknAwqK4zf88O5sdJqpC-NxvpZMmGklvC4vs80ZvaIFf-8yBuP5s0o26g",
+          }}
+          className="w-full min-h-80 overflow-hidden bg-white"
+          resizeMode="cover"
+        >
+          {/* Header */}
+          <View className="flex-row items-center justify-between p-4 pb-2">
+            <TouchableOpacity className="p-1">
+              <ArrowLeft size={24} color="#171311" />
+            </TouchableOpacity>
+          </View>
+        </ImageBackground>
+      </View>
+
+      {/* Profile Section */}
+      <View className="flex-row items-start p-4">
+        <Image
+          source={{
+            uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuBzDeoJKxOR8a_fCD3CmuAaDlH_OlCxRjt2lUWuFG--Irgo3bwc9OJiW8DPoHhIGq5cCN_ulsUFKcdyNJGHHYv54eDwg-1Bmqq5G7UuZu_rMZMVPvqvJwRo4vr_PtkJpUkdvk5eIBJReYpuOEA9PieYJEihnjQWxtghJfEsz4tey0NrCly_qR-K-iVBXC4dTgZWLIz_ki3JupYPp3EnONwURdrWPLqscBzBMgrvCzFXxf7LDq82jConJYruRxnDZwbp4IjoCf8wzg",
+          }}
+          className="w-32 h-32 rounded-full"
         />
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={keyExtractor}
-          renderItem={GridItem}
-          numColumns={2}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 24 }}
-          ListHeaderComponent={Header}
-        />
-      )}
-    </View>
+        <View className="flex-1 ml-4 justify-center">
+          <Text className="text-[#171311] text-[22px] font-bold leading-tight">Shop by Sarah</Text>
+          <Text className="text-[#876d64] text-base">100K followers · 100 items</Text>
+          <Text className="text-[#876d64] text-base">Sarah's shop</Text>
+        </View>
+      </View>
+
+      {/* Description */}
+      <Text className="text-[#171311] text-base px-4 pt-1 pb-3">
+        Sarah's shop offers a curated collection of vintage and handmade clothing, perfect for the modern bohemian.
+      </Text>
+
+      {/* Tabs */}
+      <View className="flex-row border-b border-[#e5dedc] px-4 gap-8">
+        <View className="flex-1 items-center border-b-[3px] border-[#171311] pb-3 pt-4">
+          <Text className="text-[#171311] text-sm font-bold">Products</Text>
+        </View>
+        <View className="flex-1 items-center border-b-[3px] border-transparent pb-3 pt-4">
+          <Text className="text-[#876d64] text-sm font-bold">Posts</Text>
+        </View>
+      </View>
+
+      {/* Featured */}
+      <Text className="text-[#171311] text-lg font-bold px-4 pb-2 pt-4">Featured</Text>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        className="px-4 gap-3"
+        contentContainerStyle={{ paddingRight: 16 }}
+      >
+        {[
+          {
+            image:
+              "https://lh3.googleusercontent.com/aida-public/AB6AXuA3354xyeGlTNKMbGF9b-rXlcLgvpWGdC7v-x4ke6Foj0AukPkm6alpVZPjLq7OrmkfSL3eysKL6sYRZs6myTh4DUBnFnVnET2MMPFe_XtcP1y35qs6nEfdbR9sIFJJLHlkIryDgYiPDt8SrSbmjMK9xmvsAr1em9CwrV2nC1iTrFJRqXD0WT9ieIaAN3WbcAGOe_Q2jqLxlCe3P8_x9K96aKIe7eSNKUxgnf7WGIU3_IKarV0LMbiQpTLM1gKXRF0U9P9jltok3w",
+            name: "Vintage Denim Jacket",
+            price: "$80",
+          },
+          {
+            image:
+              "https://lh3.googleusercontent.com/aida-public/AB6AXuB2Hooyors-sY7BTe0uZgKfTbLTFMQuKazarIuPebfy7KirceP_BxBoEg4wS_GgLZPYwTD8R43vhRi1auXz0NsnEVib3akiRvvSQwK88me2soyVUK-nTLpeMjOxJO5YnrkWocsASECeHPU9RMU8-aOHNYPs5D_f5DymnkB2Q30X69fCiV5HVR4k4FqvgxacuUsQMruFY5soW3JnajGkQr1uRZ1BHh5eqrgIP0yG-37zKyterhfwfwt_jfeadnJrqvW_ewnuO-8QWw",
+            name: "Handmade Knit Sweater",
+            price: "$65",
+          },
+          {
+            image:
+              "https://lh3.googleusercontent.com/aida-public/AB6AXuAHKtAOxaDvPc4Cat93AlxV3cfmPggfj_oBlCSXwFiet3PB47nNi0_lFDjXQV2m2G_GXip7k3DvXmwWIgZG6SBC2JPTqQHICtTW4KcVb9Vvax_RtjZBT_WiFz2y_jCBJHdB5Y_Hb3MrVO348-7OW3h6znbZ0bpoaY7kJ_zfUUFTpfUduaVboPelX1qIHdYDc_NuJPJSy5Gs_QoYu78WYqpPaeesE7e-8XZ9vqy3BuSwoWj455rs_w1Oj4F5nJs9EgsQWJBSvGJkbQ",
+            name: "Boho Maxi Dress",
+            price: "$55",
+          },
+        ].map((item, idx) => (
+          <View key={idx} className="min-w-40 flex flex-col gap-2">
+            <ImageBackground
+              source={{ uri: item.image }}
+              className="aspect-square rounded-lg overflow-hidden"
+              resizeMode="cover"
+            />
+            <Text className="text-[#171311] text-base font-medium">{item.name}</Text>
+            <Text className="text-[#876d64] text-sm">{item.price}</Text>
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* All Products */}
+      <Text className="text-[#171311] text-lg font-bold px-4 pb-2 pt-4">All Products</Text>
+
+      <View className="flex-row flex-wrap justify-between px-4">
+        {[
+          "Vintage Denim Jacket",
+          "Handmade Knit Sweater",
+          "Boho Maxi Dress",
+          "Leather Ankle Boots",
+          "Silk Scarf",
+          "Embroidered Tote Bag",
+        ].map((name, i) => (
+          <View key={i} className="w-[48%] mb-4">
+            <View className="aspect-square rounded-lg bg-[#eee]" />
+            <Text className="text-[#171311] text-base font-medium mt-2">{name}</Text>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
   );
 }

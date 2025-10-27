@@ -1,19 +1,52 @@
 import React, { useMemo, useRef } from "react";
 import { View, Text, FlatList, TouchableOpacity, Image } from "react-native";
-import BottomSheet from "@gorhom/bottom-sheet";
+import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import { Trash2 } from "lucide-react-native";
+import { ProductResponse } from "../models/products";
+
+type Product = {
+  id: string;
+  name: string;
+  price: number;
+  image?: string;
+};
 
 type Props = {
   visible: boolean;
-  products: { id: string; name: string; price: number; image?: string }[];
+  products: ProductResponse[];
   onClose: () => void;
-  onSelect: (p: { id: string; name: string; price: number; image?: string }) => void;
+  onSelect: (p: Product) => void;
+  onRemove?: (p: Product) => void;
+  selectedProducts: ProductResponse[];
 };
 
-export default function ProductPicker({ visible, products, onClose, onSelect }: Props) {
+export default function ProductPicker({
+  visible,
+  products,
+  selectedProducts,
+  onClose,
+  onSelect,
+  onRemove,
+}: Props) {
+  
   const sheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ["40%", "80%", "100%"], []);
+  const snapPoints = useMemo(() => ["60%", "100%"], []);
 
   if (!visible) return null;
+
+  const isSelected = (product: Product) =>
+    selectedProducts.some((p) => p.id === product.id);
+
+  const handleSelect = (item: Product) => {
+    onSelect(item);
+    requestAnimationFrame(onClose); // smoother close
+  };
+
+  const handleRemove = (item: Product) => {
+    if (onRemove) {
+      onRemove(item);
+    }
+  };
 
   return (
     <BottomSheet
@@ -22,30 +55,63 @@ export default function ProductPicker({ visible, products, onClose, onSelect }: 
       onClose={onClose}
       enablePanDownToClose
       backgroundStyle={{ backgroundColor: "#fff" }}
-      handleIndicatorStyle={{ backgroundColor: "#ccc", width: 40, height: 4, borderRadius: 2 }}
+      handleIndicatorStyle={{
+        backgroundColor: "#ccc",
+        width: 40,
+        height: 4,
+        borderRadius: 2,
+      }}
     >
-      <View style={{ flex: 1, paddingHorizontal: 16 }}>
-        <Text style={{ fontSize: 18, fontWeight: "600", marginVertical: 10 }}>Select Product</Text>
-        <FlatList
-          data={products}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() => {
-                onSelect(item);
-                onClose();
-              }}
-              style={{ flexDirection: "row", paddingVertical: 10, alignItems: "center", borderBottomWidth: 1, borderBottomColor: "#eee" }}
-            >
-              <Image source={{ uri: item.image }} style={{ width: 50, height: 50, borderRadius: 8, marginRight: 12, backgroundColor: "#ddd" }} />
-              <View>
-                <Text style={{ fontSize: 16, fontWeight: "500" }}>{item.name}</Text>
-                <Text style={{ fontSize: 14, color: "#666" }}>${item.price}</Text>
-              </View>
-            </TouchableOpacity>
-          )}
-        />
-      </View>
+      <BottomSheetView className="flex-1 px-4">
+        <Text className="text-lg font-semibold mt-4 mb-2">Select Product</Text>
+
+        {products.length === 0 ? (
+          <Text className="text-center text-gray-500 mt-10">
+            No products available.
+          </Text>
+        ) : (
+          <FlatList
+            data={products}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+              const selected = isSelected(item);
+
+              return (
+                <TouchableOpacity
+                  onPress={() => handleSelect(item)}
+                  className={`flex-row items-center p-3 mb-2 rounded-lg ${selected ? "bg-blue-100" : "bg-gray-100"}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select ${item.name}, priced at $${item.price}`}
+                >
+                  <Image
+                    source={
+                      item.images?.[0]?.media?.mobile_url
+                        ? { uri: item.images?.[0]?.media?.mobile_url }
+                        : require("../assets/icon.png") // Make sure you have a placeholder image
+                    }
+                    className="w-12 h-12 rounded-md bg-gray-300 mr-3"
+                  />
+
+                  <View className="flex-1">
+                    <Text className="text-base font-medium">{item.name}</Text>
+                    <Text className="text-sm text-gray-500">${item.price}</Text>
+                  </View>
+
+                  {onRemove && (
+                    <TouchableOpacity
+                      onPress={() => handleRemove(item)}
+                      className="p-2 rounded-full hover:bg-red-100"
+                      accessibilityLabel={`Remove ${item.name}`}
+                    >
+                      <Trash2 color="#ef4444" size={20} />
+                    </TouchableOpacity>
+                  )}
+                </TouchableOpacity>
+              );
+            }}
+          />
+        )}
+      </BottomSheetView>
     </BottomSheet>
   );
 }
