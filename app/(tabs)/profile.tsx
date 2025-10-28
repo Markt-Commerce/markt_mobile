@@ -9,10 +9,11 @@ import { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";    // <- simple context (no NativeWind)
 import { TView, TText } from "../../components/themed";       // <- Themed components (pick classes via context)
 import { useToast } from "../../components/ToastProvider";    // <- optional toast
+import { createBuyer, logoutUser, switchUserRole } from "../../services/sections/auth";
 
 export default function SettingsProfileScreen() {
   const nav = useRouter();
-  const { user, role } = useUser();
+  const { user, role, setRole } = useUser();
   const { resolvedTheme, setTheme } = useTheme();
   const { show } = useToast();
 
@@ -34,25 +35,18 @@ export default function SettingsProfileScreen() {
       })
     }
   }
-  const getBuyerData = async () => {
+
+  const SwitchRole = async () => {
     try {
+     const switchResult = await switchUserRole();
+     console.log(switchResult)
+      setRole(switchResult.user.current_role)
       
     } catch (error) {
       show({
-        variant: "error",
-        title: "Error getting profile data",
-        message: "There was an issue retrieving your profile information.",
-      })
-    }
-  }
-  const getsellerData = async () => {
-    try {
-      
-    } catch (error) {
-      show({
-        variant: "error",
-        title: "Error getting profile data",
-        message: "There was an issue retrieving your profile information.",
+        message: `An error occured switching to the ${role == "buyer"? "seller" : "buyer"} account. Please try again later`,
+        title: "Could not switch account",
+        variant: "error"
       })
     }
   }
@@ -62,6 +56,8 @@ export default function SettingsProfileScreen() {
   },[user])
 
   useEffect(() => setAppearance(resolvedTheme), [resolvedTheme]);
+
+
 
   // ---------- UI Helpers ----------
   const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
@@ -83,6 +79,29 @@ export default function SettingsProfileScreen() {
       </TView>
     </View>
   );
+
+  const DetermineSwitchType: React.FC<{ hasBuyerAccount:boolean, hasSellerAccount:boolean}> = ({ 
+    hasBuyerAccount,
+    hasSellerAccount,
+   }) => {
+    const oppAccount: "Buyer" | "Seller" = role === "buyer" ? "Seller" : "Buyer";
+    return role == "buyer" && hasSellerAccount ? (
+          <TouchableOpacity onPress={()=> {SwitchRole()}} className="flex-1 rounded-lg h-10  justify-center items-center bg-[#e26136]">
+            <Text className="text-white">Switch To Seller Account</Text>
+          </TouchableOpacity>
+        ) :
+            role == "seller" && hasBuyerAccount ? (
+            <TouchableOpacity onPress={()=> {SwitchRole()}} className="flex-1 rounded-lg h-10 justify-center items-center bg-[#e26136]">
+              <Text className="text-white">Switch To Buyer Account</Text>
+              </TouchableOpacity>
+          ) :
+            (
+              /* Will go to a page or a bottom sheet to input the buyer details */
+            <TouchableOpacity onPress={()=>""} className="flex-1 rounded-lg h-10 justify-center items-center bg-[#e26136]">
+              <Text className="text-white">Create A {oppAccount} Account</Text>
+              </TouchableOpacity>
+          )
+   };
 
   const Row: React.FC<{
     children: React.ReactNode;
@@ -181,7 +200,7 @@ export default function SettingsProfileScreen() {
               dark="bg-neutral-900 border-neutral-800"
               className="items-center rounded-2xl border px-5 py-6"
             >
-              <Image source={{  uri: profileData?.profile_picture_url ?? "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=320&q=80&crop=faces,entropy" }} className="w-28 h-28 rounded-full" />
+              <Image source={{  uri: profileData?.profile_picture_url ?? "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" }} className="w-28 h-28 rounded-full" />
               <TText
                 light="text-[#171311]"
                 dark="text-neutral-100"
@@ -204,6 +223,10 @@ export default function SettingsProfileScreen() {
                 Joined {profileData?.created_at ? String(new Date(profileData.created_at).getFullYear()) : "now maybe"}
               </TText>
             </TView>
+          </View>
+
+          <View>
+            <DetermineSwitchType hasBuyerAccount={profileData?.is_buyer ?? false} hasSellerAccount={profileData?.is_seller ?? false}/>
           </View>
 
 
@@ -341,8 +364,17 @@ export default function SettingsProfileScreen() {
             <TouchableOpacity
               className="h-11 rounded-full justify-center items-center active:opacity-85"
               onPress={() => {
-                // your logout logic
-                show({ variant: "info", title: "Logged out", message: "You’ve been signed out." });
+                try {
+                 logoutUser(); 
+                 show({ variant: "info", title: "Logged out", message: "You’ve been signed out." });
+                 nav.push("/login")
+                } catch (error) {
+                  show({
+                    variant: "error",
+                    title: "Error Logging out",
+                    message: "We could not log you out of your account. Please try again"
+                  })
+                }
               }}
               style={{ backgroundColor: resolvedTheme === "dark" ? "#111827" : "#f4f1f0" }}
             >

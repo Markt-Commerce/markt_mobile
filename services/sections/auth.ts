@@ -1,4 +1,5 @@
-import { RegisterRequest, LoginRequest, AuthUser, ApiResponse } from '../../models/auth';
+import { RegisterRequest, LoginRequest, AuthUser, ApiResponse, UserSwitchResponse, RoleCreationResult } from '../../models/auth';
+import { CommonBuyerResponseData, CommonSellerResponseData } from '../../models/user';
 import { BASE_URL,request } from '../api';
 
 
@@ -100,4 +101,42 @@ export async function resetPassword(email: string, code: string, newPassword: st
     body: JSON.stringify({ email, code:code, new_password: newPassword }),
   });
   return res.message;
+}
+
+/**
+ * Switch the current user's active role to buyer or seller.
+ * @param toRole The role to switch to ('buyer' | 'seller')
+ * @returns Updated authenticated user object
+ */
+export async function switchUserRole(): Promise<UserSwitchResponse> {
+  const res = await request<UserSwitchResponse>(`${BASE_URL}/users/switch-role`, {
+    method: 'POST'
+  });
+  return res;
+}
+
+/**
+ * Create a buyer profile for the current user (or create a new buyer account).
+ * @param data Buyer creation data (reuses RegisterRequest shape)
+ * @returns Created/updated authenticated user object
+ */
+export async function createBuyer(data: RegisterRequest['buyer_data']): Promise<RoleCreationResult> {
+  const res = await request<RoleCreationResult>(`${BASE_URL}/users/create-buyer`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return res;
+}
+
+/**
+ * Create a seller profile for the current user (or create a new seller account).
+ * @param data Seller creation data (reuses RegisterRequest shape)
+ * @returns Created/updated authenticated user object
+ */
+export async function createSeller(data: RegisterRequest['seller_data']): Promise<RoleCreationResult> {
+  const res = await request<RoleCreationResult>(`${BASE_URL}/users/create-seller`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return res;
 }

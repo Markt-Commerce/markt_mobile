@@ -64,8 +64,10 @@ export default function FeedScreen() {
     setLoading(true);
 
     const options = ["product", "post"];
-    if (user?.account_type === "seller") options.push("request");
-    let fetchType = options[Math.floor(Math.random() * options.length)];
+    if (role === "seller") options.push("request");
+    const Itemchoice = Math.floor(Math.random() * options.length);
+        console.log("Item choice number: ",Itemchoice)
+    let fetchType = options[Itemchoice];
     if (!loadedStartCards) {
       //start cards are only loaded once at the start of the feed
       fetchType = "startCard";
@@ -146,9 +148,9 @@ export default function FeedScreen() {
         <View className="px-4 pt-3">
           <View className="rounded-2xl border border-[#efe9e7] bg-white p-4">
             <View className="flex-row items-center mb-3">
-              <Image source={{ uri: req.buyer.profile_picture_url }} className="w-10 h-10 rounded-full mr-3" />
+              <Image source={{ uri: req.buyer?.profile_picture_url }} className="w-10 h-10 rounded-full mr-3" />
               <View>
-                <Text className="font-semibold text-[#111418]">{req.buyer.username}</Text>
+                <Text className="font-semibold text-[#111418]">{req.buyer?.username}</Text>
                 <Text className="text-xs text-[#876d64]">Buyer request</Text>
               </View>
             </View>
@@ -245,7 +247,6 @@ export default function FeedScreen() {
 
               <View className="flex-row justify-between mt-3">
                 <Pressable className="flex-row items-center gap-2" onPress={async ()=>{
-                  console.log("liking")
                   try {
                     //work on this later... liking should be toggled for each post
                     const res = await likePost(post.id);
