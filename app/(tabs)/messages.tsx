@@ -14,7 +14,6 @@ export default function MessagesScreen() {
   useEffect(()=>{
     const attemptGetRooms = async () => {
       const result = await getRooms();
-      console.log("Fetched chat rooms:", result);
       setChatRooms(result)
     }
     attemptGetRooms()
@@ -42,7 +41,7 @@ export default function MessagesScreen() {
               />
               <View className="flex-col justify-center">
                 <Text className="text-[#171312] text-base font-medium leading-normal">
-              {item.last_message?.sender_username}
+              {item.other_user.username}
                 </Text>
                 <Text className="text-[#826f68] text-sm leading-normal">
               {item.last_message?.content}
