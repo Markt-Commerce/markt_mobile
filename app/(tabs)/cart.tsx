@@ -18,6 +18,7 @@ import {
 import { Cart, CartItem, CartSummary, CheckoutRequest } from "../../models/cart";
 import { ArrowLeft, Trash2 } from "lucide-react-native";
 import { useRouter } from "expo-router";
+import { useToast } from "../../components/ToastProvider";
 
 export default function CartScreen() {
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function CartScreen() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const { show } = useToast();
 
   const fetchCart = useCallback(async () => {
     try {
@@ -35,7 +37,11 @@ export default function CartScreen() {
       setCart(cartData);
       setSummary(summaryData);
     } catch (err) {
-      console.error("Failed to fetch cart:", err);
+      show({
+        variant: "error",
+        title: "Error loading cart",
+        message: "There was a problem fetching your cart. Please try again.",
+      });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -91,11 +97,18 @@ export default function CartScreen() {
         notes: "Checkout from mobile app",
       };
       await checkoutCart(checkoutData);
-      alert("Checkout successful!");
-      fetchCart();
+      show({
+        variant: "success",
+        title: "Checkout successful",
+        message: "Your order has been placed successfully.",
+      });
+      fetchCart(); // reset cart
     } catch (err) {
-      console.error("Checkout failed:", err);
-      alert("Checkout failed. Try again.");
+      show({
+        variant: "error",
+        title: "Checkout failed",
+        message: "There was a problem during checkout. Please try again.",
+      });
     } finally {
       setProcessing(false);
     }

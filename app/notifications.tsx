@@ -1,83 +1,10 @@
-import React, { useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  Image,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  ArrowLeft,
-  Truck,
-  Package,
-  Bell,
-  MessageSquare,
-  Tag,
-  Check,
-} from "lucide-react-native";
-import { useRouter } from "expo-router";
+import React from 'react';
+import { View, Text, Image, ScrollView } from 'react-native';
+import { ArrowLeft, Truck, Package, User, Dot, PlusSquare, Search, Home, LucideIcon } from 'lucide-react-native';
+import { TouchableOpacity } from 'react-native';
+import { NotificationItem } from '../models/notifications';
+import { getNotifications, markAllAsRead } from '../services/sections/notifications';
 
-// ---- Your data (kept, just typed a bit) ----
-type NotificationItem =
-  | {
-      id: number | string;
-      type: "avatar";
-      name: string;
-      time: string;
-      image: string; // avatar url
-      read?: boolean;
-    }
-  | {
-      id: number | string;
-      type: "icon";
-      name: string;
-      time: string;
-      icon?: React.ComponentType<any>; // lucide icon component
-      read?: boolean;
-    };
-
-const notifications: NotificationItem[] = [
-  {
-    id: 1,
-    type: "avatar",
-    name: "Liam Carter liked your post",
-    time: "2d",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDN4yy6jkI988RPXDv_c1XIvFc9hBXXhE6NHVuLOnNvvSd5lnHQ8yx1e1xT9eB86_TDBMZvXIVi1KvZ-JmNX-FHfdm6ttmcxPvk8NC6L2YY_oxUmdnBZmiQaYNU1Ea5U17D5shJYHms-mj-FGXNpIwzKR4_Gle7smAP1UBwDIDlvl1VKNRHinW4PDVm0KJrcdt02QNM9CQGHK3IWR2f0Use9paZl6SCRQxZRBJEnsuysWKJCWCRcSXkLWw1LrlLalxzSemGcWq5ug",
-  },
-  {
-    id: 2,
-    type: "avatar",
-    name: "You have a new follower",
-    time: "1d",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDVqT_khGhGbUlxaXHdg1NSA065X_k4IeqWZavkUlXSc335Rxz5D2cgWkRcYh9M1EDdmU1tap8Qkd7bRBcKwevhDT0dEr7nnhNLt-FphLRtXyrFDRTUHItWl550VBVR3NcnNk9WFsBCecVjcaJXSZMw2cfu7t4oMJZwysWfe6EqOBBYjaOBeiGHQb1E3_EfzlMraGxWjvLO7dyau2yOejsI00iHPsJgnPPEMjq5IqRpL-Grqj_tMJP-r3FQze7ltKga0iis-kQS0w",
-  },
-  {
-    id: 3,
-    type: "icon",
-    name: "Your order has been shipped",
-    time: "1d",
-    icon: Truck,
-  },
-  {
-    id: 4,
-    type: "avatar",
-    name: "Sophia Bennett sent you a message",
-    time: "2d",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuANN47Phzq5Tpj6yntoJRKamA75JS6Ur7G_hM6UiEf-MrYxRsxwGMjevG3YJFFI8Ybdt_wxJqdxUAj1XdSjJFau_fGxSHlCRYa-fzmJbOonWKvUDV-m0ojCsnRwVPT6TtsBTXHFPHWGGjaHZw_jbMGzvJEfsTGNaZcSFxhu_mx8Dvg6EQW13VF27zC1qz_m1x0InN9TbfenVyZxWIy7dLXYADEDXMMydxQKpZXJFCDKS-7q9pQ_0BSmQzFF6CXpK6cq1j6D0v_nIw",
-  },
-  {
-    id: 5,
-    type: "icon",
-    name: "Your order has been delivered",
-    time: "2d",
-    icon: Package,
-  },
-];
 
 // ---- Small presentational helpers ----
 const IconBubble = ({ Cmp }: { Cmp?: React.ComponentType<any> }) => (

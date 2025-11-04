@@ -1,3 +1,5 @@
+import { SellerStartCard } from "./analytics";
+
 export interface MediaVariant {
     height: number;
     width: number;
@@ -120,5 +122,6 @@ export interface BuyerRequest {
   export type FeedItem =
     | { type: "product"; data: Product[] }
     | { type: "post"; data: Post }
+    | { type: "startCard"; data: SellerStartCard[] }
     | { type: "request"; data: BuyerRequest };
   

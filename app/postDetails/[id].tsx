@@ -4,6 +4,7 @@ import {  ArrowLeft,  Heart,  MessageCircle,  Send,  Image as ImageIcon, X, Send
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { getPostById, getPostComments, likePost } from "../../services/sections/post";
 import { CommentItem, CommentResponse, PostDetails } from "../../models/post";
+import { useToast } from "../../components/ToastProvider";
 
 
 
@@ -45,16 +46,19 @@ export default function PostDetailsScreen() {
   const [hasMore, setHasMore] = useState(true); // Control for infinite scroll
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { show } = useToast();
 
 
   const FetchPost = async (id: string) => {
   try {
     const res = await getPostById(id);
-    console.log(res)
     setPost(res);
-    console.log("post fetched")
   } catch (error) {
-    console.error("post could not be fetched, reason: ", error);
+    show({
+      variant: "error",
+      title: "Error loading post",
+      message: "There was an issue retrieving the post details.",
+    });
   }
 };
 
@@ -66,16 +70,23 @@ export default function PostDetailsScreen() {
     if (loading || !hasMore) return;
 
     setLoading(true);
-    const newComments = (await getPostComments(id, page)).items;
-
-    if (newComments.length === 0 && page > 1) {
-      // If we stop receiving new comments, stop loading more
-      setHasMore(false);
-    } else {
-      setComments((prev) => [...prev, ...newComments]);
-      setPage((prev) => prev + 1);
+    try {
+      const newComments = (await getPostComments(id, page)).items;
+      if (newComments.length === 0 && page > 1) {
+        // If we stop receiving new comments, stop loading more
+        setHasMore(false);
+      } else {
+        setComments((prev) => [...prev, ...newComments]);
+        setPage((prev) => prev + 1);
+      }
+      setLoading(false);
+    } catch (error) {
+      show({
+        variant: "error",
+        title: "Error loading comments",
+        message: "There was an issue retrieving the post comments.",
+      });
     }
-    setLoading(false);
   }, [id, page, loading, hasMore]);
 
   useEffect(() => {

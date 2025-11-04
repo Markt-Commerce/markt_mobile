@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import BottomSheet from "@gorhom/bottom-sheet";
 import QuickChatBottomSheet from "../../components/quickChatBottomSheet";
 import { useUser } from "../../hooks/userContextProvider";
+import { useToast } from "../../components/ToastProvider";
 
 
 export default function ProductDetails() {
@@ -31,6 +32,7 @@ export default function ProductDetails() {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const ChatBottomSheetRef = useRef<BottomSheet>(null);
+  const { show } = useToast();
 
   const toggleDetail = (key: string) => {
     setOpenDetails((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -45,8 +47,11 @@ export default function ProductDetails() {
       setSimilarProducts((prev)=>[...prev,...products])
     }
     catch (err) {
-      //todo: work on displaying errors to users
-      console.error("Failed to fetch product:", err);
+      show({
+        variant: "error",
+        title: "Error loading products",
+        message: "There was an issue retrieving similar products.",
+      })
     }
   }
 
@@ -56,17 +61,29 @@ export default function ProductDetails() {
     setProduct(product);
   }
   catch (err) {
-    //todo: work on displaying errors to users
-    console.error("Failed to fetch product:", err);
+    show({
+        variant: "error",
+        title: "Error loading product",
+        message: "There was an issue retrieving the product.",
+      })
   }
 }
 
 const addProductToCart = async (product:ProductDetail)=>{
   try {
       const res = await addToCart({product_id: product.id,variant_id:0,quantity});
+      show({
+        variant: "success",
+        title: "Product added to cart",
+        message: "The product has been successfully added to your cart.",
+      });
       setAddedToCart(true);
     } catch (error) {
-      console.error("couldn't add to cart: ", error)
+      show({
+        variant: "error",
+        title: "Error adding to cart",
+        message: "Could not add the product to the cart.",
+      })
     }
   }
 
@@ -198,7 +215,7 @@ const addProductToCart = async (product:ProductDetail)=>{
           </View>
         </View>
         <View className="px-4 py-3 flex-row justify-end">
-          <Link href={`/shop/${product.seller.id}`} asChild>
+          <Link href={`/shopDetails/${product.seller.id}`} asChild>
           <TouchableOpacity className="bg-gray-200 h-10 rounded-lg px-4 justify-center items-center">
             <Text className="text-[#171311] font-bold">View Shop</Text>
           </TouchableOpacity>

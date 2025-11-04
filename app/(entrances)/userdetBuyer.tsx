@@ -18,6 +18,7 @@ import { useRouter } from "expo-router";
 import { SignupStepTwo, register, useRegData } from "../../models/signupSteps";
 import Button from "../../components/button";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useToast } from "../../components/ToastProvider";
 
 const schema = z.object({
   Buyername: z.string().min(1, "Name is required"),
@@ -29,6 +30,7 @@ export default function UserInfoScreen() {
   const { setUser } = useUser();
   const { regData, setRegData } = useRegData();
   const router = useRouter();
+  const { show } =  useToast();
 
   const {
     control,
@@ -59,8 +61,6 @@ export default function UserInfoScreen() {
 
     // send the user data to the backend here
     // may move this later to a another signup step
-
-    console.log("Submitting user data:", regData);
     try {
       const userRegResult = await registerUser(regData)
       //store user in secure store
@@ -73,10 +73,18 @@ export default function UserInfoScreen() {
         email: userRegResult.email.toLowerCase(),
         account_type: userRegResult.account_type,
       }); //store user data in context
-      console.log("Registration successful:", userRegResult);
+      show({
+        variant: "success",
+        title: "Registration Successful",
+        message: "Your account has been created successfully. Please verify your email to continue.",
+      })
       router.push("/emailVerification");
     } catch (error) {
-        console.error("Registration failed:", error);
+      show({
+        variant: "error",
+        title: "Registration Failed",
+        message: error instanceof Error ? error.message : "An unexpected error occurred",
+      });
   }
   };
 

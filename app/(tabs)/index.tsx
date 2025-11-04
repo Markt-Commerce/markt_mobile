@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { View, Text, FlatList, TouchableOpacity, Image, ImageBackground, ActivityIndicator, Pressable } from "react-native";
-import { Plus, ShoppingCart, MessageCircle, Heart, Send, Star } from "lucide-react-native";
+import { Plus, ShoppingCart, MessageCircle, Heart, Send, Star, Bell, Search } from "lucide-react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { FeedItem } from "../../models/feed";
 import { getProducts, getPosts, getBuyerRequests } from "../../services/sections/feed";
 import { useUser } from "../../hooks/userContextProvider";
@@ -15,11 +15,16 @@ import { createProduct } from "../../services/sections/product";
 import { createBuyerRequest } from "../../services/sections/request";
 import { CreateProductRequest, PlaceholderProduct } from "../../models/products";
 import { Category } from "../../models/categories";
+import { useToast } from "../../components/ToastProvider";
+import StartCards from "../../components/startCards";
 
 export default function FeedScreen() {
+  const router = useRouter();
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadedStartCards, setLoadedStartCards] = useState(false);
   const [page, setPage] = useState(1);
+  const { show } = useToast();
 
   //for create product
   const [productCategories, setProductCategories] = useState<Category[]>([]);
@@ -59,11 +64,24 @@ export default function FeedScreen() {
     setLoading(true);
 
     const options = ["product", "post"];
-    if (user?.account_type === "seller") options.push("request");
-    const fetchType = options[Math.floor(Math.random() * options.length)];
+    if (role === "seller") options.push("request");
+    const Itemchoice = Math.floor(Math.random() * options.length);
+    console.log("Item choice number: ",Itemchoice)
+    console.log("Item choice", options[Itemchoice])
+    console.log("options length", options.length)
+    let fetchType = options[Itemchoice];
+    if (!loadedStartCards) {
+      //start cards are only loaded once at the start of the feed
+      fetchType = "startCard";
+      setLoadedStartCards(true);
+    }
 
     try {
       let newItems: FeedItem[] = [];
+      if (fetchType === "startCard") {
+        //load start cards
+        newItems = [{ type: "startCard", data: [] }]; //start cards component can handle its own data fetching with population
+      }
       if (fetchType === "product") {
         const products = await getProducts(page, 6);
         const groupedProducts = [];
@@ -80,7 +98,11 @@ export default function FeedScreen() {
       }
       setFeed((prev) => [...prev, ...newItems]);
     } catch (err) {
-      console.error("Failed to fetch feed:", err);
+      show({
+        variant: "error",
+        title: "Error loading feed",
+        message: "There was a problem loading the feed. Please try again later."
+      })
     } finally {
       setLoading(false);
     }
@@ -96,12 +118,29 @@ export default function FeedScreen() {
 
   // Header Component (visuals only)
   const Header = () => (
+    <>
     <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-[#f0e9e7]">
       <Text className="text-xl font-extrabold text-[#111418]">Marketplace</Text>
-      <TouchableOpacity onPress={openMenu} className="p-2 rounded-full bg-[#f5f2f1]" hitSlop={{top:8,bottom:8,left:8,right:8}}>
-        <Plus size={22} color="#111418" />
+      <View className="flex-row justify-between items-center">
+        <TouchableOpacity onPress={openMenu} className="p-2 rounded-full bg-[#f5f2f1] mx-1" hitSlop={{top:8,bottom:8,left:8,right:8}}>
+          <Plus size={22} color="#111418" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/notifications')} className="p-2 rounded-full bg-[#f5f2f1] mx-1" hitSlop={{top:8,bottom:8,left:8,right:8}}>
+          <Bell size={22} color="#111418" />
+      </TouchableOpacity>
+      </View>
+    </View>
+    <View className="px-4 py-3 bg-white border-b border-[#f0e9e7]">
+      {/* search bar but like button that leads to search page */}
+      <TouchableOpacity onPress={() => router.push('/search')} className="p-2 rounded-full bg-[#f5f2f1] mx-1" hitSlop={{top:8,bottom:8,left:8,right:8}}>
+        {/* button that looks like a search bar */}
+        <View className="flex-row items-center bg-[#f5f2f1] rounded-full px-3 py-1">
+          <Search size={18} color="#886963" />
+          <Text className="text-[#886963] ml-2">What are you looking for?</Text>
+        </View>
       </TouchableOpacity>
     </View>
+    </>
   );
 
   const renderItem = ({ item }: { item: FeedItem }) => {
@@ -111,9 +150,9 @@ export default function FeedScreen() {
         <View className="px-4 pt-3">
           <View className="rounded-2xl border border-[#efe9e7] bg-white p-4">
             <View className="flex-row items-center mb-3">
-              <Image source={{ uri: req.buyer.profile_picture_url }} className="w-10 h-10 rounded-full mr-3" />
+              <Image source={{ uri: req.buyer?.profile_picture_url }} className="w-10 h-10 rounded-full mr-3" />
               <View>
-                <Text className="font-semibold text-[#111418]">{req.buyer.username}</Text>
+                <Text className="font-semibold text-[#111418]">{req.buyer?.username}</Text>
                 <Text className="text-xs text-[#876d64]">Buyer request</Text>
               </View>
             </View>
@@ -183,14 +222,14 @@ export default function FeedScreen() {
           </View>
         </View>
       );
-    } else {
+    } else if (item.type === "post"){
       const post = item.data;
       return (
         <Link href={`/postDetails/${post.id}`} asChild>
           <TouchableOpacity activeOpacity={0.85} className="px-4 pt-3">
             <View className="rounded-2xl border border-[#efe9e7] bg-white p-4">
               <View className="flex-row items-center mb-3">
-                <Image source={{ uri: post.user?.profile_picture_url }} className="w-10 h-10 rounded-full mr-3" />
+                <Image source={{ uri: post.user?.profile_picture_url.length > 0 ? post.user?.profile_picture_url : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" }} className="w-10 h-10 rounded-full mr-3" />
                 <View>
                   <Text className="font-semibold text-[#111418]">{post.user?.username}</Text> {/* Ask the backend to provide the actual name i.e shop or buyer name to include here */}
                   <Text className="text-xs text-[#876d64]">Post</Text>
@@ -210,7 +249,6 @@ export default function FeedScreen() {
 
               <View className="flex-row justify-between mt-3">
                 <Pressable className="flex-row items-center gap-2" onPress={async ()=>{
-                  console.log("liking")
                   try {
                     //work on this later... liking should be toggled for each post
                     const res = await likePost(post.id);
@@ -234,6 +272,9 @@ export default function FeedScreen() {
           </TouchableOpacity>
         </Link>
       );
+    }
+    else {
+      return <StartCards />;
     }
   };
 
@@ -300,28 +341,54 @@ export default function FeedScreen() {
       <ProductFormBottomSheet ref={productFormRef} productCategories={productCategories} onSubmit={async (product) => {
         try {
           const newProduct = await createProduct(product as CreateProductRequest);
+          show({
+            variant: "success",
+            title: "Product Created",
+            message: "Your product has been successfully created."
+          });
           productFormRef.current?.close();
         } catch (error) {
-          console.error("Error creating product:", error);
+          show({
+            variant: "error",
+            title: "Error creating product",
+            message: "There was a problem creating the product. Please try again later."
+          });
         }
       }}/>
       <PostFormBottomSheet ref={postFormRef} productCategories={productCategories} products={postProducts} postImages={postImages} onSubmit={async (data) => {
         try {
           data.products = postProducts.map((prod) => { return { product_id: prod.id }; });
           const newPost = await createPost(data);
-          console.log("post: ",newPost)
+          show({
+            variant: "success",
+            title: "Post Created",
+            message: "Your post has been successfully created."
+          });
           //set feed later to show new post on top
           postFormRef.current?.close();
         } catch (error) {
-          console.error("Error creating post:", error);
+          show({
+            variant: "error",
+            title: "Error creating post",
+            message: "There was a problem creating the post. Please try again later."
+          });
         }
       }}/>
       <BuyerRequestFormBottomSheet ref={requestFormRef} requestImages={requestImages} onSubmit={async(request) => {
         try {
           const newRequest = await createBuyerRequest(request);
+          show({
+            variant: "success",
+            title: "Request Created",
+            message: "Your request has been successfully created."
+          });
           requestFormRef.current?.close();
         } catch (error) {
-          console.error("Error creating request:", error);
+          show({
+            variant: "error",
+            title: "Error creating buyer request",
+            message: "There was a problem creating the buyer request. Please try again later."
+          });
         }
       }}/>
     </SafeAreaView>
