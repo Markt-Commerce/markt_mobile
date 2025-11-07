@@ -215,7 +215,7 @@ const addProductToCart = async (product:ProductDetail)=>{
           </View>
         </View>
         <View className="px-4 py-3 flex-row justify-end">
-          <Link href={`/shopDetails/${product.seller.id}`} asChild>
+          <Link href={`/shopDetails/${product.seller_user.id}`} asChild>
           <TouchableOpacity className="bg-gray-200 h-10 rounded-lg px-4 justify-center items-center">
             <Text className="text-[#171311] font-bold">View Shop</Text>
           </TouchableOpacity>

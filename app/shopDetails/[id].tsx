@@ -1,22 +1,29 @@
 // app/ShopBySarah.tsx
 import React, { useEffect, useState} from "react";
+import { useRouter } from "expo-router";
 import { View, Text, ImageBackground, ScrollView, Image, TouchableOpacity } from "react-native";
 import { ArrowLeft, Share } from "lucide-react-native";
 import { useLocalSearchParams } from "expo-router";
 import { getSellerProducts } from "../../services/sections/product";
 import { getUserPublicProfile, getUserShopInfo } from "../../services/sections/users";
+import { Product } from "../../models/cart";
+import { ProductResponse } from "../../models/products";
+import { CommonSellerResponseData } from "../../models/user";
 
 export default function Shop() {
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [shop, setShop] = useState(null);
+  const [shop, setShop] = useState<CommonSellerResponseData>();
+  const [shopProducts, setShopProducts] = useState<ProductResponse[]>([]);
 
   useEffect(() => {
     const fetchShopData = async () => {
       try {
         const profileData = await getUserShopInfo(id);
         console.log("Fetched shop profile:", profileData);
-        //const sellerProducts = await getSellerProducts(id);
-        //setShop({ ...profileData, products: sellerProducts });
+        setShop(profileData);
+        const sellerProducts = await getSellerProducts(profileData.id);
+        setShopProducts((prev) => [...prev, ...sellerProducts]);
       } catch (error) {
         console.error("Error fetching shop data:", error);
       } 
@@ -31,7 +38,7 @@ export default function Shop() {
       <View className="px-4 py-3">
         <ImageBackground
           source={{
-            uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuBGc16JP6_OIzByauKbHb4NGeg7GP58-NEEsQEh8LaG2-foAXr0ZCtC6NiAVj0YigcNhPrlcni3LqIclo425kQ5WUVAJYzbb-hhh1rWREMqyuwhIVvanP48t9IuEoxzQpYeJyKlOTS2nCXgYtJzFf0nt9nIIt-G3nA-9LHLzVFwLB66KBwlvjwpfFw9h1govTzaZgH98IgXzgWgAeG8igknAwqK4zf88O5sdJqpC-NxvpZMmGklvC4vs80ZvaIFf-8yBuP5s0o26g",
+            uri: "",
           }}
           className="w-full min-h-80 overflow-hidden bg-white"
           resizeMode="cover"
@@ -49,15 +56,22 @@ export default function Shop() {
       <View className="flex-row items-start p-4">
         <Image
           source={{
-            uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuBzDeoJKxOR8a_fCD3CmuAaDlH_OlCxRjt2lUWuFG--Irgo3bwc9OJiW8DPoHhIGq5cCN_ulsUFKcdyNJGHHYv54eDwg-1Bmqq5G7UuZu_rMZMVPvqvJwRo4vr_PtkJpUkdvk5eIBJReYpuOEA9PieYJEihnjQWxtghJfEsz4tey0NrCly_qR-K-iVBXC4dTgZWLIz_ki3JupYPp3EnONwURdrWPLqscBzBMgrvCzFXxf7LDq82jConJYruRxnDZwbp4IjoCf8wzg",
+            uri: "",
           }}
           className="w-32 h-32 rounded-full"
         />
         <View className="flex-1 ml-4 justify-center">
-          <Text className="text-[#171311] text-[22px] font-bold leading-tight">Shop by Sarah</Text>
-          <Text className="text-[#876d64] text-base">100K followers · 100 items</Text>
-          <Text className="text-[#876d64] text-base">Sarah's shop</Text>
+          <Text className="text-[#171311] text-[22px] font-bold leading-tight">{shop?.shop_name}</Text>
+          <Text className="text-[#876d64] text-base">{shop?.total_raters} followers · 100 items</Text>
+          <Text className="text-[#876d64] text-base">{shop?.average_rating} / 5</Text>
+          <Text className="text-[#876d64] text-base">{shop?.verification_status}</Text>
         </View>
+      </View>
+
+      {/* Follow Button */}
+      <View>
+        <TouchableOpacity>Follow</TouchableOpacity>
+        <TouchableOpacity onPress={()=>{router.navigate(`/followers/${id}`)}}>Followers</TouchableOpacity>
       </View>
 
       {/* Description */}
