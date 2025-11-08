@@ -69,9 +69,6 @@ export default function FeedScreen() {
     const options = ["product", "post"];
     if (role === "seller") options.push("request");
     const Itemchoice = Math.floor(Math.random() * options.length);
-    console.log("Item choice number: ",Itemchoice)
-    console.log("Item choice", options[Itemchoice])
-    console.log("options length", options.length)
     let fetchType = options[Itemchoice];
     if (!loadedStartCards) {
       //start cards are only loaded once at the start of the feed
