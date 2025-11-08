@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
-import { View, Text, FlatList, TouchableOpacity, Image, ImageBackground, ActivityIndicator, Pressable } from "react-native";
-import { Plus, ShoppingCart, MessageCircle, Heart, Send, Star, Bell, Search } from "lucide-react-native";
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
+import { Plus, Bell, Search } from "lucide-react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { Link, useRouter } from "expo-router";
 import { FeedItem } from "../../models/feed";
@@ -17,6 +17,9 @@ import { CreateProductRequest, PlaceholderProduct } from "../../models/products"
 import { Category } from "../../models/categories";
 import { useToast } from "../../components/ToastProvider";
 import StartCards from "../../components/startCards";
+import PostDisplayComponent from "../../components/PostDisplayComponent";
+import RequestDisplayComponent from "../../components/requestDisplayComponent";
+import ProductDisplayComponent from "../../components/productDisplayComponent";
 
 export default function FeedScreen() {
   const router = useRouter();
@@ -78,10 +81,6 @@ export default function FeedScreen() {
 
     try {
       let newItems: FeedItem[] = [];
-      if (fetchType === "startCard") {
-        //load start cards
-        newItems = [{ type: "startCard", data: [] }]; //start cards component can handle its own data fetching with population
-      }
       if (fetchType === "product") {
         const products = await getProducts(page, 6);
         const groupedProducts = [];
@@ -140,141 +139,23 @@ export default function FeedScreen() {
         </View>
       </TouchableOpacity>
     </View>
+
+    {role === "seller" && <View className="px-4 py-3 bg-white border-b border-[#f0e9e7]">
+      <StartCards />
+      </View>}
     </>
   );
 
   const renderItem = ({ item }: { item: FeedItem }) => {
     if (item.type === "request") {
       const req = item.data;
-      return (
-        <View className="px-4 pt-3">
-          <View className="rounded-2xl border border-[#efe9e7] bg-white p-4">
-            <View className="flex-row items-center mb-3">
-              <Image source={{ uri: req.buyer?.profile_picture_url }} className="w-10 h-10 rounded-full mr-3" />
-              <View>
-                <Text className="font-semibold text-[#111418]">{req.buyer?.username}</Text>
-                <Text className="text-xs text-[#876d64]">Buyer request</Text>
-              </View>
-            </View>
-
-            <Text className="font-bold text-[#111418] text-[16px] mb-1" numberOfLines={2}>
-              {req.title}
-            </Text>
-            <Text className="text-[#60758a] mb-3" numberOfLines={3}>
-              {req.description}
-            </Text>
-
-            <View className="flex-row items-center justify-between">
-              <View>
-                <Text className="text-sm text-[#e26136] font-semibold">Budget: ${req.budget}</Text>
-                <Text className="text-[11px] text-[#60758a]">Deadline: {new Date(req.deadline).toDateString()}</Text>
-              </View>
-              <TouchableOpacity className="px-3 py-2 bg-[#e26136] rounded-full">
-                <Text className="text-white text-sm font-semibold">Message Buyer</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      );
+      return <RequestDisplayComponent req={req}/>; //todo: add message press event for requests
     } else if (item.type === "product") {
       const products = item.data;
-      return (
-        <View className="px-4 pt-3">
-          <View className="flex-row justify-between gap-3">
-            {products.map((product) => (
-              <View key={product.id} className="w-[48%]">
-                <Link href={`/productDetails/${product.id}`} asChild>
-                  <TouchableOpacity activeOpacity={0.85}>
-                    <View className="rounded-2xl overflow-hidden border border-[#efe9e7] bg-white">
-                      <ImageBackground
-                        source={{ uri: product.images?.[0]?.media?.original_url }}
-                        className="w-full aspect-square"
-                        resizeMode="cover"
-                      >
-                        {/* price pill */}
-                        <View className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-1">
-                          <Text className="text-[12px] font-semibold text-[#111418]">
-                            {product.price}
-                          </Text>
-                        </View>
-                      </ImageBackground>
-
-                      <View className="px-3 pt-2 pb-3">
-                        <Text className="text-[14px] font-semibold text-[#171311]" numberOfLines={1}>
-                          {product.name}
-                        </Text>
-                        <View className="flex-row justify-between mt-2">
-                          <TouchableOpacity className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-[#f5f2f1]">
-                            <ShoppingCart size={16} color="#60758a" />
-                            <Text className="text-[12px] text-[#111418]">Add</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-[#f5f2f1]">
-                            <MessageCircle size={16} color="#60758a" />
-                            <Text className="text-[12px] text-[#111418]">Chat</Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                </Link>
-              </View>
-            ))}
-          </View>
-        </View>
-      );
-    } else if (item.type === "post"){
+      return <ProductDisplayComponent products={products}/> //todo: add in a add to cart functionality here as well as a message seller functionality
+    } else {
       const post = item.data;
-      return (
-        <Link href={`/postDetails/${post.id}`} asChild>
-          <TouchableOpacity activeOpacity={0.85} className="px-4 pt-3">
-            <View className="rounded-2xl border border-[#efe9e7] bg-white p-4">
-              <View className="flex-row items-center mb-3">
-                <Image source={{ uri: post.user?.profile_picture_url.length > 0 ? post.user?.profile_picture_url : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" }} className="w-10 h-10 rounded-full mr-3" />
-                <View>
-                  <Text className="font-semibold text-[#111418]">{post.user?.username}</Text> {/* Ask the backend to provide the actual name i.e shop or buyer name to include here */}
-                  <Text className="text-xs text-[#876d64]">Post</Text>
-                </View>
-              </View>
-
-              {post.caption ? (
-                <Text className="mb-3 text-[#111418]" numberOfLines={3}>{post.caption}</Text>
-              ) : null}
-
-              {post.social_media[0]?.media?.original_url && (
-                <Image
-                  source={{ uri: post.social_media[0].media.original_url }}
-                  className="w-full h-56 rounded-xl"
-                />
-              )}
-
-              <View className="flex-row justify-between mt-3">
-                <Pressable className="flex-row items-center gap-2" onPress={async ()=>{
-                  try {
-                    //work on this later... liking should be toggled for each post
-                    const res = await likePost(post.id);
-                    post.like_count++;
-                  } catch (error) {
-                   console.error("unable to like this post") 
-                  }
-                }}>
-                  <Heart size={18} color="#60758a" />
-                  <Text className="text-[#111418]">{post.like_count}</Text>
-                </Pressable>
-                <Pressable className="flex-row items-center gap-2">
-                  <MessageCircle size={18} color="#60758a" />
-                  <Text className="text-[#111418]">{post.comment_count}</Text>
-                </Pressable>
-                <Pressable>
-                  <Send size={18} color="#60758a" />
-                </Pressable>
-              </View>
-            </View>
-          </TouchableOpacity>
-        </Link>
-      );
-    }
-    else {
-      return <StartCards />;
+      return <PostDisplayComponent post={post} onLike={(postId)=> likePost(postId)}/>;
     }
   };
 

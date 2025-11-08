@@ -1,9 +1,11 @@
-import React from 'react';
-import { View, Text, Image, ScrollView } from 'react-native';
-import { ArrowLeft, Truck, Package, User, Dot, PlusSquare, Search, Home, LucideIcon } from 'lucide-react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, Image, ScrollView, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ArrowLeft, Truck, Package, User, Dot, PlusSquare, Search, Home, LucideIcon, Bell, Check, MessageSquare, Tag } from 'lucide-react-native';
 import { TouchableOpacity } from 'react-native';
 import { NotificationItem } from '../models/notifications';
 import { getNotifications, markAllAsRead } from '../services/sections/notifications';
+import { useRouter } from 'expo-router';
 
 
 // ---- Small presentational helpers ----
@@ -15,28 +17,39 @@ const IconBubble = ({ Cmp }: { Cmp?: React.ComponentType<any> }) => (
 
 export default function NotificationsScreen() {
   const router = useRouter();
-  const [items, setItems] = useState<NotificationItem[]>(notifications);
+  const [items, setItems] = useState<NotificationItem[]>();
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<"all" | "orders" | "messages" | "promos">("all");
+
+  useEffect(() => {
+    const getpresentNotifs = async () => {
+      const notifs = await getNotifications(10);
+      setItems(notifs.items)
+    };
+    getpresentNotifs()
+  }, []);
+
+
+
 
   // optional local filters (UI only for now)
   const filtered = useMemo(() => {
     if (tab === "all") return items;
     if (tab === "orders")
-      return items.filter(
-        (n) => (n.type === "icon" && (n.icon === Truck || n.icon === Package)) // shipping/delivered
+      return items?.filter(
+        (n) => (n.type === "icon")
       );
     if (tab === "messages")
-      return items.filter(
+      return items?.filter(
         (n) =>
-          (n.type === "avatar" && /message/i.test(n.name)) ||
-          (n.type === "icon" && n.icon === MessageSquare)
+          (n.type === "avatar") ||
+          (n.type === "icon")
       );
-    return items.filter((n) => n.type === "icon" && n.icon === Tag); // promos
+    return items?.filter((n) => n.type === "icon"); // promos
   }, [items, tab]);
 
-  const today = filtered.slice(0, 3);
-  const yesterday = filtered.slice(3);
+  const today = filtered?.slice(0, 3);
+  const yesterday = filtered?.slice(3);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -47,7 +60,7 @@ export default function NotificationsScreen() {
 
   const markAllRead = () => {
     // await markAllRead();
-    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+    setItems((prev) => prev?.map((n) => ({ ...n, read: true })));
   };
 
   const TabPill = ({
@@ -74,20 +87,17 @@ export default function NotificationsScreen() {
 
   const Row = ({ n }: { n: NotificationItem }) => (
     <View className="flex-row items-center gap-4 px-4 py-3">
-      {n.type === "avatar" ? (
-        <Image source={{ uri: n.image }} className="h-12 w-12 rounded-full bg-[#f4f2f1]" />
-      ) : (
-        <IconBubble Cmp={n.icon} />
-      )}
+     <IconBubble />
 
       <View className="flex-1">
+        <Text>{n.title}</Text>
         <Text
-          className={`text-base ${n.read ? "text-[#7b6660]" : "text-[#171311] font-medium"}`}
+          className={`text-base ${n.is_read ? "text-[#7b6660]" : "text-[#171311] font-medium"}`}
           numberOfLines={2}
         >
-          {n.name}
+          {n.message}
         </Text>
-        <Text className="text-[#826f68] text-xs mt-0.5">{n.time}</Text>
+        <Text className="text-[#826f68] text-xs mt-0.5">{n.created_at}</Text>
       </View>
     </View>
   );
@@ -140,7 +150,7 @@ export default function NotificationsScreen() {
         <View className="px-4">
           <View className="rounded-2xl bg-white border border-[#efe9e7] overflow-hidden">
             <Text className="px-4 pt-3 pb-1 text-sm font-semibold text-[#8e7a74]">Today</Text>
-            {today.length ? (
+            {today?.length ? (
               today.map((n, i) => (
                 <View key={n.id} className={`${i !== today.length - 1 ? "border-b border-[#f3efed]" : ""}`}>
                   <Row n={n} />
@@ -153,7 +163,7 @@ export default function NotificationsScreen() {
             )}
           </View>
 
-          {yesterday.length ? (
+          {yesterday?.length ? (
             <View className="rounded-2xl bg-white border border-[#efe9e7] overflow-hidden mt-3">
               <Text className="px-4 pt-3 pb-1 text-sm font-semibold text-[#8e7a74]">Yesterday</Text>
               {yesterday.map((n, i) => (
