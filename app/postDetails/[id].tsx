@@ -1,10 +1,14 @@
 import React, { useEffect, useState, useCallback } from "react";
-import {View,Text,ScrollView,FlatList,ActivityIndicator,TouchableOpacity,TextInput,Image} from "react-native";
+import {View,Text,ScrollView,FlatList,ActivityIndicator,TouchableOpacity,TextInput,Image, KeyboardAvoidingView} from "react-native";
 import {  ArrowLeft,  Heart,  MessageCircle,  Send,  Image as ImageIcon, X, SendHorizonal} from "lucide-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { getPostById, getPostComments, likePost } from "../../services/sections/post";
+import { commentOnPost, getPostById, getPostComments, likePost } from "../../services/sections/post";
 import { CommentItem, CommentResponse, PostDetails } from "../../models/post";
 import { useToast } from "../../components/ToastProvider";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { parseDate } from "../../utils/parseDate";
+import { useUser } from "../../hooks/userContextProvider";
+import { defaultProfilePicture } from "../../models/defaults";
 
 
 
@@ -26,7 +30,7 @@ const SingleCommentComponent = React.memo(({ comment }: { comment: CommentItem }
             {comment.user.username}
           </Text>
           <Text className="text-[#876d64] text-sm font-normal leading-normal">
-            {comment.created_at}
+            {parseDate(comment.created_at)}
           </Text>
         </View>
         <Text className="text-[#171311] text-sm font-normal leading-normal">
@@ -40,6 +44,7 @@ const SingleCommentComponent = React.memo(({ comment }: { comment: CommentItem }
 // Main Screen Component
 export default function PostDetailsScreen() {
   const [post, setPost] = useState<PostDetails | null>(null);
+  const [newComment, setNewComment] = useState<string>("");
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -47,6 +52,7 @@ export default function PostDetailsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { show } = useToast();
+  const {user, role} = useUser();
 
 
   const FetchPost = async (id: string) => {
@@ -65,6 +71,21 @@ export default function PostDetailsScreen() {
   useEffect(() => {
     FetchPost(id);
   }, [id]);
+
+  const createComment = async (comment: string, parentId?: number) => {
+    try {
+      if (comment == "") return;
+      const newComment = await commentOnPost(id, comment, parentId);
+      setComments((prev) => [newComment, ...prev]);
+    } catch (error) {
+      console.log(error)
+      show({
+        variant: "error",
+        title: "Error adding comment",
+        message: "There was an issue adding your comment. "+ error,
+      });
+    }
+  };
 
   const loadComments = useCallback(async () => {
     if (loading || !hasMore) return;
@@ -93,6 +114,7 @@ export default function PostDetailsScreen() {
     // Initial load of comments
     if (id && page === 1) {
       loadComments();
+      setPage(2)
     }
   }, [id, loadComments, page]);
 
@@ -120,7 +142,6 @@ export default function PostDetailsScreen() {
         </Text>
       </View>
 
-      {/* User Info: change to user once done in the backend to allow all users to post */}
       <View className="flex flex-row gap-4 bg-white px-4 min-h-[72px] py-2">
         <Image
           source={{ uri: post.user.profile_picture_url || "https://i.pravatar.cc/150?img=7" }}
@@ -131,7 +152,7 @@ export default function PostDetailsScreen() {
             {post.user.username}
           </Text>
           <Text className="text-[#876d64] text-sm font-normal leading-normal line-clamp-2">
-            {post.created_at}
+            {parseDate(post.created_at)}
           </Text>
         </View>
       </View>
@@ -142,11 +163,11 @@ export default function PostDetailsScreen() {
       </Text>
 
       {/* Main Image */}
-      {post.social_media?.length > 0 && (
+      {post.social_media.length > 0 && (
         <View className="flex w-full grow bg-white p-4">
           <View className="w-full gap-1 overflow-hidden bg-white aspect-[2/3] rounded-lg flex md:gap-2">
             <Image
-              source={{ uri: post.social_media[0].media.mobile_url }}
+              source={{ uri: post.social_media[0].media.original_url }}
               className="w-full bg-center bg-no-repeat bg-cover aspect-auto rounded-none flex-1"
             />
           </View>
@@ -255,43 +276,51 @@ export default function PostDetailsScreen() {
       />
 
       {/* Comment Input Footer */}
-      <View>
-        <View className="flex items-center px-4 py-3 gap-3 flex-row">
-          <Image
-            source={{ uri: "https://i.pravatar.cc/150?img=7" }} // Placeholder for current user
-            className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 shrink-0"
-          />
-          <View className="flex flex-col min-w-40 h-12 flex-1">
-            <View className="flex w-full flex-1 items-stretch rounded-lg h-full flex-row">
-              <TextInput
-                placeholder="Add a comment..."
-                className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#171311] focus:outline-0 focus:ring-0 border-none bg-[#f4f1f0] focus:border-none h-full placeholder:text-[#876d64] px-4 rounded-r-none border-r-0 pr-2 text-base font-normal leading-normal"
+      <SafeAreaView>
+      <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={100}>
+          <View className="bg-white px-4 py-3 border-t border-[#e6e2e0]">
+            <View className="flex-row items-center gap-3">
+              {/* User Avatar */}
+              <Image
+                source={{ uri: defaultProfilePicture }}
+                className="w-10 h-10 rounded-full bg-[#f4f1f0]"
               />
-              <View className="flex border-none bg-[#f4f1f0] items-center justify-center pr-4 rounded-r-lg border-l-0 !pr-2 flex-row">
-                <View className="flex items-center gap-4 justify-end flex-row">
-                  <View className="flex items-center gap-1 flex-row">
-                    <TouchableOpacity
-                      className="flex items-center justify-center p-1.5"
-                      onPress={() => console.log("Attach image")}
-                    >
-                      <ImageIcon size={20} color="#876d64" />
-                    </TouchableOpacity>
-                  </View>
+
+              {/* Input + Icons */}
+              <View className="flex-1 flex-row items-center bg-[#f4f1f0] rounded-lg px-3">
+                {/* Text Input */}
+                <TextInput
+                  placeholder="Add a comment..."
+                  placeholderTextColor="#876d64"
+                  className="flex-1 text-[#171311] text-base font-normal py-2"
+                  value={newComment}
+                  onChangeText={setNewComment}
+                  multiline
+                />
+
+                {/* Right-side Icons */}
+                <View className="flex-row items-center">
+                  {/* Attach image */}
+                  {/* <TouchableOpacity
+                    className="p-1.5"
+                    onPress={() => console.log("Attach image")}
+                  >
+                    <ImageIcon size={20} color="#876d64" />
+                  </TouchableOpacity> */}
+
+                  {/* Send button */}
+                  <TouchableOpacity
+                    className="p-1.5"
+                    onPress={() => createComment(newComment)}
+                  >
+                    <SendHorizonal size={20} color="#171311" />
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>
-            <View>
-              <TouchableOpacity 
-                className="flex items-center justify-center p-1.5"
-                onPress={() => console.log("add a comment")}
-                >
-                <SendHorizonal color="#000000" size={20}/>
-              </TouchableOpacity>
-            </View>
           </View>
-        </View>
-        <View className="h-5 bg-white"></View>
-      </View>
+      </KeyboardAvoidingView>
+      </SafeAreaView>
     </View>
   );
 }

@@ -29,18 +29,6 @@ export default function FeedScreen() {
   const [page, setPage] = useState(1);
   const { show } = useToast();
 
-  //for create product
-  const [productCategories, setProductCategories] = useState<Category[]>([]);
-  const [productImages, setProductImages] = useState<string[]>([]);
-
-  //for create post
-  const [postCategories, setPostCategories] = useState<Category[]>([]);
-  const [postProducts, setPostProducts] = useState<PlaceholderProduct[]>([]);
-  const [postImages, setpostImages] = useState<string[]>([]);
-
-  //for request
-  const [requestImages, setRequestImages] = useState<string[]>([]);
-
   const { role, setUser, user } = useUser();
   const snapPoints = useMemo(() => ["30%"], []);
 
@@ -137,7 +125,7 @@ export default function FeedScreen() {
       </TouchableOpacity>
     </View>
 
-    {role === "seller" && <View className="px-4 py-3 bg-white border-b border-[#f0e9e7]">
+    {role === "seller" && <View >
       <StartCards />
       </View>}
     </>
@@ -216,59 +204,9 @@ export default function FeedScreen() {
       </BottomSheet>
 
       {/* Imported Bottom Sheets */}
-      <ProductFormBottomSheet ref={productFormRef} productCategories={productCategories} onSubmit={async (product) => {
-        try {
-          const newProduct = await createProduct(product as CreateProductRequest);
-          show({
-            variant: "success",
-            title: "Product Created",
-            message: "Your product has been successfully created."
-          });
-          productFormRef.current?.close();
-        } catch (error) {
-          show({
-            variant: "error",
-            title: "Error creating product",
-            message: "There was a problem creating the product. Please try again later."
-          });
-        }
-      }}/>
-      <PostFormBottomSheet ref={postFormRef} productCategories={productCategories} products={postProducts} postImages={postImages} onSubmit={async (data) => {
-        try {
-          data.products = postProducts.map((prod) => { return { product_id: prod.id }; });
-          const newPost = await createPost(data);
-          show({
-            variant: "success",
-            title: "Post Created",
-            message: "Your post has been successfully created."
-          });
-          //set feed later to show new post on top
-          postFormRef.current?.close();
-        } catch (error) {
-          show({
-            variant: "error",
-            title: "Error creating post",
-            message: "There was a problem creating the post. Please try again later."
-          });
-        }
-      }}/>
-      <BuyerRequestFormBottomSheet ref={requestFormRef} requestImages={requestImages} onSubmit={async(request) => {
-        try {
-          const newRequest = await createBuyerRequest(request);
-          show({
-            variant: "success",
-            title: "Request Created",
-            message: "Your request has been successfully created."
-          });
-          requestFormRef.current?.close();
-        } catch (error) {
-          show({
-            variant: "error",
-            title: "Error creating buyer request",
-            message: "There was a problem creating the buyer request. Please try again later."
-          });
-        }
-      }}/>
+      {/* <ProductFormBottomSheet ref={productFormRef} />
+      <PostFormBottomSheet ref={postFormRef}/>
+      <BuyerRequestFormBottomSheet ref={requestFormRef}/> */}
     </SafeAreaView>
   );
 }

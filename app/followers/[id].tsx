@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect} from "react";
 import { View, Text, TextInput, TouchableOpacity, FlatList, Image } from "react-native";
 import { ArrowLeft, Search } from "lucide-react-native";
 
@@ -25,6 +25,18 @@ const followers = [
 ];
 
 export default function FollowersScreen({ navigation }: any) {
+
+  const [followersList, setFollowersList] = React.useState(followers);
+
+  const getFollowers = async () => {
+
+  }
+
+  useEffect(() => {
+    getFollowers();
+  }, []);
+
+
   return (
     <View className="flex-1 bg-white">
       {/* Header */}

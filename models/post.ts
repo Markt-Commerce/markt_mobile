@@ -142,3 +142,24 @@ export type CommentItem = {
       profile_picture_url: string;
     };
   }
+
+export interface CommentRequest {
+    content: string;
+    parent_id?: number;
+}
+
+interface User {
+  id: string;
+  profile_picture_url: string;
+  username: string;
+}
+
+export interface CommentCreatedResponse {
+  id: number;
+  user_id: string;
+  content: string;
+  post_id: string;
+  created_at: string;
+  user: User;
+}
+

@@ -1,4 +1,4 @@
-import { CommonSellerResponseData } from "../../models/user";
+import { CommonSellerResponseData, ShopData } from "../../models/user";
 import { request, BASE_URL } from "../api";
 
 
@@ -12,8 +12,8 @@ export async function getUserPublicProfile(user_id: string): Promise<any> {
 }
 
 //get shop information
-export async function getUserShopInfo(user_id: string): Promise<CommonSellerResponseData> {
-  const res = await request<CommonSellerResponseData>(
+export async function getUserShopInfo(user_id: string): Promise<ShopData> {
+  const res = await request<ShopData>(
     `${BASE_URL}/users/shops/${user_id}`,
     { method: "GET" }
   );

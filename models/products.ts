@@ -140,7 +140,7 @@ export interface PlaceholderProduct {
 
 export interface ProductVariant {
   name: string;
-  options: Record<string, string>;
+  options?: Record<string, string>;
 }
 
 export interface CreateProductRequest {

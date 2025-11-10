@@ -16,6 +16,9 @@ import { getSellerProducts } from "../services/sections/product";
 import { PlaceholderProduct } from "../models/products";
 import { uploadImage, attemptMultipleUpload } from "../services/sections/media";
 import { MediaResponse } from "../models/media";
+import { createPost } from "../services/sections/post";
+import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
+const { useToast } = require("./ToastProvider");
 
 const postSchema = z.object({
   caption: z.string().max(1000, "Caption too long").optional(),
@@ -28,11 +31,16 @@ const postSchema = z.object({
 
 export type PostFormData = z.infer<typeof postSchema>;
 
-const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormData) => void, products:PlaceholderProduct[], productCategories:Category[], postImages:string[]}>(
-  ({ onSubmit, productCategories, products, postImages }, ref) => {
+const PostFormBottomSheet = React.forwardRef<BottomSheetMethods | null, {}>(
+  (props, ref) => {
 
+    const sheetRef = React.useRef<BottomSheetMethods | null>(null);
+    React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
     //user
     const { user } = useUser();
+    const {show} = useToast();
+
+    const [postImages, setpostImages] = useState<string[]>([]);
 
     // images state: store PickedImage[] from InstagramGrid
     const [Imagevalue, setImageValue] = React.useState<InstagramGridProps["value"]>(postImages ? postImages.map((uri, index) => ({ id: index.toString(), uri })) : []);
@@ -50,9 +58,33 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
     const [categories, setCategories] = React.useState<Category[]>([]);
     const [selectedCategories, setSelectedCategories] = React.useState<Category[]>([]);
 
+      //for create post
+      const [postCategories, setPostCategories] = useState<Category[]>([]);
+      const [postProducts, setPostProducts] = useState<PlaceholderProduct[]>([]);
+
     postSchema.refine(()=> selectedCategories?.length ?? 0 > 0,{
       path: ["category_ids"]
     });
+
+    const submitForm = async (data: PostFormData) => {
+      try {
+        data.products = postProducts.map((prod) => { return { product_id: prod.id }; });
+        const newPost = await createPost(data);
+        show({
+          variant: "success",
+          title: "Post Created",
+          message: "Your post has been successfully created."
+        });
+        sheetRef.current?.close();
+        
+      } catch (error) {
+        show({
+          variant: "error",
+          title: "Error creating post",
+          message: "There was a problem creating the post. Please try again later."
+        });
+      }
+    }
 
 
     const handleLocalSubmit = async (data: PostFormData) => {
@@ -79,7 +111,7 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
       };
 
       // call parent-provided onSubmit
-      onSubmit(payload);
+      submitForm(payload);
       console.log("all done, created post successfully")
     } catch (err) {
       console.error("Create post failed:", err);
@@ -229,3 +261,4 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
 );
 
 export default PostFormBottomSheet;
+

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Ref, useState } from "react";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import { useForm, Controller } from "react-hook-form";
@@ -13,6 +13,10 @@ import InstagramGrid, { InstagramGridProps, PickedImage } from "./imagePicker";
 import { pickImage } from "../services/imageSelection";
 import { uploadImage, attemptMultipleUpload } from "../services/sections/media";
 import { MediaResponse } from "../models/media";
+import { createBuyerRequest } from "../services/sections/request";
+import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
+import { CreateRequestPayload } from "../models/request";
+import { useToast } from "./ToastProvider";
 
 //temporary date parser to create an expiry date. This default expiry date would be seven days from when the request was first placed
 function getDateSevenDaysFromNow() {
@@ -37,9 +41,14 @@ const requestSchema = z.object({
 
 export type RequestFormData = z.infer<typeof requestSchema>;
 
-const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (data: RequestFormData) => void, requestImages:string[] }>(
-  ({ onSubmit, requestImages }, ref) => {
+const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheetMethods | null, {}>(
+  (props, ref) => {
+    const sheetRef = React.useRef<BottomSheetMethods | null>(null);
+    React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
+    const {show} = useToast();
+
     const snapPoints = React.useMemo(() => ["50%", "85%"], []);
+    const [requestImages, setRequestImages] = useState<string[]>([]);
 
     requestSchema.refine(()=> selectedCategories?.length ?? 0 > 0,{
       path: ["category_ids"]
@@ -49,7 +58,6 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (d
       resolver: zodResolver(requestSchema) as any // todo: remember to solve later
     });
     
-    // images state: store PickedImage[] from InstagramGrid
     const [Imagevalue, setImageValue] = React.useState<InstagramGridProps["value"]>(requestImages ? requestImages.map((uri, index) => ({ id: index.toString(), uri })) : []);
 
     //categories
@@ -75,6 +83,24 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (d
     };
 
 
+    const createRequest = async(request: CreateRequestPayload) => {
+        try {
+          const newRequest = await createBuyerRequest(request);
+          show({
+            variant: "success",
+            title: "Request Created",
+            message: "Your request has been successfully created."
+          });
+          sheetRef.current?.close();
+        } catch (error) {
+          show({
+            variant: "error",
+            title: "Error creating buyer request",
+            message: "There was a problem creating the buyer request. Please try again later."
+          });
+        }
+      }
+
     const handleLocalSubmit = async (data: RequestFormData) => {
     try{
       console.log("sending request")
@@ -97,7 +123,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (d
       };
 
       // call parent-provided onSubmit
-      await onSubmit(payload);
+      await createRequest(payload);
       console.log("all done, created request successfully")
     } catch (err) {
       console.error("Create product failed:", err);
@@ -106,7 +132,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (d
   }
 
     return (
-      <BottomSheet ref={ref} index={-1} snapPoints={snapPoints} enablePanDownToClose>
+      <BottomSheet ref={sheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose>
         <BottomSheetScrollView>
         <Text className="text-lg font-bold mb-3">Create Buyer Request</Text>
 
@@ -166,3 +192,4 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (d
 );
 
 export default BuyerRequestFormBottomSheet;
+

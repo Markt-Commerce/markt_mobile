@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, forwardRef } from 'react';
+import React, { useRef, useMemo, forwardRef, useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useForm } from 'react-hook-form';
@@ -12,6 +12,10 @@ import { X } from 'lucide-react-native';
 import InstagramGrid, { InstagramGridProps } from './imagePicker';
 import { uploadImage, attemptMultipleUpload } from '../services/sections/media';
 import { MediaResponse } from '../models/media';
+import { createPost } from '../services/sections/post';
+import { CreateProductRequest } from '../models/products';
+import { createProduct } from '../services/sections/product';
+import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types';
 
 
 // Zod Schema for Validation
@@ -25,7 +29,7 @@ const productSchema = z.object({
   barcode: z.string().max(100).optional(),
   weight: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()).default(0.01),
   variants: z.array(z.object({
-    name: z.string().min(1, "Variant name is required"),
+    name: z.string().min(1, "Variant name is required")
   })).optional(),
   sku: z.string().max(100).optional(),
   compare_at_price: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()).default(0.01),
@@ -37,14 +41,16 @@ const productSchema = z.object({
 type ProductFormData = z.infer<typeof productSchema>;
 
 interface Props {
-  onSubmit: (data: ProductFormData | any) => Promise<void>; // allow extra fields (images) in payload
   onClose?: () => void;
   productCategories?: Category[];
   productImages?: string[];
 }
 
-const ProductFormBottomSheet = forwardRef<BottomSheet, Props>(
-  ({ onSubmit, onClose, productCategories, productImages }, ref) => {
+const ProductFormBottomSheet = forwardRef<BottomSheetMethods | null, Props>(
+  (props, ref) => {
+
+    const sheetRef = React.useRef<BottomSheetMethods | null>(null);
+    React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
 
     productSchema.refine(()=> selectedCategories?.length ?? 0 > 0,{
       path: ["category_ids"]
@@ -56,6 +62,10 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, Props>(
   const [modalVisible, setModalVisible] = React.useState(false);
   const [categories, setCategories] = React.useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = React.useState<Category[]>([]);
+
+    //for create product
+    const [productCategories, setProductCategories] = useState<Category[]>([]);
+    const [productImages, setProductImages] = useState<string[]>([]);
 
   // images state: store PickedImage[] from InstagramGrid
   const [Imagevalue, setImageValue] = React.useState<InstagramGridProps["value"]>(productImages ? productImages.map((uri, index) => ({ id: index.toString(), uri })) : []);
@@ -80,6 +90,24 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, Props>(
     setSelectedCategories(prev => prev.filter(c => c.id !== id));
   };
 
+  const submitProduct = async (product: CreateProductRequest) => {
+        try {
+          const newProduct = await createProduct(product);
+          show({
+            variant: "success",
+            title: "Product Created",
+            message: "Your product has been successfully created."
+          });
+          sheetRef?.current?.close();
+        } catch (error) {
+          show({
+            variant: "error",
+            title: "Error creating product",
+            message: "There was a problem creating the product. Please try again later."
+          });
+        }
+      }
+
 
   const handleLocalSubmit = async (data: ProductFormData) => {
     try {
@@ -98,14 +126,14 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, Props>(
       data.cost_per_item = data.cost_per_item ?? 0.01;
 
       // prepare payload: keep form data, add category_ids (if we generated them) and add images
-      const payload = {
+      const payload: CreateProductRequest = {
         ...data,
         category_ids,
         media_ids: imageIds ?? [],
       };
 
       // call parent-provided onSubmit
-      await onSubmit(payload);
+      await submitProduct(payload);
       console.log("completed... all good")
     } catch (err) {
       console.error("Create product failed:", err);
@@ -216,3 +244,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet, Props>(
 );
 
 export default ProductFormBottomSheet;
+function show(arg0: { variant: string; title: string; message: string; }) {
+  throw new Error('Function not implemented.');
+}
+

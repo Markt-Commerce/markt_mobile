@@ -54,6 +54,72 @@ export interface BuyerProfile {
     last_order_date: string
   }
 
+
+  export interface ShopData {
+  average_rating: number;
+  categories: Category[];
+  description: string;
+  id: number;
+  is_active: boolean;
+  policies: Policies;
+  recent_posts: Post[];
+  recent_products: Product[];
+  shop_name: string;
+  shop_slug: string | null;
+  stats: Stats;
+  total_raters: number;
+  total_rating: number;
+  user: User;
+  verification_status: "unverified" | "verified" | string;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+export interface Policies {
+  returns: string;
+  shipping: string;
+  warranty: string;
+}
+
+export interface Post {
+  caption: string;
+  comments_count: number;
+  created_at: string;
+  id: string;
+  likes_count: number;
+  media: Media[];
+}
+
+export interface Media {
+  alt_text: string | null;
+  type: "image" | "video" | string;
+  url: string;
+}
+
+export interface Product {
+  id: string;
+  image: string | null;
+  name: string;
+  price: number;
+}
+
+export interface Stats {
+  follower_count: number;
+  post_count: number;
+  product_count: number;
+}
+
+export interface User {
+  id: string;
+  profile_picture: string;
+  username: string;
+}
+
+
   export interface CommonSellerResponseData {
     joined_date: string,
     average_rating: number,
