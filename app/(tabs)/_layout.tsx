@@ -3,10 +3,12 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Home, Search, PlusSquare, Heart, User, ChartColumnStackedIcon, ListOrdered, Badge, ShoppingBasket, MessageCircle } from 'lucide-react-native';
 import { useUser } from '../../hooks/userContextProvider';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TabsLayout() {
   const { role } = useUser();
   return (
+    <SafeAreaView style={{ flex: 1 }}>
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -70,5 +72,6 @@ export default function TabsLayout() {
         }}
       />
     </Tabs>
+    </SafeAreaView>
   );
 }

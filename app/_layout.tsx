@@ -6,12 +6,9 @@ import { RegisterProvider } from "../models/signupSteps";
 import { ToastProvider } from "../components/ToastProvider";
 import { ThemeProvider} from "../components/themeProvider";
 import { useState } from "react";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 import { RegisterRequest } from "../models/auth";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 //import * as SecureStore from 'expo-secure-store';
-import { UserAuthType } from "../models/user";
-import { loginUser } from "../services/sections/auth";
 import React from "react";
 
 export default function RootLayout() {
@@ -30,7 +27,6 @@ export default function RootLayout() {
   // Persist user session on app load
   // Firstly, check if there is a stored user information in SecureStore
   return (
-    <SafeAreaProvider>
     <ThemeProvider>
     <ToastProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -42,7 +38,6 @@ export default function RootLayout() {
     </GestureHandlerRootView>
     </ToastProvider>
     </ThemeProvider>
-    </SafeAreaProvider>
   );
 }
 
@@ -51,7 +46,6 @@ export function AppStack() {
   //const userData:UserAuthType = JSON.parse(await SecureStore.getItemAsync('user') || 'null') as UserAuthType;
   
   const user: UserContextType | null = useUser();
-  console.log("Current user in AppStack:", user);
 
   if (user.user == null) {
     return <Stack screenOptions={{ headerShown: false }} initialRouteName="introduction" />;

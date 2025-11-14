@@ -188,7 +188,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheetMethods | null, Props>(
 
         {/* Product Images */}
         <Text className="mb-1">Product Images</Text>
-        {Imagevalue?.length && Imagevalue.length > 0 && <Text className="text-neutral-500 mb-2">Long press on each image to remove it</Text>}
+        {Array.isArray(Imagevalue) && Imagevalue.length > 0 && <Text>Long press on each image to remove it</Text>}
         {/* <<< IMPORTANT: pass value & onChange so we can receive images >>> */}
         <InstagramGrid value={Imagevalue} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} />
 

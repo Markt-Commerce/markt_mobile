@@ -11,10 +11,6 @@ import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BuyerRequestFormBottomSheet from "../../components/buyerRequestBottomSheet";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { createPost,likePost } from "../../services/sections/post";
-import { createProduct } from "../../services/sections/product";
-import { createBuyerRequest } from "../../services/sections/request";
-import { CreateProductRequest, PlaceholderProduct } from "../../models/products";
-import { Category } from "../../models/categories";
 import { useToast } from "../../components/ToastProvider";
 import StartCards from "../../components/startCards";
 import PostDisplayComponent from "../../components/PostDisplayComponent";
@@ -95,10 +91,6 @@ export default function FeedScreen() {
   useEffect(() => {
     loadFeed();
   }, []);
-
-
-  //social functions
-
 
   // Header Component (visuals only)
   const Header = () => (
@@ -204,9 +196,9 @@ export default function FeedScreen() {
       </BottomSheet>
 
       {/* Imported Bottom Sheets */}
-      {/* <ProductFormBottomSheet ref={productFormRef} />
+      <ProductFormBottomSheet ref={productFormRef} />
       <PostFormBottomSheet ref={postFormRef}/>
-      <BuyerRequestFormBottomSheet ref={requestFormRef}/> */}
+      <BuyerRequestFormBottomSheet ref={requestFormRef}/>
     </SafeAreaView>
   );
 }

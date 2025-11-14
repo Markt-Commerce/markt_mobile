@@ -3,6 +3,7 @@ import { TouchableOpacity, View, Text, Image, Pressable } from "react-native";
 import { Link } from "expo-router";
 import { Post } from "../models/feed";
 import { Heart, MessageCircle, Send } from "lucide-react-native";
+import { highlightMentions } from "../utils/highLightMentions";
 
 // /c:/Users/Administrator/markt_mobile/components/PostDisplayComponent.tsx
 
@@ -66,7 +67,7 @@ export default function PostDisplayComponent({ post, onLike }: Props) {
 
                     {post.caption ? (
                         <Text className="mb-3 text-[#111418]" numberOfLines={3}>
-                            {post.caption}
+                            {highlightMentions(post.caption)}
                         </Text>
                     ) : null}
 
