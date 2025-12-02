@@ -62,23 +62,18 @@ export default function UserInfoScreen() {
     // send the user data to the backend here
     // may move this later to a another signup step
     try {
-      const userRegResult = await registerUser(regData)
       //store user in secure store
       /* await SecureStore.setItemAsync('user', JSON.stringify({
         email: regData.email,
         password: regData.password,
         userType: regData.account_type,
       })); */
-      setUser({
-        email: userRegResult.email.toLowerCase(),
-        account_type: userRegResult.account_type,
-      }); //store user data in context
       show({
         variant: "success",
         title: "Registration Successful",
-        message: "Your account has been created successfully. Please verify your email to continue.",
+        message: "Well done! Your information has been saved.",
       })
-      router.push("/emailVerification");
+      router.push("/locationdet");
     } catch (error) {
       show({
         variant: "error",

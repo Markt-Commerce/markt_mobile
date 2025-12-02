@@ -19,6 +19,7 @@ export interface RegisterRequest {
     shipping_address: Record<string, string>;
     buyername: string;
   };
+  address?: AddressData;
 }
 
 export interface LoginRequest {

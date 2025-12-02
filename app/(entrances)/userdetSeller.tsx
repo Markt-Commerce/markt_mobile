@@ -76,24 +76,17 @@ const ShopInformationScreen = () => {
     setRegData(updatedRegData);
 
     try {
-      const userRegResult = await registerUser(updatedRegData); // keep consistent with updated data
-      setUser({
-        email: userRegResult.email.toLowerCase(),
-        account_type: userRegResult.account_type,
-      });
-
       show({
         variant: "success",
         title: "Shop details saved",
-        message: "We sent a verification code to your email.",
+        message: "Well done! Your shop information has been saved.",
       });
 
-      router.push("/emailVerification");
+      router.push("/locationdet");
     } catch (error: any) {
-      console.error("Registration failed:", error);
       show({
         variant: "error",
-        title: "Couldn’t complete signup",
+        title: "Could not complete signup",
         message: error?.message || "Please review your details and try again.",
       });
     }

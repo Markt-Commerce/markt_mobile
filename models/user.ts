@@ -33,14 +33,14 @@ export interface BuyerProfile {
   }
 
   export interface AddressData{
-    country: string,
-    latitude: number,
-    street: string,
-    postal_code: string,
-    city: string,
-    longitude: number,
-    house_number: string,
-    state: string
+    country?: string,
+    latitude?: number,
+    street?: string,
+    postal_code?: string,
+    city?: string,
+    longitude?: number,
+    house_number?: string,
+    state?: string
   }
   
   export interface CommonBuyerResponseData {

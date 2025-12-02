@@ -77,12 +77,12 @@ export default function PostDetailsScreen() {
       if (comment == "") return;
       const newComment = await commentOnPost(id, comment, parentId);
       setComments((prev) => [newComment, ...prev]);
+      setNewComment("");
     } catch (error) {
-      console.log(error)
       show({
         variant: "error",
         title: "Error adding comment",
-        message: "There was an issue adding your comment. "+ error,
+        message: "There was an issue adding your comment.",
       });
     }
   };

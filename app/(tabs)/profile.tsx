@@ -225,6 +225,14 @@ export default function SettingsProfileScreen() {
             </TView>
           </View>
 
+          {/* Edit Profile */}
+          <TouchableOpacity
+            className="bg-[#e26136] rounded h-12 items-center justify-center mb-6"
+            onPress={() => nav.push('/settings/accountInfoScreen')}
+          >
+            <Text className="text-white font-bold">Edit Profile</Text>
+          </TouchableOpacity>
+
           <View>
             <DetermineSwitchType hasBuyerAccount={profileData?.is_buyer ?? false} hasSellerAccount={profileData?.is_seller ?? false}/>
           </View>

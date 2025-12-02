@@ -1,44 +1,33 @@
 // app/search.tsx
 import React, { useState, useEffect, useCallback } from "react";
-import { View, TextInput, Text, FlatList, Dimensions } from "react-native";
+import { View, TextInput, Text, FlatList, Dimensions, TouchableOpacity } from "react-native";
 //import MapView, { Marker } from "react-native-maps";
 import { Search } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { debounce } from "lodash";
-
-const mockSellers = [
-  { id: "1", name: "Jennifer Miller", type: "Seller", latitude: 53.344, longitude: -6.267 },
-  { id: "2", name: "David Smith", type: "Seller", latitude: 53.346, longitude: -6.25 },
-  { id: "3", name: "Emily Clark", type: "Seller", latitude: 53.342, longitude: -6.26 },
-];
-
-const mockProducts = [
-  { id: "101", name: "Red Shirt", type: "Product" },
-  { id: "102", name: "Blue Sneakers", type: "Product" },
-];
+import { search } from "../services/sections/search";
+import { SearchResponse } from "../models/search";
+import ProductDisplayComponent from "../components/productDisplayComponent";
+import PostDisplayComponent from "../components/PostDisplayComponent";
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<(typeof mockSellers[0] | typeof mockProducts[0])[]>([]);
+  const [results, setResults] = useState<SearchResponse>();
+  const [page, setPage] = useState(1);
+  const router = useRouter(); 
 
   const performSearch = useCallback(
-    debounce((q: string) => {
-      if (!q) return setResults([]);
-      // filter sellers + products by name
-      const filteredSellers = mockSellers.filter((s) =>
-        s.name.toLowerCase().includes(q.toLowerCase())
-      );
-      const filteredProducts = mockProducts.filter((p) =>
-        p.name.toLowerCase().includes(q.toLowerCase())
-      );
-      setResults([...filteredSellers, ...filteredProducts]);
+    debounce(async (q: string) => {
+      if (!q) return setResults(undefined);
+      const response = await search(q, page);
+      setResults(response);
     }, 500),
     []
   );
 
   useEffect(() => {
     performSearch(query);
-  }, [query]);
+  }, [query, page]);
 
   return (
     <View className="flex-1 bg-white">
@@ -72,17 +61,56 @@ export default function SearchPage() {
           ))}
       </MapView> */}
 
-      <FlatList
-        data={results}
-        keyExtractor={(item) => item.id}
-        className="bg-white px-4 py-2"
-        renderItem={({ item }) => (
-          <View className="py-2 border-b border-[#f4f1f0]">
-            <Text className="text-[#181211] font-bold text-base">{item.name}</Text>
-            <Text className="text-[#886963] text-sm">{item.type}</Text>
-          </View>
-        )}
-      />
+        { results && results.sellers.length === 0 && results.products.length === 0 && results.posts.length === 0 ? (
+        <View className="flex-1 justify-center items-center">
+          <Text className="text-gray-500 text-lg">No results found</Text>
+        </View>
+      ) : (<>
+      <View>
+        <Text>Sellers</Text>
+        <FlatList
+          data={results?.sellers}
+          renderItem={({ item }) => (
+            /* Reminder to work on a proper UI for this that would link to the seller page as well as
+            use the other data sent from the backend */
+            <View>
+              <Text>{item.shop_name}</Text>
+            </View>
+          )}
+          keyExtractor={(item) => item.id.toString()}
+        />
+        <TouchableOpacity>
+          <Text>View More</Text>
+        </TouchableOpacity>
+      </View>
+      <View>
+        <Text>Products</Text>
+        <FlatList
+          data={results?.products}
+          renderItem={({ item }) => (
+            <ProductDisplayComponent products={[item]} />
+          )}
+          keyExtractor={(item) => item.id.toString()}
+        />
+        <TouchableOpacity>
+          <Text>View More</Text>
+        </TouchableOpacity>
+      </View>
+      <View>
+        <Text>Posts</Text>
+        <FlatList
+          data={results?.posts}
+          renderItem={({ item }) => (
+            <PostDisplayComponent post={item} />
+          )}
+          keyExtractor={(item) => item.id.toString()}
+        />
+        <TouchableOpacity>
+          <Text>View More</Text>
+        </TouchableOpacity>
+      </View>
+      </>) }
     </View>
+      
   );
 }

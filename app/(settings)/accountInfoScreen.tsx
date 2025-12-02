@@ -4,6 +4,7 @@ import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert } from 'reac
 import { useUser } from '../../hooks/userContextProvider';
 import { request } from "../../services/api";
 import { z } from 'zod';
+import { useToast } from '../../components/ToastProvider';
 
 const BuyerSchema = z.object({
   buyername: z.string().min(2).max(60).optional(),
@@ -18,6 +19,7 @@ const SellerSchema = z.object({
 
 export default function AccountInfoScreen() {
   const { user, setUser } = useUser();
+  const { show } = useToast();
   const [phone, setPhone] = useState('');
   const [buyername, setBuyername] = useState('');
   const [shopName, setShopName] = useState('');
@@ -44,9 +46,9 @@ export default function AccountInfoScreen() {
       setLoading(true);
       const updated = await request(url, { method: 'PATCH', body: JSON.stringify(payload) });
       setUser(updated); // update context
-      Alert.alert('Success', 'Profile updated');
+      show({ variant: 'success', title: 'Profile updated successfully', message: 'Your profile information has been saved.' });
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Update failed');
+      show({ variant: 'error', title: 'Error updating profile', message: err.message || 'Please try again later.' });
     } finally {
       setLoading(false);
     }
