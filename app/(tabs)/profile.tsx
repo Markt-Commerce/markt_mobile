@@ -200,7 +200,7 @@ export default function SettingsProfileScreen() {
               dark="bg-neutral-900 border-neutral-800"
               className="items-center rounded-2xl border px-5 py-6"
             >
-              <Image source={{  uri: profileData?.profile_picture_url ?? "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" }} className="w-28 h-28 rounded-full" />
+              <Image source={{  uri: profileData?.profile_picture_url || profileData?.profile_picture_url == "" ? "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" : profileData?.profile_picture_url }} className="w-28 h-28 rounded-full" />
               <TText
                 light="text-[#171311]"
                 dark="text-neutral-100"
@@ -228,7 +228,7 @@ export default function SettingsProfileScreen() {
           {/* Edit Profile */}
           <TouchableOpacity
             className="bg-[#e26136] rounded h-12 items-center justify-center mb-6"
-            onPress={() => nav.push('/settings/accountInfoScreen')}
+            onPress={() => nav.push('/accountInfoScreen')}
           >
             <Text className="text-white font-bold">Edit Profile</Text>
           </TouchableOpacity>

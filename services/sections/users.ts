@@ -1,4 +1,4 @@
-import { CommonSellerResponseData, ShopData } from "../../models/user";
+import { CommonSellerResponseData, ShopData, User } from "../../models/user";
 import { request, BASE_URL } from "../api";
 
 
@@ -18,4 +18,20 @@ export async function getUserShopInfo(user_id: string): Promise<ShopData> {
     { method: "GET" }
   );
   return res;
+}
+
+export async function getSellerFollowersCount(seller_id: string): Promise<{ count: number }> {
+  const res = await request<{ follower_count: number }>(
+    `${BASE_URL}/users/sellers/${seller_id}/followers/count`,
+    { method: "GET" }
+  );
+  return { count: res.follower_count };
+}
+
+export async function getSellerFollowers(seller_id: string): Promise<User[]> {
+  const res = await request<{ items: User[] }>(
+    `${BASE_URL}/users/sellers/${seller_id}/followers`,
+    { method: "GET" }
+  );
+  return res.items;
 }

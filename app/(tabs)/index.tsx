@@ -137,7 +137,7 @@ export default function FeedScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
       <FlatList
         data={feed}
         keyExtractor={(_, idx) => idx.toString()}

@@ -9,6 +9,7 @@ import { ChatMessage } from "../models/chat";
 import { addToCart } from "../services/sections/cart";
 import { useUser } from "../hooks/userContextProvider";
 import { useRouter } from "expo-router";
+import { useToast } from "./ToastProvider";
 
 export type ChatProps = {
   route: { params: { roomId: number; otherUser?: { username?: string; profile_picture?: string, user_id: string } } };
@@ -26,6 +27,7 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
   const [page, setPage] = useState(1);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const router = useRouter();
+  const { show } = useToast();
 
 
   // load messages (first page)
@@ -36,14 +38,16 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
         if (!roomId || roomId === 0) return;
         // fetch messages
         const res = await getRoomMessages(roomId, 1, 50);
-        console.log("loaded messages: ", res.messages[0]);
         setMessages(res.messages ?? []);
         setPage(2);
         // mark read
         await markRoomRead(roomId);
       } catch (e) {
-        console.error("Failed loading messages", e);
-        Alert.alert("Error", "Could not load messages.");
+        show({
+          message: "Could not load messages.",
+          variant: "error",
+          title: "Error"
+        })
       } finally {
         setLoading(false);
       }
@@ -130,8 +134,11 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
       // scroll
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch (e) {
-      console.error("send text error", e);
-      Alert.alert("Send failed", "Could not send message.");
+      show({
+        message: "Could not send message.",
+        variant: "error",
+        title: "Error"
+      })
     } finally {
       setSending(false);
     }
@@ -174,8 +181,11 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
       setMessages(prev => [...prev, temp]);
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch (e) {
-      console.error("pick media error", e);
-      Alert.alert("Error", "Could not pick media.");
+      show({
+        message: "Could not send media.",
+        variant: "error",
+        title: "Error"
+      })
     }
   }
 
@@ -190,8 +200,11 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
       await chatSocket.sendProduct(roomId, user?.user_id || "", product_id, `Sharing product ${product_id}`);
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch (e) {
-      console.error("send product", e);
-      Alert.alert("Error", "Could not send product.");
+      show({
+        message: "Could not send product.",
+        variant: "error",
+        title: "Error"
+      })
     } finally {
       setSending(false);
     }
@@ -216,7 +229,11 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
         setMessages(prev => prev.map(m => (m.id === message.id ? { ...m, message_data: { ...m.message_data, reactions_count: Math.max(0, (m.message_data?.reactions_count ?? 1) - 1) }, hasReactedClient: false } : m)));
       }
     } catch (e) {
-      console.error("reaction fail", e);
+      show({
+        message: "Could not update reaction.",
+        variant: "error",
+        title: "Error"
+      })
     }
   }
 
@@ -286,9 +303,17 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
     // implement addToCart using your cart service
     try {
       await addToCart({ product_id: productId, variant_id: 0, quantity: 1 });
-      Alert.alert("Added to cart", `Product ${productId} added to cart (mock).`);
+      show({
+        message: "Product added to cart.",
+        variant: "success",
+        title: "Success"
+      });
     } catch (e) {
-      Alert.alert("Error", "Could not add to cart.");
+      show({
+        message: "Could not add to cart.",
+        variant: "error",
+        title: "Error"
+      });
     }
   }
 
@@ -301,7 +326,11 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
         setPage(p => p + 1);
       }
     } catch (e) {
-      console.error("load more error", e);
+      show({
+        message: "Could not load more messages.",
+        variant: "error",
+        title: "Error"
+      });
     }
   }
 

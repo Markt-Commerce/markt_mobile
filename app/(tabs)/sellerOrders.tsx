@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import OrdersList from "../../components/orderList";
 import { Search } from "lucide-react-native";
+import { getSellerOrders } from "../../services/sections/orders";
+import { OrderItem } from "../../models/orders";
 
 // Dummy data & helpers 
 type OrderStatus = "pending" | "shipped" | "delivered" | "canceled";
@@ -71,6 +73,7 @@ export default function SellerOrders() {
   const [query, setQuery] = React.useState("");
   const [status, setStatus] = React.useState<"all" | OrderStatus>("all");
   const [sort, setSort] = React.useState<"latest" | "price_asc" | "price_desc">("latest");
+  const [orders, setOrders] = React.useState<OrderItem[]>([]);
 
   const pageSize = 10;
 
@@ -91,62 +94,48 @@ export default function SellerOrders() {
   // It applies filters & sorting on the mock data and paginates.
   const fetchSellerOrders = React.useCallback(async (page: number) => {
     // ---- Real API (uncomment and adapt when backend is ready) ----
-    /*
     // Example with your request helper:
-    const res = await request('/orders/seller', {
-      method: 'GET',
-      params: {
-        page,
-        pageSize,
-        status: status === 'all' ? undefined : status,
-        q: query || undefined,
-        sort, // 'latest' | 'price_asc' | 'price_desc'
-      },
-    });
-    // Expecting res.data.items in your OrdersList format:
-    return res.data.items;
-    */
-
-    await new Promise((r) => setTimeout(r, 500)); // small delay for UX
+    const res = await getSellerOrders(page, pageSize);
+    setOrders(res.items);
 
     // filter
-    let rows = MOCK_ORDERS.filter((o) => {
+    let rows = orders.filter((o) => {
       const matchStatus = status === "all" ? true : o.status === status;
       const q = query.trim().toLowerCase();
       const matchQuery = q
-        ? o.from.toLowerCase().includes(q) ||
-          o.product.toLowerCase().includes(q) ||
-          o.order.toLowerCase().includes(q)
+        ? o.status.toLowerCase().includes(q) ||
+          o.product?.name.toLowerCase().includes(q)
         : true;
       return matchStatus && matchQuery;
     });
 
     // sort
-    rows.sort((a, b) => {
+    /* rows.sort((a, b) => {
       if (sort === "latest") {
-        return new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime();
+        return new Date(b.).getTime() - new Date(a.dateISO).getTime();
       }
       const priceA = parseFloat(a.price.replace("$", ""));
       const priceB = parseFloat(b.price.replace("$", ""));
       if (sort === "price_asc") return priceA - priceB;
       return priceB - priceA; // price_desc
-    });
+    }); */
 
     // paginate
     const start = (page - 1) * pageSize;
     const end = start + pageSize;
     const slice = rows.slice(start, end);
 
-    // Map to the minimal shape your existing OrdersList expects.
+    /* // Map to the minimal shape your existing OrdersList expects.
     return slice.map((o) => ({
-      from: o.from,
+      from: o,
       product: o.product,
       order: o.order,
       price: o.price,
       // Extra fields are fine if OrdersList ignores them:
       status: o.status,
       dateISO: o.dateISO,
-    }));
+    })); */
+    return res.items;
   }, [pageSize, query, sort, status]);
 
   // Re-mount OrdersList when filters change so it calls fetch from page 1
@@ -160,7 +149,7 @@ export default function SellerOrders() {
     active?: boolean;
     children: React.ReactNode;
     onPress?: () => void;
-  }) => (
+  }) => ( 
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.85}

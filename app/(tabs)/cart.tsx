@@ -30,10 +30,12 @@ export default function CartScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const { show } = useToast();
 
+  //map
   const fetchCart = useCallback(async () => {
     try {
       if (!refreshing) setLoading(true);
       const [cartData, summaryData] = await Promise.all([getCart(), getCartSummary()]);
+      console.log("Fetched cart:", cartData);
       setCart(cartData);
       setSummary(summaryData);
     } catch (err) {
@@ -62,7 +64,7 @@ export default function CartScreen() {
     try {
       return Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(v);
     } catch {
-      return `$${(v || 0).toFixed(2)}`;
+      return `₦${(v || 0).toFixed(2)}`;
     }
   };
 
@@ -102,6 +104,8 @@ export default function CartScreen() {
         title: "Checkout successful",
         message: "Your order has been placed successfully.",
       });
+      //proceed to payment section
+      
       fetchCart(); // reset cart
     } catch (err) {
       show({
@@ -124,7 +128,7 @@ export default function CartScreen() {
     );
   }
 
-  if (!cart || cart.items.length === 0) {
+  if (!cart || cart.items?.length === 0) {
     return (
       <View className="flex-1 bg-white">
         {/* Header */}
@@ -173,7 +177,7 @@ export default function CartScreen() {
         {/* Items container */}
         <View className="px-4">
           <View className="rounded-2xl bg-white border border-[#efe9e7] overflow-hidden">
-            {cart.items.map((item, idx) => {
+            {cart.items?.map((item, idx) => {
               const image = item.product?.images?.[0]?.media?.original_url ?? "";
               const name = item.product?.name ?? "Product";
               const price =
@@ -183,7 +187,7 @@ export default function CartScreen() {
               const lineTotal = Number(price) * (item.quantity ?? 1);
 
               return (
-                <View key={item.id} className={`px-4 py-3 ${idx !== cart.items.length - 1 ? "border-b border-[#f3efed]" : ""}`}>
+                <View key={item.id} className={`px-4 py-3 ${idx !== cart.items?.length - 1 ? "border-b border-[#f3efed]" : ""}`}>
                   <View className="flex-row gap-3">
                     <Image source={{ uri: image }} className="w-16 h-16 rounded-xl bg-[#f4f1f0]" />
                     <View className="flex-1">

@@ -1,28 +1,24 @@
-import React from "react";
+import React, {useEffect} from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import OrdersList from "../../components/orderList";
+import { getBuyerOrders } from "../../services/sections/orders";
 import { ArrowLeft, RefreshCw, Info } from "lucide-react-native";
-
-const fetchBuyerOrders = async (page: number) => {
-  // Dummy data for now
-  return new Promise<any[]>((resolve) =>
-    setTimeout(
-      () =>
-        resolve(
-          page > 2
-            ? []
-            : [
-                { id: "#789012", status: "Shipped", total: "$150.00", progress: 75 },
-                { id: "#901234", status: "Processing", total: "$220.00", progress: 25 },
-              ]
-        ),
-      1000
-    )
-  );
-};
+import { Order } from "../../models/orders";
 
 export default function BuyerOrders() {
+
+  const [orders, setOrders] = React.useState<Order[]>([]);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const data = await getBuyerOrders(1, 10);
+      setOrders(data);
+    };
+
+    fetchOrders();
+  }, []);
+
   return (
     <SafeAreaView className="flex-1 bg-[#faf9f8]">
       {/* Top Bar */}
@@ -86,7 +82,10 @@ export default function BuyerOrders() {
       <View className="flex-1 px-4">
         <View className="flex-1 rounded-2xl bg-white border border-[#efe9e7] overflow-hidden">
           {/* Your component (kept exactly the same prop) */}
-          <OrdersList fetchOrders={fetchBuyerOrders} />
+          <OrdersList fetchOrders={async (page: number) => {
+            const data = await getBuyerOrders(page, 10);
+            return data;
+          }} />
         </View>
 
         {/* Footer helper */}
