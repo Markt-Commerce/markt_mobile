@@ -1,10 +1,61 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter,useLocalSearchParams } from "expo-router";
 import { X, CreditCard, LucideBanknote as Bank } from "lucide-react-native";
+import { initiatePayment } from "../../../services/sections/payments";
+import { getOrderDetails } from "../../../services/sections/orders";
+import { useToast } from "../../../components/ToastProvider";
 
 export default function PaymentMethod() {
   const router = useRouter();
+  const [selectedMethod, setSelectedMethod] = React.useState<"card" | "bank" | null>(null);
+  const [orderTotal, setOrderTotal] = React.useState<number>(0);
+  const { show } = useToast();
+
+  const determinePaymentDirection = () => {
+    try {
+      initiatePayment({
+        method: selectedMethod as string,
+        currency: "NGN",
+        order_id: useLocalSearchParams().id as string,
+        amount: orderTotal,
+        metadata: {},
+      });
+      if (selectedMethod === "card") 
+        router.push("/checkout/card-info");
+      if (selectedMethod === "bank") 
+        router.push("/checkout/payment-info");
+    } catch (error) {
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Unable to initiate payment.",
+      });
+    }
+    
+    return null;
+  };
+
+
+  const getOrderTotal = async () => {
+    try {
+      const id = useLocalSearchParams().id as string;
+      const orderDetails = await getOrderDetails(id);
+      setOrderTotal(orderDetails.total || 0);
+    } catch (error) {
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Unable to fetch order total.",
+      })
+      return 0;
+    }
+  }
+
+  useEffect(() => {
+    // Fetch order total on mount
+    getOrderTotal();
+  }, []);
 
   return (
     <View className="flex-1 bg-white justify-between">
@@ -25,12 +76,12 @@ export default function PaymentMethod() {
             Total
           </Text>
           <Text className="text-[#181211] text-[22px] font-bold px-4 pb-3 pt-5">
-            $120.00
+            N{orderTotal.toFixed(2)}
           </Text>
         </View>
 
         {/* Card Option */}
-        <TouchableOpacity
+        <TouchableOpacity onPress={() => setSelectedMethod("card")}
           className="flex-row items-center gap-4 bg-white px-4 py-2 min-h-[72px]"
           activeOpacity={0.7}
         >
@@ -48,7 +99,7 @@ export default function PaymentMethod() {
         </TouchableOpacity>
 
         {/* Bank Option */}
-        <TouchableOpacity
+        <TouchableOpacity onPress={() => setSelectedMethod("bank")}
           className="flex-row items-center gap-4 bg-white px-4 py-2 min-h-[56px]"
           activeOpacity={0.7}
         >
@@ -64,7 +115,7 @@ export default function PaymentMethod() {
       {/* Proceed Button */}
       <View className="px-4 py-3">
         <TouchableOpacity
-          onPress={() => router.push("/checkout/payment-info")}
+          onPress={() => determinePaymentDirection()}
           className="flex items-center justify-center bg-[#ea4a2a] h-10 rounded-lg"
         >
           <Text className="text-white text-sm font-bold tracking-[0.015em]">

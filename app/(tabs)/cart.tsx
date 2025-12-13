@@ -99,14 +99,16 @@ export default function CartScreen() {
         notes: "Checkout from mobile app",
       };
       await checkoutCart(checkoutData);
+      //we need to get the order id somehow here to proceed to payment
       show({
         variant: "success",
         title: "Checkout successful",
         message: "Your order has been placed successfully.",
       });
       //proceed to payment section
-      
+
       fetchCart(); // reset cart
+      router.push("/checkout/payment-method/");
     } catch (err) {
       show({
         variant: "error",

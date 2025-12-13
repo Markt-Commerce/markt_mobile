@@ -13,6 +13,11 @@ export default function PaymentInfo() {
   const [email, setEmail] = useState("");
   const [bank, setBank] = useState("");
 
+  const getBankList = () => {
+    // This function would ideally fetch a list of banks from an API or a static list
+    return ["Bank A", "Bank B", "Bank C"];
+  };
+
   return (
     <View className="flex-1 bg-white justify-between">
       <ScrollView>
