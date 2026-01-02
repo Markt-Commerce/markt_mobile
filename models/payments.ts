@@ -24,11 +24,12 @@ export interface Transaction {
 }
 
 export interface PaymentInit {
-  method: string;        // e.g. "card"
+  method: "card" | "bank_transfer";
   currency: string;      // e.g. "NGN"
   order_id: string;
   metadata: Record<string, any>;
   amount: number;
+  idempotency_key?: string;
 }
 
 export interface BankOrCardAuthorization {

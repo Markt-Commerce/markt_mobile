@@ -2,29 +2,27 @@ import React, { useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { useRouter,useLocalSearchParams } from "expo-router";
 import { X, CreditCard, LucideBanknote as Bank } from "lucide-react-native";
-import { initiatePayment } from "../../../services/sections/payments";
+import { initializePayment, initiatePayment } from "../../../services/sections/payments";
 import { getOrderDetails } from "../../../services/sections/orders";
 import { useToast } from "../../../components/ToastProvider";
 
 export default function PaymentMethod() {
   const router = useRouter();
-  const [selectedMethod, setSelectedMethod] = React.useState<"card" | "bank" | null>(null);
+  const [selectedMethod, setSelectedMethod] = React.useState<"card" | "bank_transfer">("card");
   const [orderTotal, setOrderTotal] = React.useState<number>(0);
   const { show } = useToast();
+  const { id } = useLocalSearchParams();
 
   const determinePaymentDirection = () => {
     try {
-      initiatePayment({
-        method: selectedMethod as string,
+      initializePayment({
+        method: selectedMethod,
         currency: "NGN",
         order_id: useLocalSearchParams().id as string,
         amount: orderTotal,
         metadata: {},
       });
-      if (selectedMethod === "card") 
-        router.push("/checkout/card-info");
-      if (selectedMethod === "bank") 
-        router.push("/checkout/payment-info");
+      router.push("checkout/payment-info")
     } catch (error) {
       show({
         variant: "error",
@@ -37,10 +35,11 @@ export default function PaymentMethod() {
   };
 
 
-  const getOrderTotal = async () => {
+  const getOrderTotal = async (id: string) => {
     try {
-      const id = useLocalSearchParams().id as string;
       const orderDetails = await getOrderDetails(id);
+      console.log("order id:", id);
+      console.log("Order details fetched:", orderDetails);
       setOrderTotal(orderDetails.total || 0);
     } catch (error) {
       show({
@@ -48,14 +47,15 @@ export default function PaymentMethod() {
         title: "Error",
         message: "Unable to fetch order total.",
       })
+      console.error("Error fetching order total:", error);
       return 0;
     }
   }
 
   useEffect(() => {
     // Fetch order total on mount
-    getOrderTotal();
-  }, []);
+    getOrderTotal(id as string);
+  }, [id]);
 
   return (
     <View className="flex-1 bg-white justify-between">
@@ -99,7 +99,7 @@ export default function PaymentMethod() {
         </TouchableOpacity>
 
         {/* Bank Option */}
-        <TouchableOpacity onPress={() => setSelectedMethod("bank")}
+        <TouchableOpacity onPress={() => setSelectedMethod("bank_transfer")}
           className="flex-row items-center gap-4 bg-white px-4 py-2 min-h-[56px]"
           activeOpacity={0.7}
         >

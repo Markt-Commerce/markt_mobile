@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, Switch } from "rea
 import { useRouter } from "expo-router";
 import { ArrowLeft, ChevronsUpDown } from "lucide-react-native";
 
+
+
 export default function PaymentInfo() {
   const router = useRouter();
 
@@ -13,6 +15,8 @@ export default function PaymentInfo() {
   const [email, setEmail] = useState("");
   const [bank, setBank] = useState("");
 
+
+
   const getBankList = () => {
     // This function would ideally fetch a list of banks from an API or a static list
     return ["Bank A", "Bank B", "Bank C"];
@@ -21,6 +25,8 @@ export default function PaymentInfo() {
   return (
     <View className="flex-1 bg-white justify-between">
       <ScrollView>
+
+        
         {/* Header */}
         <View className="flex-row items-center bg-white p-4 pb-2 justify-between">
           <TouchableOpacity onPress={() => router.back()} className="size-12 items-center justify-center">

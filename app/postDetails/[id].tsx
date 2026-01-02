@@ -92,8 +92,11 @@ export default function PostDetailsScreen() {
 
     setLoading(true);
     try {
-      const newComments = (await getPostComments(id, page)).items;
-      if (newComments.length === 0 && page > 1) {
+      const commentResponse = await getPostComments(id, page)
+      const totalPages = commentResponse.pagination.total_pages
+      const newComments = commentResponse.items;
+      console.log(totalPages)
+      if (totalPages == page) {
         // If we stop receiving new comments, stop loading more
         setHasMore(false);
       } else {

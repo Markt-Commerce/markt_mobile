@@ -113,7 +113,7 @@ const addProductToCart = async (product:ProductDetail)=>{
         {/* Image Carousel */}
         <ImageBackground
           source={{
-            uri: product.images[0].media.original_url,
+            uri: product.images[0]?.media?.original_url || "",
           }}
           className="h-80 justify-end p-5"
           imageStyle={{ borderRadius: 12 }}

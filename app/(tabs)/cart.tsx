@@ -1,24 +1,11 @@
 import React, { useEffect, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  RefreshControl,
-} from "react-native";
-import {
-  getCart,
-  updateCartItem,
-  deleteCartItem,
-  getCartSummary,
-  checkoutCart,
-} from "../../services/sections/cart";
+import {View,Text,Image,TouchableOpacity,ScrollView,ActivityIndicator,RefreshControl} from "react-native";
+import {getCart,updateCartItem,deleteCartItem,getCartSummary,checkoutCart} from "../../services/sections/cart";
 import { Cart, CartItem, CartSummary, CheckoutRequest } from "../../models/cart";
 import { ArrowLeft, Trash2 } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useToast } from "../../components/ToastProvider";
+import { createOrder } from "../../services/sections/orders";
 
 export default function CartScreen() {
   const router = useRouter();
@@ -35,7 +22,6 @@ export default function CartScreen() {
     try {
       if (!refreshing) setLoading(true);
       const [cartData, summaryData] = await Promise.all([getCart(), getCartSummary()]);
-      console.log("Fetched cart:", cartData);
       setCart(cartData);
       setSummary(summaryData);
     } catch (err) {
@@ -98,7 +84,12 @@ export default function CartScreen() {
         shipping_address: {},
         notes: "Checkout from mobile app",
       };
-      await checkoutCart(checkoutData);
+      //await checkoutCart(checkoutData);
+      const order = await createOrder({
+        shipping_address: {},
+        payment_method: "card",
+        cart_id: cart?.id || 0,// should not be zero. Would test out and change later
+      });
       //we need to get the order id somehow here to proceed to payment
       show({
         variant: "success",
@@ -108,7 +99,7 @@ export default function CartScreen() {
       //proceed to payment section
 
       fetchCart(); // reset cart
-      router.push("/checkout/payment-method/");
+      router.push(`/checkout/payment-method/${order.id}`);
     } catch (err) {
       show({
         variant: "error",
