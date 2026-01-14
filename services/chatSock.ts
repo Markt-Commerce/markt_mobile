@@ -159,7 +159,7 @@ class ChatSocket {
     user_id: string,
     message_data?: Record<string, any> | null
   ): Promise<boolean /*client_id*/> {
-    const payload = { room_id, message: content, message_type, user_id, message_data };
+    const payload = { room_id, content, message_type, user_id, message_data };
 
     if (this.connected) {
       // try with ack first, fallback to fire-and-forget
@@ -194,18 +194,16 @@ class ChatSocket {
     return this.sendMessage(room_id, "text", trimmed, user_id, null);
   }
 
-  sendImage(room_id: number, user_id:string, url: string, mime = "image/jpeg", meta?: Record<string, any>) {
-    if (!/^image\//.test(mime)) throw new Error("Invalid image mime");
-    return this.sendMessage(room_id, "image", url, user_id, { url, mime, ...meta });
+  sendImage(room_id: number, user_id:string, url: string, meta?: Record<string, any>) {
+    return this.sendMessage(room_id, "image", "Shared Image", user_id, { image_url:"https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/upload_20260106_003932.jpeg", thumbnail_url:"https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/upload_20260106_003932.jpeg", ...meta });//remember to change to thumbnail
   }
 
-  sendVideo(room_id: number, user_id:string, url: string, mime = "video/mp4", meta?: Record<string, any>) {
-    if (!/^video\//.test(mime)) throw new Error("Invalid video mime");
-    return this.sendMessage(room_id, "video", url, user_id, { url, mime, ...meta });
+  sendVideo(room_id: number, user_id:string, url: string, meta?: Record<string, any>) {
+    return this.sendMessage(room_id, "video", "Shared Video", user_id, { image_url:url, thumbnail_url:url, ...meta });
   }
 
   sendProduct(room_id: number, user_id:string, product_id: string, note?: string) {
-    return this.sendMessage(room_id, "product", note ?? "", user_id, { product_id });
+    return this.sendMessage(room_id, "product", "Shared Product", user_id, { product_id });
   }
 
   // ===== Offers =====

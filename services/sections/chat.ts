@@ -100,14 +100,14 @@ export async function sendOfferREST(room_id: number, payload: OfferPayload): Pro
  * Mock: attach product to chat via REST (since server doesn't expose it yet).
  * We'll pretend it returns a message with message_type 'product'.
  */
-export async function sendProductMessageMock(room_id: number, product_id: string, note?: string): Promise<ChatMessage> {
+export async function sendProductMessageMock(room_id: number, user_id: string, product_id: string, note?: string): Promise<ChatMessage> {
   // This is a mock — you should replace with real endpoint once available
   const now = new Date().toISOString();
   return {
     id: Math.floor(Math.random() * 1000000),
     room_id,
-    sender_id: "ME",
-    content: note ?? "",
+    sender_id: user_id,
+    content: product_id,
     message_type: "product",
     message_data: { product_id },
     is_read: false,

@@ -13,17 +13,18 @@ export default function PaymentMethod() {
   const { show } = useToast();
   const { id } = useLocalSearchParams();
 
-  const determinePaymentDirection = () => {
+  const determinePaymentDirection = async () => {
     try {
-      initializePayment({
+      const paymentInitialization = await initializePayment({
         method: selectedMethod,
         currency: "NGN",
-        order_id: useLocalSearchParams().id as string,
+        order_id: id as string,
         amount: orderTotal,
         metadata: {},
       });
-      router.push("checkout/payment-info")
+      router.push(`/checkout/payscreen/${paymentInitialization.access_code}`) // id in this case should be the initialization id
     } catch (error) {
+      console.log(error)
       show({
         variant: "error",
         title: "Error",
@@ -65,51 +66,66 @@ export default function PaymentMethod() {
           <TouchableOpacity onPress={() => router.back()} className="size-12 items-center justify-center">
             <X size={24} color="#181211" />
           </TouchableOpacity>
-          <Text className="text-[#181211] text-lg font-bold text-center flex-1 pr-12">
-            Payment method
-          </Text>
-        </View>
-
-        {/* Total */}
-        <View>
-          <Text className="text-[#181211] text-lg font-bold px-4 pb-2 pt-4">
-            Total
-          </Text>
-          <Text className="text-[#181211] text-[22px] font-bold px-4 pb-3 pt-5">
-            N{orderTotal.toFixed(2)}
-          </Text>
-        </View>
-
-        {/* Card Option */}
-        <TouchableOpacity onPress={() => setSelectedMethod("card")}
-          className="flex-row items-center gap-4 bg-white px-4 py-2 min-h-[72px]"
-          activeOpacity={0.7}
-        >
-          <View className="bg-[#f4f1f0] rounded-lg items-center justify-center w-12 h-12">
-            <CreditCard size={24} color="#181211" />
           </View>
-          <View className="flex-1">
-            <Text className="text-[#181211] text-base font-medium">
-              Card
+
+          <View>
+            <Text>
+              <View className="px-4 pt-4">
+                <Text className="text-lg font-bold mb-3">Choose payment method</Text>
+
+                <TouchableOpacity
+                  onPress={() => setSelectedMethod("card")}
+                  className={`flex-row items-center p-3 rounded-lg mb-3 border ${selectedMethod === "card" ? "border-[#ea4a2a] bg-[#fff5f3]" : "border-gray-200 bg-white"}`}
+                  activeOpacity={0.8}
+                >
+                  <View className="w-9 h-9 rounded-full items-center justify-center bg-white mr-3 shadow-sm">
+                    <CreditCard size={20} color={selectedMethod === "card" ? "#ea4a2a" : "#181211"} />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-sm font-semibold">Pay with card</Text>
+                    <Text className="text-xs text-gray-500">Instant payment via Paystack</Text>
+                  </View>
+                  <View>
+                    <Text className={`text-sm font-bold ${selectedMethod === "card" ? "text-[#ea4a2a]" : "text-gray-400"}`}>
+                      {selectedMethod === "card" ? "Selected" : ""}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => setSelectedMethod("bank_transfer")}
+                  className={`flex-row items-center p-3 rounded-lg mb-2 border ${selectedMethod === "bank_transfer" ? "border-[#ea4a2a] bg-[#fff5f3]" : "border-gray-200 bg-white"}`}
+                  activeOpacity={0.8}
+                >
+                  <View className="w-9 h-9 rounded-full items-center justify-center bg-white mr-3 shadow-sm">
+                    <Bank size={20} color={selectedMethod === "bank_transfer" ? "#ea4a2a" : "#181211"} />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-sm font-semibold">Bank transfer</Text>
+                    <Text className="text-xs text-gray-500">Use bank transfer through Paystack</Text>
+                  </View>
+                  <View>
+                    <Text className={`text-sm font-bold ${selectedMethod === "bank_transfer" ? "text-[#ea4a2a]" : "text-gray-400"}`}>
+                      {selectedMethod === "bank_transfer" ? "Selected" : ""}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
+                <View className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <Text className="text-xs text-gray-500">Order total</Text>
+                  <Text className="text-xl font-bold">
+                    {orderTotal
+                      ? orderTotal.toLocaleString("en-NG", { style: "currency", currency: "NGN" })
+                      : "NGN 0.00"}
+                  </Text>
+                  <Text className="text-xs text-gray-500 mt-2">
+                    You will be redirected to Paystack to complete the payment.
+                  </Text>
+                </View>
+              </View>
             </Text>
-            <Text className="text-[#886963] text-sm">
-              Redirects to external website
-            </Text>
           </View>
-        </TouchableOpacity>
-
-        {/* Bank Option */}
-        <TouchableOpacity onPress={() => setSelectedMethod("bank_transfer")}
-          className="flex-row items-center gap-4 bg-white px-4 py-2 min-h-[56px]"
-          activeOpacity={0.7}
-        >
-          <View className="bg-[#f4f1f0] rounded-lg items-center justify-center w-10 h-10">
-            <Bank size={24} color="#181211" />
-          </View>
-          <Text className="text-[#181211] text-base flex-1 truncate">
-            Direct from Account
-          </Text>
-        </TouchableOpacity>
+          
       </ScrollView>
 
       {/* Proceed Button */}

@@ -29,7 +29,8 @@ export default function ProductPicker({
   onRemove,
 }: Props) {
   
-  const sheetRef = useRef<BottomSheet>(null);
+  const sheetRef = useRef<BottomSheet>(null); //refs should control the bottomsheet state and not bools
+  //note to work on this later and expose refs to parent
   const snapPoints = useMemo(() => ["60%", "100%"], []);
 
   if (!visible) return null;
@@ -39,7 +40,7 @@ export default function ProductPicker({
 
   const handleSelect = (item: Product) => {
     onSelect(item);
-    requestAnimationFrame(onClose); // smoother close
+    //requestAnimationFrame(onClose); // smoother close
   };
 
   const handleRemove = (item: Product) => {

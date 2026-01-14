@@ -85,12 +85,9 @@ export default function CartScreen() {
         notes: "Checkout from mobile app",
       };
       //await checkoutCart(checkoutData);
-      const order = await createOrder({
-        shipping_address: {},
-        payment_method: "card",
-        cart_id: cart?.id || 0,// should not be zero. Would test out and change later
-      });
-      //we need to get the order id somehow here to proceed to payment
+      const checkout = await checkoutCart(
+        checkoutData
+      );
       show({
         variant: "success",
         title: "Checkout successful",
@@ -99,7 +96,7 @@ export default function CartScreen() {
       //proceed to payment section
 
       fetchCart(); // reset cart
-      router.push(`/checkout/payment-method/${order.id}`);
+      router.push(`/checkout/payment-method/${checkout.order_id}`);
     } catch (err) {
       show({
         variant: "error",

@@ -10,6 +10,13 @@ import { addToCart } from "../services/sections/cart";
 import { useUser } from "../hooks/userContextProvider";
 import { useRouter } from "expo-router";
 import { useToast } from "./ToastProvider";
+import ProductPicker from "./productPicker";
+import BottomSheet from "@gorhom/bottom-sheet";
+import { PlaceholderProduct, Product } from "../models/products";
+import { getProductById, getSellerProducts } from "../services/sections/product";
+import { uploadImage, attemptMultipleUpload } from "../services/sections/media";
+import ChatProductDisplayComponent from "./chatProductDisplayComponent";
+
 
 export type ChatProps = {
   route: { params: { roomId: number; otherUser?: { username?: string; profile_picture?: string, user_id: string } } };
@@ -28,6 +35,12 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const router = useRouter();
   const { show } = useToast();
+
+  //Will change product picker to use refs later
+  const productPickerRef = useRef<BottomSheet>(null)
+  const [productVisible, setProductVisible] = useState<boolean>(false)
+  const [productList, setProductList] = useState<PlaceholderProduct[]>([])
+  const [currentProductIds, setCurrentProductIds] = useState<string[]>([]);
 
 
   // load messages (first page)
@@ -160,25 +173,35 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
       // res.uri | res.type? For expo, res.type is 'image' or 'video' (legacy). Use res.uri and determine mime
       const uri = res.assets?.[0]?.uri;
       const mime = kind === "image" ? "image/jpeg" : "video/mp4";
-      // NOTE: upload flow - upload to your media server or S3, then send URL to chat
-      const uploadedUrl = await uploadMediaMock(uri); // replace with real upload
-      // send via socket
-      const client_id = kind === "image"
-        ? await chatSocket.sendImage(roomId, uploadedUrl, mime, user?.user_id || "", { localUri: uri })
-        : await chatSocket.sendVideo(roomId, uploadedUrl, mime, user?.user_id || "", { localUri: uri });
 
-      const temp: ChatMessage = {
-        id: `c_${client_id}`,
-        room_id: roomId,
-        sender_id: user?.user_id || "",
-        content: uploadedUrl,
-        message_type: kind === "image" ? "image" : "video",
-        message_data: { url: uploadedUrl },
-        is_read: false,
-        created_at: new Date().toISOString(),
-        pending: true,
-      };
-      setMessages(prev => [...prev, temp]);
+      const uploadResult = await attemptMultipleUpload(res.assets.map((asset)=> {
+        return {
+          id: asset?.assetId || "",
+          uri: asset?.uri || ""
+        }
+      }))
+
+      console.log(uploadResult)
+
+      // send via socket
+      uploadResult.forEach(async (result)=>{
+        const client_id = kind === "image"
+          ? await chatSocket.sendImage(roomId, user?.user_id || "",result.urls["original"], { localUri: uri })
+          : await chatSocket.sendVideo(roomId, user?.user_id || "",result.urls["original"], { localUri: uri });
+
+        const temp: ChatMessage = {
+          id: `c_${client_id}`,
+          room_id: roomId,
+          sender_id: user?.user_id || "",
+          content: result.media.original_url || uri,
+          message_type: kind === "image" ? "image" : "video",
+          message_data: { url: result.media.original_url },
+          is_read: false,
+          created_at: new Date().toISOString(),
+          pending: true,
+        };
+        setMessages(prev => [...prev, temp]);
+      })
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch (e) {
       show({
@@ -189,16 +212,30 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
     }
   }
 
-  // send product (mock)
-  async function handleSendProduct(product_id: string) {
+  // send product
+  async function handlePickProduct() {
     try {
-      setSending(true);
-      // optimistic ui
-      const mock = await sendProductMessageMock(roomId, product_id, `Product shared: ${product_id}`);
-      setMessages(prev => [...prev, { ...mock, pending: false }]);
-      // optionally also inform server via socket (chatSocket.sendProduct) — better if supported
-      await chatSocket.sendProduct(roomId, user?.user_id || "", product_id, `Sharing product ${product_id}`);
-      setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
+      if (!productVisible) {
+        setProductVisible(true)
+        //attempt to get products
+        //set productList only if it is not
+        if (productList.length === 0) {
+          const products = await getSellerProducts(Number(user?.user_id) || 0); //ensure user_id is a number
+          setProductList(products); 
+        }
+      }
+
+      else {
+        setSending(true);
+        // optimistic ui
+        currentProductIds.forEach(async (product_id)=>{
+          const mock = await sendProductMessageMock(roomId, product_id, user?.user_id?.toString() || "");
+          setMessages(prev => [...prev, { ...mock, pending: false }]);
+          //inform server via socket (chatSocket.sendProduct)
+          await chatSocket.sendProduct(roomId, user?.user_id?.toString() || "", product_id, `Sharing product ${product_id}`);
+        })
+        setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
+      }
     } catch (e) {
       show({
         message: "Could not send product.",
@@ -210,15 +247,10 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
     }
   }
 
-  // Todo: remember to replace with the backend media API
-  async function uploadMediaMock(localUri: string): Promise<string> {
-    return localUri;
-  }
-
   // Reaction toggle (thumbs up)
   async function toggleReaction(message: ChatMessage) {
     try {
-      // For this demo, we check message.message_data?.reacted_by_me boolean (not provided by backend model).
+      //we check message.message_data?.reacted_by_me boolean (not provided by backend model).
       const alreadyReacted = !!(message as any).hasReactedClient;
       if (!alreadyReacted) {
         await addReaction(Number(message.id), "THUMBS_UP");
@@ -273,11 +305,14 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
 
           {item.message_type === "product" && (
             <View style={{ borderRadius: 10, padding: 8, backgroundColor: "#fff", borderWidth: 1, borderColor: "#eee" }}>
-              <Text style={{ fontWeight: "700" }}>{item.message_data?.product_name ?? `Product ${item.message_data?.product_id ?? ""}`}</Text>
-              <Text style={{ color: "#666" }}>{item.message_data?.product_price ? `$${item.message_data.product_price}` : ""}</Text>
-              <TouchableOpacity onPress={() => handleAddProductToCart(item.message_data?.product_id)} style={{ marginTop: 8, padding: 8, backgroundColor: "#e26136", borderRadius: 8 }}>
-                <Text style={{ color: "#fff", textAlign: "center" }}>Add to Cart</Text>
-              </TouchableOpacity>
+              {item.message_data?.product_id ? (
+                <ChatProductDisplayComponent products={[item.message_data.product_id]}/>
+              ) : null}
+              {role === "buyer" && 
+                <TouchableOpacity onPress={() => handleAddProductToCart(item.message_data?.product_id)} style={{ marginTop: 8, padding: 8, backgroundColor: "#e26136", borderRadius: 8 }}>
+                  <Text style={{ color: "#fff", textAlign: "center" }}>Add to Cart</Text>
+                </TouchableOpacity>
+              }
             </View>
           )}
 
@@ -382,15 +417,42 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
           <TouchableOpacity onPress={() => handlePickMedia("video")} style={{ padding: 8 }}>
             <Camera color="#994d51" size={20} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { /* open product picker */ handleSendProduct("PRD_001"); }} style={{ padding: 8 }}>
-            <ShoppingBag color="#994d51" size={20} />
-          </TouchableOpacity>
+          {
+            role === "seller" && (
+              <TouchableOpacity onPress={() => { /* open product picker */ handlePickProduct(); }} style={{ padding: 8 }}>
+                <ShoppingBag color="#994d51" size={20} />
+              </TouchableOpacity>
+            )
+          }
+          
         </View>
-
+        
         <TouchableOpacity onPress={handleSendText} disabled={sending} style={{ backgroundColor: "#ea2832", borderRadius: 24, height: 44, width: 44, alignItems: "center", justifyContent: "center" }}>
           <SendIcon size={18} color="#fff" />
         </TouchableOpacity>
       </View>
+      {/* Product picker */}
+      <ProductPicker 
+      visible={productVisible} 
+        products={productList}
+        selectedProducts={productList.filter(p => currentProductIds.includes(p.id))}
+        onClose={
+          () => {
+            handlePickProduct()
+            //clear current
+            setCurrentProductIds([])
+            setProductVisible(false)
+          }
+        } 
+        onSelect={(product) => {
+          const isAlreadyAdded = currentProductIds.find(pId => pId === product.id);
+          if (!isAlreadyAdded) {
+            setCurrentProductIds(prev => [...prev, product.id]);
+          }
+        }}
+        onRemove={(product) => {
+          setCurrentProductIds(prev => prev.filter(pId => pId !== product.id));
+        }}/>
     </KeyboardAvoidingView>
   );
 }

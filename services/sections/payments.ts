@@ -1,4 +1,4 @@
-import { BankOrCardAuthorization, PaymentInit, Transaction } from "../../models/payments";
+import { BankOrCardAuthorization, InitializeResponse, PaymentInit, Transaction } from "../../models/payments";
 import { BASE_URL, request } from "../api";
 
 export const getPaymentMethods = async () => {
@@ -30,14 +30,14 @@ export const initiatePayment = async (paymentData: PaymentInit): Promise<Transac
   }
 };
 
-export const initializePayment = async (paymentData: PaymentInit) => {
+export const initializePayment = async (paymentData: PaymentInit): Promise<InitializeResponse> => {
   try {
     paymentData.method = "card"; // Ensure method is set to card for this 
-    const response = await request(`${BASE_URL}/payments/initialize`, {
+    const response = await request<InitializeResponse>(`${BASE_URL}/payments/initialize`, {
       method: "POST",
       body: JSON.stringify(paymentData),
     });
-    return response.data;
+    return response;
   } catch (error) {
     console.error("Error initializing payment:", error);
     throw error;

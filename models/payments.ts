@@ -40,3 +40,11 @@ export interface BankOrCardAuthorization {
   card_token: string;
   metadata: Record<string, any>;
 }
+
+
+export interface InitializeResponse {
+    access_code: string,
+    authorization_url: string,
+    payment_id: string,
+    reference: string
+}

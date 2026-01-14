@@ -8,6 +8,7 @@ import {
   UpdateCartItemRequest,
   UpdateCartItemResponse,
   CheckoutRequest,
+  CheckoutResponse,
 } from "../../models/cart";
 import { ApiResponse } from "../../models/auth";
 
@@ -58,8 +59,8 @@ export async function getCartSummary() {
   return res;
 }
 
-export async function checkoutCart(data:CheckoutRequest) {
-  const res = await request<void>(`${BASE_URL}/cart/checkout`, {
+export async function checkoutCart(data:CheckoutRequest): Promise<CheckoutResponse> {
+  const res = await request<CheckoutResponse>(`${BASE_URL}/cart/checkout`, {
     method: "POST",
     body: JSON.stringify(data),
   });

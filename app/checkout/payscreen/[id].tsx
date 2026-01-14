@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Switch } from "react-native";
 import { WebView } from "react-native-webview";
 import { ArrowLeft, ChevronsUpDown } from "lucide-react-native";
@@ -13,7 +13,7 @@ export default function PaymentInfo() {
   return (
     <View className="flex-1 bg-white justify-between">
         <WebView
-          source={{ uri: `https://paystack.com/pay/${id}` }}
+          source={{ uri: `https://checkout.paystack.com/${id}` }}
           style={{ marginTop: 20 }}
         />
     </View>

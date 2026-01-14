@@ -38,6 +38,8 @@ type Props = {
   showWhenEmpty?: boolean;
   // Title override
   title?: string;
+  //what the parent should do if the component is removed
+  onRemoved?: (() => void)
 };
 
 const iconMap: Record<string, React.ComponentType<any>> = {
@@ -109,6 +111,7 @@ function normalizeResponse(raw: any): Normalized {
 }
 
 export default function StartCards({
+  onRemoved,
   fetcher = getSellerStartCards,
   showWhenEmpty = false,
   title = "Get started on Markt",
@@ -123,7 +126,7 @@ export default function StartCards({
 
   const [removed, setRemoved ] = useState<boolean>(false);
 
-  const load = useCallback(async () => {
+  const load = async () => {
     try {
       setState((s) => ({ ...s, loading: true, error: null }));
       const res = await fetcher();
@@ -140,11 +143,11 @@ export default function StartCards({
         message,
       });
     }
-  }, [fetcher]);
+  }
 
   useEffect(() => {
     load();
-  }, []);
+  }, [removed]);
 
   const total = state.data?.totalSteps ?? 0;
   const done = state.data?.completedSteps ?? 0;
@@ -170,7 +173,7 @@ export default function StartCards({
       {/* Header */}
       <View className="mb-2 flex-row justify-between">
         <Text className="text-[20px] font-extrabold text-[#171311]">{title}</Text>
-        <Pressable onPress={()=>{setRemoved(true)}}>
+        <Pressable onPress={() => { onRemoved?.(); setRemoved(true); }}>
           <X size={20}/>
         </Pressable>
       </View>

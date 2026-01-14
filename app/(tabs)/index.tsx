@@ -46,6 +46,13 @@ export default function FeedScreen() {
     if (form === "request") requestFormRef.current?.expand();
   };
 
+  /* const fetchStartCards = async ()=>{
+    if (!loadedStartCards) {
+      //start cards are only loaded once at the start of the feed
+      setLoadedStartCards(true);
+    }
+  } */
+
   const loadFeed = async () => {
     if (loading) return;
     setLoading(true);
@@ -54,11 +61,6 @@ export default function FeedScreen() {
     if (role === "seller") options.push("request");
     const Itemchoice = Math.floor(Math.random() * options.length);
     let fetchType = options[Itemchoice];
-    if (!loadedStartCards) {
-      //start cards are only loaded once at the start of the feed
-      fetchType = "startCard";
-      setLoadedStartCards(true);
-    }
 
     try {
       let newItems: FeedItem[] = [];
@@ -95,7 +97,9 @@ export default function FeedScreen() {
   // Header Component (visuals only)
   const Header = () => (
     <>
-    <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-[#f0e9e7]">
+    <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-[#f0e9e7]"
+    onStartShouldSetResponder={() => true}
+    onTouchStart={() => {}}>
       <Text className="text-xl font-extrabold text-[#111418]">Marketplace</Text>
       <View className="flex-row justify-between items-center">
         <TouchableOpacity onPress={openMenu} className="p-2 rounded-full bg-[#f5f2f1] mx-1" hitSlop={{top:8,bottom:8,left:8,right:8}}>
@@ -117,8 +121,8 @@ export default function FeedScreen() {
       </TouchableOpacity>
     </View>
 
-    {role === "seller" && <View >
-      <StartCards />
+    {role === "seller" && loadedStartCards && <View className="bg-[#f5f2f1]">
+      <StartCards onRemoved={()=>setLoadedStartCards(false)}/>
       </View>}
     </>
   );
@@ -138,14 +142,21 @@ export default function FeedScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
-      <FlatList
+      <Header/>
+      <FlatList 
+      className="bg-white"
         data={feed}
         keyExtractor={(_, idx) => idx.toString()}
         renderItem={renderItem}
         onEndReached={loadFeed}
         onEndReachedThreshold={0.5}
-        ListHeaderComponent={<Header />}
-        stickyHeaderIndices={[0]}
+        //ListHeaderComponent={<Header />}
+        refreshing = {loading}
+        onRefresh={()=>{
+          setPage(1); //reset the page back to the first to get the latest content
+          loadFeed()
+        }}
+        //stickyHeaderIndices={[0]}
         ListFooterComponent={
           loading ? (
             <View className="py-5">
