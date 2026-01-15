@@ -1,9 +1,11 @@
 import React, { useState, useCallback } from "react";
 import { FlatList, ActivityIndicator, Text } from "react-native";
 import OrderCard from "./orderCard";
+import { Order, OrderItem } from "../models/orders";
 
 interface OrdersListProps {
   fetchOrders: (page: number) => Promise<any[]>;
+  onPress: (item: OrderItem | Order) => any;
   isSeller?: boolean;
 }
 

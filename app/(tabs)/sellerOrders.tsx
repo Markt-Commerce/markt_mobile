@@ -1,145 +1,115 @@
-import React from "react";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import OrdersList from "../../components/orderList";
 import { Search } from "lucide-react-native";
-import { getSellerOrders } from "../../services/sections/orders";
+
+import OrdersList from "../../components/orderList";
+import {
+  getSellerOrders,
+  updateSellerOrderItem,
+} from "../../services/sections/orders";
 import { OrderItem } from "../../models/orders";
 
-// Dummy data & helpers 
 type OrderStatus = "pending" | "shipped" | "delivered" | "canceled";
 
-type OrderRow = {
-  from: string;
-  product: string;
-  order: string; 
-  price: string; 
-  status: OrderStatus;
-  dateISO: string; 
-};
-
-// simple helpers
-const names = [
-  "Olivia Bennett", "Ethan Carter", "Ava Johnson", "Liam Davis", "Mia Wilson",
-  "Noah Harper", "Chloe Clark", "Owen Carter", "Sophia Lewis", "James Reed",
-];
-const products = [
-  "Leather Wallet", "Vintage Sunglasses", "Wireless Earbuds", "Smartwatch",
-  "Bluetooth Speaker", "Gaming Mouse", "Mechanical Keyboard", "USB-C Hub",
-  "Portable SSD", "Laptop Sleeve",
-];
-const statuses: OrderStatus[] = ["pending", "shipped", "delivered", "canceled"];
-
-function money(n: number) {
-  return `$${n.toFixed(2)}`;
-}
-
-function orderLine(id: number) {
-  // e.g. "#345678 - 3 items"
-  const items = (id % 4) + 1;
-  const base = 100000 + id;
-  return `#${base} - ${items} item${items > 1 ? "s" : ""}`;
-}
-
-// generate N mock orders with varying dates & prices
-function buildMockOrders(N = 44): OrderRow[] {
-  const now = Date.now();
-  const oneDay = 24 * 60 * 60 * 1000;
-
-  const arr: OrderRow[] = [];
-  for (let i = 0; i < N; i++) {
-    const name = names[i % names.length];
-    const product = products[(i * 3) % products.length];
-    const status = statuses[i % statuses.length];
-    const daysAgo = (i * 2) % 60; // within last ~2 months
-    const price = 10 + ((i * 7) % 90); // 10..99
-    arr.push({
-      from: name,
-      product,
-      order: orderLine(1000 + i),
-      price: money(price),
-      status,
-      dateISO: new Date(now - daysAgo * oneDay).toISOString(),
-    });
-  }
-  return arr;
-}
-
-const MOCK_ORDERS = buildMockOrders();
-
-// ---- Screen ----
 export default function SellerOrders() {
-  // UI state that affects how we fetch pages (search/filter/sort)
-  const [query, setQuery] = React.useState("");
-  const [status, setStatus] = React.useState<"all" | OrderStatus>("all");
-  const [sort, setSort] = React.useState<"latest" | "price_asc" | "price_desc">("latest");
-  const [orders, setOrders] = React.useState<OrderItem[]>([]);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<"all" | OrderStatus>("all");
+  const [sort, setSort] = useState<"latest" | "price_asc" | "price_desc">(
+    "latest"
+  );
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const pageSize = 10;
 
-  // Derive counts for pills
-  const counts = React.useMemo(() => {
-    const base = MOCK_ORDERS;
-    const byStatus: Record<"all" | OrderStatus, number> = {
-      all: base.length,
-      pending: base.filter((o) => o.status === "pending").length,
-      shipped: base.filter((o) => o.status === "shipped").length,
-      delivered: base.filter((o) => o.status === "delivered").length,
-      canceled: base.filter((o) => o.status === "canceled").length,
-    };
-    return byStatus;
-  }, []);
+  /**
+   * Fetch seller order items
+   * OrdersList controls pagination; we only filter/sort client-side
+   */
+  const fetchSellerOrders = useCallback(
+    async (page: number): Promise<OrderItem[]> => {
+      const res = await getSellerOrders(page, pageSize);
+      let items = res.items;
 
-  // Our fetch function matches OrdersList API: (page: number) => Promise<OrderRow[]>
-  // It applies filters & sorting on the mock data and paginates.
-  const fetchSellerOrders = React.useCallback(async (page: number) => {
-    // ---- Real API (uncomment and adapt when backend is ready) ----
-    // Example with your request helper:
-    const res = await getSellerOrders(page, pageSize);
-    setOrders(res.items);
-
-    // filter
-    let rows = orders.filter((o) => {
-      const matchStatus = status === "all" ? true : o.status === status;
-      const q = query.trim().toLowerCase();
-      const matchQuery = q
-        ? o.status.toLowerCase().includes(q) ||
-          o.product?.name.toLowerCase().includes(q)
-        : true;
-      return matchStatus && matchQuery;
-    });
-
-    // sort
-    /* rows.sort((a, b) => {
-      if (sort === "latest") {
-        return new Date(b.).getTime() - new Date(a.dateISO).getTime();
+      // Status filter
+      if (status !== "all") {
+        items = items.filter((i) => i.status === status);
       }
-      const priceA = parseFloat(a.price.replace("$", ""));
-      const priceB = parseFloat(b.price.replace("$", ""));
-      if (sort === "price_asc") return priceA - priceB;
-      return priceB - priceA; // price_desc
-    }); */
 
-    // paginate
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    const slice = rows.slice(start, end);
+      // Search filter
+      const q = query.trim().toLowerCase();
+      if (q) {
+        items = items.filter((i) =>
+          i.product?.name?.toLowerCase().includes(q)
+        );
+      }
 
-    /* // Map to the minimal shape your existing OrdersList expects.
-    return slice.map((o) => ({
-      from: o,
-      product: o.product,
-      order: o.order,
-      price: o.price,
-      // Extra fields are fine if OrdersList ignores them:
-      status: o.status,
-      dateISO: o.dateISO,
-    })); */
-    return res.items;
-  }, [pageSize, query, sort, status]);
+      // Sorting
+      if (sort === "price_asc") {
+        items = [...items].sort((a, b) => a.price - b.price);
+      } else if (sort === "price_desc") {
+        items = [...items].sort((a, b) => b.price - a.price);
+      }
+      // "latest" = backend order
 
-  // Re-mount OrdersList when filters change so it calls fetch from page 1
-  const listKey = `${status}|${sort}|${query}`;
+      return items;
+    },
+    [pageSize, query, sort, status]
+  );
+
+  /**
+   * Seller action: update item status
+   */
+  const handleUpdateStatus = async (
+    item: OrderItem,
+    newStatus: OrderStatus
+  ) => {
+    try {
+      await updateSellerOrderItem(item.variant_id!, {
+        status: newStatus,
+      });
+      setRefreshKey((k) => k + 1);
+    } catch {
+      Alert.alert("Error", "Failed to update order status");
+    }
+  };
+
+  /**
+   * Long press = seller actions
+   */
+  const handleItemPress = (item: OrderItem) => {
+    Alert.alert(
+      "Update Order Status",
+      item.product?.name ?? "Order Item",
+      [
+        {
+          text: "Mark Shipped",
+          onPress: () => handleUpdateStatus(item, "shipped"),
+        },
+        {
+          text: "Mark Delivered",
+          onPress: () => handleUpdateStatus(item, "delivered"),
+        },
+        {
+          text: "Cancel",
+          style: "destructive",
+          onPress: () => handleUpdateStatus(item, "canceled"),
+        },
+        { text: "Close", style: "cancel" },
+      ]
+    );
+  };
+
+  const listKey = useMemo(
+    () => `${status}|${sort}|${query}|${refreshKey}`,
+    [status, sort, query, refreshKey]
+  );
 
   const Pill = ({
     active,
@@ -149,26 +119,35 @@ export default function SellerOrders() {
     active?: boolean;
     children: React.ReactNode;
     onPress?: () => void;
-  }) => ( 
+  }) => (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.85}
       className={`h-9 px-3 rounded-full items-center justify-center border ${
-        active ? "bg-[#e26136] border-[#e26136]" : "bg-white border-[#e5dedc]"
+        active
+          ? "bg-[#e26136] border-[#e26136]"
+          : "bg-white border-[#e5dedc]"
       }`}
     >
-      <Text className={active ? "text-white font-semibold" : "text-[#171311] font-medium"}>
+      <Text
+        className={
+          active
+            ? "text-white font-semibold"
+            : "text-[#171311] font-medium"
+        }
+      >
         {children}
       </Text>
     </TouchableOpacity>
   );
 
-  // Sort toggle button
   const SortBtn = ({ label, v }: { label: string; v: typeof sort }) => (
     <TouchableOpacity
       onPress={() => setSort(v)}
       className={`h-9 px-3 rounded-full border ${
-        sort === v ? "bg-[#f5f2f1] border-[#e5dedc]" : "bg-white border-[#e5dedc]"
+        sort === v
+          ? "bg-[#f5f2f1] border-[#e5dedc]"
+          : "bg-white border-[#e5dedc]"
       } items-center justify-center`}
       activeOpacity={0.85}
     >
@@ -180,15 +159,15 @@ export default function SellerOrders() {
     <SafeAreaView className="flex-1 bg-white">
       {/* Header */}
       <View className="px-4 pt-2 pb-3 border-b border-[#efe9e7]">
-        <Text className="text-lg font-extrabold text-[#171311]">Shop Orders</Text>
+        <Text className="text-lg font-extrabold text-[#171311]">
+          Shop Orders
+        </Text>
         <Text className="text-xs text-[#876d64] mt-0.5">
-          {status === "all"
-            ? `${counts.all} orders total`
-            : `${counts[status]} ${status} orders`}
+          Manage and fulfill customer orders
         </Text>
       </View>
 
-      {/* Search + Status filters */}
+      {/* Search + Filters */}
       <View className="px-4 pt-3">
         {/* Search */}
         <View className="flex-row items-center rounded-full overflow-hidden border border-[#e5dedc]">
@@ -197,11 +176,10 @@ export default function SellerOrders() {
           </View>
           <TextInput
             className="flex-1 h-11 bg-[#f4f1f0] px-4 text-[#171311]"
-            placeholder="Search by buyer, product, or order #"
+            placeholder="Search product name"
             placeholderTextColor="#9a8a85"
             value={query}
             onChangeText={setQuery}
-            // nice to have: submit clears keyboard; OrdersList will re-mount via key anyway
             returnKeyType="search"
           />
         </View>
@@ -209,23 +187,29 @@ export default function SellerOrders() {
         {/* Status pills */}
         <View className="flex-row flex-wrap gap-2 mt-3">
           <Pill active={status === "all"} onPress={() => setStatus("all")}>
-            All ({counts.all})
+            All
           </Pill>
           <Pill active={status === "pending"} onPress={() => setStatus("pending")}>
-            Pending ({counts.pending})
+            Pending
           </Pill>
           <Pill active={status === "shipped"} onPress={() => setStatus("shipped")}>
-            Shipped ({counts.shipped})
+            Shipped
           </Pill>
-          <Pill active={status === "delivered"} onPress={() => setStatus("delivered")}>
-            Delivered ({counts.delivered})
+          <Pill
+            active={status === "delivered"}
+            onPress={() => setStatus("delivered")}
+          >
+            Delivered
           </Pill>
-          <Pill active={status === "canceled"} onPress={() => setStatus("canceled")}>
-            Canceled ({counts.canceled})
+          <Pill
+            active={status === "canceled"}
+            onPress={() => setStatus("canceled")}
+          >
+            Canceled
           </Pill>
         </View>
 
-        {/* Sort toggles */}
+        {/* Sort */}
         <View className="flex-row gap-2 mt-3">
           <SortBtn label="Latest" v="latest" />
           <SortBtn label="Price ↑" v="price_asc" />
@@ -233,12 +217,13 @@ export default function SellerOrders() {
         </View>
       </View>
 
-      {/* List */}
+      {/* Orders */}
       <View className="flex-1 mt-2">
         <OrdersList
           key={listKey}
           fetchOrders={fetchSellerOrders}
           isSeller
+          onPress={handleItemPress}
         />
       </View>
     </SafeAreaView>

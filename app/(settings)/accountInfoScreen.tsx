@@ -14,6 +14,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getUserProfile } from '../../services/sections/profile';
 import { UserProfile } from '../../models/profile';
+import { attemptMultipleUpload } from '../../services/sections/media';
 
 const BuyerSchema = z.object({
   buyername: z.string().min(2).max(60).optional(),
@@ -28,6 +29,7 @@ const SellerSchema = z.object({
 
 const GeneralSchema = z.object({
   phone_number: z.string().min(10).max(15).optional(),
+  profile_picture: z.string().min(10).optional()
 });
 
 export default function AccountInfoScreen() {
@@ -81,18 +83,63 @@ export default function AccountInfoScreen() {
     }
   }, [user]);
 
+  const uploadAndSaveProfileImage = async (uri: string) => {
+    try {
+      setLoading(true);
+
+      const uploadResult = await attemptMultipleUpload([
+        {
+          uri,
+          fileName: "profile.jpg",
+          type: "image/jpeg",
+        } as any,
+      ]);
+
+      const media = uploadResult?.[0];
+
+      if (!media || !media.media?.original_url) {
+        throw new Error("Image upload failed");
+      }
+
+      const imageUrl = media.media.original_url;
+
+      // PATCH profile with image URL
+      await handleSave("/users/profile", {
+        profile_picture: imageUrl,
+      });
+
+      setCurrentProfilePic(imageUrl);
+    } catch (err: any) {
+      show({
+        variant: "error",
+        title: "Image upload failed",
+        message: err.message || "Could not update profile picture.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   const changeImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync(); 
-    if (permissionResult.granted === false) {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
       Alert.alert("Permission to access camera roll is required!");
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync();
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+
     if (!result.canceled) {
-      setCurrentProfilePic(result.assets[0].uri);
+      const uri = result.assets[0].uri;
+      setCurrentProfilePic(uri); // instant UI feedback
+      await uploadAndSaveProfileImage(uri);
     }
   };
+
 
   const handleSave = async (url: string, payload: any) => {
 
