@@ -14,7 +14,8 @@ import {
   getSellerOrders,
   updateSellerOrderItem,
 } from "../../services/sections/orders";
-import { OrderItem } from "../../models/orders";
+import { OrderItem, SellerOrderItem } from "../../models/orders";
+import { Seller } from "../../models/search";
 
 type OrderStatus = "pending" | "shipped" | "delivered" | "canceled";
 
@@ -33,7 +34,7 @@ export default function SellerOrders() {
    * OrdersList controls pagination; we only filter/sort client-side
    */
   const fetchSellerOrders = useCallback(
-    async (page: number): Promise<OrderItem[]> => {
+    async (page: number): Promise<SellerOrderItem[]> => {
       const res = await getSellerOrders(page, pageSize);
       let items = res.items;
 
@@ -67,11 +68,11 @@ export default function SellerOrders() {
    * Seller action: update item status
    */
   const handleUpdateStatus = async (
-    item: OrderItem,
+    item: SellerOrderItem,
     newStatus: OrderStatus
   ) => {
     try {
-      await updateSellerOrderItem(item.variant_id!, {
+      await updateSellerOrderItem(item.id!, {
         status: newStatus,
       });
       setRefreshKey((k) => k + 1);
@@ -83,7 +84,7 @@ export default function SellerOrders() {
   /**
    * Long press = seller actions
    */
-  const handleItemPress = (item: OrderItem) => {
+  const handleItemPress = (item: SellerOrderItem) => {
     Alert.alert(
       "Update Order Status",
       item.product?.name ?? "Order Item",

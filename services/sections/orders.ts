@@ -1,5 +1,5 @@
 import { request, BASE_URL } from "../api";
-import { Order, OrderItem, CreateOrderPayload, PayOrderPayload, UpdateOrderItemPayload, Pagination } from "../../models/orders";
+import { Order, OrderItem, CreateOrderPayload, PayOrderPayload, UpdateOrderItemPayload, Pagination, SellerOrderItem } from "../../models/orders";
 
 // Get buyer orders
 export async function getBuyerOrders(page = 1, per_page = 10): Promise<Order[]> {
@@ -10,8 +10,8 @@ export async function getBuyerOrders(page = 1, per_page = 10): Promise<Order[]> 
   }
   
   // Get seller orders
-  export async function getSellerOrders(page = 1, per_page = 10): Promise<{ items: OrderItem[]; pagination: Pagination }> {
-    const res = await request<{ items: OrderItem[]; pagination: Pagination }>(
+  export async function getSellerOrders(page = 1, per_page = 10): Promise<{ items: SellerOrderItem[]; pagination: Pagination }> {
+    const res = await request<{ items: SellerOrderItem[]; pagination: Pagination }>(
       `${BASE_URL}/orders/seller?page=${page}&per_page=${per_page}`,
       { method: "GET" }
     );

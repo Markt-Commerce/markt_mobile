@@ -41,36 +41,6 @@ export interface MediaResponse {
   urls: Urls;
 }
 
-export interface Media {
-  social_square_url: string;
-  tablet_url: string;
-  duration: number;
-  social_story_url: string;
-  original_url: string;
-  height: number;
-  user_id: string;
-  processing_status: string;
-  is_public: boolean;
-  compression_quality: number;
-  mime_type: string;
-  media_type: string; // e.g. "image" | "video"
-  created_at: string; // ISO timestamp
-  exif_data: ExifData;
-  alt_text: string;
-  updated_at: string; // ISO timestamp
-  social_post_url: string;
-  original_filename: string;
-  file_size: number;
-  background_removed: boolean;
-  mobile_url: string;
-  width: number;
-  id: number;
-  desktop_url: string;
-  thumbnail_url: string;
-  storage_key: string;
-  variants: MediaVariant[];
-  caption: string;
-}
   
   export interface ProductImage {
     product_id: string;
@@ -169,4 +139,41 @@ export interface RequestImageResponse {
   media_id: number;
   is_primary: boolean;
   id: number;
+}
+
+export interface MediaUploadResponse {
+  success: boolean;
+  message: string;
+  media: {
+    id: number;
+    created_at: string;
+    media_type: 'image' | 'video' | string;
+    mime_type: string;
+    original_filename: string;
+    storage_key: string;
+    file_size: number;
+    width: number | null;
+    height: number | null;
+    is_public: boolean;
+    processing_status: 'uploaded' | 'processing' | 'completed' | 'failed' | string;
+
+    alt_text: string | null;
+    caption: string | null;
+
+    original_url: string | null;
+    thumbnail_url: string | null;
+    mobile_url: string | null;
+    tablet_url: string | null;
+    desktop_url: string | null;
+
+    social_post_url: string | null;
+    social_square_url: string | null;
+    social_story_url: string | null;
+  };
+  urls: {
+    original: string;
+    mime_type: string;
+    type: 'image' | 'video' | string;
+  };
+  variants: Array<unknown>;
 }

@@ -41,3 +41,12 @@ export async function getProductById(productId: string): Promise<ProductDetail> 
   });
   return (res as any).data ?? (res as any);
 }
+
+/**
+ * Delete product (seller only)
+ */
+export async function deleteProduct(productId: string): Promise<void> {
+  await request(`${BASE_URL}/products/${productId}`, {
+    method: "DELETE",
+  });
+}

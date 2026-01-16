@@ -15,6 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { getUserProfile } from '../../services/sections/profile';
 import { UserProfile } from '../../models/profile';
 import { attemptMultipleUpload } from '../../services/sections/media';
+import { isArray } from 'lodash';
 
 const BuyerSchema = z.object({
   buyername: z.string().min(2).max(60).optional(),
@@ -95,13 +96,13 @@ export default function AccountInfoScreen() {
         } as any,
       ]);
 
-      const media = uploadResult?.[0];
+      const media = isArray(uploadResult) ? uploadResult[0] : uploadResult;
 
-      if (!media || !media.media?.original_url) {
+      if (!media || !media.urls.original) {
         throw new Error("Image upload failed");
       }
 
-      const imageUrl = media.media.original_url;
+      const imageUrl = media.urls.original;
 
       // PATCH profile with image URL
       await handleSave("/users/profile", {

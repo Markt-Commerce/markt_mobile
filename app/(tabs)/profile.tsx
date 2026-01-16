@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Image, Switch } from "react-native";
 import { ArrowLeft, Bell, Sun, Globe, User, Lock, CreditCard, Truck, Link as LinkIcon, HelpCircle as Question, FileText, ShieldCheck, Info, ArrowRight } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -10,6 +10,8 @@ import { useTheme } from "../../components/themeProvider";    // <- simple conte
 import { TView, TText } from "../../components/themed";       // <- Themed components (pick classes via context)
 import { useToast } from "../../components/ToastProvider";    // <- optional toast
 import { createBuyer, logoutUser, switchUserRole } from "../../services/sections/auth";
+import CreateRoleBottomSheet from "../../components/createRoleBottomSheet";
+import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 
 export default function SettingsProfileScreen() {
   const nav = useRouter();
@@ -22,10 +24,24 @@ export default function SettingsProfileScreen() {
   const [language, setLanguage] = useState<"EN" | "FR">("EN");
   const [profileData, setProfileData] = useState<UserProfile>();
 
+  const createRoleRef = useRef<BottomSheetMethods | null>(null);
+  const [createMode, setCreateMode] = useState<"buyer" | "seller" | null>(null);
+
+  // open sheet when createMode set
+  useEffect(() => {
+    if (createMode) {
+      // small delay ensures mode prop is set before expanding
+      requestAnimationFrame(() => {
+        createRoleRef.current?.expand?.();
+      });
+    }
+  }, [createMode]);
+
   //get and set api functions.
   const getUserData = async () => {
     try {
       const result = await getUserProfile();
+      console.log("Profile data retrieved:", result);
       setProfileData(result);
     } catch (error) {
       show({
@@ -80,28 +96,37 @@ export default function SettingsProfileScreen() {
     </View>
   );
 
-  const DetermineSwitchType: React.FC<{ hasBuyerAccount:boolean, hasSellerAccount:boolean}> = ({ 
+  // update DetermineSwitchType to open sheet when account missing
+  const DetermineSwitchType: React.FC<{ hasBuyerAccount: boolean; hasSellerAccount: boolean }> = ({
     hasBuyerAccount,
     hasSellerAccount,
-   }) => {
+  }) => {
     const oppAccount: "Buyer" | "Seller" = role === "buyer" ? "Seller" : "Buyer";
     return role == "buyer" && hasSellerAccount ? (
-          <TouchableOpacity onPress={()=> {SwitchRole()}} className="flex-1 rounded-lg h-10  justify-center items-center bg-[#e26136]">
-            <Text className="text-white">Switch To Seller Account</Text>
-          </TouchableOpacity>
-        ) :
-            role == "seller" && hasBuyerAccount ? (
-            <TouchableOpacity onPress={()=> {SwitchRole()}} className="flex-1 rounded-lg h-10 justify-center items-center bg-[#e26136]">
-              <Text className="text-white">Switch To Buyer Account</Text>
-              </TouchableOpacity>
-          ) :
-            (
-              /* Will go to a page or a bottom sheet to input the buyer details */
-            <TouchableOpacity onPress={()=>""} className="flex-1 rounded-lg h-10 justify-center items-center bg-[#e26136]">
-              <Text className="text-white">Create A {oppAccount} Account</Text>
-              </TouchableOpacity>
-          )
-   };
+      <TouchableOpacity onPress={() => SwitchRole()} className="flex-1 rounded-lg h-10  justify-center items-center bg-[#e26136]">
+        <Text className="text-white">Switch To Seller Account</Text>
+      </TouchableOpacity>
+    ) : role == "seller" && hasBuyerAccount ? (
+      <TouchableOpacity onPress={() => SwitchRole()} className="flex-1 rounded-lg h-10 justify-center items-center bg-[#e26136]">
+        <Text className="text-white">Switch To Buyer Account</Text>
+      </TouchableOpacity>
+    ) : (
+      // If user does not have the other account, open the creation bottom sheet
+      <TouchableOpacity
+        onPress={() => {
+          setCreateMode(role === "buyer" ? "seller" : "buyer");
+        }}
+        className="flex-1 rounded-lg h-10 justify-center items-center bg-[#e26136]"
+      >
+        <Text className="text-white">Create A {oppAccount} Account</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const handleCreated = (newRole: "buyer" | "seller") => {
+    setRole(newRole);
+    setCreateMode(null);
+  };
 
   const Row: React.FC<{
     children: React.ReactNode;
@@ -200,7 +225,7 @@ export default function SettingsProfileScreen() {
               dark="bg-neutral-900 border-neutral-800"
               className="items-center rounded-2xl border px-5 py-6"
             >
-              <Image source={{  uri: profileData?.profile_picture_url || profileData?.profile_picture_url == "" ? "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" : profileData?.profile_picture_url }} className="w-28 h-28 rounded-full" />
+              <Image source={{  uri: profileData?.profile_picture_url || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" }} className="w-28 h-28 rounded-full" />
               <TText
                 light="text-[#171311]"
                 dark="text-neutral-100"
@@ -315,11 +340,9 @@ export default function SettingsProfileScreen() {
           {/* Account Management */}
           <Section title="Account Management">
             {[
-              { label: "Account Information", icon: User, route: "/account/info" },
-              { label: "Change Password", icon: Lock, route: "/account/change-password" },
-              { label: "Payment Methods", icon: CreditCard, route: "/account/payments" },
+              { label: "Edit Profile", icon: User, route: "/accountInfoScreen" },
+              { label: "Change Password", icon: Lock, route: "/forgotPassword" },
               { label: "Shipping Addresses", icon: Truck, route: "/account/addresses" },
-              { label: "Linked Accounts", icon: LinkIcon, route: "/account/linked" },
             ].map((item, i, arr) => {
               const Icon = item.icon;
               return (
@@ -393,6 +416,7 @@ export default function SettingsProfileScreen() {
           </View>
         </ScrollView>
       </TView>
+      <CreateRoleBottomSheet ref={createRoleRef} mode={createMode} onClose={() => setCreateMode(null)} onCreated={handleCreated} />
     </SafeAreaView>
   );
 }
