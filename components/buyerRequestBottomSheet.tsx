@@ -65,6 +65,8 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheetMethods | null, 
     const [categories, setCategories] = React.useState<Category[]>([]);
     const [selectedCategories, setSelectedCategories] = React.useState<Category[]>([]);
 
+    const [sending, setSending] = React.useState(false);
+
     React.useEffect(() => {
       async function fetchCategories() {
         try {
@@ -85,12 +87,14 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheetMethods | null, 
 
     const createRequest = async(request: CreateRequestPayload) => {
         try {
+          setSending(true);
           const newRequest = await createBuyerRequest(request);
           show({
             variant: "success",
             title: "Request Created",
             message: "Your request has been successfully created."
           });
+          setSending(false);
           sheetRef.current?.close();
         } catch (error) {
           show({
@@ -173,8 +177,8 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheetMethods | null, 
           {/* <<< IMPORTANT: pass value & onChange so we can receive images >>> */}
           <InstagramGrid value={Imagevalue} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} />
 
-          <TouchableOpacity className="bg-[#E94C2A] p-3 rounded" onPress={handleSubmit(handleLocalSubmit)}>
-            <Text className="text-white text-center">Create Request</Text>
+          <TouchableOpacity disabled={sending} className="bg-[#E94C2A] p-3 rounded" onPress={handleSubmit(handleLocalSubmit)}>
+            <Text className="text-white text-center">{sending ? "Sending..." : "Create Request"}</Text>
           </TouchableOpacity>
 
 

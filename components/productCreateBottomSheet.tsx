@@ -69,6 +69,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheetMethods | null, Props>(
 
   // images state: store PickedImage[] from InstagramGrid
   const [Imagevalue, setImageValue] = React.useState<InstagramGridProps["value"]>(productImages ? productImages.map((uri, index) => ({ id: index.toString(), uri })) : []);
+  const [sending, setSending] = React.useState(false);
 
   const { control, handleSubmit, formState: { errors } } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema) as any,
@@ -92,12 +93,14 @@ const ProductFormBottomSheet = forwardRef<BottomSheetMethods | null, Props>(
 
   const submitProduct = async (product: CreateProductRequest) => {
         try {
+          setSending(true);
           const newProduct = await createProduct(product);
           show({
             variant: "success",
             title: "Product Created",
             message: "Your product has been successfully created."
           });
+          setSending(false);
           sheetRef?.current?.close();
         } catch (error) {
           show({
@@ -223,10 +226,11 @@ const ProductFormBottomSheet = forwardRef<BottomSheetMethods | null, Props>(
 
         {/* Submit Button */}
         <TouchableOpacity
+          disabled={sending}
           onPress={handleSubmit(handleLocalSubmit)} // call our merged submit handler
           className="bg-[#e94c2a] p-3 rounded mt-4"
         >
-          <Text className="text-white text-center font-bold">Create Product</Text>
+          <Text className="text-white text-center font-bold">{sending ? "Sending..." : "Create Product"}</Text>
         </TouchableOpacity>
 
 

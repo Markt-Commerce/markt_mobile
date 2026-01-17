@@ -5,6 +5,7 @@ import ChatScreen, {ChatProps} from './chat'
 import { createOrGetRoom } from '../services/sections/chat'
 import { ChatRoomLite } from '../models/chat'
 import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types'
+import { useToast } from './ToastProvider'
 
 type QuickChatBottomSheetProps = {
     sellerId: string;
@@ -21,13 +22,17 @@ export default function QuickChatBottomSheet({
 
     //const bottomSheetRef = useRef<BottomSheet>(null);
     const snapPoints = useMemo(() => ['80%'], []);
+    const { show } = useToast();
 
     //states for get room data results
     const [roomData, setRoomData] = useState<ChatRoomLite | null>(null)
 
     useEffect(() => {
         const fetchRoomData = async () => {
-            if (!sellerId || !buyerId) return;
+            if (!sellerId || !buyerId) {
+                show({ variant: "error", title: "Invalid IDs", message: "Seller ID and Buyer ID must be provided.Check that you are logged in or that the user you are trying to chat with exists." });
+                return;
+            }
             try { 
                 const result = await createOrGetRoom({
                     seller_id: sellerId,

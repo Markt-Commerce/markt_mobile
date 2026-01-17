@@ -1,18 +1,6 @@
 
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Image,
-  Dimensions,
-  Animated,
-  Easing,
-  FlatList,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, Dimensions, Animated, Easing, FlatList, RefreshControl } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { Search, ArrowBigDown as CaretDown, AlertTriangle } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,7 +12,9 @@ import { SellerAnalyticsOverview, SellerAnalyticsTimeseries } from '../../models
 import { ProductResponse } from '../../models/products';
 import { OrderItem, SellerOrderItem } from '../../models/orders';
 import { useToast } from '../../components/ToastProvider';
-import ProductFormBottomSheet from '../../components/productCreateBottomSheet'; // new import
+import ProductFormBottomSheet from '../../components/productCreateBottomSheet'; 
+import CreateNicheBottomSheet from '../../components/nicheCreateBottomSheet';
+import BottomSheet from '@gorhom/bottom-sheet';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -46,6 +36,8 @@ export default function SellerDashboard() {
 
   // Bottom sheet ref for product creation
   const productFormRef = useRef<any>(null);
+
+  const nicheFormRef = useRef<BottomSheet>(null);
 
   // Search state (controlled + debounced)
   const [searchText, setSearchText] = useState<string>('');
@@ -374,6 +366,16 @@ export default function SellerDashboard() {
           </TouchableOpacity>
         </View>
 
+        <View className="flex-row justify-between px-4 py-2">
+          <TouchableOpacity
+            accessibilityLabel="create-product-btn"
+            onPress={() => nicheFormRef.current?.expand()}
+            className="rounded-full h-10 px-4 items-center justify-center bg-[#e26136]"
+          >
+            <Text className="text-white text-sm font-semibold">Create Niche</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Sales trends card */}
         <View className="px-4 py-4">
           <View className="rounded-2xl border border-[#e5dedc] bg-white p-4">
@@ -546,6 +548,7 @@ export default function SellerDashboard() {
        </ScrollView>
 
        <ProductFormBottomSheet ref={productFormRef} />
+        <CreateNicheBottomSheet ref={nicheFormRef} />
      </SafeAreaView>
  // ...existing code...
   );

@@ -29,6 +29,7 @@ export interface CreateRequestPayload {
     media?: any;
   }
   
+  //might be unused 
   export interface RequestResponse {
     status?: "OPEN" | "CLOSED" | string;
     title: string;
@@ -49,3 +50,55 @@ export interface CreateRequestPayload {
     budget?: number;
   }
   
+
+  export type Request = {
+  id: string;
+  title: string;
+  description: string;
+  budget: number;
+  status: "OPEN" | "CLOSED" | "EXPIRED" | string;
+  upvotes: number;
+  views: number;
+
+  created_at: string;   // ISO datetime
+  updated_at: string;   // ISO datetime
+  expires_at: string;   // ISO datetime
+
+  images: string[];
+  offers: any[];        // tighten this when offer shape is known
+  request_metadata: Record<string, any>;
+
+  categories: Category[];
+
+  user_id: string;
+  user: User;
+};
+
+export type Category = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  image_url: string | null;
+  parent_id: number | null;
+  is_active: boolean;
+};
+
+export type User = {
+  id: string;
+  username: string;
+  email: string;
+  phone_number: string;
+
+  current_role: "buyer" | "seller" | string;
+  is_buyer: boolean;
+  is_seller: boolean;
+  email_verified: boolean;
+
+  profile_picture: string | null;
+  profile_picture_url: string | null;
+
+  created_at: string;     // ISO datetime
+  updated_at: string;     // ISO datetime
+  last_login_at: string;  // ISO datetime
+};

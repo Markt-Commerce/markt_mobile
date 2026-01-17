@@ -9,6 +9,7 @@ import { useUser } from "../../hooks/userContextProvider";
 import ProductFormBottomSheet from "../../components/productCreateBottomSheet";
 import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BuyerRequestFormBottomSheet from "../../components/buyerRequestBottomSheet";
+import QuickChatBottomSheet from "../../components/quickChatBottomSheet"; //for buyer request reply chat
 import { SafeAreaView } from "react-native-safe-area-context";
 import { createPost,likePost } from "../../services/sections/post";
 import { useToast } from "../../components/ToastProvider";
@@ -16,6 +17,8 @@ import StartCards from "../../components/startCards";
 import PostDisplayComponent from "../../components/PostDisplayComponent";
 import RequestDisplayComponent from "../../components/requestDisplayComponent";
 import ProductDisplayComponent from "../../components/productDisplayComponent";
+import DiscoverNiches from "../../components/discoverNichesComponent";
+import NicheFeed from "../../components/nichePostsComponent";
 
 export default function FeedScreen() {
   const router = useRouter();
@@ -33,6 +36,11 @@ export default function FeedScreen() {
   const productFormRef = useRef<BottomSheet>(null);
   const postFormRef = useRef<BottomSheet>(null);
   const requestFormRef = useRef<BottomSheet>(null);
+
+  //for chat bottom sheet
+  const chatSheetRef = useRef<BottomSheet>(null);
+  const [chatRoomOpen, setChatRoomOpen] = useState(false);
+  const [selectedBuyerId, setSelectedBuyerId] = useState<string>("");
 
   const openMenu = () => {
     createMenuRef.current?.expand();
@@ -57,7 +65,7 @@ export default function FeedScreen() {
     if (loading) return;
     setLoading(true);
 
-    const options = ["product", "post"];
+    const options = ["product", "post", "niche_posts", "niche_discover"];
     if (role === "seller") options.push("request");
     const Itemchoice = Math.floor(Math.random() * options.length);
     let fetchType = options[Itemchoice];
@@ -74,10 +82,17 @@ export default function FeedScreen() {
       } else if (fetchType === "post") {
         const posts = await getPosts(page, 7);
         newItems = posts.map((p) => ({ type: "post", data: p }));
-      } else {
+      } else if (fetchType === "niche_posts") {
+        //const nichePosts = await getNichePosts(page, 5);
+        newItems = [{ type: "niche_posts", data: [] }];
+      } else if (fetchType === "niche_discover") {
+        //const nicheDiscover = await getNicheDiscover(page, 5);
+        newItems = [{ type: "niche_discover", data: [] }];
+      } else if (fetchType === "request") {
         const requests = await getBuyerRequests(page, 5);
         newItems = requests.map((r) => ({ type: "request", data: r }));
       }
+      //note to work on niche posts and niche discover fetches later
       setFeed((prev) => [...prev, ...newItems]);
     } catch (err) {
       show({
@@ -130,11 +145,23 @@ export default function FeedScreen() {
   const renderItem = ({ item }: { item: FeedItem }) => {
     if (item.type === "request") {
       const req = item.data;
-      return <RequestDisplayComponent req={req}/>; //todo: add message press event for requests
+      return <RequestDisplayComponent req={req} onMessagePress={() => {
+        setChatRoomOpen(true);
+        setSelectedBuyerId(req.buyer.id);
+      }} />; //todo: add message press event for requests
     } else if (item.type === "product") {
       const products = item.data;
       return <ProductDisplayComponent products={products}/> //todo: add in a add to cart functionality here as well as a message seller functionality
-    } else {
+    }
+    else if (item.type === "niche_posts") {
+      const nichePosts = item.data;
+      return <NicheFeed />; //render niche posts component
+    }
+    else if (item.type === "niche_discover") {
+      const nicheDiscover = item.data;
+      return <DiscoverNiches />; //render niche discover component
+    }
+    else {
       const post = item.data;
       return <PostDisplayComponent post={post} onLike={(postId)=> likePost(postId)}/>;
     }
@@ -210,6 +237,12 @@ export default function FeedScreen() {
       <ProductFormBottomSheet ref={productFormRef} />
       <PostFormBottomSheet ref={postFormRef}/>
       <BuyerRequestFormBottomSheet ref={requestFormRef}/>
+
+      {chatRoomOpen && role === "seller" && <QuickChatBottomSheet
+        sellerId={user?.user_id || ""}
+        buyerId={selectedBuyerId}
+        sheetRef={chatSheetRef}
+      />}
     </SafeAreaView>
   );
 }

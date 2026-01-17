@@ -62,12 +62,15 @@ const PostFormBottomSheet = React.forwardRef<BottomSheetMethods | null, {}>(
     const [postCategories, setPostCategories] = useState<Category[]>([]);
     const [postProducts, setPostProducts] = useState<PlaceholderProduct[]>([]);
 
+    const [sending, setSending] = React.useState(false);
+
     postSchema.refine(()=> selectedCategories?.length ?? 0 > 0,{
       path: ["category_ids"]
     });
 
     const submitForm = async (data: PostFormData) => {
       try {
+        setSending(true);
         data.products = postProducts.map((prod) => { return { product_id: prod.id }; });
         const newPost = await createPost(data);
         show({
@@ -89,6 +92,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheetMethods | null, {}>(
 
     const handleLocalSubmit = async (data: PostFormData) => {
     try {
+      setSending(true);
       const ImageResponse = await attemptMultipleUpload(Imagevalue);
 
       const imageIds = ImageResponse.map((imgId)=>imgId.media.id)
@@ -110,6 +114,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheetMethods | null, {}>(
 
       // call parent-provided onSubmit
       submitForm(payload);
+      setSending(false);
       show({
         variant: "success",
         title: "Post Created",
@@ -231,8 +236,8 @@ const PostFormBottomSheet = React.forwardRef<BottomSheetMethods | null, {}>(
           {/* Submit Button */}
           <TouchableOpacity className="bg-[#E94C2A] p-3 rounded" onPress={
               handleSubmit(handleLocalSubmit)
-          }>
-            <Text className="text-white text-center">Create Post</Text>
+          } disabled={sending}>
+            <Text className="text-white text-center">{sending ? "Sending..." : "Create Post"}</Text>
           </TouchableOpacity>
 
           <CategoryAddition
