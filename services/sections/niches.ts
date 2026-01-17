@@ -1,5 +1,5 @@
 import { request, BASE_URL } from "../api";
-import { NichesResponse, CreateNicheRequest } from "../../models/niches";
+import { NichesResponse, CreateNicheRequest, NichePostsResponse } from "../../models/niches";
 import { CreatePostRequest } from "../../models/post";
 
 // Fetch products
@@ -39,8 +39,8 @@ export async function leaveNiche(niche_id: string): Promise<void> {
   });
 }
 
-export async function getNichePosts(niche_id: string, page = 1, perPage = 10): Promise<NichesResponse> {
-  const res = await request<NichesResponse>(
+export async function getNichePosts(niche_id: string, page = 1, perPage = 10): Promise<NichePostsResponse> {
+  const res = await request<NichePostsResponse>(
     `${BASE_URL}/socials/niches/${niche_id}/posts?page=${page}&per_page=${perPage}`,
     { method: "GET" }
   );
@@ -55,4 +55,12 @@ export async function createNichePost(niche_id: string, data: CreatePostRequest)
       "Content-Type": "application/json",
     },
   });
+}
+
+export async function getMyNiches(page = 1, perPage = 10): Promise<NichesResponse> {
+  const res = await request<NichesResponse>(
+    `${BASE_URL}/socials/users/my-niches?page=${page}&per_page=${perPage}`,
+    { method: "GET" }
+  );
+  return res;
 }

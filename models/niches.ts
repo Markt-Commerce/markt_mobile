@@ -1,5 +1,30 @@
+import { Post } from "./feed";
+
 export interface NichesResponse {
   items: Niches[];
+  pagination: Pagination;
+}
+
+export interface NichePost {
+  id: number;
+  post_id: string;
+  niche_id: string;
+  post: Post;
+  niche: Niches;
+  is_pinned: boolean;
+  is_featured: boolean;
+  is_approved: boolean;
+  status: string;
+  niche_likes: number;
+  niche_comments: number;
+  moderated_by?: string;
+  moderated_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NichePostsResponse {
+  items: NichePost[];
   pagination: Pagination;
 }
 
