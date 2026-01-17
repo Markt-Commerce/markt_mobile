@@ -1,12 +1,12 @@
 import React, { useMemo } from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter /* , useLocalSearchParams */ } from "expo-router";
+import { useRouter , useLocalSearchParams } from "expo-router";
 import { ArrowLeft, MapPin, Truck, PackageCheck, CheckCircle2, Clock } from "lucide-react-native";
 
 // --- Replace with real fetch based on order id ---
 // import { getOrderTracking } from "../../../services/sections/orders";
-// const { id } = useLocalSearchParams();
+const { id } = useLocalSearchParams();
 
 type Step = {
   key: "placed" | "processing" | "shipped" | "out" | "delivered";

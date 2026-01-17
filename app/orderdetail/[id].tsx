@@ -1,3 +1,4 @@
+import React from 'react'
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -71,7 +72,7 @@ export default function OrderDetail() {
           {order.items?.map((item, index) => (
             <View key={index} className="mb-2">
               <Text className="text-sm font-semibold text-[#171311]">
-                {item.product_name}
+                {item.product?.name}
               </Text>
               <Text className="text-xs text-[#8e7a74]">
                 Qty: {item.quantity}
@@ -96,6 +97,14 @@ export default function OrderDetail() {
             value={order.total}
             bold
           />
+        </View>
+
+        <View className="flex">
+          <TouchableOpacity onPress={()=> router.push(`/orders/${id}/track`)}>
+            <Text>
+              Track Order
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
