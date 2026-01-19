@@ -4,8 +4,10 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
+  Image,
+  Alert,
 } from "react-native";
-import { ArrowLeft, X } from "lucide-react-native";
+import { ArrowLeft, X, Camera } from "lucide-react-native";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -19,7 +21,8 @@ import { registerUser } from "../../services/sections/auth";
 import { Input } from "../../components/inputs";
 import Button from "../../components/button";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useToast } from "../../components/ToastProvider"; 
+import { useToast } from "../../components/ToastProvider";
+import * as ImagePicker from 'expo-image-picker'; 
 
 const schema = z.object({
   shopName: z.string().min(1, "Shop name is required"),
@@ -37,6 +40,7 @@ const ShopInformationScreen = () => {
   const [categories, setCategories] = React.useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = React.useState<Category[]>([]);
   const [modalVisible, setModalVisible] = React.useState(false);
+  const [profilePictureUri, setProfilePictureUri] = React.useState<string | null>(null);
 
   const { control, handleSubmit, formState: { errors, isValid } } = useForm({
     resolver: zodResolver(schema),
@@ -59,6 +63,24 @@ const ShopInformationScreen = () => {
     fetchCategories();
   }, [show]);
 
+  const changeProfilePicture = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert("Permission to access camera roll is required!");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      setProfilePictureUri(uri); // Store local URI in state
+    }
+  };
+
   const handleSubmitForm = async (data: z.infer<typeof schema>) => {
     const shopData: SignupStepTwo = {
       username: data.userName,
@@ -73,6 +95,12 @@ const ShopInformationScreen = () => {
 
     const updatedRegData = register(regData, shopData);
     delete updatedRegData.buyer_data;
+    
+    // Store local image URI if selected (will be uploaded in locationdet)
+    if (profilePictureUri) {
+      (updatedRegData as any).profile_picture_local = profilePictureUri;
+    }
+    
     setRegData(updatedRegData);
 
     try {
@@ -117,6 +145,18 @@ const ShopInformationScreen = () => {
           <Text className="text-[#181111] text-lg font-extrabold text-center flex-1 pr-12">
             Shop Information
           </Text>
+        </View>
+
+        {/* Profile Picture Picker */}
+        <View className="px-4 pt-4">
+          <TouchableOpacity className="flex-row items-center mb-4" onPress={changeProfilePicture}>
+            {profilePictureUri ? (
+              <Image source={{ uri: profilePictureUri }} className="w-12 h-12 rounded-full mr-2" />
+            ) : (
+              <Camera size={20} color="#181111" className="mr-2" />
+            )}
+            <Text className="text-[#181111]">{profilePictureUri ? "Change profile photo" : "Add profile photo (optional)"}</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Gamified progress / stepper */}

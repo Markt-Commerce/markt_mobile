@@ -57,9 +57,9 @@ export async function createNichePost(niche_id: string, data: CreatePostRequest)
   });
 }
 
-export async function getMyNiches(page = 1, perPage = 10): Promise<NichesResponse> {
+export async function getMyNiches(page = 1, perPage = 10, search: string): Promise<NichesResponse> {
   const res = await request<NichesResponse>(
-    `${BASE_URL}/socials/users/my-niches?page=${page}&per_page=${perPage}`,
+    `${BASE_URL}/socials/users/my-niches?page=${page}&per_page=${perPage}&search=${search}`,
     { method: "GET" }
   );
   return res;

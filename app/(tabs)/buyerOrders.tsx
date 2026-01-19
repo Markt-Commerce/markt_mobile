@@ -123,13 +123,6 @@ export default function BuyerOrders() {
             onPress={handleOrderPress}
           />
         </View>
-
-        {/* Footer helper */}
-        <View className="py-4 items-center">
-          <Text className="text-[#8e7a74] text-xs">
-            Need help? Visit Support · Refund Policy
-          </Text>
-        </View>
       </View>
     </SafeAreaView>
   );

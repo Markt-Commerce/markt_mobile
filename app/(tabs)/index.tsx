@@ -18,7 +18,6 @@ import PostDisplayComponent from "../../components/PostDisplayComponent";
 import RequestDisplayComponent from "../../components/requestDisplayComponent";
 import ProductDisplayComponent from "../../components/productDisplayComponent";
 import DiscoverNiches from "../../components/discoverNichesComponent";
-import NicheFeed from "../../components/nichePostsComponent";
 
 export default function FeedScreen() {
   const router = useRouter();
@@ -82,9 +81,6 @@ export default function FeedScreen() {
       } else if (fetchType === "post") {
         const posts = await getPosts(page, 7);
         newItems = posts.map((p) => ({ type: "post", data: p }));
-      } else if (fetchType === "niche_posts") {
-        //const nichePosts = await getNichePosts(page, 5);
-        newItems = [{ type: "niche_posts", data: [] }];
       } else if (fetchType === "niche_discover") {
         //const nicheDiscover = await getNicheDiscover(page, 5);
         newItems = [{ type: "niche_discover", data: [] }];
@@ -153,18 +149,15 @@ export default function FeedScreen() {
       const products = item.data;
       return <ProductDisplayComponent products={products}/> //todo: add in a add to cart functionality here as well as a message seller functionality
     }
-    else if (item.type === "niche_posts") {
-      const nichePosts = item.data;
-      return <NicheFeed />; //render niche posts component
-    }
     else if (item.type === "niche_discover") {
       const nicheDiscover = item.data;
       return <DiscoverNiches />; //render niche discover component
     }
-    else {
+    else if (item.type === "post") {
       const post = item.data;
       return <PostDisplayComponent post={post} onLike={(postId)=> likePost(postId)}/>;
     }
+    return null;
   };
 
   return (
@@ -176,7 +169,7 @@ export default function FeedScreen() {
         keyExtractor={(_, idx) => idx.toString()}
         renderItem={renderItem}
         onEndReached={loadFeed}
-        onEndReachedThreshold={0.5}
+        onEndReachedThreshold={0.9}
         //ListHeaderComponent={<Header />}
         refreshing = {loading}
         onRefresh={()=>{

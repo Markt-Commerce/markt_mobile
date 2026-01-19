@@ -9,6 +9,7 @@ export interface RegisterRequest {
   password: string;
   account_type: AccountType;
   email: string;
+  profile_picture?: string;
   seller_data?: {
     policies: Record<string, string>;
     description: string;

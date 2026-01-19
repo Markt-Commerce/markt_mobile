@@ -123,6 +123,5 @@ export interface BuyerRequest {
     | { type: "product"; data: Product[] }
     | { type: "post"; data: Post }
     | { type: "request"; data: BuyerRequest }
-    | {type: "niche_posts"; data: any[]}
     | {type: "niche_discover"; data: any[]};
   

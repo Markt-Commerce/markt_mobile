@@ -13,6 +13,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useToast } from "../../components/ToastProvider";
 import * as Location from 'expo-location';
 import { registerUser } from "../../services/sections/auth";
+import { attemptMultipleUpload } from "../../services/sections/media";
+import { isArray } from "lodash";
 
 export default function AddAddressScreen() {
   const { show } = useToast();
@@ -20,6 +22,7 @@ export default function AddAddressScreen() {
   const { setUser } = useUser();
   const { regData, setRegData } = useRegData();
   const [location, setLocation] = React.useState<Location.LocationObject | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const locationSchema = z.object({
     street: z.string().min(1, "Street Address is required"),
@@ -32,7 +35,7 @@ export default function AddAddressScreen() {
 
   type LocationFormData = z.infer<typeof locationSchema>;
 
-  const { register, control, handleSubmit, formState: { errors, isSubmitting}} =  useForm<LocationFormData>({
+  const { register, control, handleSubmit, formState: { errors, isSubmitting: isFormSubmitting}} =  useForm<LocationFormData>({
     resolver: zodResolver(locationSchema)
   });
 
@@ -71,49 +74,114 @@ export default function AddAddressScreen() {
     setLocation(location);
   }
 
+  const uploadProfilePicture = async (): Promise<string | null> => {
+    // Check if user selected an image in earlier steps
+    // The local URI would be stored as a temporary property on regData
+    const profilePictureUri = (regData as any).profile_picture_local;
+    if (!profilePictureUri) return null;
+
+    try {
+      const uploadResult = await attemptMultipleUpload([
+        {
+          uri: profilePictureUri,
+          fileName: "profile.jpg",
+          type: "image/jpeg",
+        } as any,
+      ]);
+
+      const media = isArray(uploadResult) ? uploadResult[0] : uploadResult;
+
+      if (!media || !media.urls.original) {
+        throw new Error("Image upload failed");
+      }
+
+      return media.urls.original;
+    } catch (err: any) {
+      show({
+        variant: "error",
+        title: "Image upload failed",
+        message: "Your profile picture couldn't be uploaded, but you can update it later.",
+      });
+      return null;
+    }
+  };
+
   const onSkip = async () => {
     try {
-      const userRegResult = await registerUser(regData); // keep consistent with updated data
+      setIsSubmitting(true);
+
+      // Upload image if selected (optional)
+      let profilePictureUrl: string | undefined = undefined;
+      const uploadedUrl = await uploadProfilePicture();
+      if (uploadedUrl) {
+        profilePictureUrl = uploadedUrl;
+      }
+
+      // Register user with optional profile picture
+      const finalRegData = {
+        ...regData,
+        ...(profilePictureUrl && { profile_picture: profilePictureUrl }),
+      };
+
+      const userRegResult = await registerUser(finalRegData);
       setUser({
         email: userRegResult.email.toLowerCase(),
         account_type: userRegResult.account_type,
       });
       show({
         variant: "success",
-        title: "Location details saved",
+        title: "Registration complete",
         message: "We sent a verification code to your email.",
       });
       router.push("/emailVerification");
     } catch (error) {
       show({
         variant: "error",
-        message: "Failed to move to the next step. Please try again.",
+        message: "Failed to complete registration. Please try again.",
         title: "Error"
       });
+    } finally {
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const onSubmit = async (data: LocationFormData) => {
     try {
-      const updatedRegData = { ...regData, address: data };
-      setRegData(updatedRegData);
-      const userRegResult = await registerUser(updatedRegData); // keep consistent with updated data
+      setIsSubmitting(true);
+
+      // Upload image if selected (optional)
+      let profilePictureUrl: string | undefined = undefined;
+      const uploadedUrl = await uploadProfilePicture();
+      if (uploadedUrl) {
+        profilePictureUrl = uploadedUrl;
+      }
+
+      // Register user with address and optional profile picture
+      const finalRegData = {
+        ...regData,
+        address: data,
+        ...(profilePictureUrl && { profile_picture: profilePictureUrl }),
+      };
+
+      const userRegResult = await registerUser(finalRegData);
       setUser({
         email: userRegResult.email.toLowerCase(),
         account_type: userRegResult.account_type,
       });
       show({
         variant: "success",
-        title: "Location details saved",
+        title: "Registration complete",
         message: "We sent a verification code to your email.",
       });
       router.push("/emailVerification");
     } catch (error) {
       show({
         variant: "error",
-        message: "Failed to save address. Please try again.",
+        message: "Failed to save address and complete registration. Please try again.",
         title: "Error"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -125,9 +193,9 @@ export default function AddAddressScreen() {
             <View className="size-12 justify-center">
               <ArrowLeft color="#171212" size={24} />
             </View>
-            <Text className="text-[#171212] text-lg font-bold text-center pr-12 flex-1">
-              Add Address
-            </Text>
+          <Text className="text-[#171212] text-lg font-bold text-center pr-12 flex-1">
+            Add Address
+          </Text>
           </View>
 
           <Text className="text-[#171212] text-[22px] font-bold leading-tight text-left pb-3 pt-5">
@@ -180,13 +248,19 @@ export default function AddAddressScreen() {
         </View>
 
         <View className="w-full max-w-[480px] mx-auto py-4">
-          <TouchableOpacity className="min-w-[84px] items-center justify-center overflow-hidden rounded-full h-12 px-5 bg-[#e9b8ba] text-[#171212] text-base font-bold"
-            onPress={handleSubmit(onSubmit)} disabled={isSubmitting}>
-            <Text className="truncate">Save</Text>
+          <TouchableOpacity 
+            className="min-w-[84px] items-center justify-center overflow-hidden rounded-full h-12 px-5 bg-[#e9b8ba] text-[#171212] text-base font-bold"
+            onPress={handleSubmit(onSubmit)} 
+            disabled={isFormSubmitting || isSubmitting}
+          >
+            <Text className="truncate">{isSubmitting ? "Saving..." : "Save"}</Text>
           </TouchableOpacity>
-          <TouchableOpacity className="min-w-[84px] items-center justify-center overflow-hidden rounded-full h-12 px-5 bg-[#e9b8ba] text-[#171212] text-base font-bold"
-            onPress={onSkip}>
-            <Text>Skip</Text>
+          <TouchableOpacity 
+            className="min-w-[84px] items-center justify-center overflow-hidden rounded-full h-12 px-5 bg-[#e9b8ba] text-[#171212] text-base font-bold"
+            onPress={onSkip}
+            disabled={isSubmitting}
+          >
+            <Text>{isSubmitting ? "Processing..." : "Skip"}</Text>
           </TouchableOpacity>
           <View className="h-5 bg-white" />
         </View>

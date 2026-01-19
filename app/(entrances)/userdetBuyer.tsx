@@ -6,6 +6,8 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Image,
+  Alert,
 } from "react-native";
 import { ArrowLeft, Image as ImageIcon } from "lucide-react-native";
 import { useForm } from "react-hook-form";
@@ -19,6 +21,7 @@ import { SignupStepTwo, register, useRegData } from "../../models/signupSteps";
 import Button from "../../components/button";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useToast } from "../../components/ToastProvider";
+import * as ImagePicker from 'expo-image-picker';
 
 const schema = z.object({
   Buyername: z.string().min(1, "Name is required"),
@@ -31,6 +34,7 @@ export default function UserInfoScreen() {
   const { regData, setRegData } = useRegData();
   const router = useRouter();
   const { show } =  useToast();
+  const [profilePictureUri, setProfilePictureUri] = React.useState<string | null>(null);
 
   const {
     control,
@@ -43,6 +47,24 @@ export default function UserInfoScreen() {
 
   // Change this to the actual next screen in your flow if different
   const NEXT_ROUTE = "/emailVerification";
+
+  const changeProfilePicture = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert("Permission to access camera roll is required!");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      setProfilePictureUri(uri); // Store local URI in state
+    }
+  };
 
   const handleSubmitForm = async (data: z.infer<typeof schema>) => {
     const userData: SignupStepTwo = {
@@ -129,15 +151,20 @@ export default function UserInfoScreen() {
 
             {/* Card */}
             <View className="rounded-2xl border border-[#efe9e7] bg-white px-5 py-6">
-              {/* Avatar placeholder (UI only) */}
+              {/* Avatar placeholder with image picker */}
               <View className="items-end mb-2">
                 <TouchableOpacity
                   activeOpacity={0.85}
+                  onPress={changeProfilePicture}
                   className="flex-row items-center gap-2 rounded-full border border-[#e5dedc] bg-white px-3 h-9"
                 >
-                  <ImageIcon size={16} color="#876d64" />
+                  {profilePictureUri ? (
+                    <Image source={{ uri: profilePictureUri }} className="w-5 h-5 rounded-full" />
+                  ) : (
+                    <ImageIcon size={16} color="#876d64" />
+                  )}
                   <Text className="text-[#171311] text-xs font-medium">
-                    Add profile photo
+                    {profilePictureUri ? "Change photo" : "Add profile photo"}
                   </Text>
                 </TouchableOpacity>
               </View>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import {View,Text,ScrollView,FlatList,ActivityIndicator,TouchableOpacity,TextInput,Image, KeyboardAvoidingView} from "react-native";
+import {View,Text,ScrollView,FlatList,ActivityIndicator,TouchableOpacity,TextInput,Image, KeyboardAvoidingView, Dimensions} from "react-native";
 import {  ArrowLeft,  Heart,  MessageCircle,  Send,  Image as ImageIcon, X, SendHorizonal} from "lucide-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { commentOnPost, getPostById, getPostComments, likePost } from "../../services/sections/post";
@@ -49,6 +49,7 @@ export default function PostDetailsScreen() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true); // Control for infinite scroll
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { show } = useToast();
@@ -168,12 +169,62 @@ export default function PostDetailsScreen() {
       {/* Main Image */}
       {post.social_media.length > 0 && (
         <View className="flex w-full grow bg-white p-4">
-          <View className="w-full gap-1 overflow-hidden bg-white aspect-[2/3] rounded-lg flex md:gap-2">
-            <Image
-              source={{ uri: post.social_media[0].media.original_url }}
-              className="w-full bg-center bg-no-repeat bg-cover aspect-auto rounded-none flex-1"
-            />
-          </View>
+          {post.social_media.length === 1 ? (
+            // Single image
+            <View className="w-full gap-1 overflow-hidden bg-white aspect-[2/3] rounded-lg flex md:gap-2">
+              <Image
+                source={{ uri: post.social_media[0].media.original_url }}
+                className="w-full bg-center bg-no-repeat bg-cover aspect-auto rounded-none flex-1"
+              />
+            </View>
+          ) : (
+            // Multiple images - Carousel
+            <View>
+              <FlatList
+                data={post.social_media}
+                keyExtractor={(_, idx) => idx.toString()}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={(e) => {
+                  const idx = Math.round(e.nativeEvent.contentOffset.x / Dimensions.get("window").width);
+                  setCurrentImageIndex(idx);
+                }}
+                renderItem={({ item }) => (
+                  <View style={{ width: Dimensions.get("window").width - 32 }} className="gap-1 overflow-hidden bg-white aspect-[2/3] rounded-lg flex">
+                    <Image
+                      source={{ uri: item.media.original_url }}
+                      className="w-full bg-center bg-no-repeat bg-cover aspect-auto rounded-none flex-1"
+                    />
+                    {/* Left arrow indicator */}
+                    {currentImageIndex > 0 && (
+                      <View className="absolute left-2 top-1/2 transform -translate-y-1/2">
+                        <Text className="text-white text-2xl opacity-70 font-bold">‹</Text>
+                      </View>
+                    )}
+                    {/* Right arrow indicator */}
+                    {currentImageIndex < post.social_media.length - 1 && (
+                      <View className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                        <Text className="text-white text-2xl opacity-70 font-bold">›</Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+              />
+
+              {/* Dots indicator */}
+              <View className="flex-row justify-center gap-2 py-3">
+                {post.social_media.map((_, idx) => (
+                  <View
+                    key={idx}
+                    className={`h-2 rounded-full transition-all ${
+                      idx === currentImageIndex ? "bg-[#e26136] w-6" : "bg-[#e5dedc] w-2"
+                    }`}
+                  />
+                ))}
+              </View>
+            </View>
+          )}
         </View>
       )}
       

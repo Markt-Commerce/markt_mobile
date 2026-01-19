@@ -1,6 +1,6 @@
 // app/product/[id].tsx
 import React, { useEffect, useState, useRef } from "react";
-import { View, Text, Image, ScrollView, ActivityIndicator, TouchableOpacity, ImageBackground, Pressable, FlatList } from "react-native";
+import { View, Text, Image, ScrollView, ActivityIndicator, TouchableOpacity, ImageBackground, Pressable, FlatList, Dimensions } from "react-native";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { getProductById } from "../../services/sections/product";
 import { ProductDetail } from "../../models/products";
@@ -19,6 +19,7 @@ export default function ProductDetails() {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState<boolean>(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [openDetails, setOpenDetails] = useState<{ [key: string]: boolean }>({
     details: true,
     sizeFit: false,
@@ -111,14 +112,53 @@ const addProductToCart = async (product:ProductDetail)=>{
         </View>
 
         {/* Image Carousel */}
-        <ImageBackground
-          source={{
-            uri: product.images[0]?.media?.original_url || "",
-          }}
-          className="h-80 justify-end p-5"
-          imageStyle={{ borderRadius: 12 }}
-        >
-        </ImageBackground>
+        {product.images && product.images.length > 0 && (
+          <View>
+            <View className="relative">
+              <FlatList
+                data={product.images}
+                keyExtractor={(_, idx) => idx.toString()}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={(e) => {
+                  const idx = Math.round(e.nativeEvent.contentOffset.x / (Dimensions.get("window").width - 0));
+                  setCurrentImageIndex(idx);
+                }}
+                renderItem={({ item }) => (
+                  <ImageBackground
+                    source={{ uri: item?.media?.original_url || "" }}
+                    className="h-80 w-full justify-end p-5"
+                    imageStyle={{ borderRadius: 12 }}
+                  >
+                    {/* Left arrow */}
+                    <View className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                      <Text className="text-white text-2xl opacity-60">‹</Text>
+                    </View>
+                    {/* Right arrow */}
+                    <View className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <Text className="text-white text-2xl opacity-60">›</Text>
+                    </View>
+                  </ImageBackground>
+                )}
+              />
+
+              {/* Dots indicator */}
+              {product.images.length > 1 && (
+                <View className="flex-row justify-center gap-2 py-3">
+                  {product.images.map((_, idx) => (
+                    <View
+                      key={idx}
+                      className={`h-2 rounded-full transition-all ${
+                        idx === currentImageIndex ? "bg-[#e26136] w-6" : "bg-[#e5dedc] w-2"
+                      }`}
+                    />
+                  ))}
+                </View>
+              )}
+            </View>
+          </View>
+        )}
 
         {/* Buttons: Only active if user is a buyer*/}
         {

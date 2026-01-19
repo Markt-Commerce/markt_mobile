@@ -126,6 +126,8 @@ export default function SettingsProfileScreen() {
   const handleCreated = (newRole: "buyer" | "seller") => {
     setRole(newRole);
     setCreateMode(null);
+    // Refresh profile data after creating a new role
+    getUserData();
   };
 
   const Row: React.FC<{

@@ -17,6 +17,7 @@ import { PlaceholderProduct } from "../models/products";
 import { uploadImage, attemptMultipleUpload } from "../services/sections/media";
 import { MediaResponse } from "../models/media";
 import { createPost } from "../services/sections/post";
+import { createNichePost } from "../services/sections/niches";
 import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { useToast } from "./ToastProvider";
 
@@ -31,8 +32,12 @@ const postSchema = z.object({
 
 export type PostFormData = z.infer<typeof postSchema>;
 
-const PostFormBottomSheet = React.forwardRef<BottomSheetMethods | null, {}>(
-  (props, ref) => {
+interface PostFormBottomSheetProps {
+  nicheId?: string;
+}
+
+const PostFormBottomSheet = React.forwardRef<BottomSheetMethods | null, PostFormBottomSheetProps>(
+  ({ nicheId }, ref) => {
 
     const sheetRef = React.useRef<BottomSheetMethods | null>(null);
     React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
@@ -72,7 +77,14 @@ const PostFormBottomSheet = React.forwardRef<BottomSheetMethods | null, {}>(
       try {
         setSending(true);
         data.products = postProducts.map((prod) => { return { product_id: prod.id }; });
-        const newPost = await createPost(data);
+        
+        // If nicheId is provided, create a niche post instead
+        if (nicheId) {
+          await createNichePost(nicheId, data);
+        } else {
+          await createPost(data);
+        }
+        
         show({
           variant: "success",
           title: "Post Created",

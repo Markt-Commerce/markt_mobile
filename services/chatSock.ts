@@ -195,7 +195,7 @@ class ChatSocket {
   }
 
   sendImage(room_id: number, user_id:string, url: string, meta?: Record<string, any>) {
-    return this.sendMessage(room_id, "image", "Shared Image", user_id, { image_url:"https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/upload_20260106_003932.jpeg", thumbnail_url:"https://dii6cy3k849qi.cloudfront.net/images/user_USR_Q19TMC9B/upload_20260106_003932.jpeg", ...meta });//remember to change to thumbnail
+    return this.sendMessage(room_id, "image", "Shared Image", user_id, { image_url:url, thumbnail_url:url, ...meta });
   }
 
   sendVideo(room_id: number, user_id:string, url: string, meta?: Record<string, any>) {
