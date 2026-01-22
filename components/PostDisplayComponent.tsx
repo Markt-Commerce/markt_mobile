@@ -80,40 +80,13 @@ export default function PostDisplayComponent({ post, onLike }: Props) {
                         </Text>
                     ) : null}
 
-                    {/* Image Grid or Single Image */}
+                    {/* Image - Display only first image */}
                     {imageUrls.length > 0 && (
-                        <View className="mb-3 relative">
-                            {imageUrls.length === 1 ? (
-                                // Single image
-                                <Image
-                                    source={{ uri: imageUrls[0] }}
-                                    className="w-full h-56 rounded-xl"
-                                />
-                            ) : (
-                                // Multiple images - Instagram grid
-                                <View>
-                                    <FlatList
-                                        data={imageUrls}
-                                        keyExtractor={(_, idx) => idx.toString()}
-                                        numColumns={3}
-                                        scrollEnabled={false}
-                                        renderItem={({ item, index }) => (
-                                            <View style={{ width: `${100 / 3}%`, padding: 2 }}>
-                                                <Image
-                                                    source={{ uri: item }}
-                                                    style={{ aspectRatio: 1, borderRadius: 8 }}
-                                                />
-                                            </View>
-                                        )}
-                                    />
-                                    {/* Badge showing total images */}
-                                    <View className="absolute top-2 right-2 bg-black/60 px-2 py-1 rounded-lg">
-                                        <Text className="text-white text-xs font-semibold">
-                                            +{imageUrls.length}
-                                        </Text>
-                                    </View>
-                                </View>
-                            )}
+                        <View className="mb-3">
+                            <Image
+                                source={{ uri: imageUrls[0] }}
+                                className="w-full h-56 rounded-xl"
+                            />
                         </View>
                     )}
 

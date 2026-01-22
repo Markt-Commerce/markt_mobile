@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, SafeAreaView } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Plus } from "lucide-react-native";
+import { ArrowLeft, Plus } from "lucide-react-native";
 import { getNichePosts, joinNiche, leaveNiche, getMyNiches } from "../../services/sections/niches";
 import { NichePost, Niches } from "../../models/niches";
 import { useToast } from "../../components/ToastProvider";
@@ -21,6 +22,9 @@ export default function NicheDetailScreen() {
   const [isJoined, setIsJoined] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   const postFormRef = useRef<BottomSheetMethods | null>(null);
 
@@ -31,14 +35,20 @@ export default function NicheDetailScreen() {
     }
   }, [id]);
 
+  useEffect(() => {
+    if (id && page > 1) {
+      loadNichePosts();
+    }
+  }, [page]);
+
   const checkMembershipStatus = async () => {
     if (!id) return;
     try {
       // Use search parameter to filter for this specific niche
-      const res = await getMyNiches(1, 100, id);
+      const res = await getMyNiches(1, 100, id || "");
       
       // Check if niche is in user's niches
-      const userNiche = res.items.find((n) => n.id === id);
+      const userNiche = res.items.find((n) => n.niche_id === id);
       
       if (userNiche) {
         setIsJoined(true);
@@ -60,7 +70,8 @@ export default function NicheDetailScreen() {
         setIsBanned(false);
       }
     } catch (err) {
-      console.error("Failed to check membership status:", err);
+      show({ variant: "error", title: "Error", message: "Could not verify membership status." + err});
+
       // If check fails, assume not joined
       setIsJoined(false);
       setIsBanned(false);
@@ -68,17 +79,24 @@ export default function NicheDetailScreen() {
   };
 
   const loadNichePosts = async () => {
-    if (!id || loading) return;
+    if (!id || loading || !hasMore || hasError) return;
     setLoading(true);
     try {
       const res = await getNichePosts(id, page, 10);
       setPosts((prev) => (page === 1 ? res.items || [] : [...prev, ...(res.items || [])]));
+      
+      // Update pagination info from response
+      setTotalPages(res.pagination.total_pages);
+      setHasMore(page < res.pagination.total_pages);
+      setHasError(false);
+      
       if (res.items && res.items.length > 0) {
         setNiche(res.items[0]?.niche);
       }
     } catch (err) {
       console.error("Failed to load niche posts:", err);
       show({ variant: "error", title: "Error", message: "Could not load posts." });
+      setHasError(true);
     } finally {
       setLoading(false);
     }
@@ -112,89 +130,110 @@ export default function NicheDetailScreen() {
     <PostDisplayComponent post={item.post} onLike={(postId) => likePost(postId)} />
   );
 
+  const handleEndReached = () => {
+    if (!loading && hasMore && !hasError) {
+      setPage((p) => p + 1);
+    }
+  };
+
+  const handleRetry = () => {
+    setHasError(false);
+    setPage(1);
+    setPosts([]);
+    setHasMore(true);
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-[#efe9e7]">
-        <View className="flex-1">
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text className="text-[#e26136] font-semibold">← Back</Text>
-          </TouchableOpacity>
-          <Text className="text-[#171311] text-lg font-extrabold mt-1">{niche?.name || "Niche"}</Text>
-          <Text className="text-[#876d64] text-xs mt-1">{niche?.member_count || 0} members • {niche?.post_count || 0} posts</Text>
+      <View className="flex-1">
+        <View className="flex-row items-center justify-between px-4 py-3 border-b border-[#efe9e7]">
+          <View className="flex-1">
+            <TouchableOpacity onPress={() => router.back()}>
+              <ArrowLeft size={20} color="#e26136" />
+              <Text className="text-[#e26136] font-semibold">Back</Text>
+            </TouchableOpacity>
+            <Text className="text-[#171311] text-lg font-extrabold mt-1">{niche?.name || "Niche"}</Text>
+            <Text className="text-[#876d64] text-xs mt-1">{niche?.member_count || 0} members • {niche?.post_count || 0} posts</Text>
+          </View>
+
+          {isJoined && !isBanned && (
+            <TouchableOpacity
+              onPress={() => postFormRef.current?.expand?.()}
+              className="p-2 rounded-full bg-[#e26136]"
+            >
+              <Plus size={20} color="#fff" />
+            </TouchableOpacity>
+          )}
         </View>
 
-        {isJoined && !isBanned && (
-          <TouchableOpacity
-            onPress={() => postFormRef.current?.expand?.()}
-            className="p-2 rounded-full bg-[#e26136]"
-          >
-            <Plus size={20} color="#fff" />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Niche Info */}
-      {niche && (
-        <View className="px-4 py-4 border-b border-[#efe9e7]">
-          <Text className="text-[#171311] text-sm mb-2">{niche.description}</Text>
-          <Text className="text-[#876d64] text-xs">
-            {niche.allow_buyer_posts && niche.allow_seller_posts
-              ? "Buyers & Sellers can post"
-              : niche.allow_buyer_posts
-              ? "Buyers can post"
-              : "Sellers can post"}
-          </Text>
-        </View>
-      )}
-
-      {/* Banned Message */}
-      {isBanned && (
-        <View className="mx-4 mt-3 p-3 bg-[#fff5f3] border border-[#ffd9d2] rounded-lg">
-          <Text className="text-[#b51f08] text-sm font-semibold">You have been banned from this niche</Text>
-          <Text className="text-[#b51f08] text-xs mt-1">You cannot post in this community.</Text>
-        </View>
-      )}
-
-      {/* Join/Leave Button */}
-      {!isBanned && (
-        <View className="px-4 py-3 border-b border-[#efe9e7]">
-          <TouchableOpacity
-            onPress={isJoined ? handleLeave : handleJoin}
-            className={`py-3 rounded-full items-center justify-center ${
-              isJoined ? "bg-[#f4f1f0]" : "bg-[#e26136]"
-            }`}
-          >
-            <Text className={`font-semibold text-sm ${isJoined ? "text-[#171311]" : "text-white"}`}>
-              {isJoined ? "Leave Niche" : "Join Niche"}
+        {/* Niche Info */}
+        {niche && (
+          <View className="px-4 py-4 border-b border-[#efe9e7]">
+            <Text className="text-[#171311] text-sm mb-2">{niche.description}</Text>
+            <Text className="text-[#876d64] text-xs">
+              {niche.allow_buyer_posts && niche.allow_seller_posts
+                ? "Buyers & Sellers can post"
+                : niche.allow_buyer_posts
+                ? "Buyers can post"
+                : "Sellers can post"}
             </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+          </View>
+        )}
 
-      {/* Posts List */}
-      <FlatList
-        data={posts}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={renderPost}
-        onEndReached={() => {
-          if (!loading) {
-            setPage((p) => p + 1);
-            loadNichePosts();
+        {/* Banned Message */}
+        {isBanned && (
+          <View className="mx-4 mt-3 p-3 bg-[#fff5f3] border border-[#ffd9d2] rounded-lg">
+            <Text className="text-[#b51f08] text-sm font-semibold">You have been banned from this niche</Text>
+            <Text className="text-[#b51f08] text-xs mt-1">You cannot post in this community.</Text>
+          </View>
+        )}
+
+        {/* Join/Leave Button */}
+        {!isBanned && (
+          <View className="px-4 py-3 border-b border-[#efe9e7]">
+            <TouchableOpacity
+              onPress={isJoined ? handleLeave : handleJoin}
+              className={`py-3 rounded-full items-center justify-center ${
+                isJoined ? "bg-[#f4f1f0]" : "bg-[#e26136]"
+              }`}
+            >
+              <Text className={`font-semibold text-sm ${isJoined ? "text-[#171311]" : "text-white"}`}>
+                {isJoined ? "Leave Niche" : "Join Niche"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Error state with retry */}
+        {hasError && (
+          <View className="mx-4 mt-4 p-3 bg-[#fff5f3] border border-[#ffd9d2] rounded-lg items-center">
+            <Text className="text-[#b51f08] text-sm font-semibold">Failed to load posts</Text>
+            <TouchableOpacity onPress={handleRetry} className="mt-2 px-4 py-2 bg-[#e26136] rounded-lg">
+              <Text className="text-white text-sm font-semibold">Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Posts List */}
+        <FlatList
+          data={posts}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={renderPost}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.5}
+          ListEmptyComponent={
+            !loading ? (
+              <View className="items-center justify-center py-16">
+                <Text className="text-[#876d64] text-sm">No posts yet</Text>
+                {isJoined && !isBanned && <Text className="text-[#876d64] text-xs mt-2">Be the first to post!</Text>}
+              </View>
+            ) : null
           }
-        }}
-        onEndReachedThreshold={0.5}
-        ListEmptyComponent={
-          !loading ? (
-            <View className="items-center justify-center py-16">
-              <Text className="text-[#876d64] text-sm">No posts yet</Text>
-              {isJoined && !isBanned && <Text className="text-[#876d64] text-xs mt-2">Be the first to post!</Text>}
-            </View>
-          ) : null
-        }
-        ListFooterComponent={
-          loading ? <ActivityIndicator size="large" color="#e26136" style={{ marginVertical: 20 }} /> : null
-        }
-      />
+          ListFooterComponent={
+            loading ? <ActivityIndicator size="large" color="#e26136" style={{ marginVertical: 20 }} /> : null
+          }
+        />
+      </View>
 
       {/* Post create bottom sheet (only for joined members who are not banned) */}
       {isJoined && !isBanned && <PostFormBottomSheet ref={postFormRef} nicheId={id} />}

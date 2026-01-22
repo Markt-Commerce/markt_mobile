@@ -1,4 +1,4 @@
-import { CommonSellerResponseData, ShopData, User } from "../../models/user";
+import { CommonSellerResponseData, FollowResponse, ShopData, User } from "../../models/user";
 import { request, BASE_URL } from "../api";
 
 
@@ -20,18 +20,33 @@ export async function getUserShopInfo(user_id: string): Promise<ShopData> {
   return res;
 }
 
-export async function getSellerFollowersCount(seller_id: string): Promise<{ count: number }> {
+/* export async function getSellerFollowersCount(seller_id: string): Promise<{ count: number }> {
   const res = await request<{ follower_count: number }>(
     `${BASE_URL}/users/sellers/${seller_id}/followers/count`,
     { method: "GET" }
   );
   return { count: res.follower_count };
-}
+} */
 
-export async function getSellerFollowers(seller_id: string): Promise<User[]> {
+/* export async function getSellerFollowers(seller_id: string): Promise<User[]> {
   const res = await request<{ items: User[] }>(
     `${BASE_URL}/users/sellers/${seller_id}/followers`,
     { method: "GET" }
   );
   return res.items;
+} */
+
+export async function followSeller(seller_id: string): Promise<FollowResponse> {
+  const res = await request<FollowResponse>(
+    `${BASE_URL}/socials/follow/${seller_id}`,
+    { method: "POST" }
+  );
+  return res;
+}
+
+export async function unfollowSeller(seller_id: string): Promise<void> {
+  await request<void>(
+    `${BASE_URL}/socials/follow/${seller_id}`,
+    { method: "DELETE" }
+  );
 }

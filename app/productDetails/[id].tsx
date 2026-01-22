@@ -113,50 +113,44 @@ const addProductToCart = async (product:ProductDetail)=>{
 
         {/* Image Carousel */}
         {product.images && product.images.length > 0 && (
-          <View>
-            <View className="relative">
-              <FlatList
-                data={product.images}
-                keyExtractor={(_, idx) => idx.toString()}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onMomentumScrollEnd={(e) => {
-                  const idx = Math.round(e.nativeEvent.contentOffset.x / (Dimensions.get("window").width - 0));
-                  setCurrentImageIndex(idx);
-                }}
-                renderItem={({ item }) => (
+          <View className="bg-[#f4f1f0]">
+            <FlatList
+              data={product.images}
+              keyExtractor={(_, idx) => idx.toString()}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              scrollEventThrottle={16}
+              snapToInterval={Dimensions.get("window").width}
+              decelerationRate="fast"
+              onMomentumScrollEnd={(e) => {
+                const idx = Math.round(e.nativeEvent.contentOffset.x / Dimensions.get("window").width);
+                setCurrentImageIndex(idx);
+              }}
+              renderItem={({ item }) => (
+                <View style={{ width: Dimensions.get("window").width }}>
                   <ImageBackground
                     source={{ uri: item?.media?.original_url || "" }}
                     className="h-80 w-full justify-end p-5"
-                    imageStyle={{ borderRadius: 12 }}
-                  >
-                    {/* Left arrow */}
-                    <View className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                      <Text className="text-white text-2xl opacity-60">‹</Text>
-                    </View>
-                    {/* Right arrow */}
-                    <View className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                      <Text className="text-white text-2xl opacity-60">›</Text>
-                    </View>
-                  </ImageBackground>
-                )}
-              />
-
-              {/* Dots indicator */}
-              {product.images.length > 1 && (
-                <View className="flex-row justify-center gap-2 py-3">
-                  {product.images.map((_, idx) => (
-                    <View
-                      key={idx}
-                      className={`h-2 rounded-full transition-all ${
-                        idx === currentImageIndex ? "bg-[#e26136] w-6" : "bg-[#e5dedc] w-2"
-                      }`}
-                    />
-                  ))}
+                    imageStyle={{ borderRadius: 0 }}
+                  />
                 </View>
               )}
-            </View>
+            />
+
+            {/* Dots indicator */}
+            {product.images.length > 1 && (
+              <View className="flex-row justify-center gap-2 py-3">
+                {product.images.map((_, idx) => (
+                  <View
+                    key={idx}
+                    className={`h-2 rounded-full transition-all ${
+                      idx === currentImageIndex ? "bg-[#e26136] w-6" : "bg-[#e5dedc] w-2"
+                    }`}
+                  />
+                ))}
+              </View>
+            )}
           </View>
         )}
 

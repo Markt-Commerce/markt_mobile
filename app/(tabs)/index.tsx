@@ -169,7 +169,7 @@ export default function FeedScreen() {
         keyExtractor={(_, idx) => idx.toString()}
         renderItem={renderItem}
         onEndReached={loadFeed}
-        onEndReachedThreshold={0.9}
+        onEndReachedThreshold={0.5}
         //ListHeaderComponent={<Header />}
         refreshing = {loading}
         onRefresh={()=>{

@@ -50,3 +50,13 @@ export async function deleteProduct(productId: string): Promise<void> {
     method: "DELETE",
   });
 }
+
+/**
+ * Review product (buyer only)
+ */
+export async function reviewProduct(productId: string, orderId: string, rating: number, title: string, comment: string): Promise<void> {
+  await request(`${BASE_URL}/products/${productId}/reviews`, {
+    method: "POST",
+    body: JSON.stringify({ order_id: orderId, rating, content: comment, title}),
+  });
+}

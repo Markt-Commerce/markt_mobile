@@ -136,3 +136,10 @@ export interface User {
     is_active: boolean,
     total_rating: number
   }
+
+  export interface FollowResponse {
+  followee_id: string,
+  created_at: string,
+  follow_type: string,
+  follower_id: string
+}

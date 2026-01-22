@@ -1,11 +1,11 @@
-// app/ShopBySarah.tsx
 import React, { useEffect, useState} from "react";
 import { useRouter } from "expo-router";
 import { View, Text, ImageBackground, ScrollView, Image, TouchableOpacity } from "react-native";
-import { ArrowLeft, Share } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ArrowLeft, Share, Heart, MessageCircle } from "lucide-react-native";
 import { useLocalSearchParams } from "expo-router";
 import { getSellerProducts } from "../../services/sections/product";
-import { getUserPublicProfile, getUserShopInfo } from "../../services/sections/users";
+import { getUserPublicProfile, getUserShopInfo, followSeller, unfollowSeller } from "../../services/sections/users";
 import { ProductResponse } from "../../models/products";
 import { ShopData } from "../../models/user";
 import { useToast } from "../../components/ToastProvider";
@@ -19,6 +19,8 @@ export default function Shop() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [shop, setShop] = useState<ShopData>();
   const [shopProducts, setShopProducts] = useState<ProductResponse[][]>([]);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
   const { show } = useToast();
 
   useEffect(() => {
@@ -31,7 +33,7 @@ export default function Shop() {
       } catch (error) {
         show({
           title: "Error getting shop data",
-          message: "There was an error fetching the shop information. Please try again later.",
+          message: "There was an error fetching the shop information. Please try again later." + error,
           variant: "error"
         })
       } 
@@ -47,53 +49,124 @@ export default function Shop() {
         return groupedProducts;
   }
 
-  return (
-    <ScrollView className="flex-1 bg-white" showsVerticalScrollIndicator={false}>
+  const handleFollowToggle = async () => {
+    if (!shop?.id || followLoading) return;
+    
+    setFollowLoading(true);
+    try {
+      if (isFollowing) {
+        await unfollowSeller(String(shop.id));
+        setIsFollowing(false);
+        show({
+          variant: "success",
+          title: "Unfollowed",
+          message: "You unfollowed this shop.",
+        });
+      } else {
+        await followSeller(String(shop.id));
+        setIsFollowing(true);
+        show({
+          variant: "success",
+          title: "Following",
+          message: "You are now following this shop!",
+        });
+      }
+    } catch (error) {
+      show({
+        variant: "error",
+        title: "Error",
+        message: isFollowing ? "Could not unfollow shop." : "Could not follow shop.",
+      });
+    } finally {
+      setFollowLoading(false);
+    }
+  };
 
-      {/* Cover Image */}
-      <View className="px-4 py-3">
+  return (
+    <SafeAreaView className="flex-1 bg-white">
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+
+        {/* Header with back button */}
+        <View className="flex-row items-center justify-between px-4 py-3 border-b border-[#efe9e7]">
+          <TouchableOpacity onPress={() => router.back()} className="p-2">
+            <ArrowLeft size={24} color="#171311" />
+          </TouchableOpacity>
+          <Text className="text-[#171311] text-lg font-bold flex-1 text-center pr-8">Shop</Text>
+          <TouchableOpacity className="p-2">
+            <Share size={24} color="#171311" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Cover Image */}
         <ImageBackground
           source={{
             uri: shop?.user.profile_picture || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
           }}
-          className="w-full min-h-80 overflow-hidden bg-white"
+          className="w-full h-56 overflow-hidden bg-[#f4f1f0]"
           resizeMode="cover"
-        >
-          {/* Header */}
-          <View className="flex-row items-center justify-between p-4 pb-2">
-            <TouchableOpacity className="p-1">
-              <ArrowLeft size={24} color="#171311" />
+        />
+
+        {/* Profile Section */}
+        <View className="px-4 py-4">
+          {/* Profile Picture Overlap */}
+          <View className="flex-row items-end gap-3 mb-4">
+            <Image
+              source={{
+                uri: shop?.user.profile_picture || defaultProfilePicture,
+              }}
+              className="w-24 h-24 rounded-full border-4 border-white bg-[#f4f1f0]"
+            />
+            <View className="flex-1 pb-1">
+              <View className="flex-row items-center gap-2 mb-1">
+                <Text className="text-[#171311] text-xl font-bold">{shop?.shop_name}</Text>
+              </View>
+              <View className="flex-row items-center gap-1 mt-1">
+                <Text className="text-[#e26136] text-sm font-semibold">{shop?.average_rating || 0}</Text>
+                <Text className="text-[#876d64] text-xs bg-[#f4f1f0] px-2 py-1 rounded">
+                  {shop?.verification_status || "Unverified"}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Action Buttons */}
+          <View className="flex-row gap-3 mb-4">
+            <TouchableOpacity 
+              className={`flex-1 rounded-lg py-3 items-center justify-center ${
+                isFollowing ? "bg-[#f4f1f0]" : "bg-[#e26136]"
+              }`}
+              onPress={handleFollowToggle}
+              disabled={followLoading}
+            >
+              <Text className={`font-semibold text-sm ${isFollowing ? "text-[#171311]" : "text-white"}`}>
+                {followLoading ? "Loading..." : isFollowing ? "Following" : "Follow Shop"}
+              </Text>
             </TouchableOpacity>
           </View>
-        </ImageBackground>
-      </View>
 
-      {/* Profile Section */}
-      <View className="flex-row items-start p-4">
-        <Image
-          source={{
-            uri: shop?.user.profile_picture || defaultProfilePicture,
-          }}
-          className="w-32 h-32 rounded-full"
-        />
-        <View className="flex-1 ml-4 justify-center">
-          <Text className="text-[#171311] text-[22px] font-bold leading-tight">{shop?.shop_name}</Text>
-          <Text className="text-[#876d64] text-base">{shop?.stats.follower_count} followers · {shop?.stats.post_count! + shop?.stats.product_count!} items</Text>
-          <Text className="text-[#876d64] text-base">{shop?.average_rating} / 5</Text>
-          <Text className="text-[#876d64] text-base">{shop?.verification_status}</Text>
+          {/* Stats Row */}
+          <View className="flex-row justify-between gap-4 py-3 border-t border-b border-[#efe9e7]">
+            <View className="flex-1 items-center">
+              <Text className="text-[#171311] text-lg font-bold">{shop?.stats.product_count || 0}</Text>
+              <Text className="text-[#876d64] text-xs mt-1">Products</Text>
+            </View>
+            <View className="flex-1 items-center">
+              <Text className="text-[#171311] text-lg font-bold">{shop?.stats.post_count || 0}</Text>
+              <Text className="text-[#876d64] text-xs mt-1">Posts</Text>
+            </View>
+            <View className="flex-1 items-center">
+              <Text className="text-[#171311] text-lg font-bold">{shop?.stats.follower_count || 0}</Text>
+              <Text className="text-[#876d64] text-xs mt-1">Followers</Text>
+            </View>
+          </View>
         </View>
-      </View>
 
-      {/* Follow Button */}
-      <View>
-        <TouchableOpacity>Follow</TouchableOpacity>
-        <TouchableOpacity className="bg-[#f4f1f0] p-2 rounded" onPress={()=>{router.navigate(`/followers/${id}`)}}><Text>Followers</Text></TouchableOpacity>
-      </View>
-
-      {/* Description */}
-      <Text className="text-[#171311] text-base px-4 pt-1 pb-3">
-        {shop?.description}
-      </Text>
+        {/* Description */}
+        {shop?.description && (
+          <View className="px-4 py-4 border-b border-[#efe9e7]">
+            <Text className="text-[#171311] text-base leading-relaxed">{shop?.description}</Text>
+          </View>
+        )}
 
       {/* Tabs */}
       <View className="flex-row border-b border-[#e5dedc] px-4 gap-8">
@@ -134,6 +207,7 @@ export default function Shop() {
         {shop?.recent_posts.map((item, i) => (
           <PostDisplayComponent key={i} post={{ }} />
       </View> */}
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

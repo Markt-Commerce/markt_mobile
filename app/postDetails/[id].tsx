@@ -93,17 +93,22 @@ export default function PostDetailsScreen() {
 
     setLoading(true);
     try {
-      const commentResponse = await getPostComments(id, page)
-      const totalPages = commentResponse.pagination.total_pages
+      const commentResponse = await getPostComments(id, page);
+      const totalPages = commentResponse.pagination.total_pages;
       const newComments = commentResponse.items;
-      console.log(totalPages)
-      if (totalPages == page) {
-        // If we stop receiving new comments, stop loading more
+
+      // Add comments first
+      setComments((prev) => [...prev, ...newComments]);
+
+      // Increment page
+      const nextPage = page + 1;
+      setPage(nextPage);
+
+      // Check if we've reached the last page
+      if (nextPage > totalPages) {
         setHasMore(false);
-      } else {
-        setComments((prev) => [...prev, ...newComments]);
-        setPage((prev) => prev + 1);
       }
+
       setLoading(false);
     } catch (error) {
       show({
@@ -111,16 +116,16 @@ export default function PostDetailsScreen() {
         title: "Error loading comments",
         message: "There was an issue retrieving the post comments.",
       });
+      setLoading(false);
     }
-  }, [id, page, loading, hasMore]);
+  }, [id, page, loading, hasMore, show]);
 
   useEffect(() => {
     // Initial load of comments
-    if (id && page === 1) {
+    if (id && page === 1 && comments.length === 0) {
       loadComments();
-      setPage(2)
     }
-  }, [id, loadComments, page]);
+  }, [id, comments.length, loadComments]);
 
   if (!post) {
     return (
@@ -313,25 +318,23 @@ export default function PostDetailsScreen() {
   };
 
   return (
-    <View
-      className="relative flex size-full min-h-screen flex-col bg-white justify-between group/design-root overflow-x-hidden"
-    >
-      {/* Scrollable Content (Header and Comments) */}
-      <FlatList
-        data={comments}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderCommentItem}
-        ListHeaderComponent={renderListHeader}
-        ListFooterComponent={renderListFooter}
-        onEndReached={loadComments}
-        onEndReachedThreshold={0.5}
-        // This is a common pattern to ensure the flatlist can scroll properly
-        contentContainerStyle={{ flexGrow: 1 }}
-      />
+    <KeyboardAvoidingView behavior="padding" className="flex-1 bg-white">
+      <View className="relative flex-1 flex-col bg-white justify-between group/design-root overflow-x-hidden">
+        {/* Scrollable Content (Header and Comments) */}
+        <FlatList
+          data={comments}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderCommentItem}
+          ListHeaderComponent={renderListHeader}
+          ListFooterComponent={renderListFooter}
+          onEndReached={loadComments}
+          onEndReachedThreshold={0.5}
+          // This is a common pattern to ensure the flatlist can scroll properly
+          contentContainerStyle={{ flexGrow: 1 }}
+        />
 
-      {/* Comment Input Footer */}
-      <SafeAreaView>
-      <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={100}>
+        {/* Comment Input Footer */}
+        <SafeAreaView edges={["bottom"]}>
           <View className="bg-white px-4 py-3 border-t border-[#e6e2e0]">
             <View className="flex-row items-center gap-3">
               {/* User Avatar */}
@@ -373,8 +376,8 @@ export default function PostDetailsScreen() {
               </View>
             </View>
           </View>
-      </KeyboardAvoidingView>
-      </SafeAreaView>
-    </View>
+        </SafeAreaView>
+      </View>
+    </KeyboardAvoidingView>
   );
 }

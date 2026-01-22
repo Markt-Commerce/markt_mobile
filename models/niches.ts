@@ -33,6 +33,7 @@ export interface Niches {
   name: string;
   slug: string;
   description: string;
+  niche_id: string
 
   status: "active" | "inactive" | string;
   visibility: "public" | "private" | string;
