@@ -6,14 +6,14 @@ import { Order, OrderItem, SellerOrderItem } from "../models/orders";
 
 interface OrdersListProps<T> {
   fetchOrders: (page: number) => Promise<T[]>;
-  onPress?: (item: T) => any;
+  pressed?: (item: T) => any;
   isSeller?: boolean;
 }
 
 export default function OrdersList<T extends Order | OrderItem | SellerOrderItem>({
   fetchOrders,
   isSeller,
-  onPress,
+  pressed,
 }: OrdersListProps<T>) {
   const [orders, setOrders] = useState<T[]>([]);
   const [page, setPage] = useState(1);
@@ -50,22 +50,15 @@ export default function OrdersList<T extends Order | OrderItem | SellerOrderItem
   return (
     <FlatList
       data={orders}
-      keyExtractor={(item, idx) =>
-        item && (item as any).id ? String((item as any).id) : idx.toString()
-      }
       renderItem={({ item }) => (
-        <TouchableOpacity activeOpacity={0.9} onPress={() => onPress?.(item)}>
-          <OrderCard order={item} isSeller={isSeller} />
-        </TouchableOpacity>
+          <TouchableOpacity onPress={() => pressed && pressed(item)} activeOpacity={0.7}>
+            <OrderCard order={item} isSeller={isSeller} />
+          </TouchableOpacity>
       )}
-      onEndReached={() => loadOrders()}
       onEndReachedThreshold={0.5}
       refreshing={refreshing}
       onRefresh={onRefresh}
-      ListFooterComponent={
-        loading && !refreshing ? <ActivityIndicator size="large" color="#e26136" /> : null
-      }
-      ListEmptyComponent={<Text className="text-center text-[#876d64] mt-5">No orders found</Text>}
+      ListEmptyComponent={<Text className="text-center text-[#876d64] mt-5">No orders found</Text>} 
     />
   );
 }

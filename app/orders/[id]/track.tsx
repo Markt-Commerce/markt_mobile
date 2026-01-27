@@ -1,43 +1,66 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter , useLocalSearchParams } from "expo-router";
 import { ArrowLeft, MapPin, Truck, PackageCheck, CheckCircle2, Clock } from "lucide-react-native";
+import { getOrderDetails } from "../../../services/sections/orders";
+import { Order } from "../../../models/orders";
 
-// --- Replace with real fetch based on order id ---
-// import { getOrderTracking } from "../../../services/sections/orders";
+
 const { id } = useLocalSearchParams();
 
 type Step = {
-  key: "placed" | "processing" | "shipped" | "out" | "delivered";
+  key: "placed" | "pending_payment" | "shipped" | "out" | "delivered";
   label: string;
   time?: string;
   done?: boolean;
 };
 
-const MOCK_STEPS: Step[] = [
-  { key: "placed", label: "Order placed", time: "Mon, 10:03 AM", done: true },
-  { key: "processing", label: "Processing", time: "Mon, 1:20 PM", done: true },
-  { key: "shipped", label: "Shipped", time: "Tue, 9:00 AM", done: true },
-  { key: "out", label: "Out for delivery", time: "Today, 10:10 AM", done: false },
-  { key: "delivered", label: "Delivered", time: "", done: false },
-];
-
 export default function TrackOrderScreen() {
   const router = useRouter();
   // const { data, loading } = useOrderTracking(id as string);
-  const steps = MOCK_STEPS; // replace with data?.steps
+
+  const [orderDetails, setOrderDetails] = useState<Order>();
+
+  const [steps, setSteps] = useState<Step[]>();
 
   const progressPct = useMemo(() => {
-    const total = steps.length;
-    const done = steps.filter((s) => s.done).length;
-    return Math.round((done / total) * 100);
+    const total = steps?.length;
+    const done = steps?.filter((s) => s.done).length;
+    return Math.round((done || 0) / (total || 1) * 100);
   }, [steps]);
+
+  useEffect(() => {
+    // Fetch order tracking data here and update steps accordingly
+    const fetchTrackingData = async () => {
+
+      const steps: Step[] = [
+        { key: "placed", label: "Order placed",  done: true },
+        { key: "pending_payment", label: "Pending payment",  done: true },
+        { key: "shipped", label: "Shipped", done: true },
+        { key: "out", label: "Out for delivery",  done: false },
+        { key: "delivered", label: "Delivered",  done: false },
+      ];
+      const data = await getOrderDetails(id as string);
+      // Update steps based on fetched data
+      let isSet = false;
+      
+      for (const step of steps) {
+        if (isSet) {
+          isSet = step.key === data.status;
+        }
+        step.done = !isSet;
+      }
+      setSteps(steps);
+    };
+
+    fetchTrackingData();
+  }, [id]);
 
   const StatusIcon = ({ k, done }: { k: Step["key"]; done?: boolean }) => {
     const color = done ? "#171311" : "#c8c1be";
     if (k === "placed") return <Clock size={16} color={color} />;
-    if (k === "processing") return <PackageCheck size={16} color={color} />;
+    if (k === "pending_payment") return <PackageCheck size={16} color={color} />;
     if (k === "shipped") return <Truck size={16} color={color} />;
     if (k === "out") return <MapPin size={16} color={color} />;
     return <CheckCircle2 size={16} color={color} />;
@@ -64,7 +87,7 @@ export default function TrackOrderScreen() {
         <View className="px-4">
           <View className="rounded-2xl bg-white border border-[#efe9e7] p-4">
             <View className="flex-row items-center justify-between">
-              <Text className="text-[#171311] font-extrabold">Order #901234</Text>
+              <Text className="text-[#171311] font-extrabold">Order #{orderDetails?.id}</Text>
               <Text className="text-[#171311] font-semibold">{progressPct}%</Text>
             </View>
             <View className="mt-3 h-2 w-full rounded-full bg-[#f1ecea] overflow-hidden">
@@ -77,7 +100,7 @@ export default function TrackOrderScreen() {
         {/* Timeline */}
         <View className="px-4 mt-4">
           <View className="rounded-2xl bg-white border border-[#efe9e7] p-4">
-            {steps.map((s, idx) => {
+            {steps?.map((s, idx) => {
               const last = idx === steps.length - 1;
               return (
                 <View key={s.key} className="flex-row">
@@ -121,14 +144,13 @@ export default function TrackOrderScreen() {
         <View className="px-4 mt-4">
           <View className="rounded-2xl bg-white border border-[#efe9e7] overflow-hidden">
             <View className="h-44 bg-[#f7f4f3] items-center justify-center">
-              <MapPin size={22} color="#171311" />
-              <Text className="mt-2 text-[#7b6660] text-sm">Live map appears here</Text>
+              {/* <MapView style={{ height: 220 }} initialRegion={...}>
+                <Marker coordinate={{ latitude, longitude }} />
+              </MapView> */}
+              {/* <MapPin size={22} color="#171311" />
+              <Text className="mt-2 text-[#7b6660] text-sm">Live map appears here</Text> */}
             </View>
-            {/* Real map later:
-            <MapView style={{ height: 220 }} initialRegion={...}>
-              <Marker coordinate={{ latitude, longitude }} />
-            </MapView>
-            */}
+           
           </View>
         </View>
 

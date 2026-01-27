@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react-native";
+import { ArrowLeft, ArrowRight } from "lucide-react-native";
 import { getOrderDetails } from "../../services/sections/orders";
 import { Order } from "../../models/orders";
 
@@ -54,7 +54,7 @@ export default function OrderDetail() {
             <ArrowLeft size={18} color="#171311" />
           </TouchableOpacity>
           <Text className="text-xl font-extrabold text-[#171311]">
-            Order #{order.order_number}
+            Order #{order.id}
           </Text>
         </View>
 
@@ -100,10 +100,9 @@ export default function OrderDetail() {
         </View>
 
         <View className="flex">
-          <TouchableOpacity onPress={()=> router.push(`/orders/${id}/track`)}>
-            <Text>
-              Track Order
-            </Text>
+          <TouchableOpacity className="bg-[#E94C2A] p-2 rounded-md" onPress={()=> router.push(`/orders/${id}/track`)}>
+            <Text className="text-white">Track Order</Text>
+            <ArrowRight size={16} color="#fff" className="absolute right-3 top-3" />
           </TouchableOpacity>
         </View>
       </ScrollView>

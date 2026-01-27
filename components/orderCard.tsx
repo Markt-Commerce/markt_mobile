@@ -5,7 +5,6 @@ import { Order, OrderItem, SellerOrderItem } from "../models/orders";
 
 interface OrderCardProps {
   order: Order | OrderItem | SellerOrderItem | any;
-  onPress?: () => void;
   isSeller?: boolean;
 }
 
@@ -21,7 +20,7 @@ function isOrderItem(o: any): o is OrderItem {
   return !!o && typeof o === "object" && ("product_id" in o || ("price" in o && "quantity" in o && !isSellerOrderItem(o)));
 }
 
-export default function OrderCard({ order, onPress, isSeller }: OrderCardProps) {
+export default function OrderCard({ order, isSeller }: OrderCardProps) {
   // Safe extraction with fallbacks
   let title = "Order";
   let subtitle = "";
@@ -66,10 +65,8 @@ export default function OrderCard({ order, onPress, isSeller }: OrderCardProps) 
   }
 
   return (
-    <TouchableOpacity
+    <View
       className="flex-row justify-between gap-4 bg-white px-4 py-3 border-b border-[#eee]"
-      onPress={onPress}
-      activeOpacity={onPress ? 0.8 : 1}
     >
       <View className="flex-row gap-4 flex-1">
         {imageUri ? (
@@ -104,6 +101,6 @@ export default function OrderCard({ order, onPress, isSeller }: OrderCardProps) 
           <Text className="text-sm font-medium text-[#171311]">{Math.round(progress)}%</Text>
         </View>
       )}
-    </TouchableOpacity>
+    </View>
   );
 }

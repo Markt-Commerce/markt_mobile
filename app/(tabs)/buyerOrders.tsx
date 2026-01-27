@@ -37,6 +37,7 @@ export default function BuyerOrders() {
   };
 
   const handleOrderPress = (order: Order) => {
+    console.log("Pressed order:", order.id);
     router.push(`/orderdetail/${order.id}`);
   };
 
@@ -120,7 +121,7 @@ export default function BuyerOrders() {
           <OrdersList
             key={refreshKey}
             fetchOrders={fetchOrders}
-            onPress={handleOrderPress}
+            pressed={handleOrderPress}
           />
         </View>
       </View>
