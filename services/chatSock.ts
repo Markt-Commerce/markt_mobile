@@ -159,7 +159,7 @@ class ChatSocket {
     user_id: string,
     message_data?: Record<string, any> | null
   ): Promise<boolean /*client_id*/> {
-    const payload = { room_id, content, message_type, user_id, message_data };
+    const payload = { room_id, content, message_type, user_id, message: message_data };
 
     if (this.connected) {
       // try with ack first, fallback to fire-and-forget
@@ -191,7 +191,7 @@ class ChatSocket {
   sendText(room_id: number, user_id:string, text: string) {
     // server validation caps are 1–1000; we trim client-side to be safe
     const trimmed = (text ?? "").slice(0, 1000);
-    return this.sendMessage(room_id, "text", trimmed, user_id, null);
+    return this.sendMessage(room_id, "text", trimmed, user_id, {text: trimmed});
   }
 
   sendImage(room_id: number, user_id:string, url: string, meta?: Record<string, any>) {
@@ -199,7 +199,7 @@ class ChatSocket {
   }
 
   sendVideo(room_id: number, user_id:string, url: string, meta?: Record<string, any>) {
-    return this.sendMessage(room_id, "video", "Shared Video", user_id, { image_url:url, thumbnail_url:url, ...meta });
+    return this.sendMessage(room_id, "video", "Shared Video", user_id, { video_url:url, thumbnail_url:url, ...meta });
   }
 
   sendProduct(room_id: number, user_id:string, product_id: string, note?: string) {
