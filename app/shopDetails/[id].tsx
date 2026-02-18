@@ -28,6 +28,7 @@ export default function Shop() {
       try {
         const profileData = await getUserShopInfo(id);
         setShop(profileData);
+        setIsFollowing((profileData as any).is_followed ?? false);
         const sellerProducts = await getSellerProducts(profileData.id);
         setShopProducts((prev) => [...prev, ...groupProducts(sellerProducts)]);
       } catch (error) {
@@ -50,12 +51,13 @@ export default function Shop() {
   }
 
   const handleFollowToggle = async () => {
-    if (!shop?.id || followLoading) return;
-    
+    const followeeId = shop?.user?.id;
+    if (!followeeId || followLoading) return;
+
     setFollowLoading(true);
     try {
       if (isFollowing) {
-        await unfollowSeller(String(shop.id));
+        await unfollowSeller(followeeId);
         setIsFollowing(false);
         show({
           variant: "success",
@@ -63,7 +65,7 @@ export default function Shop() {
           message: "You unfollowed this shop.",
         });
       } else {
-        await followSeller(String(shop.id));
+        await followSeller(followeeId);
         setIsFollowing(true);
         show({
           variant: "success",
@@ -131,17 +133,19 @@ export default function Shop() {
 
           {/* Action Buttons */}
           <View className="flex-row gap-3 mb-4">
-            <TouchableOpacity 
+            {shop?.user && (shop as any).can_follow !== false && (
+            <TouchableOpacity
               className={`flex-1 rounded-lg py-3 items-center justify-center ${
-                isFollowing ? "bg-[#f4f1f0]" : "bg-[#e26136]"
+                isFollowing ? "bg-bg-muted" : "bg-primary"
               }`}
               onPress={handleFollowToggle}
               disabled={followLoading}
             >
-              <Text className={`font-semibold text-sm ${isFollowing ? "text-[#171311]" : "text-white"}`}>
-                {followLoading ? "Loading..." : isFollowing ? "Following" : "Follow Shop"}
+              <Text className={`font-semibold text-sm ${isFollowing ? "text-text-primary" : "text-white"}`}>
+                {followLoading ? "Loading…" : isFollowing ? "Following" : "Follow"}
               </Text>
             </TouchableOpacity>
+          )}
           </View>
 
           {/* Stats Row */}

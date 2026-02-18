@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import {View,Text,ScrollView,FlatList,ActivityIndicator,TouchableOpacity,TextInput,Image, KeyboardAvoidingView, Dimensions} from "react-native";
+import {View,Text,ScrollView,FlatList,ActivityIndicator,TouchableOpacity,TextInput,Image, KeyboardAvoidingView, Dimensions, Share} from "react-native";
 import {  ArrowLeft,  Heart,  MessageCircle,  Send,  Image as ImageIcon, X, SendHorizonal} from "lucide-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { commentOnPost, getPostById, getPostComments, likePost } from "../../services/sections/post";
@@ -44,6 +44,8 @@ const SingleCommentComponent = React.memo(({ comment }: { comment: CommentItem }
 // Main Screen Component
 export default function PostDetailsScreen() {
   const [post, setPost] = useState<PostDetails | null>(null);
+  const [likeCount, setLikeCount] = useState(0);
+  const [isLiking, setIsLiking] = useState(false);
   const [newComment, setNewComment] = useState<string>("");
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [page, setPage] = useState(1);
@@ -57,17 +59,45 @@ export default function PostDetailsScreen() {
 
 
   const FetchPost = async (id: string) => {
-  try {
-    const res = await getPostById(id);
-    setPost(res);
-  } catch (error) {
-    show({
-      variant: "error",
-      title: "Error loading post",
-      message: "There was an issue retrieving the post details.",
-    });
-  }
-};
+    try {
+      const res = await getPostById(id);
+      setPost(res);
+      setLikeCount(res.like_count ?? 0);
+    } catch (error) {
+      show({
+        variant: "error",
+        title: "Error loading post",
+        message: "There was an issue retrieving the post details.",
+      });
+    }
+  };
+
+  const handleLike = async () => {
+    if (isLiking || !post) return;
+    setIsLiking(true);
+    const prev = likeCount;
+    setLikeCount((c) => c + 1);
+    try {
+      await likePost(post.id);
+    } catch {
+      setLikeCount(prev);
+      show({ variant: "error", title: "Could not like", message: "Please try again." });
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: "Check out this post on Markt",
+        url: `markt://post/${post?.id}`,
+        title: "Share post",
+      });
+    } catch {
+      // User cancelled
+    }
+  };
 
   useEffect(() => {
     FetchPost(id);
@@ -267,32 +297,39 @@ export default function PostDetailsScreen() {
       </View>
       )}
 
-      {/* Social Actions */}
-      <View className="flex flex-wrap gap-4 px-4 py-2 justify-between flex-row">
-        <View className="flex items-center justify-center gap-2 px-3 py-2 flex-row">
-          <TouchableOpacity onPress={() => likePost(post.id)}>{/* work on this later */}
-            <Heart size={24} color="#876d64" />
-          </TouchableOpacity>
-          <Text className="text-[#876d64] text-[13px] font-bold leading-normal tracking-[0.015em]">
-            {post.like_count}
-          </Text>
-        </View>
-        <View className="flex items-center justify-center gap-2 px-3 py-2 flex-row">
-          <TouchableOpacity onPress={() => console.log("View comments")}>
-            <MessageCircle size={24} color="#876d64" />
-          </TouchableOpacity>
-          <Text className="text-[#876d64] text-[13px] font-bold leading-normal tracking-[0.015em]">
-            {post.comment_count}
-          </Text>
-        </View>
-        <View className="flex items-center justify-center gap-2 px-3 py-2 flex-row">
-          <TouchableOpacity onPress={() => console.log("Share")}>
-            <Send size={24} color="#876d64" />
-          </TouchableOpacity>
-          <Text className="text-[#876d64] text-[13px] font-bold leading-normal tracking-[0.015em]">
-            12
-          </Text>
-        </View>
+      {/* Social Actions — aligned with FeedPostCard: gap-6, min-h-[44px], orange heart when liked */}
+      <View className="flex-row mt-3 pt-2 border-t border-border-light px-4 gap-6">
+        <TouchableOpacity
+          onPress={handleLike}
+          disabled={isLiking}
+          className="flex-row items-center gap-2 py-1 min-h-[44px]"
+          accessibilityRole="button"
+          accessibilityLabel={`${likeCount} likes`}
+        >
+          <Heart
+            size={18}
+            color={likeCount > 0 ? "#e26136" : "#876d64"}
+            fill={likeCount > 0 ? "#e26136" : "transparent"}
+          />
+          <Text className="text-text-primary text-sm">{likeCount}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          className="flex-row items-center gap-2 py-1 min-h-[44px]"
+          accessibilityRole="button"
+          accessibilityLabel={`${post.comment_count} comments`}
+        >
+          <MessageCircle size={18} color="#876d64" />
+          <Text className="text-text-primary text-sm">{post.comment_count}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={handleShare}
+          className="flex-row items-center gap-2 py-1 min-h-[44px]"
+          accessibilityRole="button"
+          accessibilityLabel="Share post"
+        >
+          <Send size={18} color="#876d64" />
+          <Text className="text-text-primary text-sm">Share</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Comments Header */}

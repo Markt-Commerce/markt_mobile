@@ -131,14 +131,19 @@ export default function CartScreen() {
         </View>
 
         <View className="flex-1 items-center justify-center px-6">
-          <View className="w-24 h-24 rounded-2xl bg-[#f7f4f3] mb-4" />
-          <Text className="text-[#171311] text-xl font-extrabold">Your cart is empty</Text>
-          <Text className="mt-2 text-[#876d64] text-sm text-center">
+          <View className="w-24 h-24 rounded-2xl bg-bg-muted items-center justify-center mb-4">
+            <Text className="text-4xl">🛒</Text>
+          </View>
+          <Text className="text-text-primary text-xl font-bold">Your cart is empty</Text>
+          <Text className="mt-2 text-text-secondary text-sm text-center">
             Explore the marketplace and add items you love.
           </Text>
           <TouchableOpacity
             onPress={() => router.replace("/")}
-            className="mt-6 h-11 px-6 rounded-full bg-[#171311] items-center justify-center"
+            className="mt-6 h-12 px-6 rounded-full bg-primary items-center justify-center"
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Start shopping"
           >
             <Text className="text-white font-semibold">Start shopping</Text>
           </TouchableOpacity>
@@ -259,12 +264,13 @@ export default function CartScreen() {
             <TouchableOpacity
               onPress={handleCheckout}
               disabled={processing}
-              className="mt-4 h-12 rounded-full items-center justify-center"
-              style={{ backgroundColor: processing ? "#e9d6d1" : "#e26136" }}
-              activeOpacity={0.9}
+              className={`mt-4 h-12 rounded-button items-center justify-center ${processing ? "bg-bg-muted" : "bg-primary"}`}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={processing ? "Processing" : "Proceed to checkout"}
             >
-              <Text className="text-white text-base font-bold tracking-[0.015em]">
-                {processing ? "Processing..." : "Proceed to Checkout"}
+              <Text className={`text-base font-semibold tracking-[0.015em] ${processing ? "text-text-secondary" : "text-white"}`}>
+                {processing ? "Processing…" : "Proceed to Checkout"}
               </Text>
             </TouchableOpacity>
           </View>

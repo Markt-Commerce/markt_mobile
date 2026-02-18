@@ -77,10 +77,12 @@ export default function MarktLandingScreen() {
         {/* Actions */}
         <View className="px-4 pb-6">
           <TouchableOpacity
-            className="h-12 bg-[#e9242a] rounded-full justify-center items-center mb-3 active:opacity-90"
+            className="h-12 bg-primary rounded-full justify-center items-center mb-3 active:opacity-90"
             onPress={() => router.navigate("/signup")}
+            accessibilityRole="button"
+            accessibilityLabel="Start your first quest"
           >
-            <Text className="text-white text-base font-bold tracking-[0.015em]">
+            <Text className="text-white text-base font-semibold tracking-[0.015em]">
               Start your first quest
             </Text>
           </TouchableOpacity>
@@ -88,8 +90,10 @@ export default function MarktLandingScreen() {
           <TouchableOpacity
             className="h-12 bg-white/90 rounded-full justify-center items-center active:opacity-90"
             onPress={() => router.navigate("/login")}
+            accessibilityRole="button"
+            accessibilityLabel="I already have an account"
           >
-            <Text className="text-[#181111] text-base font-bold tracking-[0.015em]">
+            <Text className="text-text-primary text-base font-semibold tracking-[0.015em]">
               I already have an account
             </Text>
           </TouchableOpacity>

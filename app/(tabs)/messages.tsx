@@ -54,8 +54,14 @@ export default function MessagesScreen() {
           showsVerticalScrollIndicator={false}
         />
       ) : (
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-[#171312] text-lg font-bold">No messages</Text>
+        <View className="flex-1 items-center justify-center px-6">
+          <View className="w-20 h-20 rounded-full bg-bg-muted items-center justify-center mb-4">
+            <Text className="text-4xl">💬</Text>
+          </View>
+          <Text className="text-text-primary text-lg font-bold">No messages yet</Text>
+          <Text className="mt-2 text-text-secondary text-sm text-center">
+            Start a conversation with a seller to ask about products.
+          </Text>
         </View>
       )}
     </SafeAreaView>

@@ -1,6 +1,7 @@
-import { RegisterRequest, LoginRequest, AuthUser, ApiResponse, UserSwitchResponse, RoleCreationResult } from '../../models/auth';
-import { CommonBuyerResponseData, CommonSellerResponseData } from '../../models/user';
-import { BASE_URL,request } from '../api';
+import { RegisterRequest, LoginRequest, AuthUser, ApiResponse, UserSwitchResponse, RoleCreationResult } from "../../models/auth";
+import { CommonBuyerResponseData, CommonSellerResponseData } from "../../models/user";
+import { BASE_URL, request } from "../api";
+import { setAuthToken, extractTokenFromResponse, setUserSession, clearUserSession } from "../authStorage";
 
 
 /**
@@ -11,11 +12,20 @@ import { BASE_URL,request } from '../api';
  * @returns 
  */
 export async function registerUser(data: RegisterRequest): Promise<AuthUser> {
-  const res = await request<AuthUser>(`${BASE_URL}/users/register`, {
-    method: 'POST',
+  const res = await request<any>(`${BASE_URL}/users/register`, {
+    method: "POST",
     body: JSON.stringify(data),
   });
-  return res;
+  const token = extractTokenFromResponse(res);
+  if (token) await setAuthToken(token);
+  const user = (res?.user ?? res?.data ?? res) as AuthUser;
+  if (user?.email) {
+    await setUserSession(
+      { email: user.email, account_type: user.current_role ?? user.account_type, user_id: user.id },
+      (user.current_role ?? user.account_type) as "buyer" | "seller"
+    );
+  }
+  return user;
 }
 
 
@@ -26,11 +36,20 @@ export async function registerUser(data: RegisterRequest): Promise<AuthUser> {
  * @returns 
  */
 export async function loginUser(data: LoginRequest): Promise<AuthUser> {
-  const res = await request<AuthUser>(`${BASE_URL}/users/login`, {
-    method: 'POST',
+  const res = await request<any>(`${BASE_URL}/users/login`, {
+    method: "POST",
     body: JSON.stringify(data),
   });
-  return res;
+  const token = extractTokenFromResponse(res);
+  if (token) await setAuthToken(token);
+  const user = (res?.user ?? res?.data ?? res) as AuthUser;
+  if (user?.email) {
+    await setUserSession(
+      { email: user.email, account_type: user.current_role ?? user.account_type, user_id: user.id },
+      (user.current_role ?? user.account_type) as "buyer" | "seller"
+    );
+  }
+  return user;
 }
 
 /**
@@ -39,10 +58,13 @@ export async function loginUser(data: LoginRequest): Promise<AuthUser> {
  * @returns 
  */
 export async function logoutUser(): Promise<void> {
-    await request<void>(`${BASE_URL}/users/logout`, {
-      method: 'POST',
-    });
+  try {
+    await request<void>(`${BASE_URL}/users/logout`, { method: "POST" });
+  } finally {
+    await setAuthToken(null);
+    await clearUserSession();
   }
+}
   
 /**
  * This function sends a verification email to the user.

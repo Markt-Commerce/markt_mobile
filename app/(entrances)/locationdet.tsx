@@ -19,7 +19,7 @@ import { isArray } from "lodash";
 export default function AddAddressScreen() {
   const { show } = useToast();
   const router = useRouter();
-  const { setUser } = useUser();
+  const { setUser, setRole } = useUser();
   const { regData, setRegData } = useRegData();
   const [location, setLocation] = React.useState<Location.LocationObject | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -124,10 +124,13 @@ export default function AddAddressScreen() {
       };
 
       const userRegResult = await registerUser(finalRegData);
+      const accountType = (userRegResult.current_role ?? userRegResult.account_type) as "buyer" | "seller";
       setUser({
         email: userRegResult.email.toLowerCase(),
-        account_type: userRegResult.account_type,
+        account_type: accountType,
+        user_id: userRegResult.id,
       });
+      setRole(accountType);
       show({
         variant: "success",
         title: "Registration complete",
@@ -164,10 +167,13 @@ export default function AddAddressScreen() {
       };
 
       const userRegResult = await registerUser(finalRegData);
+      const accountType = (userRegResult.current_role ?? userRegResult.account_type) as "buyer" | "seller";
       setUser({
         email: userRegResult.email.toLowerCase(),
-        account_type: userRegResult.account_type,
+        account_type: accountType,
+        user_id: userRegResult.id,
       });
+      setRole(accountType);
       show({
         variant: "success",
         title: "Registration complete",

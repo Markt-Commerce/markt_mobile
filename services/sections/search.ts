@@ -1,9 +1,15 @@
+/**
+ * Global search — MOBILE_HOME_FEED_API_CONTRACTS.md
+ * GET /api/v1/search/?search=...&page=1&per_page=20
+ */
 import { SearchResponse } from "../../models/search";
-import { BASE_URL, request } from "../api";
+import { request } from "../api";
 
-export const search = async (query: string, page: number): Promise<SearchResponse> => {
-  const response = await request<SearchResponse>(`${BASE_URL}/search?search=${query}&page=${page}`, {
-    method: "GET",
+export async function search(query: string, page = 1, perPage = 20): Promise<SearchResponse> {
+  const params = new URLSearchParams({
+    search: query,
+    page: String(page),
+    per_page: String(perPage),
   });
-  return response;
-};
+  return request<SearchResponse>(`/search?${params.toString()}`, { method: "GET" });
+}

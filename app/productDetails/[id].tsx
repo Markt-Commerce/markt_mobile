@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { View, Text, Image, ScrollView, ActivityIndicator, TouchableOpacity, ImageBackground, Pressable, FlatList, Dimensions } from "react-native";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
-import { getProductById } from "../../services/sections/product";
+import { getProductById, trackProductView } from "../../services/sections/product";
 import { ProductDetail } from "../../models/products";
 import { ArrowLeft, ShoppingBag, ArrowBigDown, MessageCircle, ShoppingCart } from "lucide-react-native";
 import { addToCart } from "../../services/sections/cart";
@@ -90,6 +90,14 @@ const addProductToCart = async (product:ProductDetail)=>{
 
   useEffect(() => {
     if (id) fetchProduct(id);
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    const t = setTimeout(() => {
+      trackProductView(id).catch(() => {});
+    }, 500);
+    return () => clearTimeout(t);
   }, [id]);
 
   if (!product) return <ActivityIndicator size="large" />;
@@ -267,9 +275,9 @@ const addProductToCart = async (product:ProductDetail)=>{
       }
       renderItem={({ item }) => (
         <View className="px-4 pt-3 w-[48%]">
-          <Link href={`/productDetails/${item.id}`} asChild>
-            <TouchableOpacity activeOpacity={0.85}>
-              <View className="rounded-2xl overflow-hidden border border-[#efe9e7] bg-white">
+          <View className="rounded-2xl overflow-hidden border border-[#efe9e7] bg-white">
+            <Link href={`/productDetails/${item.id}`} asChild>
+              <TouchableOpacity activeOpacity={0.85}>
                 <ImageBackground
                   source={{ uri: item.images?.[0]?.media?.original_url }}
                   className="w-full aspect-square"
@@ -281,25 +289,39 @@ const addProductToCart = async (product:ProductDetail)=>{
                     </Text>
                   </View>
                 </ImageBackground>
-
-                <View className="px-3 pt-2 pb-3">
+                <View className="px-3 pt-2">
                   <Text className="text-[14px] font-semibold text-[#171311]" numberOfLines={1}>
                     {item.name}
                   </Text>
-                  <View className="flex-row justify-between mt-2">
-                    <TouchableOpacity className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-[#f5f2f1]">
-                      <ShoppingCart size={16} color="#60758a" />
-                      <Text className="text-[12px] text-[#111418]">Add</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-[#f5f2f1]">
-                      <MessageCircle size={16} color="#60758a" />
-                      <Text className="text-[12px] text-[#111418]">Chat</Text>
-                    </TouchableOpacity>
-                  </View>
                 </View>
+              </TouchableOpacity>
+            </Link>
+            {role === "buyer" && (
+              <View className="flex-row justify-between gap-2 px-3 pb-3 pt-2">
+                <TouchableOpacity
+                  onPress={async () => {
+                    try {
+                      await addToCart({ product_id: item.id, variant_id: 0, quantity: 1 });
+                      show({ variant: "success", title: "Added to cart", message: `${item.name} added.` });
+                    } catch {
+                      show({ variant: "error", title: "Could not add", message: "Please try again." });
+                    }
+                  }}
+                  className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-[#f5f2f1]"
+                >
+                  <ShoppingCart size={16} color="#60758a" />
+                  <Text className="text-[12px] text-[#111418]">Add</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => router.push(`/productDetails/${item.id}`)}
+                  className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-[#f5f2f1]"
+                >
+                  <MessageCircle size={16} color="#60758a" />
+                  <Text className="text-[12px] text-[#111418]">Chat</Text>
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
-          </Link>
+            )}
+          </View>
         </View>
       )}
       numColumns={2}

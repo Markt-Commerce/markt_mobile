@@ -1,7 +1,8 @@
 // app/_layout.tsx
 import { Stack } from "expo-router";
+import { View, Text, ActivityIndicator } from "react-native";
 import "../global.css";
-import { UserProvider, useUser, UserContextType } from "../hooks/userContextProvider";
+import { UserProvider, useUser } from "../hooks/userContextProvider";
 import { RegisterProvider } from "../models/signupSteps";
 import { ToastProvider } from "../components/ToastProvider";
 import { ThemeProvider} from "../components/themeProvider";
@@ -42,26 +43,20 @@ export default function RootLayout() {
 }
 
 export function AppStack() {
-  //get the user from secure store and set it to the user context
-  //const userData:UserAuthType = JSON.parse(await SecureStore.getItemAsync('user') || 'null') as UserAuthType;
-  
-  const user: UserContextType | null = useUser();
+  const { user, isRestoringSession } = useUser();
 
-  if (user.user == null) {
-    return <Stack screenOptions={{ headerShown: false }} initialRouteName="introduction" />;
+  if (isRestoringSession) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" }}>
+        <ActivityIndicator size="large" color="#e26136" />
+        <Text style={{ marginTop: 12, color: "#876d64", fontSize: 14 }}>Loading…</Text>
+      </View>
+    );
   }
 
+  if (!user) {
+    return <Stack key="guest" screenOptions={{ headerShown: false }} initialRouteName="introduction" />;
+  }
 
-
-  //const loggedIn = await loginUser({email: userData.email, password: userData.password, account_type: userData.userType});
-  /* if (!loggedIn) {
-    return <Stack screenOptions={{ headerShown: false }} initialRouteName="entrances/login" />;
-  } */
-
-  
-  //store user in context
-  //SecureStore.setItemAsync('user', JSON.stringify(userData));
-  return (
-    <Stack  screenOptions={{ headerShown: false }} />
-    );
+  return <Stack key="auth" screenOptions={{ headerShown: false }} />;
 }

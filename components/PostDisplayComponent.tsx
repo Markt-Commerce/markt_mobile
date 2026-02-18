@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { TouchableOpacity, View, Text, Image, Pressable, FlatList, Dimensions } from "react-native";
+import { TouchableOpacity, View, Text, Image, Pressable, Dimensions, Share } from "react-native";
 import { Link } from "expo-router";
 import { Post } from "../models/feed";
 import { Heart, MessageCircle, Send } from "lucide-react-native";
@@ -59,28 +59,27 @@ export default function PostDisplayComponent({ post, onLike }: Props) {
 
     return (
         <Link href={`/postDetails/${post.id}`} asChild>
-            <TouchableOpacity activeOpacity={0.85} className="px-4 pt-3">
-                <View className="rounded-2xl border border-[#efe9e7] bg-white p-4">
+            <TouchableOpacity activeOpacity={0.85} className="px-4 pt-4">
+                <View className="rounded-card border border-border bg-white p-4">
                     <View className="flex-row items-center mb-3">
                         <Image
                             source={{ uri: profilePic }}
                             className="w-10 h-10 rounded-full mr-3"
                         />
                         <View>
-                            <Text className="font-semibold text-[#111418]">
+                            <Text className="font-semibold text-text-primary">
                                 {post.user?.username ?? "Unknown"}
                             </Text>
-                            <Text className="text-xs text-[#876d64]">Post</Text>
+                            <Text className="text-xs text-text-secondary">Post</Text>
                         </View>
                     </View>
 
                     {post.caption ? (
-                        <Text className="mb-3 text-[#111418]" numberOfLines={3}>
+                        <Text className="mb-3 text-text-primary text-sm leading-5" numberOfLines={3}>
                             {highlightMentions(post.caption)}
                         </Text>
                     ) : null}
 
-                    {/* Image - Display only first image */}
                     {imageUrls.length > 0 && (
                         <View className="mb-3">
                             <Image
@@ -90,23 +89,36 @@ export default function PostDisplayComponent({ post, onLike }: Props) {
                         </View>
                     )}
 
-                    <View className="flex-row justify-between mt-3">
+                    <View className="flex-row mt-3 pt-2 border-t border-border-light gap-6">
                         <Pressable
-                            className="flex-row items-center gap-2"
+                            className="flex-row items-center gap-2 py-1 min-h-[44px]"
                             onPress={handleLike}
                             disabled={isLiking}
+                            accessibilityRole="button"
+                            accessibilityLabel={`${likeCount} likes`}
                         >
-                            <Heart size={18} color="#60758a" />
-                            <Text className="text-[#111418]">{likeCount}</Text>
+                            <Heart
+                                size={18}
+                                color={likeCount > 0 ? "#e26136" : "#876d64"}
+                                fill={likeCount > 0 ? "#e26136" : "transparent"}
+                            />
+                            <Text className="text-text-primary text-sm">{likeCount}</Text>
                         </Pressable>
-
-                        <Pressable className="flex-row items-center gap-2">
-                            <MessageCircle size={18} color="#60758a" />
-                            <Text className="text-[#111418]">{post.comment_count}</Text>
+                        <Pressable
+                            className="flex-row items-center gap-2 py-1 min-h-[44px]"
+                            accessibilityRole="button"
+                            accessibilityLabel={`${post.comment_count} comments`}
+                        >
+                            <MessageCircle size={18} color="#876d64" />
+                            <Text className="text-text-primary text-sm">{post.comment_count}</Text>
                         </Pressable>
-
-                        <Pressable>
-                            <Send size={18} color="#60758a" />
+                        <Pressable
+                            className="flex-row items-center gap-2 py-1 min-h-[44px]"
+                            onPress={handleShare}
+                            accessibilityRole="button"
+                            accessibilityLabel="Share post"
+                        >
+                            <Send size={18} color="#876d64" />
                         </Pressable>
                     </View>
                 </View>

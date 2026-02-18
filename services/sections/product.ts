@@ -36,10 +36,18 @@ export async function getSellerProducts(sellerId: number, page = 1, per_page = 2
  *
  */
 export async function getProductById(productId: string): Promise<ProductDetail> {
-  const res = await request<ApiResponse<ProductDetail>>(`${BASE_URL}/products/${productId}`, {
+  const res = await request<ApiResponse<ProductDetail>>(`/products/${productId}`, {
     method: "GET",
   });
   return (res as any).data ?? (res as any);
+}
+
+/**
+ * Track product view (analytics) — FEED_ACTIONS_PRODUCTS_POSTS_AND_WEBSOCKETS.md
+ * Call when user lands on product detail page.
+ */
+export async function trackProductView(productId: string): Promise<void> {
+  await request(`/products/${productId}/view`, { method: "POST" });
 }
 
 /**

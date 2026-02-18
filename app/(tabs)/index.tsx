@@ -1,33 +1,47 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  ScrollView,
+  Animated,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
+} from "react-native";
 import { Plus, Bell, Search } from "lucide-react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
-import { Link, useRouter } from "expo-router";
-import { FeedItem } from "../../models/feed";
-import { getProducts, getPosts, getBuyerRequests } from "../../services/sections/feed";
+import { useRouter } from "expo-router";
+import type { FeedItem, FeedProduct } from "../../types/feed";
 import { useUser } from "../../hooks/userContextProvider";
 import ProductFormBottomSheet from "../../components/productCreateBottomSheet";
 import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BuyerRequestFormBottomSheet from "../../components/buyerRequestBottomSheet";
 import QuickChatBottomSheet from "../../components/quickChatBottomSheet"; //for buyer request reply chat
-import { SafeAreaView } from "react-native-safe-area-context";
-import { createPost,likePost } from "../../services/sections/post";
 import { useToast } from "../../components/ToastProvider";
 import StartCards from "../../components/startCards";
-import PostDisplayComponent from "../../components/PostDisplayComponent";
-import RequestDisplayComponent from "../../components/requestDisplayComponent";
-import ProductDisplayComponent from "../../components/productDisplayComponent";
-import DiscoverNiches from "../../components/discoverNichesComponent";
+import FeedPostCard from "../../components/FeedPostCard";
+import FeedProductCard from "../../components/FeedProductCard";
+import ShopStrip from "../../components/ShopStrip";
+import { useFeed } from "../../hooks/useFeed";
+import { isFeedPost, isFeedProduct } from "../../types/feed";
+
+const TABS = [
+  { id: "for_you" as const, label: "For You" },
+  { id: "discover" as const, label: "Discover" },
+  { id: "trending" as const, label: "Trending" },
+  { id: "following" as const, label: "Following" },
+];
 
 export default function FeedScreen() {
   const router = useRouter();
-  const [feed, setFeed] = useState<FeedItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [selectedTab, setSelectedTab] = useState<"for_you" | "discover" | "trending" | "following">("for_you");
   const [loadedStartCards, setLoadedStartCards] = useState(false);
-  const [page, setPage] = useState(1);
   const { show } = useToast();
 
-  const { role, setUser, user } = useUser();
+  const { role, user } = useUser();
+  const { items, loading, loadingMore, hasNext, error, refresh, loadMore } = useFeed(selectedTab);
   const snapPoints = useMemo(() => ["30%"], []);
 
   // Bottom sheet refs
@@ -36,10 +50,37 @@ export default function FeedScreen() {
   const postFormRef = useRef<BottomSheet>(null);
   const requestFormRef = useRef<BottomSheet>(null);
 
-  //for chat bottom sheet
   const chatSheetRef = useRef<BottomSheet>(null);
+  const productChatSheetRef = useRef<BottomSheet>(null);
   const [chatRoomOpen, setChatRoomOpen] = useState(false);
   const [selectedBuyerId, setSelectedBuyerId] = useState<string>("");
+  const [productForChat, setProductForChat] = useState<FeedProduct | null>(null);
+
+  // Shop strip collapse on scroll: hide when scrolling down, show when scrolling up
+  const [stripCollapsed, setStripCollapsed] = useState(false);
+  const lastScrollY = useRef(0);
+  const stripHeight = useRef(new Animated.Value(1)).current; // 1 = expanded, 0 = collapsed
+
+  useEffect(() => {
+    Animated.timing(stripHeight, {
+      toValue: stripCollapsed ? 0 : 1,
+      duration: 200,
+      useNativeDriver: false, // height/maxHeight requires false
+    }).start();
+  }, [stripCollapsed]);
+
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const y = e.nativeEvent.contentOffset.y;
+    const dy = y - lastScrollY.current;
+    lastScrollY.current = y;
+    if (dy > 8 && y > 60) setStripCollapsed(true);
+    else if (dy < -8) setStripCollapsed(false);
+  };
+
+  const openProductChat = (product: FeedProduct) => {
+    setProductForChat(product);
+    productChatSheetRef.current?.expand();
+  };
 
   const openMenu = () => {
     createMenuRef.current?.expand();
@@ -53,142 +94,168 @@ export default function FeedScreen() {
     if (form === "request") requestFormRef.current?.expand();
   };
 
-  /* const fetchStartCards = async ()=>{
-    if (!loadedStartCards) {
-      //start cards are only loaded once at the start of the feed
-      setLoadedStartCards(true);
-    }
-  } */
-
-  const loadFeed = async () => {
-    if (loading) return;
-    setLoading(true);
-
-    const options = ["product", "post", "niche_posts", "niche_discover"];
-    if (role === "seller") options.push("request");
-    const Itemchoice = Math.floor(Math.random() * options.length);
-    let fetchType = options[Itemchoice];
-
-    try {
-      let newItems: FeedItem[] = [];
-      if (fetchType === "product") {
-        const products = await getProducts(page, 6);
-        const groupedProducts = [];
-        for (let i = 0; i < products.length; i += 2) {
-          groupedProducts.push(products.slice(i, i + 2));
-        }
-        newItems = groupedProducts.map((group) => ({ type: "product", data: group }));
-      } else if (fetchType === "post") {
-        const posts = await getPosts(page, 7);
-        newItems = posts.map((p) => ({ type: "post", data: p }));
-      } else if (fetchType === "niche_discover") {
-        //const nicheDiscover = await getNicheDiscover(page, 5);
-        newItems = [{ type: "niche_discover", data: [] }];
-      } else if (fetchType === "request") {
-        const requests = await getBuyerRequests(page, 5);
-        newItems = requests.map((r) => ({ type: "request", data: r }));
-      }
-      //note to work on niche posts and niche discover fetches later
-      setFeed((prev) => [...prev, ...newItems]);
-    } catch (err) {
-      show({
-        variant: "error",
-        title: "Error loading feed",
-        message: "There was a problem loading the feed. Please try again later."
-      })
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    refresh();
+  }, [selectedTab]);
 
   useEffect(() => {
-    loadFeed();
-  }, []);
+    if (!error) return;
+    // Don't toast "Unauthorized" — we redirect to login; avoid spam from parallel 401s
+    if (error.toLowerCase().includes("unauthorized")) return;
+    show({ variant: "error", title: "Feed error", message: error });
+  }, [error]);
 
   // Header Component (visuals only)
   const Header = () => (
     <>
-    <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-[#f0e9e7]"
-    onStartShouldSetResponder={() => true}
-    onTouchStart={() => {}}>
-      <Text className="text-xl font-extrabold text-[#111418]">Marketplace</Text>
-      <View className="flex-row justify-between items-center">
-        <TouchableOpacity onPress={openMenu} className="p-2 rounded-full bg-[#f5f2f1] mx-1" hitSlop={{top:8,bottom:8,left:8,right:8}}>
-          <Plus size={22} color="#111418" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/notifications')} className="p-2 rounded-full bg-[#f5f2f1] mx-1" hitSlop={{top:8,bottom:8,left:8,right:8}}>
-          <Bell size={22} color="#111418" />
-      </TouchableOpacity>
-      </View>
-    </View>
-    <View className="px-4 py-3 bg-white border-b border-[#f0e9e7]">
-      {/* search bar but like button that leads to search page */}
-      <TouchableOpacity onPress={() => router.push('/search')} className="p-2 rounded-full bg-[#f5f2f1] mx-1" hitSlop={{top:8,bottom:8,left:8,right:8}}>
-        {/* button that looks like a search bar */}
-        <View className="flex-row items-center bg-[#f5f2f1] rounded-full px-3 py-1">
-          <Search size={18} color="#886963" />
-          <Text className="text-[#886963] ml-2">What are you looking for?</Text>
+      <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-border">
+        <Text className="text-xl font-bold text-text-primary">Marketplace</Text>
+        <View className="flex-row items-center gap-1">
+          <TouchableOpacity
+            onPress={openMenu}
+            className="p-2.5 rounded-full bg-bg-muted"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Create new"
+          >
+            <Plus size={22} color="#171311" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push("/notifications")}
+            className="p-2.5 rounded-full bg-bg-muted"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+          >
+            <Bell size={22} color="#171311" />
+          </TouchableOpacity>
         </View>
-      </TouchableOpacity>
-    </View>
+      </View>
+      <View className="px-4 py-3 bg-white border-b border-border">
+        <TouchableOpacity
+          onPress={() => router.push("/search")}
+          className="flex-row items-center bg-bg-muted rounded-full px-4 py-3"
+          accessibilityRole="button"
+          accessibilityLabel="Search products, posts, and sellers"
+        >
+          <Search size={18} color="#876d64" />
+          <Text className="text-text-secondary ml-3 text-base">What are you looking for?</Text>
+        </TouchableOpacity>
+      </View>
 
-    {role === "seller" && loadedStartCards && <View className="bg-[#f5f2f1]">
-      <StartCards onRemoved={()=>setLoadedStartCards(false)}/>
-      </View>}
+      <Animated.View
+        style={{
+          overflow: "hidden",
+          maxHeight: stripHeight.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 130],
+          }),
+        }}
+      >
+        <ShopStrip />
+      </Animated.View>
+
+      <View className="bg-white border-b border-border pb-1 mb-3">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 24 }}
+        >
+          {TABS.map((t) => (
+            <TouchableOpacity
+              key={t.id}
+              onPress={() => setSelectedTab(t.id)}
+              className="py-2 min-h-[44px] justify-center relative"
+              accessibilityRole="tab"
+              accessibilityState={{ selected: selectedTab === t.id }}
+              accessibilityLabel={t.label}
+            >
+              <Text
+                className={`font-semibold text-sm ${selectedTab === t.id ? "text-text-primary" : "text-text-secondary"}`}
+              >
+                {t.label}
+              </Text>
+              {selectedTab === t.id && (
+                <View
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 2,
+                    backgroundColor: "#e26136",
+                    borderRadius: 1,
+                  }}
+                />
+              )}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {role === "seller" && loadedStartCards && (
+        <View className="bg-bg-muted">
+          <StartCards onRemoved={() => setLoadedStartCards(false)} />
+        </View>
+      )}
     </>
   );
 
   const renderItem = ({ item }: { item: FeedItem }) => {
-    if (item.type === "request") {
-      const req = item.data;
-      return <RequestDisplayComponent req={req} onMessagePress={() => {
-        setChatRoomOpen(true);
-        setSelectedBuyerId(req.buyer.id);
-      }} />; //todo: add message press event for requests
-    } else if (item.type === "product") {
-      const products = item.data;
-      return <ProductDisplayComponent products={products}/> //todo: add in a add to cart functionality here as well as a message seller functionality
-    }
-    else if (item.type === "niche_discover") {
-      const nicheDiscover = item.data;
-      return <DiscoverNiches />; //render niche discover component
-    }
-    else if (item.type === "post") {
-      const post = item.data;
-      return <PostDisplayComponent post={post} onLike={(postId)=> likePost(postId)}/>;
-    }
+    if (isFeedPost(item)) return <FeedPostCard post={item} />;
+    if (isFeedProduct(item))
+      return (
+        <FeedProductCard
+          product={item}
+          onMessageSeller={openProductChat}
+        />
+      );
     return null;
   };
 
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
+    <View style={{ flex: 1, backgroundColor: "white" }}>
       <Header/>
-      <FlatList 
-      className="bg-white"
-        data={feed}
-        keyExtractor={(_, idx) => idx.toString()}
+      <FlatList
+        className="bg-white"
+        data={items}
+        keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        onEndReached={loadFeed}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        onEndReached={() => hasNext && loadMore()}
         onEndReachedThreshold={0.5}
-        //ListHeaderComponent={<Header />}
-        refreshing = {loading}
-        onRefresh={()=>{
-          setPage(1); //reset the page back to the first to get the latest content
-          loadFeed()
-        }}
-        //stickyHeaderIndices={[0]}
+        refreshing={loading}
+        onRefresh={refresh}
         ListFooterComponent={
-          loading ? (
-            <View className="py-5">
+          loadingMore ? (
+            <View className="py-8 items-center">
               <ActivityIndicator size="large" color="#e26136" />
+              <Text className="text-text-secondary text-sm mt-2">Loading more…</Text>
             </View>
           ) : null
         }
         ListEmptyComponent={
           !loading ? (
-            <View className="items-center justify-center py-16">
-              <Text className="text-[#171311] font-semibold text-base">No items yet</Text>
-              <Text className="text-[#876d64] text-sm mt-1">Pull up to load more or create something new.</Text>
+            <View className="items-center justify-center py-16 px-6">
+              <View className="w-20 h-20 rounded-full bg-bg-muted items-center justify-center mb-4">
+                <Search size={32} color="#876d64" />
+              </View>
+              <Text className="text-text-primary font-semibold text-lg text-center">
+                {selectedTab === "following" ? "Follow sellers to see their products" : "No items yet"}
+              </Text>
+              <Text className="text-text-secondary text-sm mt-2 text-center">
+                Pull to refresh or tap + to create a post or product.
+              </Text>
+              <TouchableOpacity
+                onPress={openMenu}
+                className="mt-6 h-12 px-6 rounded-full bg-primary items-center justify-center min-h-[48px]"
+                accessibilityRole="button"
+                accessibilityLabel="Create something new"
+              >
+                <Text className="text-white font-semibold">Create</Text>
+              </TouchableOpacity>
             </View>
           ) : null
         }
@@ -197,29 +264,29 @@ export default function FeedScreen() {
 
       <BottomSheet ref={createMenuRef} index={-1} snapPoints={snapPoints} enablePanDownToClose>
         <BottomSheetView className="flex-1 p-4">
-          <Text className="text-lg font-extrabold mb-2 text-[#111418]">Create</Text>
+          <Text className="text-lg font-bold mb-4 text-text-primary">Create</Text>
 
           {role === "buyer" && (
             <>
-              <TouchableOpacity onPress={() => openForm("request")} className="border-b border-[#f0e9e7] py-4" hitSlop={{top:8,bottom:8,left:8,right:8}}>
-                <Text className="font-semibold text-[16px] text-[#171311]">Create Buyer Request</Text>
-                <Text className="text-xs text-[#876d64]">Describe what you need and your budget.</Text>
+              <TouchableOpacity onPress={() => openForm("request")} className="border-b border-border-light py-4" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create Buyer Request</Text>
+                <Text className="text-xs text-text-secondary mt-0.5">Describe what you need and your budget.</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => openForm("post")} className="border-b border-[#f0e9e7] py-4" hitSlop={{top:8,bottom:8,left:8,right:8}}>
-                <Text className="font-semibold text-[16px] text-[#171311]">Create Post</Text>
-                <Text className="text-xs text-[#876d64]">Share updates, photos, or deals.</Text>
+              <TouchableOpacity onPress={() => openForm("post")} className="border-b border-border-light py-4" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create Post</Text>
+                <Text className="text-xs text-text-secondary mt-0.5">Share updates, photos, or deals.</Text>
               </TouchableOpacity>
             </>
           )}
           {role === "seller" && (
             <>
-              <TouchableOpacity onPress={() => openForm("product")} className="border-b border-[#f0e9e7] py-4" hitSlop={{top:8,bottom:8,left:8,right:8}}>
-                <Text className="font-semibold text-[16px] text-[#171311]">Create Product</Text>
-                <Text className="text-xs text-[#876d64]">Add a new item to your shop.</Text>
+              <TouchableOpacity onPress={() => openForm("product")} className="border-b border-border-light py-4" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create Product</Text>
+                <Text className="text-xs text-text-secondary mt-0.5">Add a new item to your shop.</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => openForm("post")} className="border-b border-[#f0e9e7] py-4" hitSlop={{top:8,bottom:8,left:8,right:8}}>
-                <Text className="font-semibold text-[16px] text-[#171311]">Create Post</Text>
-                <Text className="text-xs text-[#876d64]">Share updates, photos, or deals.</Text>
+              <TouchableOpacity onPress={() => openForm("post")} className="border-b border-border-light py-4" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create Post</Text>
+                <Text className="text-xs text-text-secondary mt-0.5">Share updates, photos, or deals.</Text>
               </TouchableOpacity>
             </>
           )}
@@ -231,11 +298,21 @@ export default function FeedScreen() {
       <PostFormBottomSheet ref={postFormRef}/>
       <BuyerRequestFormBottomSheet ref={requestFormRef}/>
 
-      {chatRoomOpen && role === "seller" && <QuickChatBottomSheet
-        sellerId={user?.user_id || ""}
-        buyerId={selectedBuyerId}
-        sheetRef={chatSheetRef}
-      />}
-    </SafeAreaView>
+      {chatRoomOpen && role === "seller" && (
+        <QuickChatBottomSheet
+          sellerId={user?.user_id || ""}
+          buyerId={selectedBuyerId}
+          sheetRef={chatSheetRef}
+        />
+      )}
+
+      {productForChat && role === "buyer" && (
+        <QuickChatBottomSheet
+          sellerId={productForChat.seller.user.id}
+          buyerId={user?.user_id || ""}
+          sheetRef={productChatSheetRef}
+        />
+      )}
+    </View>
   );
 }

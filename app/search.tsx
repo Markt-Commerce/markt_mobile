@@ -19,17 +19,17 @@ export default function SearchPage() {
   const router = useRouter(); 
 
   const performSearch = useCallback(
-    debounce(async (q: string) => {
-      if (!q) return setResults(undefined);
-      const response = await search(q, page);
+    debounce(async (q: string, p: number) => {
+      if (!q.trim()) return setResults(undefined);
+      const response = await search(q.trim(), p);
       setResults(response);
-    }, 500),
+    }, 350),
     []
   );
 
   useEffect(() => {
-    performSearch(query);
-  }, [query, page]);
+    performSearch(query, 1);
+  }, [query]);
 
   return (
     <SafeAreaView className="flex-1 bg-white">

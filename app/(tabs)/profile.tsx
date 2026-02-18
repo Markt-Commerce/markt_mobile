@@ -102,23 +102,21 @@ export default function SettingsProfileScreen() {
     hasSellerAccount,
   }) => {
     const oppAccount: "Buyer" | "Seller" = role === "buyer" ? "Seller" : "Buyer";
-    return role == "buyer" && hasSellerAccount ? (
-      <TouchableOpacity onPress={() => SwitchRole()} className="flex-1 rounded-lg h-10  justify-center items-center bg-[#e26136]">
-        <Text className="text-white">Switch To Seller Account</Text>
+    return role === "buyer" && hasSellerAccount ? (
+      <TouchableOpacity onPress={() => SwitchRole()} className="rounded-button h-11 justify-center items-center bg-primary" activeOpacity={0.85}>
+        <Text className="text-white font-semibold">Switch To Seller Account</Text>
       </TouchableOpacity>
-    ) : role == "seller" && hasBuyerAccount ? (
-      <TouchableOpacity onPress={() => SwitchRole()} className="flex-1 rounded-lg h-10 justify-center items-center bg-[#e26136]">
-        <Text className="text-white">Switch To Buyer Account</Text>
+    ) : role === "seller" && hasBuyerAccount ? (
+      <TouchableOpacity onPress={() => SwitchRole()} className="rounded-button h-11 justify-center items-center bg-primary" activeOpacity={0.85}>
+        <Text className="text-white font-semibold">Switch To Buyer Account</Text>
       </TouchableOpacity>
     ) : (
-      // If user does not have the other account, open the creation bottom sheet
       <TouchableOpacity
-        onPress={() => {
-          setCreateMode(role === "buyer" ? "seller" : "buyer");
-        }}
-        className="flex-1 rounded-lg h-10 justify-center items-center bg-[#e26136]"
+        onPress={() => setCreateMode(role === "buyer" ? "seller" : "buyer")}
+        className="rounded-button h-11 justify-center items-center bg-primary"
+        activeOpacity={0.85}
       >
-        <Text className="text-white">Create A {oppAccount} Account</Text>
+        <Text className="text-white font-semibold">Create A {oppAccount} Account</Text>
       </TouchableOpacity>
     );
   };
@@ -253,15 +251,20 @@ export default function SettingsProfileScreen() {
           </View>
 
           {/* Edit Profile */}
-          <TouchableOpacity
-            className="bg-[#e26136] rounded h-12 items-center justify-center mb-6"
-            onPress={() => nav.push('/accountInfoScreen')}
-          >
-            <Text className="text-white font-bold">Edit Profile</Text>
-          </TouchableOpacity>
+          <View className="w-full max-w-[640px] self-center px-4 mb-4">
+            <TouchableOpacity
+              className="bg-primary rounded-button h-12 items-center justify-center"
+              onPress={() => nav.push("/accountInfoScreen")}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile"
+            >
+              <Text className="text-white font-semibold">Edit Profile</Text>
+            </TouchableOpacity>
+          </View>
 
-          <View>
-            <DetermineSwitchType hasBuyerAccount={profileData?.is_buyer ?? false} hasSellerAccount={profileData?.is_seller ?? false}/>
+          <View className="w-full max-w-[640px] self-center px-4 mb-2">
+            <DetermineSwitchType hasBuyerAccount={profileData?.is_buyer ?? false} hasSellerAccount={profileData?.is_seller ?? false} />
           </View>
 
 

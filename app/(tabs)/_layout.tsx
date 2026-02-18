@@ -1,74 +1,82 @@
 // app/(tabs)/_layout.js
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, Search, PlusSquare, Heart, User, ChartColumnStackedIcon, ListOrdered, Badge, ShoppingBasket, MessageCircle } from 'lucide-react-native';
+import { Home, ChartColumnStackedIcon, ShoppingBasket, MessageCircle, ListOrdered, User } from 'lucide-react-native';
 import { useUser } from '../../hooks/userContextProvider';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TabsLayout() {
   const { role } = useUser();
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: false,
+        tabBarShowLabel: true,
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
         tabBarActiveTintColor: '#171311',
         tabBarInactiveTintColor: '#876d64',
         tabBarStyle: {
           backgroundColor: 'white',
-          borderTopWidth: 1, 
-          borderTopColor: '#f4f1f0',
+          borderTopWidth: 1,
+          borderTopColor: '#efe9e7',
           paddingBottom: 8,
-          paddingTop: 4,
-          height: 60,
+          paddingTop: 6,
+          height: 64,
         },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <Home color={color} fill={color} />,
+          title: 'Home',
+          tabBarIcon: ({ color }) => <Home color={color} fill={color} size={22} />,
         }}
       />
-      <Tabs.Screen 
+      <Tabs.Screen
         name="sellerDashboard"
         options={{
-          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <ChartColumnStackedIcon color={color} />,
-          href: (role != 'seller') ? null : undefined,
+          title: 'Dashboard',
+          tabBarIcon: ({ color }) => <ChartColumnStackedIcon color={color} size={22} />,
+          href: role !== 'seller' ? null : undefined,
         }}
-      /> 
-      <Tabs.Screen 
+      />
+      <Tabs.Screen
         name="cart"
         options={{
-          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <ShoppingBasket color={color} />,
-          href: (role != 'buyer') ? null : undefined,
+          title: 'Cart',
+          tabBarIcon: ({ color }) => <ShoppingBasket color={color} size={22} />,
+          href: role !== 'buyer' ? null : undefined,
         }}
-      /> 
+      />
       <Tabs.Screen
         name="messages"
         options={{
-          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <MessageCircle color={color} />,
+          title: 'Messages',
+          tabBarIcon: ({ color }) => <MessageCircle color={color} size={22} />,
         }}
       />
-      <Tabs.Screen 
+      <Tabs.Screen
         name="buyerOrders"
         options={{
-          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <ListOrdered color={color} />,
-          href: (role != 'buyer') ? null : undefined, 
+          title: 'Orders',
+          tabBarIcon: ({ color }) => <ListOrdered color={color} size={22} />,
+          href: role !== 'buyer' ? null : undefined,
         }}
-      /> 
-      <Tabs.Screen 
+      />
+      <Tabs.Screen
         name="sellerOrders"
         options={{
-          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <ListOrdered color={color} />,
-          href: (role != 'seller') ? null : undefined,
+          title: 'Orders',
+          tabBarIcon: ({ color }) => <ListOrdered color={color} size={22} />,
+          href: role !== 'seller' ? null : undefined,
         }}
-      /> 
+      />
       <Tabs.Screen
         name="profile"
         options={{
-          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => <User color={color} />,
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <User color={color} size={22} />,
         }}
       />
     </Tabs>
