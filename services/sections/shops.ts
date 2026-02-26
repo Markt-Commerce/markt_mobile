@@ -1,5 +1,5 @@
 /**
- * Shops API — SHOP_STRIP_HOME_DESIGN_AND_API.md
+ * Shops API
  * Trending shops for strip, list/search, detail, categories, follow.
  */
 

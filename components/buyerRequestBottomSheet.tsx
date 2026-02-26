@@ -137,24 +137,21 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheetMethods | null, 
 
     return (
       <BottomSheet ref={sheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose>
-        <BottomSheetScrollView>
-        <Text className="text-lg font-bold mb-3">Create Buyer Request</Text>
+        <BottomSheetScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}>
+        <Text className="text-lg font-bold mb-4">Create Buyer Request</Text>
 
           {/* Title */}
-          <Input name="title" control={control} placeholder="Title"></Input>
-          {errors && errors.title && <Text className="text-red-500">{errors.title.message}</Text>}
+          <Input name="title" control={control} placeholder="Title" errors={errors} />
 
           {/* Description */}
-          <Input name="description" control={control} placeholder="Description" multiline numberOfLines={4} style={{height: 100, textAlignVertical: 'top'}}></Input>
-          {errors && errors.description && <Text className="text-red-500">{errors.description.message}</Text>}
-          
+          <Input name="description" control={control} placeholder="Description" errors={errors} multiline numberOfLines={4} style={{height: 100, textAlignVertical: 'top'}} />
+
           {/* Budget */}
-          <Input name="budget" control={control} placeholder="Budget" keyboardType="numeric"></Input>
-          {errors && errors.budget && <Text className="text-red-500">{errors.budget.message}</Text>}
+          <Input name="budget" control={control} placeholder="Budget" errors={errors} keyboardType="numeric" />
 
           {/* Category IDs */}
-          <Text className="mb-1">Categories</Text>
-          <View className="flex-row flex-wrap gap-3 p-3 pr-4">
+          <Text className="mb-2 text-text-primary font-medium">Categories</Text>
+          <View className="flex-row flex-wrap gap-3 mb-4">
             {selectedCategories.map(cat => (
               <View key={cat.id.toString()} className="flex-row items-center bg-[#f4f0f0] rounded-full px-3 py-1">
                 <Text className="text-[#181111] text-sm font-medium mr-2">{cat.name}</Text>
@@ -172,13 +169,25 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheetMethods | null, 
           </View>
 
           {/* Images Select */}
-          <Text className="mb-1">Images</Text>
-          {Array.isArray(Imagevalue) && Imagevalue.length > 0 && <Text>Long press on each image to remove it</Text>}
-          {/* <<< IMPORTANT: pass value & onChange so we can receive images >>> */}
-          <InstagramGrid value={Imagevalue} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} />
+          <Text className="mb-2 text-text-primary font-medium">Images</Text>
+          {Array.isArray(Imagevalue) && Imagevalue.length > 0 && (
+            <Text className="text-text-secondary text-xs mb-2">Long press on each image to remove it</Text>
+          )}
+          <View className="mb-6">
+            <InstagramGrid
+              value={Imagevalue}
+              onChange={(imgs) => setImageValue(imgs)}
+              emptyPlaceholdersCount={3}
+              emptyLabel="No images yet"
+            />
+          </View>
 
-          <TouchableOpacity disabled={sending} className="bg-[#E94C2A] p-3 rounded" onPress={handleSubmit(handleLocalSubmit)}>
-            <Text className="text-white text-center">{sending ? "Sending..." : "Create Request"}</Text>
+          <TouchableOpacity
+            disabled={sending}
+            className="bg-primary py-4 rounded-button items-center justify-center"
+            onPress={handleSubmit(handleLocalSubmit)}
+          >
+            <Text className="text-white font-semibold">{sending ? "Sending…" : "Create Request"}</Text>
           </TouchableOpacity>
 
 

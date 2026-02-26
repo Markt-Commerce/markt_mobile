@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { TouchableOpacity, View, Text, Image, Pressable, Dimensions, Share } from "react-native";
 import { Link } from "expo-router";
 import { Post } from "../models/feed";
+import { likePost } from "../services/sections/post";
 import { Heart, MessageCircle, Send } from "lucide-react-native";
 import { highlightMentions } from "../utils/highLightMentions";
 
@@ -25,6 +26,7 @@ interface Props {
 
 export default function PostDisplayComponent({ post, onLike }: Props) {
     const [likeCount, setLikeCount] = useState<number>(post.like_count ?? 0);
+    const [likedByMe, setLikedByMe] = useState<boolean>(post.liked_by_me ?? false);
     const [isLiking, setIsLiking] = useState<boolean>(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -43,15 +45,31 @@ export default function PostDisplayComponent({ post, onLike }: Props) {
     const handleLike = async () => {
         if (isLiking) return;
         setIsLiking(true);
-        setLikeCount((c) => c + 1); // optimistic
+        const prevLiked = likedByMe;
+        const prevCount = likeCount;
+        setLikedByMe(!likedByMe);
+        setLikeCount((c) => (likedByMe ? Math.max(0, c - 1) : c + 1));
         try {
             if (onLike) await onLike(post.id);
+            else await likePost(post.id);
         } catch (err) {
-            // revert on failure
-            setLikeCount((c) => Math.max(0, c - 1));
+            setLikedByMe(prevLiked);
+            setLikeCount(prevCount);
             console.error("unable to like this post", err);
         } finally {
             setIsLiking(false);
+        }
+    };
+
+    const handleShare = async () => {
+        try {
+            await Share.share({
+                message: "Check out this post on Markt",
+                url: `markt://post/${post.id}`,
+                title: "Share post",
+            });
+        } catch {
+            // User cancelled or share failed
         }
     };
 
@@ -99,8 +117,8 @@ export default function PostDisplayComponent({ post, onLike }: Props) {
                         >
                             <Heart
                                 size={18}
-                                color={likeCount > 0 ? "#e26136" : "#876d64"}
-                                fill={likeCount > 0 ? "#e26136" : "transparent"}
+                                color={likedByMe ? "#e26136" : "#876d64"}
+                                fill={likedByMe ? "#e26136" : "transparent"}
                             />
                             <Text className="text-text-primary text-sm">{likeCount}</Text>
                         </Pressable>

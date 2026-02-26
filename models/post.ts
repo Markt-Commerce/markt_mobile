@@ -106,6 +106,8 @@ export interface CreatePostRequest {
   }[];
   caption: string;
   like_count: number;
+  /** true if current user liked this post — use for orange filled heart (API_CONTRACT_FEED_AND_FOLLOW) */
+  liked_by_me?: boolean;
   comment_count: number;
   categories: string;
   created_at: string;

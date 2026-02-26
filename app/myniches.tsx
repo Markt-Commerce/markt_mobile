@@ -78,7 +78,7 @@ export default function MyNichesScreen() {
             {/* Niche Icon/Image */}
             <View className="w-24 h-24 bg-[#f5f2f1] justify-center items-center">
               <Text className="text-3xl">
-                {item.name.charAt(0).toUpperCase()}
+                {(item.name ?? "").charAt(0).toUpperCase() || "?"}
               </Text>
             </View>
 
@@ -86,10 +86,10 @@ export default function MyNichesScreen() {
             <View className="flex-1 p-3 justify-space-between">
               <View>
                 <Text className="font-semibold text-[#111418] text-base" numberOfLines={1}>
-                  {item.name}
+                  {item.name ?? "Unnamed"}
                 </Text>
                 <Text className="text-xs text-[#876d64] mt-1" numberOfLines={2}>
-                  {item.description}
+                  {item.description ?? ""}
                 </Text>
               </View>
 

@@ -1,5 +1,5 @@
 /**
- * Feed API Types — Single source of truth from MOBILE_HOME_FEED_API_CONTRACTS.md
+ * Feed API Types — Single source of truth
  *
  * These types match the exact request/response shapes for feed endpoints
  * (For You, Discover, Trending, Following, Niche) and ensure type safety
@@ -66,6 +66,8 @@ export interface FeedPost {
   media: FeedPostMedia[];
   likes_count: number;
   comments_count: number;
+  /** true if current user liked this post — use for orange filled heart (API_CONTRACT_FEED_AND_FOLLOW §1.1). Fallback to likes_count > 0 if absent. */
+  liked_by_me?: boolean;
   created_at: string;
   score?: number;
   niche: FeedPostNiche | null;
@@ -92,6 +94,10 @@ export interface FeedProductSellerUser {
 export interface FeedProductSeller {
   id: number;
   shop_name: string;
+  /** Follower count for this seller (API_CONTRACT_FEED_AND_FOLLOW §1.2). Default 0 if absent. */
+  follower_count?: number;
+  /** true if current user follows this seller — use for Follow vs Following (API_CONTRACT_FEED_AND_FOLLOW §1.2). Default false if absent. */
+  is_followed?: boolean;
   user: FeedProductSellerUser;
 }
 

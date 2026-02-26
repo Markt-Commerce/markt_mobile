@@ -1,5 +1,5 @@
 /**
- * Feed API Service — Single source of truth from MOBILE_HOME_FEED_API_CONTRACTS.md
+ * Feed API Service — Single source of truth
  *
  * One function per feed endpoint. Use these exclusively for the home feed;
  * do NOT call /products and /posts separately for the main feed.

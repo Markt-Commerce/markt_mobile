@@ -1,6 +1,5 @@
 /**
  * Discover Shops — Full shop discovery with search and filters
- * SHOP_STRIP_HOME_DESIGN_AND_API.md
  */
 
 import React, { useState, useEffect, useCallback } from "react";

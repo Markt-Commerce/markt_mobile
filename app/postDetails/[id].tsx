@@ -45,6 +45,7 @@ const SingleCommentComponent = React.memo(({ comment }: { comment: CommentItem }
 export default function PostDetailsScreen() {
   const [post, setPost] = useState<PostDetails | null>(null);
   const [likeCount, setLikeCount] = useState(0);
+  const [likedByMe, setLikedByMe] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [newComment, setNewComment] = useState<string>("");
   const [comments, setComments] = useState<CommentItem[]>([]);
@@ -63,6 +64,7 @@ export default function PostDetailsScreen() {
       const res = await getPostById(id);
       setPost(res);
       setLikeCount(res.like_count ?? 0);
+      setLikedByMe(res.liked_by_me ?? false);
     } catch (error) {
       show({
         variant: "error",
@@ -75,12 +77,15 @@ export default function PostDetailsScreen() {
   const handleLike = async () => {
     if (isLiking || !post) return;
     setIsLiking(true);
-    const prev = likeCount;
-    setLikeCount((c) => c + 1);
+    const prevLiked = likedByMe;
+    const prevCount = likeCount;
+    setLikedByMe(!likedByMe);
+    setLikeCount((c) => (likedByMe ? Math.max(0, c - 1) : c + 1));
     try {
       await likePost(post.id);
     } catch {
-      setLikeCount(prev);
+      setLikedByMe(prevLiked);
+      setLikeCount(prevCount);
       show({ variant: "error", title: "Could not like", message: "Please try again." });
     } finally {
       setIsLiking(false);
@@ -308,8 +313,8 @@ export default function PostDetailsScreen() {
         >
           <Heart
             size={18}
-            color={likeCount > 0 ? "#e26136" : "#876d64"}
-            fill={likeCount > 0 ? "#e26136" : "transparent"}
+            color={likedByMe ? "#e26136" : "#876d64"}
+            fill={likedByMe ? "#e26136" : "transparent"}
           />
           <Text className="text-text-primary text-sm">{likeCount}</Text>
         </TouchableOpacity>

@@ -130,8 +130,8 @@ class ChatSocket {
     this.socket?.emit("join_room", { room_id, user_id });
   }
 
-  leaveRoom(room_id: number) {
-    this.socket?.emit("leave_room", { room_id });
+  leaveRoom(room_id: number, user_id: string) {
+    this.socket?.emit("leave_room", { room_id, user_id });
   }
 
   // ===== Typing =====
@@ -159,7 +159,14 @@ class ChatSocket {
     user_id: string,
     message_data?: Record<string, any> | null
   ): Promise<boolean /*client_id*/> {
-    const payload = { room_id, content, message_type, user_id, message: message_data };
+    // Contract §3.3: message (content), message_type, product_id?, user_id
+    const payload = {
+      room_id,
+      message: content,
+      message_type,
+      product_id: message_data?.product_id ?? null,
+      user_id,
+    };
 
     if (this.connected) {
       // try with ack first, fallback to fire-and-forget
@@ -216,7 +223,7 @@ class ChatSocket {
     }
   }
 
-  async respondToOffer(data: OfferResponsePayload): Promise<void> {
+  async respondToOffer(data: OfferResponsePayload & { user_id?: string }): Promise<void> {
     const payload = { ...data };
     if (this.connected) {
       this.socket?.emit("respond_to_offer", payload);

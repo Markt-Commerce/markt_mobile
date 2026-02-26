@@ -1,7 +1,6 @@
 /**
  * FeedPostCard — Renders a post in the hybrid feed.
  *
- * Design: MOBILE_HOME_DESIGN_AND_UX_GUIDE.md
  * - Header: Avatar + username (→ profile), optional niche label
  * - Body: Caption (truncate with "more"), media (image/video, respect aspect_ratio)
  * - Footer: Likes, comments; tap card → post detail
@@ -28,6 +27,7 @@ interface Props {
 
 export default function FeedPostCard({ post, onLike }: Props) {
   const [likeCount, setLikeCount] = useState(post.likes_count);
+  const [likedByMe, setLikedByMe] = useState(post.liked_by_me ?? false);
   const [isLiking, setIsLiking] = useState(false);
   const { show } = useToast();
 
@@ -48,7 +48,10 @@ export default function FeedPostCard({ post, onLike }: Props) {
   const handleLike = async () => {
     if (isLiking) return;
     setIsLiking(true);
-    setLikeCount((c) => c + 1);
+    const prevLiked = likedByMe;
+    const prevCount = likeCount;
+    setLikedByMe(!likedByMe);
+    setLikeCount((c) => (likedByMe ? Math.max(0, c - 1) : c + 1));
     try {
       if (onLike) {
         await onLike(post.id);
@@ -56,7 +59,8 @@ export default function FeedPostCard({ post, onLike }: Props) {
         await likePost(post.id);
       }
     } catch {
-      setLikeCount((c) => Math.max(0, c - 1));
+      setLikedByMe(prevLiked);
+      setLikeCount(prevCount);
       show({
         variant: "error",
         title: "Could not like",
@@ -131,7 +135,7 @@ export default function FeedPostCard({ post, onLike }: Props) {
               accessibilityRole="button"
               accessibilityLabel={`${likeCount} likes. Double tap to like`}
             >
-              <Heart size={18} color={likeCount > 0 ? "#e26136" : "#876d64"} fill={likeCount > 0 ? "#e26136" : "transparent"} />
+              <Heart size={18} color={likedByMe ? "#e26136" : "#876d64"} fill={likedByMe ? "#e26136" : "transparent"} />
               <Text className="text-text-primary text-sm">{likeCount}</Text>
             </Pressable>
 

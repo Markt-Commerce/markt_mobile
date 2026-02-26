@@ -1,6 +1,5 @@
 /**
  * ShopStrip — Instagram story–style horizontal shop strip
- * SHOP_STRIP_HOME_DESIGN_AND_API.md
  *
  * Circular avatars + shop name, verified ring, "Discover more" tile.
  */

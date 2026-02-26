@@ -97,6 +97,21 @@ export async function sendOfferREST(room_id: number, payload: OfferPayload): Pro
 }
 
 /**
+ * Room discounts (CHATS_API §2.8)
+ */
+export async function getRoomDiscounts(room_id: number): Promise<any[]> {
+  const res = await request<any[]>(`${BASE_URL}/chats/rooms/${room_id}/discounts`, { method: "GET" });
+  return res ?? [];
+}
+
+export async function respondToDiscount(discount_id: number, body: { response: "accepted" | "rejected"; response_message?: string }): Promise<void> {
+  await request<void>(`${BASE_URL}/chats/discounts/${discount_id}/respond`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+/**
  * Mock: attach product to chat via REST (since server doesn't expose it yet).
  * We'll pretend it returns a message with message_type 'product'.
  */

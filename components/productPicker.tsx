@@ -1,5 +1,5 @@
 import React, { useMemo, useRef } from "react";
-import { View, Text, FlatList, TouchableOpacity, Image } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator } from "react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { Trash2 } from "lucide-react-native";
 import { ProductResponse } from "../models/products";
@@ -14,6 +14,7 @@ type Product = {
 type Props = {
   visible: boolean;
   products: ProductResponse[];
+  loading?: boolean;
   onClose: () => void;
   onSelect: (p: Product) => void;
   onRemove?: (p: Product) => void;
@@ -23,6 +24,7 @@ type Props = {
 export default function ProductPicker({
   visible,
   products,
+  loading = false,
   selectedProducts,
   onClose,
   onSelect,
@@ -66,10 +68,20 @@ export default function ProductPicker({
       <BottomSheetView className="flex-1 px-4">
         <Text className="text-lg font-semibold mt-4 mb-2">Select Product</Text>
 
-        {products.length === 0 ? (
-          <Text className="text-center text-gray-500 mt-10">
-            No products available.
-          </Text>
+        {loading ? (
+          <View className="flex-1 items-center justify-center py-12">
+            <ActivityIndicator size="large" color="#e26136" />
+            <Text className="text-text-secondary text-sm mt-3">Loading products…</Text>
+          </View>
+        ) : products.length === 0 ? (
+          <View className="flex-1 items-center justify-center py-12">
+            <Text className="text-center text-text-secondary">
+              No products available.
+            </Text>
+            <Text className="text-center text-text-secondary text-sm mt-1">
+              Create products in your dashboard first.
+            </Text>
+          </View>
         ) : (
           <FlatList
             data={products}

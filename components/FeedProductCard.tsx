@@ -1,7 +1,6 @@
 /**
  * FeedProductCard — Renders a product in the hybrid feed.
  *
- * FEED_ACTIONS_PRODUCTS_POSTS_AND_WEBSOCKETS.md
  * - View → product detail
  * - Add to cart (buyers)
  * - Message seller (buyers)
@@ -10,9 +9,10 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Pressable } from "react-native";
 import { Link } from "expo-router";
-import { ShoppingCart, MessageCircle } from "lucide-react-native";
+import { ShoppingCart, MessageCircle, UserPlus } from "lucide-react-native";
 import type { FeedProduct } from "../types/feed";
 import { addToCart } from "../services/sections/cart";
+import { followSeller, unfollowSeller } from "../services/sections/users";
 import SkeletonImage from "./SkeletonImage";
 import { useUser } from "../hooks/userContextProvider";
 import { useToast } from "./ToastProvider";
@@ -26,6 +26,11 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
   const { role } = useUser();
   const { show } = useToast();
   const [adding, setAdding] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(product.seller?.is_followed ?? false);
+  const [followLoading, setFollowLoading] = useState(false);
+
+  const followeeId = product.seller?.user?.id;
+  const followerCount = product.seller?.follower_count ?? 0;
 
   const imageUrl = product.images?.[0]?.url;
   const isBuyer = role === "buyer";
@@ -57,6 +62,28 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
 
   const handleMessageSeller = () => {
     onMessageSeller?.(product);
+  };
+
+  const handleFollowToggle = async (e: { stopPropagation?: () => void }) => {
+    e?.stopPropagation?.();
+    if (!followeeId || followLoading) return;
+    setFollowLoading(true);
+    const prev = isFollowing;
+    setIsFollowing(!isFollowing);
+    try {
+      if (isFollowing) {
+        await unfollowSeller(followeeId);
+        show({ variant: "success", title: "Unfollowed", message: "You unfollowed this seller." });
+      } else {
+        await followSeller(followeeId);
+        show({ variant: "success", title: "Following", message: "You are now following this seller." });
+      }
+    } catch {
+      setIsFollowing(prev);
+      show({ variant: "error", title: "Error", message: isFollowing ? "Could not unfollow." : "Could not follow." });
+    } finally {
+      setFollowLoading(false);
+    }
   };
 
   return (
@@ -101,9 +128,27 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
                 </Text>
               )}
 
-              <Text className="text-xs text-text-secondary mt-1">
-                By {product.seller?.shop_name ?? "Seller"}
-              </Text>
+              <View className="flex-row items-center justify-between mt-2 gap-2">
+                <Text className="text-xs text-text-secondary flex-1" numberOfLines={1}>
+                  By {product.seller?.shop_name ?? "Seller"}
+                  {followerCount > 0 && ` · ${followerCount} follower${followerCount !== 1 ? "s" : ""}`}
+                </Text>
+                {followeeId && (
+                  <TouchableOpacity
+                    onPress={(e) => handleFollowToggle(e)}
+                    disabled={followLoading}
+                    activeOpacity={0.7}
+                    className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full min-h-[32px] justify-center ${isFollowing ? "bg-bg-muted" : "bg-primary"}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={isFollowing ? "Unfollow seller" : "Follow seller"}
+                  >
+                    <UserPlus size={14} color={isFollowing ? "#876d64" : "#fff"} />
+                    <Text className={`text-xs font-semibold ${isFollowing ? "text-text-primary" : "text-white"}`}>
+                      {followLoading ? "…" : isFollowing ? "Following" : "Follow"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
 
               <View className="mt-3 h-10 rounded-full bg-primary items-center justify-center">
                 <Text className="text-white font-semibold text-sm">View</Text>

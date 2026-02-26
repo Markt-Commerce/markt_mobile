@@ -195,7 +195,15 @@ export default function BuyerRequestDetails() {
             </View>
         </View>
         </View>
-        {role === "seller" && <QuickChatBottomSheet sheetRef={chatSheetRef} sellerId={user?.user_id || ""} buyerId={requestDetails?.user.id || ""} />}
+        {role === "seller" && requestDetails && (
+          <QuickChatBottomSheet
+            sheetRef={chatSheetRef}
+            sellerId={user?.user_id ?? ""}
+            buyerId={requestDetails.user.id}
+            otherUser={{ username: requestDetails.user.username, profile_picture: requestDetails.user.profile_picture ?? requestDetails.user.profile_picture_url ?? undefined }}
+            asBuyer={false}
+          />
+        )}
     </SafeAreaView>
   );
 }

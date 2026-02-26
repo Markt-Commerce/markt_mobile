@@ -348,8 +348,16 @@ const addProductToCart = async (product:ProductDetail)=>{
       }
     />
 
-    {/* TODO: remember to add a guard clause for empty states */}
-    <QuickChatBottomSheet sheetRef={ChatBottomSheetRef} sellerId={product.seller_user.id} buyerId={user?.user_id?.toString() || ""}/>
+    {product && (
+      <QuickChatBottomSheet
+        sheetRef={ChatBottomSheetRef}
+        sellerId={product.seller_user.id}
+        buyerId={user?.user_id?.toString() ?? ""}
+        product_id={product.id}
+        otherUser={{ username: product.seller_user.username, profile_picture: product.seller_user.profile_picture }}
+        asBuyer
+      />
+    )}
   </SafeAreaView>
 );
 

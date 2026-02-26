@@ -224,7 +224,7 @@ export default function SellerOrders() {
           key={listKey}
           fetchOrders={fetchSellerOrders}
           isSeller
-          onPress={handleItemPress}
+          pressed={handleItemPress}
         />
       </View>
     </SafeAreaView>

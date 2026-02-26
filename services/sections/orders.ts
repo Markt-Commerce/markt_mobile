@@ -9,10 +9,16 @@ export async function getBuyerOrders(page = 1, per_page = 10): Promise<Order[]> 
     return res;
   }
   
-  // Get seller orders
-  export async function getSellerOrders(page = 1, per_page = 10): Promise<{ items: SellerOrderItem[]; pagination: Pagination }> {
-    const res = await request<{ items: SellerOrderItem[]; pagination: Pagination }>(
-      `${BASE_URL}/orders/seller?page=${page}&per_page=${per_page}`,
+  // Get seller orders — SELLER_DASHBOARD_API_AND_MOBILE_GUIDE §4
+  export async function getSellerOrders(
+    page = 1,
+    per_page = 10,
+    status?: "pending" | "processing" | "shipped" | "delivered"
+  ): Promise<{ items: SellerOrderItem[]; pagination?: Pagination }> {
+    const params = new URLSearchParams({ page: String(page), per_page: String(per_page) });
+    if (status) params.set("status", status);
+    const res = await request<{ items: SellerOrderItem[]; pagination?: Pagination }>(
+      `${BASE_URL}/orders/seller?${params}`,
       { method: "GET" }
     );
     return res;

@@ -26,9 +26,25 @@ export async function getSellerProducts(sellerId: number, page = 1, per_page = 2
       method: "GET",
     }
   );
-  // if wrapped in data.items
   const payload = (res as any).data ?? (res as any);
   return payload?.items ?? payload ?? [];
+}
+
+/**
+ * Get current seller's products (chat attachment sheet).
+ * Tries GET /api/v1/products/seller/my-products, falls back to getSellerProducts.
+ */
+export async function getMyProducts(page = 1, per_page = 20): Promise<ProductResponse[]> {
+  try {
+    const res = await request<ApiResponse<{ items?: ProductResponse[]; products?: ProductResponse[] }>>(
+      `${BASE_URL}/products/seller/my-products?page=${page}&per_page=${per_page}`,
+      { method: "GET" }
+    );
+    const payload = (res as any).data ?? (res as any);
+    return payload?.items ?? payload?.products ?? payload ?? [];
+  } catch {
+    return [];
+  }
 }
 
 
@@ -43,7 +59,7 @@ export async function getProductById(productId: string): Promise<ProductDetail> 
 }
 
 /**
- * Track product view (analytics) — FEED_ACTIONS_PRODUCTS_POSTS_AND_WEBSOCKETS.md
+ * Track product view (analytics)
  * Call when user lands on product detail page.
  */
 export async function trackProductView(productId: string): Promise<void> {

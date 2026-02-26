@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from "react";
-import { View, Text, Image } from "react-native";
+import { View, Text, Image, Platform } from "react-native";
 
 function getInitials(name: string | null | undefined, fallback = "?"): string {
   if (!name || typeof name !== "string") return fallback;
@@ -56,7 +56,12 @@ export default function Avatar({ uri, name, size = 40, className = "" }: AvatarP
       ) : (
         <Text
           className="text-white font-semibold"
-          style={{ fontSize: size * 0.4 }}
+          style={{
+            fontSize: size * 0.4,
+            lineHeight: size,
+            textAlign: "center",
+            ...(Platform.OS === "android" && { includeFontPadding: false }),
+          }}
         >
           {initials}
         </Text>

@@ -6,7 +6,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Markt brand & semantic colors (docs/DESIGN_SYSTEM.md)
+        // Markt brand & semantic colors
         primary: "#e26136",
         "primary-muted": "#fff6f4",
         "text-primary": "#171311",

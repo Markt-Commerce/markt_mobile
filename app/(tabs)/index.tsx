@@ -10,11 +10,13 @@ import {
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from "react-native";
-import { Plus, Bell, Search } from "lucide-react-native";
+import { Plus, Search } from "lucide-react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useRouter } from "expo-router";
 import type { FeedItem, FeedProduct } from "../../types/feed";
 import { useUser } from "../../hooks/userContextProvider";
+import { switchUserRole } from "../../services/sections/auth";
+import { setUserSession } from "../../services/authStorage";
 import ProductFormBottomSheet from "../../components/productCreateBottomSheet";
 import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BuyerRequestFormBottomSheet from "../../components/buyerRequestBottomSheet";
@@ -40,7 +42,7 @@ export default function FeedScreen() {
   const [loadedStartCards, setLoadedStartCards] = useState(false);
   const { show } = useToast();
 
-  const { role, user } = useUser();
+  const { role, user, setRole } = useUser();
   const { items, loading, loadingMore, hasNext, error, refresh, loadMore } = useFeed(selectedTab);
   const snapPoints = useMemo(() => ["30%"], []);
 
@@ -94,6 +96,24 @@ export default function FeedScreen() {
     if (form === "request") requestFormRef.current?.expand();
   };
 
+  const handleSwitchMode = async () => {
+    closeMenu();
+    try {
+      const res = await switchUserRole();
+      const newRole = (res.user?.current_role ?? res.current_role) as "buyer" | "seller";
+      setRole(newRole);
+      if (res.user?.email) {
+        await setUserSession(
+          { email: res.user.email, account_type: newRole, user_id: res.user.id },
+          newRole
+        );
+      }
+      show({ variant: "success", title: "Mode switched", message: `Now in ${newRole === "seller" ? "Seller" : "Buyer"} mode` });
+    } catch {
+      show({ variant: "error", title: "Could not switch", message: "You may need both accounts. Check Profile." });
+    }
+  };
+
   useEffect(() => {
     refresh();
   }, [selectedTab]);
@@ -105,44 +125,9 @@ export default function FeedScreen() {
     show({ variant: "error", title: "Feed error", message: error });
   }, [error]);
 
-  // Header Component (visuals only)
+  // Header: shop strip + tabs (search lives in nav Search tab only to avoid duplicate)
   const Header = () => (
     <>
-      <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-border">
-        <Text className="text-xl font-bold text-text-primary">Marketplace</Text>
-        <View className="flex-row items-center gap-1">
-          <TouchableOpacity
-            onPress={openMenu}
-            className="p-2.5 rounded-full bg-bg-muted"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel="Create new"
-          >
-            <Plus size={22} color="#171311" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push("/notifications")}
-            className="p-2.5 rounded-full bg-bg-muted"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel="Notifications"
-          >
-            <Bell size={22} color="#171311" />
-          </TouchableOpacity>
-        </View>
-      </View>
-      <View className="px-4 py-3 bg-white border-b border-border">
-        <TouchableOpacity
-          onPress={() => router.push("/search")}
-          className="flex-row items-center bg-bg-muted rounded-full px-4 py-3"
-          accessibilityRole="button"
-          accessibilityLabel="Search products, posts, and sellers"
-        >
-          <Search size={18} color="#876d64" />
-          <Text className="text-text-secondary ml-3 text-base">What are you looking for?</Text>
-        </TouchableOpacity>
-      </View>
-
       <Animated.View
         style={{
           overflow: "hidden",
@@ -288,8 +273,16 @@ export default function FeedScreen() {
                 <Text className="font-semibold text-base text-text-primary">Create Post</Text>
                 <Text className="text-xs text-text-secondary mt-0.5">Share updates, photos, or deals.</Text>
               </TouchableOpacity>
+              <TouchableOpacity onPress={() => { closeMenu(); router.push("/(tabs)/requests"); }} className="border-b border-border-light py-4" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Make offer</Text>
+                <Text className="text-xs text-text-secondary mt-0.5">Browse requests and submit offers.</Text>
+              </TouchableOpacity>
             </>
           )}
+          <TouchableOpacity onPress={handleSwitchMode} className="py-4" activeOpacity={0.7}>
+            <Text className="font-semibold text-base text-primary">Switch mode</Text>
+            <Text className="text-xs text-text-secondary mt-0.5">Change between Buyer and Seller.</Text>
+          </TouchableOpacity>
         </BottomSheetView>
       </BottomSheet>
 
@@ -298,10 +291,28 @@ export default function FeedScreen() {
       <PostFormBottomSheet ref={postFormRef}/>
       <BuyerRequestFormBottomSheet ref={requestFormRef}/>
 
+      {/* FAB — bottom right, opens create menu */}
+      <TouchableOpacity
+        onPress={openMenu}
+        className="absolute bottom-20 right-4 w-14 h-14 rounded-full bg-primary items-center justify-center shadow-lg"
+        style={{
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.2,
+          shadowRadius: 6,
+          elevation: 8,
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Create post or product"
+      >
+        <Plus size={26} color="white" />
+      </TouchableOpacity>
+
       {chatRoomOpen && role === "seller" && (
         <QuickChatBottomSheet
-          sellerId={user?.user_id || ""}
+          sellerId={user?.user_id ?? ""}
           buyerId={selectedBuyerId}
+          asBuyer={false}
           sheetRef={chatSheetRef}
         />
       )}
@@ -309,7 +320,10 @@ export default function FeedScreen() {
       {productForChat && role === "buyer" && (
         <QuickChatBottomSheet
           sellerId={productForChat.seller.user.id}
-          buyerId={user?.user_id || ""}
+          buyerId={user?.user_id ?? ""}
+          product_id={productForChat.id}
+          otherUser={{ username: productForChat.seller.user.username, profile_picture: productForChat.seller.user.profile_picture ?? undefined }}
+          asBuyer
           sheetRef={productChatSheetRef}
         />
       )}

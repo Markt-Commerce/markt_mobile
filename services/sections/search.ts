@@ -1,5 +1,5 @@
 /**
- * Global search — MOBILE_HOME_FEED_API_CONTRACTS.md
+ * Global search
  * GET /api/v1/search/?search=...&page=1&per_page=20
  */
 import { SearchResponse } from "../../models/search";

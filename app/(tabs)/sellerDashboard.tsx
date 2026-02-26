@@ -1,11 +1,12 @@
 
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { useRouter } from 'expo-router';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, Dimensions, Animated, Easing, FlatList, RefreshControl } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { Search, ArrowBigDown as CaretDown, AlertTriangle } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSellerAnalyticsOverview, getSellerAnalyticsTimeseries } from '../../services/sections/analytics';
-import { getSellerProducts } from '../../services/sections/product';
+import { getMyProducts } from '../../services/sections/product';
 import { getSellerOrders, updateSellerOrderItem } from '../../services/sections/orders';
 import { deleteProduct } from '../../services/sections/product';
 import { SellerAnalyticsOverview, SellerAnalyticsTimeseries } from '../../models/analytics';
@@ -15,10 +16,12 @@ import { useToast } from '../../components/ToastProvider';
 import ProductFormBottomSheet from '../../components/productCreateBottomSheet'; 
 import CreateNicheBottomSheet from '../../components/nicheCreateBottomSheet';
 import BottomSheet from '@gorhom/bottom-sheet';
+import StartCards from '../../components/startCards';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function SellerDashboard() {
+  const router = useRouter();
   const { show } = useToast();
   //chart width
   const chartWidth = Math.min(screenWidth - 32, 800);
@@ -63,7 +66,7 @@ export default function SellerDashboard() {
           metric: "sales"
         });
         const ordersData = await getSellerOrders(1,5);
-        const productsData = await getSellerProducts(1,50);
+        const productsData = await getMyProducts(1, 50);
         if (!mounted) return;
         setAnalyticsOverview(analyticsOverviewData);
         setAnalyticsTimeseries(analyticsTimeseriesData);
@@ -101,8 +104,8 @@ export default function SellerDashboard() {
           end_date: toDate,
           metric: "sales"
         }),
-        getSellerOrders(1,5),
-        getSellerProducts(1,50),
+        getSellerOrders(1, 5),
+        getMyProducts(1, 50),
       ]);
       setAnalyticsOverview(analyticsOverviewData);
       setAnalyticsTimeseries(analyticsTimeseriesData);
@@ -230,9 +233,9 @@ export default function SellerDashboard() {
 
   const handleAcceptOrder = async (item: SellerOrderItem) => {
     try {
-      await updateSellerOrderItem(item.id, { status: 'completed' });
-      setSellerRecentOrders(prev => prev.map(it => it.id === item.id ? { ...it, status: 'completed' } : it));
-      show({ variant: 'success', title: 'Order accepted', message: 'Order item marked as completed.' });
+      await updateSellerOrderItem(item.id, { status: 'processing' });
+      setSellerRecentOrders(prev => prev.map(it => it.id === item.id ? { ...it, status: 'processing' } : it));
+      show({ variant: 'success', title: 'Order accepted', message: 'Order item marked as processing.' });
     } catch (err) {
       show({ variant: 'error', title: 'Accept failed', message: 'Could not accept order.' });
     }
@@ -242,9 +245,19 @@ export default function SellerDashboard() {
     try {
       await updateSellerOrderItem(item.id, { status: 'cancelled' });
       setSellerRecentOrders(prev => prev.map(it => it.id === item.id ? { ...it, status: 'cancelled' } : it));
-      show({ variant: 'success', title: 'Order declined', message: 'Order item declined.' });
+      show({ variant: 'success', title: 'Order declined', message: 'Order item cancelled.' });
     } catch (err) {
       show({ variant: 'error', title: 'Decline failed', message: 'Could not decline order.' });
+    }
+  };
+
+  const handleUpdateOrderStatus = async (item: SellerOrderItem, newStatus: string) => {
+    try {
+      await updateSellerOrderItem(item.id, { status: newStatus });
+      setSellerRecentOrders(prev => prev.map(it => it.id === item.id ? { ...it, status: newStatus } : it));
+      show({ variant: 'success', title: 'Status updated', message: `Order item set to ${newStatus}.` });
+    } catch (err) {
+      show({ variant: 'error', title: 'Update failed', message: 'Could not update order status.' });
     }
   };
 
@@ -257,8 +270,11 @@ export default function SellerDashboard() {
           <Text className="text-[#876d64] text-xs">{formatCurrency(item.price)}</Text>
           <Text className="text-[#876d64] text-xs">Order #: {item.order.order_number ?? item.order_id}</Text>
           <View className="flex-row items-center mt-1">
-            <Image source={{ uri: item.order.buyer.profile_picture_url }} className="w-6 h-6 rounded-full" />
-            <Text className="text-[#171311] text-xs ml-2">{item.order.buyer.buyername}</Text>
+            <Image
+              source={{ uri: item.order?.buyer?.profile_picture ?? item.order?.buyer?.profile_picture_url }}
+              className="w-6 h-6 rounded-full bg-bg-muted"
+            />
+            <Text className="text-[#171311] text-xs ml-2">{item.order?.buyer?.buyername ?? item.order?.buyer?.username ?? "Buyer"}</Text>
           </View>
         </View>
 
@@ -272,8 +288,21 @@ export default function SellerDashboard() {
                 <Text className="text-[#b51f08] text-sm">Decline</Text>
               </TouchableOpacity>
             </>
+          ) : item.status === 'processing' ? (
+            <>
+              <TouchableOpacity onPress={() => handleUpdateOrderStatus(item, 'shipped')} className="bg-[#e26136] rounded-full px-3 py-1 mb-2">
+                <Text className="text-white text-sm">Mark Shipped</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleDeclineOrder(item)} className="bg-[#f4dedc] rounded-full px-3 py-1">
+                <Text className="text-[#b51f08] text-sm">Cancel</Text>
+              </TouchableOpacity>
+            </>
+          ) : item.status === 'shipped' ? (
+            <TouchableOpacity onPress={() => handleUpdateOrderStatus(item, 'delivered')} className="bg-[#0f8b3a] rounded-full px-3 py-1">
+              <Text className="text-white text-sm">Mark Delivered</Text>
+            </TouchableOpacity>
           ) : (
-            <Text className="text-[#171311] text-base font-semibold">{item.status}</Text>
+            <Text className="text-[#171311] text-base font-semibold capitalize">{item.status}</Text>
           )}
         </View>
       </View>
@@ -300,7 +329,6 @@ export default function SellerDashboard() {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      // ...existing code...
       <ScrollView
         className="bg-white"
         contentContainerStyle={{ paddingBottom: 40 }}
@@ -349,10 +377,29 @@ export default function SellerDashboard() {
           </View>
         </View>
 
-        {/* Orders quick nav */}
-        <View className="px-4 py-3">
-          <TouchableOpacity accessibilityLabel="orders-quicknav" className="rounded-full h-10 px-4 items-center justify-center border border-[#e5dedc] bg-white">
+        {/* Start cards (onboarding) — SELLER_DASHBOARD_API_AND_MOBILE_GUIDE §2.4 */}
+        <StartCards title="Getting started" />
+
+        {/* Quick links — SELLER_DASHBOARD_API_AND_MOBILE_GUIDE §2.7 */}
+        <View className="flex-row flex-wrap gap-3 px-4 py-3">
+          <TouchableOpacity
+            accessibilityLabel="orders-quicknav"
+            onPress={() => router.push("/(tabs)/sellerOrders")}
+            className="rounded-full h-10 px-4 items-center justify-center border border-[#e5dedc] bg-white"
+          >
             <Text className="text-[#171311] text-sm font-semibold">Orders</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/messages")}
+            className="rounded-full h-10 px-4 items-center justify-center border border-[#e5dedc] bg-white"
+          >
+            <Text className="text-[#171311] text-sm font-semibold">Chats</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/requests")}
+            className="rounded-full h-10 px-4 items-center justify-center border border-[#e5dedc] bg-white"
+          >
+            <Text className="text-[#171311] text-sm font-semibold">Requests</Text>
           </TouchableOpacity>
         </View>
 
@@ -543,13 +590,10 @@ export default function SellerDashboard() {
         </View>
 
         <View className="h-4" />
-        {/* ... rest of the UI ... */}
-        {/* end injected UI */}
        </ScrollView>
 
        <ProductFormBottomSheet ref={productFormRef} />
         <CreateNicheBottomSheet ref={nicheFormRef} />
      </SafeAreaView>
- // ...existing code...
   );
 }
