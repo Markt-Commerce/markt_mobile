@@ -1,8 +1,33 @@
 import { Post } from "./feed";
 
+export type NicheVisibility = "public" | "private" | "restricted";
+export type NicheStatus = "active" | "inactive" | "moderated" | "archived";
+export type NicheMemberRole = "member" | "moderator" | "admin" | "owner";
+
 export interface NichesResponse {
   items: Niches[];
   pagination: Pagination;
+}
+
+/** My-niches returns memberships with nested niche (NICHES_API §1.8) */
+export interface MyNichesResponse {
+  items: NicheMembership[];
+  pagination: Pagination;
+}
+
+export interface NicheMembership {
+  id: number;
+  niche_id: string;
+  user_id: string;
+  role: NicheMemberRole;
+  joined_at: string;
+  is_active: boolean;
+  niche: Niches;
+}
+
+export interface NicheCanPostResponse {
+  can_post: boolean;
+  reason?: string;
 }
 
 export interface NichePost {
@@ -33,10 +58,8 @@ export interface Niches {
   name: string;
   slug: string;
   description: string;
-  niche_id: string
-
-  status: "active" | "inactive" | string;
-  visibility: "public" | "private" | string;
+  status?: NicheStatus | string;
+  visibility?: NicheVisibility | string;
 
   allow_buyer_posts: boolean;
   allow_seller_posts: boolean;
@@ -80,19 +103,22 @@ export interface Pagination {
 export interface CreateNicheRequest {
   name: string;
   description: string;
+  visibility?: NicheVisibility | string;
+  max_members?: number;
+  allow_buyer_posts?: boolean;
+  allow_seller_posts?: boolean;
+  require_approval?: boolean;
+  category_ids?: number[];
+  tags?: string[];
+  rules?: string[];
+  settings?: CommunitySettings;
+}
 
-  visibility: "public" | "private";
-
-  max_members: number;
-
-  allow_buyer_posts: boolean;
-  allow_seller_posts: boolean;
-  require_approval: boolean;
-
-  tags: string[];
-  category_ids: number[];
-  rules: string[];
-
-  settings: CommunitySettings;
+export interface NichesListParams {
+  search?: string;
+  category_ids?: number[];
+  visibility?: NicheVisibility | string;
+  page?: number;
+  per_page?: number;
 }
 

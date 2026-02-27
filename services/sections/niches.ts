@@ -1,11 +1,45 @@
 import { request, BASE_URL } from "../api";
-import { NichesResponse, CreateNicheRequest, NichePostsResponse } from "../../models/niches";
+import {
+  Niches,
+  NichesResponse,
+  MyNichesResponse,
+  CreateNicheRequest,
+  NichePostsResponse,
+  NichesListParams,
+  NicheCanPostResponse,
+} from "../../models/niches";
 import { CreatePostRequest } from "../../models/post";
 
-// Fetch products
-export async function getNiches(page = 1, perPage = 10): Promise<NichesResponse> {
-  const res = await request<NichesResponse>(
-    `${BASE_URL}/socials/niches?page=${page}&per_page=${perPage}`,
+/**
+ * GET /socials/niches — discover communities (NICHES_API §1.1).
+ * Supports search, category filter, visibility.
+ */
+export async function getNiches(params: NichesListParams = {}): Promise<NichesResponse> {
+  const { search, category_ids, visibility, page = 1, per_page = 20 } = params;
+  const q = new URLSearchParams();
+  q.set("page", String(page));
+  q.set("per_page", String(per_page));
+  if (search?.trim()) q.set("search", search.trim());
+  if (category_ids?.length) q.set("category_ids", category_ids.join(","));
+  if (visibility) q.set("visibility", visibility);
+  const res = await request<NichesResponse>(`${BASE_URL}/socials/niches?${q}`, { method: "GET" });
+  return res;
+}
+
+/**
+ * GET /socials/niches/<id> — niche detail (NICHES_API §1.2).
+ */
+export async function getNicheById(id: string): Promise<Niches> {
+  const res = await request<Niches>(`${BASE_URL}/socials/niches/${id}`, { method: "GET" });
+  return res;
+}
+
+/**
+ * GET /socials/niches/<id>/can-post — check if user can create posts (NICHES_API §1.6).
+ */
+export async function canPostInNiche(nicheId: string): Promise<NicheCanPostResponse> {
+  const res = await request<NicheCanPostResponse>(
+    `${BASE_URL}/socials/niches/${nicheId}/can-post`,
     { method: "GET" }
   );
   return res;
@@ -57,10 +91,21 @@ export async function createNichePost(niche_id: string, data: CreatePostRequest)
   });
 }
 
-export async function getMyNiches(page = 1, perPage = 10, search: string): Promise<NichesResponse> {
-  const res = await request<NichesResponse>(
-    `${BASE_URL}/socials/my-niches?page=${page}&per_page=${perPage}&search=${search}`,
-    { method: "GET" }
-  );
+/**
+ * GET /socials/my-niches — user's joined niches (NICHES_API §1.8).
+ * Returns memberships with nested niche. Use items[].niche for feed chips.
+ */
+export async function getMyNiches(
+  page = 1,
+  perPage = 10,
+  search?: string
+): Promise<MyNichesResponse> {
+  const q = new URLSearchParams();
+  q.set("page", String(page));
+  q.set("per_page", String(perPage));
+  if (search?.trim()) q.set("search", search.trim());
+  const res = await request<MyNichesResponse>(`${BASE_URL}/socials/my-niches?${q}`, {
+    method: "GET",
+  });
   return res;
 }

@@ -100,8 +100,11 @@ export async function sendOfferREST(room_id: number, payload: OfferPayload): Pro
  * Room discounts (CHATS_API §2.8)
  */
 export async function getRoomDiscounts(room_id: number): Promise<any[]> {
-  const res = await request<any[]>(`${BASE_URL}/chats/rooms/${room_id}/discounts`, { method: "GET" });
-  return res ?? [];
+  const res = await request<any>(`${BASE_URL}/chats/rooms/${room_id}/discounts`, { method: "GET" });
+  if (Array.isArray(res)) return res;
+  if (res && typeof res === "object" && Array.isArray((res as any).items)) return (res as any).items;
+  if (res && typeof res === "object" && Array.isArray((res as any).discounts)) return (res as any).discounts;
+  return [];
 }
 
 export async function respondToDiscount(discount_id: number, body: { response: "accepted" | "rejected"; response_message?: string }): Promise<void> {

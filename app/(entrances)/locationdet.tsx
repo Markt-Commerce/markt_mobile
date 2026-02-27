@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { ArrowLeft } from "lucide-react-native";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,13 +8,11 @@ import { Input } from "../../components/inputs";
 import { useUser } from "../../hooks/userContextProvider";
 import { AccountType } from "../../models/auth";
 import { useRouter } from "expo-router";
-import { register, useRegData } from "../../models/signupSteps";
+import { useRegData } from "../../models/signupSteps";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useToast } from "../../components/ToastProvider";
 import * as Location from 'expo-location';
 import { registerUser } from "../../services/sections/auth";
-import { attemptMultipleUpload } from "../../services/sections/media";
-import { isArray } from "lodash";
 
 export default function AddAddressScreen() {
   const { show } = useToast();
@@ -22,6 +20,7 @@ export default function AddAddressScreen() {
   const { setUser, setRole } = useUser();
   const { regData, setRegData } = useRegData();
   const [location, setLocation] = React.useState<Location.LocationObject | null>(null);
+  const [geocoding, setGeocoding] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const locationSchema = z.object({
@@ -35,95 +34,61 @@ export default function AddAddressScreen() {
 
   type LocationFormData = z.infer<typeof locationSchema>;
 
-  const { register, control, handleSubmit, formState: { errors, isSubmitting: isFormSubmitting}} =  useForm<LocationFormData>({
-    resolver: zodResolver(locationSchema)
+  const { register, control, handleSubmit, setValue, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<LocationFormData>({
+    resolver: zodResolver(locationSchema),
   });
 
-  useEffect(() => {
-    async function getCurrentLocation() {
-      
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        show({
-          variant: "error",
-          message: "Permission to access location was denied.",
-          title: "Location Permission Denied"
-        });
-        return;
+  const reverseGeocodeAndAutofill = async (loc: Location.LocationObject) => {
+    setGeocoding(true);
+    try {
+      const [addr] = await Location.reverseGeocodeAsync({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+      if (addr) {
+        const a = addr as { street?: string; streetNumber?: string; city?: string; region?: string; country?: string; postalCode?: string; name?: string; district?: string; subregion?: string };
+        setValue("street", a.street ?? a.name ?? "", { shouldValidate: false });
+        setValue("house_number", a.streetNumber ?? a.district ?? "", { shouldValidate: false });
+        setValue("city", a.city ?? a.subregion ?? "", { shouldValidate: false });
+        setValue("state", a.region ?? "", { shouldValidate: false });
+        setValue("country", a.country ?? "", { shouldValidate: false });
+        setValue("postal_code", a.postalCode ?? "", { shouldValidate: false });
       }
-
-      let location = await Location.getCurrentPositionAsync({});
-      setLocation(location);
+    } catch {
+      show({ variant: "error", title: "Address lookup", message: "Could not resolve address. Please type manually." });
+    } finally {
+      setGeocoding(false);
     }
+  };
 
-    getCurrentLocation();
+  useEffect(() => {
+    if (!location) return;
+    reverseGeocodeAndAutofill(location);
+  }, [location?.coords?.latitude, location?.coords?.longitude]);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") return;
+      const loc = await Location.getCurrentPositionAsync({});
+      setLocation(loc);
+    })();
   }, []);
 
   const useCurrentLocation = async () => {
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      show({
-        variant: "error",
-        message: "Permission to access location was denied.",
-        title: "Location Permission Denied"
-      });
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      show({ variant: "error", title: "Permission denied", message: "Permission to access location was denied." });
       return;
     }
-
-    let location = await Location.getCurrentPositionAsync({});
-    setLocation(location);
-  }
-
-  const uploadProfilePicture = async (): Promise<string | null> => {
-    // Check if user selected an image in earlier steps
-    // The local URI would be stored as a temporary property on regData
-    const profilePictureUri = (regData as any).profile_picture_local;
-    if (!profilePictureUri) return null;
-
-    try {
-      const uploadResult = await attemptMultipleUpload([
-        {
-          uri: profilePictureUri,
-          fileName: "profile.jpg",
-          type: "image/jpeg",
-        } as any,
-      ]);
-
-      const media = isArray(uploadResult) ? uploadResult[0] : uploadResult;
-
-      if (!media || !media.urls.original) {
-        throw new Error("Image upload failed");
-      }
-
-      return media.urls.original;
-    } catch (err: any) {
-      show({
-        variant: "error",
-        title: "Image upload failed",
-        message: "Your profile picture couldn't be uploaded, but you can update it later.",
-      });
-      return null;
-    }
+    const loc = await Location.getCurrentPositionAsync({});
+    setLocation(loc);
   };
 
   const onSkip = async () => {
     try {
       setIsSubmitting(true);
-
-      // Upload image if selected (optional)
-      let profilePictureUrl: string | undefined = undefined;
-      const uploadedUrl = await uploadProfilePicture();
-      if (uploadedUrl) {
-        profilePictureUrl = uploadedUrl;
-      }
-
-      // Register user with optional profile picture
-      const finalRegData = {
-        ...regData,
-        ...(profilePictureUrl && { profile_picture: profilePictureUrl }),
-      };
-
-      const userRegResult = await registerUser(finalRegData);
+      const userRegResult = await registerUser(regData);
       const accountType = (userRegResult.current_role ?? userRegResult.account_type) as "buyer" | "seller";
       setUser({
         email: userRegResult.email.toLowerCase(),
@@ -131,12 +96,8 @@ export default function AddAddressScreen() {
         user_id: userRegResult.id,
       });
       setRole(accountType);
-      show({
-        variant: "success",
-        title: "Registration complete",
-        message: "We sent a verification code to your email.",
-      });
-      router.push("/emailVerification");
+      show({ variant: "success", title: "Registration complete", message: "Add your profile picture (optional)." });
+      router.push("/addProfilePicture");
     } catch (error) {
       show({
         variant: "error",
@@ -152,20 +113,7 @@ export default function AddAddressScreen() {
     try {
       setIsSubmitting(true);
 
-      // Upload image if selected (optional)
-      let profilePictureUrl: string | undefined = undefined;
-      const uploadedUrl = await uploadProfilePicture();
-      if (uploadedUrl) {
-        profilePictureUrl = uploadedUrl;
-      }
-
-      // Register user with address and optional profile picture
-      const finalRegData = {
-        ...regData,
-        address: data,
-        ...(profilePictureUrl && { profile_picture: profilePictureUrl }),
-      };
-
+      const finalRegData = { ...regData, address: data };
       const userRegResult = await registerUser(finalRegData);
       const accountType = (userRegResult.current_role ?? userRegResult.account_type) as "buyer" | "seller";
       setUser({
@@ -174,12 +122,8 @@ export default function AddAddressScreen() {
         user_id: userRegResult.id,
       });
       setRole(accountType);
-      show({
-        variant: "success",
-        title: "Registration complete",
-        message: "We sent a verification code to your email.",
-      });
-      router.push("/emailVerification");
+      show({ variant: "success", title: "Registration complete", message: "Add your profile picture (optional)." });
+      router.push("/addProfilePicture");
     } catch (error) {
       show({
         variant: "error",
@@ -208,23 +152,27 @@ export default function AddAddressScreen() {
             Where are you located?
           </Text>
 
-          <TouchableOpacity className="min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#f4f1f1] text-[#171212] text-sm font-bold mb-4"
-            onPress={useCurrentLocation}>
-            <Text className="truncate">Use Current Location</Text>
+          <TouchableOpacity
+            className="min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#f4f1f1] text-[#171212] text-sm font-bold mb-4"
+            onPress={useCurrentLocation}
+            disabled={geocoding}
+          >
+            {geocoding ? <ActivityIndicator size="small" color="#171212" /> : <Text className="truncate">Use Current Location</Text>}
           </TouchableOpacity>
 
           <View className="gap-4">
             <View>
               <Text className="text-[#171212] text-base font-medium pb-2">Street Address</Text>
-              <Input placeholder="Street Address" control={control} name="streetAddress" errors={errors} />
+              <Input placeholder="Street Address" control={control} name="street" errors={errors} />
               {errors.street && <Text className="text-[#e9242a] text-xs font-medium mb-1">{errors.street.message as string}</Text>}
-              {location && (<Text className="text-sm text-gray-500 mt-1">Detected: {location?.coords.latitude}, {location?.coords.longitude}</Text>
+              {location && !geocoding && (
+                <Text className="text-sm text-gray-500 mt-1">Detected: {location.coords.latitude.toFixed(4)}, {location.coords.longitude.toFixed(4)}</Text>
               )}
             </View>
 
             <View>
               <Text className="text-[#171212] text-base font-medium pb-2">House Number</Text>
-              <Input placeholder="House Number" control={control} name="houseNumber" errors={errors} />
+              <Input placeholder="House Number" control={control} name="house_number" errors={errors} />
               {errors.house_number && <Text className="text-[#e9242a] text-xs font-medium mb-1">{errors.house_number.message as string}</Text>}
             </View>
 
@@ -248,27 +196,31 @@ export default function AddAddressScreen() {
 
             <View>
               <Text className="text-[#171212] text-base font-medium pb-2">Postal Code</Text>
-              <Input placeholder="Postal Code" control={control} name="postalCode" errors={errors} />
+              <Input placeholder="Postal Code" control={control} name="postal_code" errors={errors} />
             </View>
           </View>
         </View>
 
-        <View className="w-full max-w-[480px] mx-auto py-4">
-          <TouchableOpacity 
-            className="min-w-[84px] items-center justify-center overflow-hidden rounded-full h-12 px-5 bg-[#e9b8ba] text-[#171212] text-base font-bold"
-            onPress={handleSubmit(onSubmit)} 
+        <View className="w-full max-w-[480px] mx-auto py-4 gap-3">
+          <TouchableOpacity
+            className="min-w-[84px] items-center justify-center rounded-full h-12 px-5 bg-primary"
+            onPress={handleSubmit(onSubmit)}
             disabled={isFormSubmitting || isSubmitting}
+            accessibilityRole="button"
+            accessibilityLabel="Save address"
           >
-            <Text className="truncate">{isSubmitting ? "Saving..." : "Save"}</Text>
+            <Text className="text-white text-base font-bold">{isSubmitting ? "Saving…" : "Save"}</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            className="min-w-[84px] items-center justify-center overflow-hidden rounded-full h-12 px-5 bg-[#e9b8ba] text-[#171212] text-base font-bold"
+          <TouchableOpacity
+            className="min-w-[84px] items-center justify-center rounded-full h-12 px-5 bg-bg-muted"
             onPress={onSkip}
             disabled={isSubmitting}
+            accessibilityRole="button"
+            accessibilityLabel="Skip and continue without address"
           >
-            <Text>{isSubmitting ? "Processing..." : "Skip"}</Text>
+            <Text className="text-text-primary text-base font-semibold">{isSubmitting ? "Processing…" : "Skip"}</Text>
           </TouchableOpacity>
-          <View className="h-5 bg-white" />
+          <View className="h-5" />
         </View>
       </ScrollView>
     </SafeAreaView>

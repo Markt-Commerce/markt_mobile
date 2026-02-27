@@ -7,17 +7,19 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react-native";
+import { ArrowLeft } from "lucide-react-native";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Input } from "../../components/inputs";
+import { Input, PasswordInput } from "../../components/inputs";
 import { useUser } from "../../hooks/userContextProvider";
 import { AccountType } from "../../models/auth";
 import { useRouter } from "expo-router";
 import { register, useRegData } from "../../models/signupSteps";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useToast } from "../../components/ToastProvider"; // toaster
+import { useToast } from "../../components/ToastProvider";
+import { useWatch } from "react-hook-form";
+import { getPasswordStrength } from "../../utils/passwordStrength";
 
 // --- Validation schema (fixed: standard refine; removed invalid 'when' option) ---
 const schema = z
@@ -55,9 +57,8 @@ export default function SignupScreen() {
   });
 
   // ---- UI-only enhancements (don’t affect your data flow) ----
-  const [showPwd, setShowPwd] = React.useState(false);
-  const [showConfirmPwd, setShowConfirmPwd] = React.useState(false);
-
+  const password = useWatch({ control, name: "password", defaultValue: "" });
+  const strength = getPasswordStrength(password);
   const setUserRole = (r: AccountType) => setRole(r);
 
   const onSubmit = async (data: FormValues) => {
@@ -177,23 +178,27 @@ export default function SignupScreen() {
                 {errors.password ? (
                   <Text className="mb-1 text-xs text-[#E94C2A]">{errors.password.message as string}</Text>
                 ) : null}
-                <Input
-                  placeholder="Enter your password"
+                <PasswordInput
+                  placeholder="Min 8 chars, 1 digit, 1 upper, 1 lower"
                   control={control}
                   name="password"
                   errors={errors}
-                  secureTextEntry={!showPwd}
-                  textContentType="password"
                 />
                 {/* Show/Hide toggle (kept outside Input to avoid changing your component’s API) */}
-                <TouchableOpacity
-                  onPress={() => setShowPwd((v) => !v)}
-                  className="self-end mt-2 flex-row items-center"
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                >
-                  {showPwd ? <EyeOff size={16} color="#876d64" /> : <Eye size={16} color="#876d64" />}
-                  <Text className="ml-1 text-xs text-[#876d64]">{showPwd ? "Hide" : "Show"}</Text>
-                </TouchableOpacity>
+                <View className="flex-row gap-1 mt-2">
+                  {[0, 1, 2, 3].map((i) => (
+                    <View
+                      key={i}
+                      className={`flex-1 h-1 rounded-full ${i < strength.level ? (strength.level <= 1 ? "bg-red-500" : strength.level <= 2 ? "bg-orange-500" : strength.level <= 3 ? "bg-yellow-500" : "bg-green-500") : "bg-[#e5dedc]"}`}
+                    />
+                  ))}
+                </View>
+                <View className="flex-row flex-wrap gap-x-4 gap-y-0.5 mt-1.5">
+                  <Text className={`text-[11px] ${strength.checks.length ? "text-green-600" : "text-[#8e7a74]"}`}>{strength.checks.length ? "✓" : "○"} 8+ chars</Text>
+                  <Text className={`text-[11px] ${strength.checks.digit ? "text-green-600" : "text-[#8e7a74]"}`}>{strength.checks.digit ? "✓" : "○"} 1 digit</Text>
+                  <Text className={`text-[11px] ${strength.checks.lowercase ? "text-green-600" : "text-[#8e7a74]"}`}>{strength.checks.lowercase ? "✓" : "○"} 1 lower</Text>
+                  <Text className={`text-[11px] ${strength.checks.uppercase ? "text-green-600" : "text-[#8e7a74]"}`}>{strength.checks.uppercase ? "✓" : "○"} 1 upper</Text>
+                </View>
               </View>
 
               {/* Confirm Password */}
@@ -204,22 +209,12 @@ export default function SignupScreen() {
                     {errors.confirmPassword.message as string}
                   </Text>
                 ) : null}
-                <Input
+                <PasswordInput
                   placeholder="Re-enter your password"
                   control={control}
                   name="confirmPassword"
                   errors={errors}
-                  secureTextEntry={!showConfirmPwd}
-                  textContentType="password"
                 />
-                <TouchableOpacity
-                  onPress={() => setShowConfirmPwd((v) => !v)}
-                  className="self-end mt-2 flex-row items-center"
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                >
-                  {showConfirmPwd ? <EyeOff size={16} color="#876d64" /> : <Eye size={16} color="#876d64" />}
-                  <Text className="ml-1 text-xs text-[#876d64]">{showConfirmPwd ? "Hide" : "Show"}</Text>
-                </TouchableOpacity>
               </View>
 
               {/* Role selection */}

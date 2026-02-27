@@ -1,21 +1,25 @@
 /**
- * ChatProductDisplayComponent — Renders a product card in chat (CHATS_API §2.4)
- * Supports embedded product from message_data or fetch by product_id.
- * Never shows raw IDs.
+ * ChatProductDisplayComponent — Renders a product card in chat
+ * CHAT_UI_FRONTEND_INSTRUCTIONS §2.A, CHATS_API §2.4
+ * Supports message_data.product (image_url, name, price) or fetch by product_id.
+ * Never shows raw IDs. Compact fallbacks for missing image or product.
  */
 
 import React, { useState, useEffect } from "react";
 import { View, Text, Image, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Link } from "expo-router";
-import { ShoppingCart } from "lucide-react-native";
+import { ShoppingCart, Package } from "lucide-react-native";
 import { ProductDetail } from "../models/products";
 import { getProductById } from "../services/sections/product";
 
 type EmbeddedProduct = {
   id: string;
   name?: string;
+  /** API returns image_url; support both for compatibility */
+  image_url?: string;
   image?: string;
   price?: number | string;
+  currency?: string;
 };
 
 type Props = {
@@ -34,14 +38,23 @@ export default function ChatProductDisplayComponent({
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const id = embeddedProduct?.id ?? productId;
   const displayName = product?.name ?? embeddedProduct?.name ?? "Product";
   const displayPrice = product?.price ?? (typeof embeddedProduct?.price === "number" ? embeddedProduct.price : Number(embeddedProduct?.price) || 0);
-  const displayImage = product?.images?.[0]?.media?.original_url ?? product?.images?.[0]?.media?.mobile_url ?? embeddedProduct?.image;
+  const displayImage =
+    product?.images?.[0]?.media?.original_url ??
+    product?.images?.[0]?.media?.mobile_url ??
+    (embeddedProduct as any)?.image_url ??
+    embeddedProduct?.image;
 
   useEffect(() => {
-    if (embeddedProduct?.name && embeddedProduct?.id) {
+    setImageError(false);
+  }, [displayImage]);
+
+  useEffect(() => {
+    if (embeddedProduct?.id && (embeddedProduct?.name || embeddedProduct?.price != null)) {
       setProduct(null);
       setLoading(false);
       setError(false);
@@ -98,12 +111,18 @@ export default function ChatProductDisplayComponent({
       <Link href={`/productDetails/${id}`} asChild>
         <TouchableOpacity activeOpacity={0.85}>
           <View className="flex-row p-3 gap-3">
-            <View className="w-20 h-20 rounded-xl bg-bg-muted overflow-hidden">
-              {displayImage ? (
-                <Image source={{ uri: displayImage }} className="w-full h-full" resizeMode="cover" />
+            <View className="w-20 h-20 rounded-xl bg-bg-muted overflow-hidden items-center justify-center">
+              {displayImage && !imageError ? (
+                <Image
+                  source={{ uri: displayImage }}
+                  className="w-full h-full"
+                  resizeMode="cover"
+                  onError={() => setImageError(true)}
+                />
               ) : (
-                <View className="flex-1 items-center justify-center">
-                  <Text className="text-text-secondary text-xs">No image</Text>
+                <View className="items-center justify-center p-2">
+                  <Package size={24} color="#876d64" />
+                  <Text className="text-text-secondary text-[10px] mt-0.5">Product</Text>
                 </View>
               )}
             </View>

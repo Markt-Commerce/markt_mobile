@@ -1,9 +1,8 @@
 /**
  * ChatScreen — 1:1 conversation
- * CHATS_API_AND_SOCKETS.md §2, §3
  */
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -170,6 +169,18 @@ export default function ChatScreen({ route }: ChatProps) {
   useEffect(() => {
     loadInitial();
   }, [roomId]);
+
+  const justLoadedRef = useRef(false);
+  useEffect(() => {
+    if (!loading && sortedMessages.length > 0) justLoadedRef.current = true;
+  }, [loading, sortedMessages.length]);
+
+  const handleContentSizeChange = useCallback(() => {
+    if (justLoadedRef.current && sortedMessages.length > 0) {
+      justLoadedRef.current = false;
+      requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: false }));
+    }
+  }, [sortedMessages.length]);
 
   useEffect(() => {
     chatSocket.connect();
@@ -365,7 +376,7 @@ export default function ChatScreen({ route }: ChatProps) {
     setDiscountLoading(true);
     try {
       const list = await getRoomDiscounts(roomId);
-      setDiscounts(list ?? []);
+      setDiscounts(Array.isArray(list) ? list : []);
     } catch {
       setDiscounts([]);
       show({ variant: "error", title: "Error", message: "Could not load discounts." });
@@ -377,7 +388,7 @@ export default function ChatScreen({ route }: ChatProps) {
   async function handleRespondToDiscount(discountId: number, response: "accepted" | "rejected") {
     try {
       await respondToDiscount(discountId, { response });
-      setDiscounts((prev) => prev.filter((d) => d.id !== discountId));
+      setDiscounts((prev) => (Array.isArray(prev) ? prev : []).filter((d) => d.id !== discountId));
       show({ variant: "success", title: "Discount", message: response === "accepted" ? "Discount accepted." : "Discount declined." });
     } catch {
       show({ variant: "error", title: "Error", message: "Could not respond to discount." });
@@ -485,13 +496,26 @@ export default function ChatScreen({ route }: ChatProps) {
           </View>
         )}
         <View className={`max-w-[80%] ${isMe ? "items-end" : "items-start"}`}>
-          {item.message_type === "text" && (
-            <View
-              className={`px-4 py-3 rounded-2xl ${isMe ? "rounded-br-md bg-primary" : "rounded-bl-md bg-white border border-border"}`}
-            >
-              <Text className={`text-base ${isMe ? "text-white" : "text-text-primary"}`}>{item.content}</Text>
-            </View>
-          )}
+          {item.message_type === "text" && (() => {
+            const productIdInContent = (item.content || "").match(/PRD_[\w]+/)?.[0];
+            if (productIdInContent && (item.content?.includes("Sharing product") || /^PRD_[\w]+$/.test(item.content.trim()))) {
+              return (
+                <ChatProductDisplayComponent
+                  productId={productIdInContent}
+                  embeddedProduct={null}
+                  showAddToCart={role === "buyer"}
+                  onAddToCart={handleAddProductToCart}
+                />
+              );
+            }
+            return (
+              <View
+                className={`px-4 py-3 rounded-2xl ${isMe ? "rounded-br-md bg-primary" : "rounded-bl-md bg-white border border-border"}`}
+              >
+                <Text className={`text-base ${isMe ? "text-white" : "text-text-primary"}`}>{item.content}</Text>
+              </View>
+            );
+          })()}
 
           {item.message_type === "image" && (
             <TouchableOpacity activeOpacity={0.9}>
@@ -512,14 +536,25 @@ export default function ChatScreen({ route }: ChatProps) {
             </View>
           )}
 
-          {item.message_type === "product" && (
-            <ChatProductDisplayComponent
-              productId={item.message_data?.product_id ? String(item.message_data.product_id) : undefined}
-              embeddedProduct={item.message_data?.product}
-              showAddToCart={role === "buyer"}
-              onAddToCart={handleAddProductToCart}
-            />
-          )}
+          {item.message_type === "product" && (() => {
+            const productId = item.message_data?.product_id ? String(item.message_data.product_id) : (item.content || "").match(/PRD_[\w]+/)?.[0];
+            const embeddedProduct = item.message_data?.product;
+            if (!productId && !embeddedProduct?.id) {
+              return (
+                <View className="rounded-2xl border border-border bg-bg-muted px-4 py-3">
+                  <Text className="text-text-secondary text-sm">Product no longer available</Text>
+                </View>
+              );
+            }
+            return (
+              <ChatProductDisplayComponent
+                productId={productId}
+                embeddedProduct={embeddedProduct}
+                showAddToCart={role === "buyer"}
+                onAddToCart={handleAddProductToCart}
+              />
+            );
+          })()}
 
           {item.message_type === "offer" && (
             <View className="rounded-2xl overflow-hidden border border-border bg-white min-w-[200px]">
@@ -648,6 +683,7 @@ export default function ChatScreen({ route }: ChatProps) {
         data={sortedMessages}
         keyExtractor={(it) => String(it.id)}
         renderItem={renderMessage}
+        onContentSizeChange={handleContentSizeChange}
         contentContainerStyle={{ paddingVertical: 12, paddingBottom: 8 }}
         showsVerticalScrollIndicator={false}
         onScroll={({ nativeEvent }) => {
@@ -727,10 +763,10 @@ export default function ChatScreen({ route }: ChatProps) {
             </View>
             {discountLoading ? (
               <ActivityIndicator size="small" color="#e26136" />
-            ) : discounts.length === 0 ? (
+            ) : (Array.isArray(discounts) ? discounts : []).length === 0 ? (
               <Text className="text-text-secondary text-sm">No active discounts for this chat.</Text>
             ) : (
-              discounts.map((d) => (
+              (Array.isArray(discounts) ? discounts : []).map((d) => (
                 <View key={d.id} className="bg-bg-muted rounded-xl p-3 mb-2">
                   <Text className="text-text-primary font-medium text-sm">{d.discount_message ?? d.discount_type ?? "Discount"}</Text>
                   <Text className="text-primary font-semibold text-sm mt-1">₦{Number(d.discount_value ?? 0).toLocaleString()}</Text>

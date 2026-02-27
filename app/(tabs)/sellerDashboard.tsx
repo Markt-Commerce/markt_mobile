@@ -3,7 +3,7 @@ import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'expo-router';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, Dimensions, Animated, Easing, FlatList, RefreshControl } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { Search, ArrowBigDown as CaretDown, AlertTriangle } from 'lucide-react-native';
+import { Search, ArrowBigDown as CaretDown, AlertTriangle, MoreVertical } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSellerAnalyticsOverview, getSellerAnalyticsTimeseries } from '../../services/sections/analytics';
 import { getMyProducts } from '../../services/sections/product';
@@ -36,6 +36,8 @@ export default function SellerDashboard() {
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [windowDays, setWindowDays] = useState<7 | 30 | 90>(30);
+  const [exportMenuVisible, setExportMenuVisible] = useState(false);
 
   // Bottom sheet ref for product creation
   const productFormRef = useRef<any>(null);
@@ -58,7 +60,7 @@ export default function SellerDashboard() {
         const date = new Date();
         const fromDate = (new Date(date.getFullYear() - 1, date.getMonth(), 1)).toISOString();
         const toDate = (new Date()).toISOString();
-        const analyticsOverviewData = await getSellerAnalyticsOverview(30);
+        const analyticsOverviewData = await getSellerAnalyticsOverview(windowDays);
         const analyticsTimeseriesData = await getSellerAnalyticsTimeseries({
           bucket: "month",
           start_date: fromDate,
@@ -87,7 +89,7 @@ export default function SellerDashboard() {
     };
     fetchData();
     return () => { mounted = false; };
-  }, [show]);
+  }, [show, windowDays]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -97,7 +99,7 @@ export default function SellerDashboard() {
       const fromDate = (new Date(date.getFullYear() - 1, date.getMonth(), 1)).toISOString();
       const toDate = (new Date()).toISOString();
       const [analyticsOverviewData, analyticsTimeseriesData, ordersData, productsData] = await Promise.all([
-        getSellerAnalyticsOverview(30),
+        getSellerAnalyticsOverview(windowDays),
         getSellerAnalyticsTimeseries({
           bucket: "month",
           start_date: fromDate,
@@ -118,7 +120,7 @@ export default function SellerDashboard() {
     } finally {
       setRefreshing(false);
     }
-  }, [show]);
+  }, [show, windowDays]);
 
   // Debounce search filter
   useEffect(() => {
@@ -139,14 +141,13 @@ export default function SellerDashboard() {
     return () => clearTimeout(t);
   }, [searchText, sellerInventory]);
 
-  // Utility formatters
+  // Currency: NGN (Nigerian Naira) — SELLER_DASHBOARD improvement §1
   const formatCurrency = useCallback((n?: number) => {
     const val = n ?? 0;
     try {
-      return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+      return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0, minimumFractionDigits: 0 }).format(val);
     } catch {
-      // fallback simple formatting
-      return `$${Math.round(val).toLocaleString()}`;
+      return `₦${Math.round(val).toLocaleString()}`;
     }
   }, []);
 
@@ -211,11 +212,12 @@ export default function SellerDashboard() {
 
   // Handlers (now wired)
   const handleExport = () => {
-    show({ variant: 'info', title: 'Export', message: 'Export started (not implemented).' });
+    setExportMenuVisible(false);
+    show({ variant: 'info', title: 'Export report', message: 'Export started (not implemented).' });
   };
-  const handleDateRange = () => {
-    show({ variant: 'info', title: 'Date Range', message: 'Date range picker (not implemented).' });
-  };
+
+  const pendingOrderCount = sellerRecentOrders.filter((o) => o.status === 'pending').length;
+  const periodLabel = windowDays === 7 ? 'Last 7 days' : windowDays === 30 ? 'Last 30 days' : 'Last 90 days';
   const handleCreateProduct = () => {
     productFormRef.current?.expand?.();
   };
@@ -334,60 +336,107 @@ export default function SellerDashboard() {
         contentContainerStyle={{ paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {/* Header */}
-        <View className="flex-row items-center px-4 pt-2 pb-3 justify-between border-b border-[#efe9e7]">
-          <Text className="text-[#171311] text-lg font-extrabold flex-1 text-center">Seller Dashboard</Text>
-        </View>
-
-        {/* Primary actions */}
-        <View className="flex-row justify-end px-4 py-3 gap-3">
+        {/* Time selector (7d / 30d / 90d) + Export menu */}
+        <View className="flex-row items-center justify-between px-4 py-3">
+          <View className="flex-row rounded-full bg-[#f5f2f1] p-1 border border-[#e5dedc]">
+            {([7, 30, 90] as const).map((d) => (
+              <TouchableOpacity
+                key={d}
+                onPress={() => { setWindowDays(d); setExportMenuVisible(false); }}
+                className={`px-4 py-2 rounded-full ${windowDays === d ? "bg-white shadow-sm" : ""}`}
+                accessibilityLabel={`${d} days`}
+                accessibilityState={{ selected: windowDays === d }}
+              >
+                <Text className={`text-sm font-semibold ${windowDays === d ? "text-[#171311]" : "text-[#876d64]"}`}>
+                  {d}d
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
           <TouchableOpacity
-            accessibilityLabel="date-range-btn"
-            onPress={handleDateRange}
-            className="rounded-full h-10 px-4 items-center justify-center border border-[#e5dedc] bg-white"
+            onPress={() => setExportMenuVisible(!exportMenuVisible)}
+            className="p-2 -mr-2"
+            accessibilityLabel="More options"
           >
-            <Text className="text-[#171311] text-sm font-semibold">Date Range</Text>
+            <MoreVertical size={22} color="#171311" />
           </TouchableOpacity>
+        </View>
+        {exportMenuVisible && (
           <TouchableOpacity
-            accessibilityLabel="export-btn"
             onPress={handleExport}
-            className="rounded-full h-10 px-4 items-center justify-center bg-[#e26136]"
+            className="mx-4 mb-2 py-3 px-4 rounded-xl bg-white border border-[#e5dedc]"
           >
-            <Text className="text-white text-sm font-semibold">Export</Text>
+            <Text className="text-[#171311] font-semibold text-sm">Export report</Text>
           </TouchableOpacity>
-        </View>
+        )}
 
-        {/* Stats cards */}
-        <View className="flex-row flex-wrap gap-4 p-4">
+        {/* Period label */}
+        <Text className="text-[#876d64] text-sm px-4 -mt-1">{periodLabel}</Text>
+
+        {/* Metrics cards — Revenue first, visual hierarchy, empty states */}
+        <View className="flex-row flex-wrap gap-3 p-4">
+          <View className="min-w-[160px] flex-1 rounded-2xl p-5 border border-[#e5dedc] bg-white" style={{ borderLeftWidth: 4, borderLeftColor: '#e26136' }}>
+            <Text className="text-[#6f5d57] text-xs font-semibold uppercase tracking-wider">Revenue</Text>
+            <Text className="text-[#171311] text-[22px] font-extrabold mt-1">
+              {formatCurrency(analyticsOverview?.revenue_30d)}
+            </Text>
+            {(analyticsOverview?.revenue_30d ?? 0) === 0 && (
+              <Text className="text-[#876d64] text-xs mt-0.5">No sales yet. Share your products to get started.</Text>
+            )}
+          </View>
+          <View className="min-w-[158px] flex-1 rounded-2xl p-5 border border-[#e5dedc] bg-white">
+            <Text className="text-[#6f5d57] text-xs font-semibold uppercase tracking-wider">Orders</Text>
+            <Text className="text-[#171311] text-2xl font-extrabold mt-1">{analyticsOverview?.orders_30d ?? 0}</Text>
+            {(analyticsOverview?.orders_30d ?? 0) === 0 && (
+              <Text className="text-[#876d64] text-xs mt-0.5">No orders yet.</Text>
+            )}
+          </View>
           <View className="min-w-[158px] flex-1 rounded-2xl p-5 border border-[#e5dedc] bg-white">
             <Text className="text-[#6f5d57] text-xs font-semibold uppercase tracking-wider">Product Views</Text>
-            <Text className="text-[#171311] text-2xl font-extrabold mt-1">{analyticsOverview?.views_30d || 0}</Text>
+            <Text className="text-[#171311] text-2xl font-extrabold mt-1">{analyticsOverview?.views_30d ?? 0}</Text>
+            {(analyticsOverview?.views_30d ?? 0) === 0 && (
+              <Text className="text-[#876d64] text-xs mt-0.5">No product views yet.</Text>
+            )}
           </View>
           <View className="min-w-[158px] flex-1 rounded-2xl p-5 border border-[#e5dedc] bg-white">
-            <Text className="text-[#6f5d57] text-xs font-semibold uppercase tracking-wider">Total Orders</Text>
-            <Text className="text-[#171311] text-2xl font-extrabold mt-1">{analyticsOverview?.orders_30d || 0}</Text>
-          </View>
-          <View className="min-w-[158px] flex-1 rounded-2xl p-5 border border-[#e5dedc] bg-white">
-            <Text className="text-[#6f5d57] text-xs font-semibold uppercase tracking-wider">Total Revenue</Text>
-            <Text className="text-[#171311] text-2xl font-extrabold mt-1">{formatCurrency(analyticsOverview?.revenue_30d)}</Text>
-          </View>
-          <View className="min-w-[158px] flex-1 rounded-2xl p-5 border border-[#e5dedc] bg-white">
-            <Text className="text-[#6f5d57] text-xs font-semibold uppercase tracking-wider">Conversions</Text>
-            <Text className="text-[#171311] text-2xl font-extrabold mt-1">{analyticsOverview?.conversion_30d || 0}</Text>
+            <Text className="text-[#6f5d57] text-xs font-semibold uppercase tracking-wider">Conversion Rate</Text>
+            <Text className="text-[#171311] text-2xl font-extrabold mt-1">{(analyticsOverview?.conversion_30d ?? 0)}%</Text>
           </View>
         </View>
 
         {/* Start cards (onboarding) — SELLER_DASHBOARD_API_AND_MOBILE_GUIDE §2.4 */}
         <StartCards title="Getting started" />
 
-        {/* Quick links — SELLER_DASHBOARD_API_AND_MOBILE_GUIDE §2.7 */}
+        {/* Primary CTA — Create Product */}
+        <View className="px-4 py-3">
+          <TouchableOpacity
+            accessibilityLabel="create-product-btn"
+            onPress={handleCreateProduct}
+            className="rounded-full h-12 items-center justify-center bg-[#e26136]"
+          >
+            <Text className="text-white text-base font-semibold">Create Product</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => nicheFormRef.current?.expand()}
+            className="mt-2 rounded-full h-10 items-center justify-center border border-[#e5dedc] bg-white"
+          >
+            <Text className="text-[#171311] text-sm font-semibold">Create Community</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Quick actions — with badges */}
         <View className="flex-row flex-wrap gap-3 px-4 py-3">
           <TouchableOpacity
             accessibilityLabel="orders-quicknav"
             onPress={() => router.push("/(tabs)/sellerOrders")}
-            className="rounded-full h-10 px-4 items-center justify-center border border-[#e5dedc] bg-white"
+            className={`flex-row items-center rounded-full h-10 px-4 ${pendingOrderCount > 0 ? "bg-[#fff5f3] border border-[#ffd9d2]" : "border border-[#e5dedc] bg-white"}`}
           >
             <Text className="text-[#171311] text-sm font-semibold">Orders</Text>
+            {pendingOrderCount > 0 && (
+              <View className="ml-2 min-w-[20px] h-5 rounded-full bg-[#e26136] items-center justify-center px-1.5">
+                <Text className="text-white text-xs font-bold">{pendingOrderCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push("/(tabs)/messages")}
@@ -403,31 +452,11 @@ export default function SellerDashboard() {
           </TouchableOpacity>
         </View>
 
-        <View className="flex-row justify-between px-4 py-2">
-          <TouchableOpacity
-            accessibilityLabel="create-product-btn"
-            onPress={handleCreateProduct}
-            className="rounded-full h-10 px-4 items-center justify-center bg-[#e26136]"
-          >
-            <Text className="text-white text-sm font-semibold">Create Product</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View className="flex-row justify-between px-4 py-2">
-          <TouchableOpacity
-            accessibilityLabel="create-product-btn"
-            onPress={() => nicheFormRef.current?.expand()}
-            className="rounded-full h-10 px-4 items-center justify-center bg-[#e26136]"
-          >
-            <Text className="text-white text-sm font-semibold">Create Niche</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Sales trends card */}
         <View className="px-4 py-4">
           <View className="rounded-2xl border border-[#e5dedc] bg-white p-4">
             <Text className="text-[#171311] text-base font-semibold">Sales Trends</Text>
-            <Text className="text-[#171311] text-[28px] font-extrabold mt-1">{formatCurrency(analyticsOverview?.revenue_30d)}</Text>
+            <Text className="text-[#171311] text-[28px] font-extrabold mt-1">{formatCurrency(analyticsOverview?.revenue_30d ?? 0)}</Text>
             <View className="flex-row gap-2 items-center mt-1">
               <Text className="text-[#876d64] text-sm">Last 30 Days</Text>
               <Text className="text-[#07880b] text-sm font-semibold">+15%</Text>

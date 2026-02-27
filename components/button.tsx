@@ -15,7 +15,7 @@ type ButtonProps = TouchableOpacityProps & {
 };
 
 /**
- * Markt primary button. Follows DESIGN_SYSTEM.md:
+ * Markt primary button.
  * - Primary: brand color, white text
  * - Secondary: muted bg, primary text
  * - Outline: border only

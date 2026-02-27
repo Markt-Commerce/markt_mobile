@@ -1,6 +1,5 @@
 /**
  * NavDrawer — Twitter-style side drawer (slide-in from left)
- * BUYER_SELLER_NAV_REDESIGN_AND_ACTIONS.md
  *
  * Header: avatar, display name, handle
  * Switch mode (if is_buyer && is_seller)
@@ -138,11 +137,30 @@ export default function NavDrawer({
       });
       onClose();
     } catch {
-      show({
-        variant: "error",
-        title: "Could not switch",
-        message: "Please try again.",
-      });
+      // Switch fails when user doesn't have both accounts; offer Create account
+      if (profile && !profile.is_seller) {
+        show({
+          variant: "info",
+          title: "Create seller account",
+          message: "This action requires a seller account. Create one from Profile.",
+        });
+        onClose();
+        router.push("/(tabs)/profile");
+      } else if (profile && !profile.is_buyer) {
+        show({
+          variant: "info",
+          title: "Create buyer account",
+          message: "This action requires a buyer account. Create one from Profile.",
+        });
+        onClose();
+        router.push("/(tabs)/profile");
+      } else {
+        show({
+          variant: "error",
+          title: "Could not switch",
+          message: "Create the missing account from Profile.",
+        });
+      }
     }
   };
 

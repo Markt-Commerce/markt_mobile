@@ -54,17 +54,18 @@ export default function Avatar({ uri, name, size = 40, className = "" }: AvatarP
           onError={() => setImageError(true)}
         />
       ) : (
-        <Text
-          className="text-white font-semibold"
-          style={{
-            fontSize: size * 0.4,
-            lineHeight: size,
-            textAlign: "center",
-            ...(Platform.OS === "android" && { includeFontPadding: false }),
-          }}
-        >
-          {initials}
-        </Text>
+        <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center" }}>
+          <Text
+            className="text-white font-semibold"
+            style={{
+              fontSize: size * 0.4,
+              textAlign: "center",
+              ...(Platform.OS === "android" && { includeFontPadding: false }),
+            }}
+          >
+            {initials}
+          </Text>
+        </View>
       )}
     </View>
   );

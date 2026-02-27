@@ -1,15 +1,20 @@
-import React, { useCallback, useState, useEffect } from "react";
-import { View, Text, FlatList, Pressable, ActivityIndicator, RefreshControl } from "react-native";
-import { Image } from "expo-image";
+import React, { useCallback, useState, useEffect, useRef } from "react";
+import { View, Text, FlatList, Pressable, ActivityIndicator, RefreshControl, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { Plus, ChevronRight } from "lucide-react-native";
 import { useToast } from "../components/ToastProvider";
+import { useUser } from "../hooks/userContextProvider";
 import { getMyNiches } from "../services/sections/niches";
 import { Niches } from "../models/niches";
-import { ChevronRight } from "lucide-react-native";
+import CreateNicheBottomSheet from "../components/nicheCreateBottomSheet";
+import type { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 
 export default function MyNichesScreen() {
   const router = useRouter();
   const { show } = useToast();
+  const { role } = useUser();
+  const nicheFormRef = useRef<BottomSheetMethods | null>(null);
   const [niches, setNiches] = useState<Niches[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -23,12 +28,12 @@ export default function MyNichesScreen() {
         else setLoading(true);
 
         const response = await getMyNiches(pageNum, 10);
-        
+        const nicheList = response.items.map((m) => m.niche);
         if (isRefresh) {
-          setNiches(response.items);
+          setNiches(nicheList);
           setPage(1);
         } else {
-          setNiches((prev) => [...prev, ...response.items]);
+          setNiches((prev) => (pageNum === 1 ? nicheList : [...prev, ...nicheList]));
           setPage(pageNum);
         }
 
@@ -123,19 +128,33 @@ export default function MyNichesScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-white justify-center items-center">
+      <SafeAreaView className="flex-1 bg-white justify-center items-center" edges={["top"]}>
         <ActivityIndicator size="large" color="#e26136" />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View className="flex-1 bg-white">
-      <View className="px-4 py-4 border-b border-[#efe9e7]">
-        <Text className="text-2xl font-bold text-[#111418]">My Niches</Text>
-        <Text className="text-sm text-[#876d64] mt-1">
-          {niches.length} niche{niches.length !== 1 ? "s" : ""}
-        </Text>
+    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
+      <View className="px-4 py-4 border-b border-[#efe9e7] flex-row items-center justify-between">
+        <View>
+          <Text className="text-2xl font-bold text-[#111418]">My Niches</Text>
+          <Text className="text-sm text-[#876d64] mt-1">
+            {niches.length} niche{niches.length !== 1 ? "s" : ""}
+          </Text>
+        </View>
+        {role === "seller" && (
+          <TouchableOpacity
+            onPress={() => nicheFormRef.current?.expand?.()}
+            className="flex-row items-center gap-2 px-4 py-2 rounded-full bg-primary"
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Create community"
+          >
+            <Plus size={18} color="#fff" />
+            <Text className="text-white font-semibold text-sm">Create</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <FlatList
@@ -166,8 +185,14 @@ export default function MyNichesScreen() {
             </View>
           ) : null
         }
-        contentContainerStyle={{ paddingBottom: 20 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
       />
-    </View>
+      {role === "seller" && (
+        <CreateNicheBottomSheet
+          ref={nicheFormRef}
+          onCreated={() => fetchNiches(1, true)}
+        />
+      )}
+    </SafeAreaView>
   );
 }

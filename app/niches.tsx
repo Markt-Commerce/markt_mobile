@@ -1,8 +1,12 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { View, Text, TextInput, FlatList, Pressable, StatusBar } from "react-native";
+import React, { useCallback, useMemo, useState, useRef } from "react";
+import { View, Text, TextInput, FlatList, Pressable, StatusBar, TouchableOpacity } from "react-native";
 import { Image } from "expo-image";
-import { Search } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Search, Plus } from "lucide-react-native";
 import { useRouter } from "expo-router";
+import { useUser } from "../hooks/userContextProvider";
+import CreateNicheBottomSheet from "../components/nicheCreateBottomSheet";
+import type { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 
 type Niche = { id: string | number; name: string; image: string };
 
@@ -24,6 +28,8 @@ const ALL_NICHES: Niche[] = [
 
 export default function NichesIndexPage() {
   const router = useRouter();
+  const { role } = useUser();
+  const nicheFormRef = useRef<BottomSheetMethods | null>(null);
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -101,8 +107,20 @@ export default function NichesIndexPage() {
   const Header = (
     <View>
       <StatusBar barStyle="dark-content" />
-      <View className="flex-row items-center justify-between p-4 pb-2">
+      <View className="flex-row items-center justify-between px-4 py-3 pb-2">
         <Text className="flex-1 text-center text-lg font-bold text-[#171312]">Niches</Text>
+        {role === "seller" && (
+          <TouchableOpacity
+            onPress={() => nicheFormRef.current?.expand?.()}
+            className="flex-row items-center gap-1.5 px-3 py-2 rounded-full bg-primary"
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Create community"
+          >
+            <Plus size={18} color="#fff" />
+            <Text className="text-white font-semibold text-sm">Create</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View className="flex-row items-center bg-[#f4f2f1] rounded-xl mx-4 px-3 h-12">
@@ -133,7 +151,7 @@ export default function NichesIndexPage() {
   );
 
   return (
-    <View className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
       <FlatList
         data={filtered}
         keyExtractor={keyExtractor}
@@ -143,6 +161,12 @@ export default function NichesIndexPage() {
         contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 24 }}
         ListHeaderComponent={Header}
       />
-    </View>
+      {role === "seller" && (
+        <CreateNicheBottomSheet
+          ref={nicheFormRef}
+          onCreated={() => router.push("/myniches")}
+        />
+      )}
+    </SafeAreaView>
   );
 }

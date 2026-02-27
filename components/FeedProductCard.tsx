@@ -23,7 +23,8 @@ interface Props {
 }
 
 export default function FeedProductCard({ product, onMessageSeller }: Props) {
-  const { role } = useUser();
+  const { role, user } = useUser();
+  const isOwnProduct = user?.user_id && product.seller?.user?.id && product.seller.user.id === user.user_id;
   const { show } = useToast();
   const [adding, setAdding] = useState(false);
   const [isFollowing, setIsFollowing] = useState(product.seller?.is_followed ?? false);
@@ -133,7 +134,7 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
                   By {product.seller?.shop_name ?? "Seller"}
                   {followerCount > 0 && ` · ${followerCount} follower${followerCount !== 1 ? "s" : ""}`}
                 </Text>
-                {followeeId && (
+                {followeeId && !isOwnProduct && (
                   <TouchableOpacity
                     onPress={(e) => handleFollowToggle(e)}
                     disabled={followLoading}
@@ -157,7 +158,7 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
           </Pressable>
         </Link>
 
-        {/* Actions: Add to cart, Message seller (buyers only) */}
+        {/* Actions: Add to cart, Message seller (buyers only; hide Message when own product) */}
         {isBuyer && (
           <View className="flex-row gap-2 px-4 pb-4 border-t border-border-light pt-3">
             <TouchableOpacity
@@ -172,6 +173,7 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
                 {adding ? "Adding…" : "Add to cart"}
               </Text>
             </TouchableOpacity>
+            {!isOwnProduct && (
             <TouchableOpacity
               onPress={handleMessageSeller}
               className="flex-1 flex-row items-center justify-center gap-2 h-10 rounded-full bg-bg-muted"
@@ -181,6 +183,7 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
               <MessageCircle size={18} color="#876d64" />
               <Text className="text-text-primary font-semibold text-sm">Chat</Text>
             </TouchableOpacity>
+            )}
           </View>
         )}
       </View>

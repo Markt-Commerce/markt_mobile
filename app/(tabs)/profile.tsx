@@ -54,18 +54,18 @@ export default function SettingsProfileScreen() {
 
   const SwitchRole = async () => {
     try {
-     const switchResult = await switchUserRole();
-     console.log(switchResult)
-      setRole(switchResult.user.current_role)
-      
-    } catch (error) {
+      const switchResult = await switchUserRole();
+      setRole(switchResult.user.current_role);
+    } catch {
+      // Switch fails when user doesn't have both accounts
+      const missingRole = role === "buyer" ? "seller" : "buyer";
       show({
-        message: `An error occured switching to the ${role == "buyer"? "seller" : "buyer"} account. Please try again later`,
-        title: "Could not switch account",
-        variant: "error"
-      })
+        message: `You need a ${missingRole} account. Use "Create A ${missingRole === "seller" ? "Seller" : "Buyer"} Account" below.`,
+        title: "Could not switch",
+        variant: "error",
+      });
     }
-  }
+  };
 
   useEffect(()=>{
     getUserData()

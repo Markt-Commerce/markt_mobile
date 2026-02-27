@@ -125,6 +125,31 @@ export async function resetPassword(email: string, code: string, newPassword: st
   return res.message;
 }
 
+/** Check if username is available. Debounce calls. */
+export async function checkUsername(username: string): Promise<{ available: boolean; message: string }> {
+  const res = await request<{ available: boolean; message: string }>(
+    `${BASE_URL}/users/check-username?username=${encodeURIComponent(username)}`,
+    { method: "GET" }
+  );
+  return res;
+}
+
+/** Upload profile picture. Call after registration. */
+export async function uploadProfilePicture(uri: string, fileName = "profile.jpg"): Promise<{ url?: string; profile_picture?: string }> {
+  const formData = new FormData();
+  formData.append("file", {
+    uri,
+    name: fileName,
+    type: "image/jpeg",
+  } as any);
+
+  const res = await request<any>(`${BASE_URL}/users/profile/picture`, {
+    method: "POST",
+    body: formData,
+  });
+  return res;
+}
+
 /**
  * Switch the current user's active role to buyer or seller.
  * @param toRole The role to switch to ('buyer' | 'seller')

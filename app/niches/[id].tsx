@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Plus } from "lucide-react-native";
-import { getNichePosts, joinNiche, leaveNiche, getMyNiches } from "../../services/sections/niches";
+import { getNichePosts, joinNiche, leaveNiche, getMyNiches, getNicheById, canPostInNiche } from "../../services/sections/niches";
 import { NichePost, Niches } from "../../models/niches";
 import { useToast } from "../../components/ToastProvider";
 import PostDisplayComponent from "../../components/PostDisplayComponent";
@@ -21,6 +21,7 @@ export default function NicheDetailScreen() {
   const [loading, setLoading] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
+  const [canPost, setCanPost] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -30,10 +31,38 @@ export default function NicheDetailScreen() {
 
   useEffect(() => {
     if (id) {
-      loadNichePosts();
+      loadNicheDetail();
       checkMembershipStatus();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (id && isJoined && !isBanned) {
+      checkCanPost();
+    } else {
+      setCanPost(false);
+    }
+  }, [id, isJoined, isBanned]);
+
+  const loadNicheDetail = async () => {
+    if (!id) return;
+    try {
+      const n = await getNicheById(id);
+      setNiche(n);
+    } catch {
+      // fallback: will infer from first post in loadNichePosts
+    }
+  };
+
+  const checkCanPost = async () => {
+    if (!id) return;
+    try {
+      const res = await canPostInNiche(id);
+      setCanPost(res.can_post ?? false);
+    } catch {
+      setCanPost(false);
+    }
+  };
 
   useEffect(() => {
     if (id && page > 1) {
@@ -44,18 +73,15 @@ export default function NicheDetailScreen() {
   const checkMembershipStatus = async () => {
     if (!id) return;
     try {
-      // Use search parameter to filter for this specific niche
-      const res = await getMyNiches(1, 100, id || "");
-      
-      // Check if niche is in user's niches
-      const userNiche = res.items.find((n) => n.niche_id === id);
+      const res = await getMyNiches(1, 100);
+      const userNiche = res.items.find((m) => m.niche_id === id);
       
       if (userNiche) {
         setIsJoined(true);
         
         // Check if user is banned (assuming banned status is indicated by a property)
         // You may need to adjust this based on actual API response structure
-        const isBannedStatus = (userNiche as any).is_banned || (userNiche as any).banned || false;
+        const isBannedStatus = !!(userNiche as any)?.is_banned || !!(userNiche as any)?.banned;
         setIsBanned(isBannedStatus);
         
         if (isBannedStatus) {
@@ -156,10 +182,12 @@ export default function NicheDetailScreen() {
             <Text className="text-[#876d64] text-xs mt-1">{niche?.member_count || 0} members • {niche?.post_count || 0} posts</Text>
           </View>
 
-          {isJoined && !isBanned && (
+          {isJoined && !isBanned && canPost && (
             <TouchableOpacity
               onPress={() => postFormRef.current?.expand?.()}
               className="p-2 rounded-full bg-[#e26136]"
+              accessibilityRole="button"
+              accessibilityLabel="Create post"
             >
               <Plus size={20} color="#fff" />
             </TouchableOpacity>
@@ -236,7 +264,7 @@ export default function NicheDetailScreen() {
       </View>
 
       {/* Post create bottom sheet (only for joined members who are not banned) */}
-      {isJoined && !isBanned && <PostFormBottomSheet ref={postFormRef} nicheId={id} />}
+      {isJoined && !isBanned && canPost && <PostFormBottomSheet ref={postFormRef} nicheId={id} />}
     </SafeAreaView>
   );
 }

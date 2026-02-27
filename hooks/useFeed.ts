@@ -1,6 +1,12 @@
 import { useState, useCallback, useRef } from "react";
-import type { FeedItem, FeedTab } from "../types/feed";
-import { getForYouFeed, getDiscoverFeed, getTrendingFeed, getFollowingFeed } from "../services/sections/feedApi";
+import type { FeedItem } from "../types/feed";
+import {
+  getForYouFeed,
+  getDiscoverFeed,
+  getTrendingFeed,
+  getFollowingFeed,
+  getNicheFeed,
+} from "../services/sections/feedApi";
 
 const PER_PAGE = 20;
 
@@ -12,10 +18,18 @@ function deduplicateById(items: FeedItem[]): FeedItem[] {
     return true;
   });
 }
-const FETCHERS = { for_you: getForYouFeed, discover: getDiscoverFeed, trending: getTrendingFeed, following: getFollowingFeed } as const;
+
+const MAIN_TABS = {
+  for_you: getForYouFeed,
+  discover: getDiscoverFeed,
+  trending: getTrendingFeed,
+  following: getFollowingFeed,
+} as const;
+
 const cache: Record<string, { items: FeedItem[]; page: number; hasNext: boolean }> = {};
 
-export function useFeed(tab: keyof typeof FETCHERS) {
+/** Tab is either a main tab id or a niche id string for niche feed (NICHES_API §2.1). */
+export function useFeed(tab: keyof typeof MAIN_TABS | string) {
   const c = cache[tab];
   const [items, setItems] = useState<FeedItem[]>(c?.items ?? []);
   const [page, setPage] = useState(c?.page ?? 1);
@@ -26,6 +40,13 @@ export function useFeed(tab: keyof typeof FETCHERS) {
   const loadingRef = useRef(false);
   const loadingMoreRef = useRef(false);
 
+  const fetcher =
+    tab in MAIN_TABS
+      ? (params: { page: number; per_page: number; force_refresh?: boolean }) =>
+          (MAIN_TABS[tab as keyof typeof MAIN_TABS] as typeof getForYouFeed)(params)
+      : (params: { page: number; per_page: number }) =>
+          getNicheFeed(tab, { ...params });
+
   const refresh = useCallback(async () => {
     if (loadingRef.current) return;
     loadingRef.current = true;
@@ -33,7 +54,11 @@ export function useFeed(tab: keyof typeof FETCHERS) {
     setLoading(true);
     setError(null);
     try {
-      const res = await FETCHERS[tab]({ page: 1, per_page: PER_PAGE, force_refresh: tab === "for_you" });
+      const res = await fetcher({
+        page: 1,
+        per_page: PER_PAGE,
+        force_refresh: tab === "for_you",
+      });
       const deduped = deduplicateById(res.items);
       setItems(deduped);
       setPage(1);
@@ -54,7 +79,7 @@ export function useFeed(tab: keyof typeof FETCHERS) {
     setError(null);
     try {
       const nextPage = page + 1;
-      const res = await FETCHERS[tab]({ page: nextPage, per_page: PER_PAGE });
+      const res = await fetcher({ page: nextPage, per_page: PER_PAGE });
       const existingIds = new Set(items.map((i) => i.id));
       const uniqueNew = res.items.filter((i) => !existingIds.has(i.id));
       const newItems = deduplicateById([...items, ...uniqueNew]);

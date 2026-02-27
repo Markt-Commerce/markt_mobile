@@ -178,20 +178,22 @@ export default function StartCards({
         </Pressable>
       </View>
 
-      {/* Progress row */}
+      {/* Progress row — show "X of Y" only when total > 0 (avoid "0 of —") */}
       <View className="mb-3">
         <View className="flex-row items-center justify-between">
           <Text className="text-sm text-[#5f4f4f]">
-            {done} of {total || "—"} steps completed
+            {total > 0 ? `${done} of ${total} steps completed` : "Complete these steps to start selling."}
           </Text>
-          <Text className="text-sm font-semibold text-[#171311]">{pct}%</Text>
+          {total > 0 && <Text className="text-sm font-semibold text-[#171311]">{pct}%</Text>}
         </View>
-        <View className="mt-2 h-2 w-full rounded-full bg-[#f1ecea] overflow-hidden">
-          <View
-            className="h-2 bg-[#171311] rounded-full"
-            style={{ width: `${pct}%` }}
-          />
-        </View>
+        {total > 0 && (
+          <View className="mt-2 h-2 w-full rounded-full bg-[#f1ecea] overflow-hidden">
+            <View
+              className="h-2 bg-[#171311] rounded-full"
+              style={{ width: `${pct}%` }}
+            />
+          </View>
+        )}
       </View>
 
       {/* Loading skeleton */}
@@ -253,15 +255,14 @@ export default function StartCards({
               </View>
             );
 
-            // If we have a route, make the card CTA navigable
-              { card.actionHref &&
+            if (card.actionHref) {
+              return (
                 <Link key={card.id} href={card.actionHref || ""} asChild>
                   <TouchableOpacity activeOpacity={0.9}>{body}</TouchableOpacity>
                 </Link>
-          }
-            return (
-              <View key={card.id}>{body}</View>
-            );
+              );
+            }
+            return <View key={card.id}>{body}</View>;
           })}
         </ScrollView>
       )}

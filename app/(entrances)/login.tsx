@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginUser } from "../../services/sections/auth";
 import { useUser } from "../../hooks/userContextProvider";
-import { Input } from "../../components/inputs";
+import { Input, PasswordInput } from "../../components/inputs";
 import Button from "../../components/button";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRegData } from "../../models/signupSteps";
@@ -162,16 +162,14 @@ export default function LoginScreen() {
               />
             </View>
 
-            {/* Password */}
+            {/* Password — eye toggle */}
             <View className="mb-2">
               <Text className="mb-1 text-[13px] text-text-secondary">Password</Text>
-              <Input
+              <PasswordInput
                 placeholder="Enter your password"
                 control={control}
                 name="password"
                 errors={errors}
-                secureTextEntry
-                textContentType="password"
               />
             </View>
 

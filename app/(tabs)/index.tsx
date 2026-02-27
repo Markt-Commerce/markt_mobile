@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo } from "react";
+import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,9 +10,10 @@ import {
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from "react-native";
-import { Plus, Search } from "lucide-react-native";
+import { Plus, Search, Compass } from "lucide-react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
-import { useRouter } from "expo-router";
+import type { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
+import { useRouter, useFocusEffect } from "expo-router";
 import type { FeedItem, FeedProduct } from "../../types/feed";
 import { useUser } from "../../hooks/userContextProvider";
 import { switchUserRole } from "../../services/sections/auth";
@@ -20,6 +21,7 @@ import { setUserSession } from "../../services/authStorage";
 import ProductFormBottomSheet from "../../components/productCreateBottomSheet";
 import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BuyerRequestFormBottomSheet from "../../components/buyerRequestBottomSheet";
+import CreateNicheBottomSheet from "../../components/nicheCreateBottomSheet";
 import QuickChatBottomSheet from "../../components/quickChatBottomSheet"; //for buyer request reply chat
 import { useToast } from "../../components/ToastProvider";
 import StartCards from "../../components/startCards";
@@ -28,22 +30,31 @@ import FeedProductCard from "../../components/FeedProductCard";
 import ShopStrip from "../../components/ShopStrip";
 import { useFeed } from "../../hooks/useFeed";
 import { isFeedPost, isFeedProduct } from "../../types/feed";
+import { getMyNiches } from "../../services/sections/niches";
+import { getUserProfile } from "../../services/sections/profile";
+import type { Niches } from "../../models/niches";
+import type { UserProfile } from "../../models/profile";
 
-const TABS = [
+const MAIN_TABS = [
   { id: "for_you" as const, label: "For You" },
   { id: "discover" as const, label: "Discover" },
   { id: "trending" as const, label: "Trending" },
   { id: "following" as const, label: "Following" },
 ];
 
+type TabId = "for_you" | "discover" | "trending" | "following" | string;
+
 export default function FeedScreen() {
   const router = useRouter();
-  const [selectedTab, setSelectedTab] = useState<"for_you" | "discover" | "trending" | "following">("for_you");
+  const [selectedTab, setSelectedTab] = useState<TabId>("for_you");
+  const [myNiches, setMyNiches] = useState<Niches[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loadedStartCards, setLoadedStartCards] = useState(false);
   const { show } = useToast();
 
   const { role, user, setRole } = useUser();
-  const { items, loading, loadingMore, hasNext, error, refresh, loadMore } = useFeed(selectedTab);
+  const feedTab = selectedTab;
+  const { items, loading, loadingMore, hasNext, error, refresh, loadMore } = useFeed(feedTab);
   const snapPoints = useMemo(() => ["30%"], []);
 
   // Bottom sheet refs
@@ -51,6 +62,7 @@ export default function FeedScreen() {
   const productFormRef = useRef<BottomSheet>(null);
   const postFormRef = useRef<BottomSheet>(null);
   const requestFormRef = useRef<BottomSheet>(null);
+  const nicheFormRef = useRef<BottomSheetMethods | null>(null);
 
   const chatSheetRef = useRef<BottomSheet>(null);
   const productChatSheetRef = useRef<BottomSheet>(null);
@@ -89,12 +101,15 @@ export default function FeedScreen() {
   };
   const closeMenu = () => createMenuRef.current?.close();
 
-  const openForm = (form: "product" | "post" | "request") => {
+  const openForm = (form: "product" | "post" | "request" | "niche") => {
     closeMenu();
     if (form === "product") productFormRef.current?.expand();
     if (form === "post") postFormRef.current?.expand();
     if (form === "request") requestFormRef.current?.expand();
+    if (form === "niche") nicheFormRef.current?.expand?.();
   };
+
+  const hasBothRoles = (profile?.is_buyer && profile?.is_seller) ?? false;
 
   const handleSwitchMode = async () => {
     closeMenu();
@@ -109,10 +124,40 @@ export default function FeedScreen() {
         );
       }
       show({ variant: "success", title: "Mode switched", message: `Now in ${newRole === "seller" ? "Seller" : "Buyer"} mode` });
-    } catch {
-      show({ variant: "error", title: "Could not switch", message: "You may need both accounts. Check Profile." });
+    } catch (e) {
+      // Switch fails when user doesn't have both accounts; offer Create account
+      if (!profile?.is_seller) {
+        show({ variant: "info", title: "Create seller account", message: "This action requires a seller account. Create one from Profile." });
+        router.push("/(tabs)/profile");
+      } else if (!profile?.is_buyer) {
+        show({ variant: "info", title: "Create buyer account", message: "This action requires a buyer account. Create one from Profile." });
+        router.push("/(tabs)/profile");
+      } else {
+        show({ variant: "error", title: "Could not switch", message: "Please try again." });
+      }
     }
   };
+
+  const handleCreateAccount = () => {
+    closeMenu();
+    router.push("/(tabs)/profile");
+  };
+
+  const fetchMyNiches = useCallback(async () => {
+    try {
+      const res = await getMyNiches(1, 20);
+      setMyNiches(res.items.map((m) => m.niche));
+    } catch {
+      // ignore; niches optional for feed chips
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyNiches();
+      getUserProfile().then(setProfile).catch(() => setProfile(null));
+    }, [fetchMyNiches])
+  );
 
   useEffect(() => {
     refresh();
@@ -144,9 +189,9 @@ export default function FeedScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 24 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 16 }}
         >
-          {TABS.map((t) => (
+          {MAIN_TABS.map((t) => (
             <TouchableOpacity
               key={t.id}
               onPress={() => setSelectedTab(t.id)}
@@ -175,6 +220,46 @@ export default function FeedScreen() {
               )}
             </TouchableOpacity>
           ))}
+          {myNiches.map((n) => (
+            <TouchableOpacity
+              key={n.id}
+              onPress={() => setSelectedTab(n.id)}
+              className="py-2 px-3 min-h-[44px] justify-center rounded-full bg-bg-muted relative"
+              accessibilityRole="tab"
+              accessibilityState={{ selected: selectedTab === n.id }}
+              accessibilityLabel={n.name}
+            >
+              <Text
+                className={`font-semibold text-sm ${selectedTab === n.id ? "text-text-primary" : "text-text-secondary"}`}
+                numberOfLines={1}
+                style={{ maxWidth: 80 }}
+              >
+                {n.name}
+              </Text>
+              {selectedTab === n.id && (
+                <View
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 2,
+                    backgroundColor: "#e26136",
+                    borderRadius: 1,
+                  }}
+                />
+              )}
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity
+            onPress={() => router.push("/discoverNiches")}
+            className="py-2 px-3 min-h-[44px] flex-row items-center gap-1"
+            accessibilityRole="button"
+            accessibilityLabel="Explore communities"
+          >
+            <Compass size={18} color="#e26136" />
+            <Text className="font-semibold text-sm text-primary">Explore</Text>
+          </TouchableOpacity>
         </ScrollView>
       </View>
 
@@ -231,7 +316,9 @@ export default function FeedScreen() {
                 {selectedTab === "following" ? "Follow sellers to see their products" : "No items yet"}
               </Text>
               <Text className="text-text-secondary text-sm mt-2 text-center">
-                Pull to refresh or tap + to create a post or product.
+                {role === "buyer"
+                  ? "Pull to refresh or tap + to create a post or buyer request."
+                  : "Pull to refresh or tap + to create a post or product."}
               </Text>
               <TouchableOpacity
                 onPress={openMenu}
@@ -277,12 +364,35 @@ export default function FeedScreen() {
                 <Text className="font-semibold text-base text-text-primary">Make offer</Text>
                 <Text className="text-xs text-text-secondary mt-0.5">Browse requests and submit offers.</Text>
               </TouchableOpacity>
+              <TouchableOpacity onPress={() => openForm("niche")} className="border-b border-border-light py-4" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create community</Text>
+                <Text className="text-xs text-text-secondary mt-0.5">Start a topic-based niche for your audience.</Text>
+              </TouchableOpacity>
             </>
           )}
-          <TouchableOpacity onPress={handleSwitchMode} className="py-4" activeOpacity={0.7}>
-            <Text className="font-semibold text-base text-primary">Switch mode</Text>
-            <Text className="text-xs text-text-secondary mt-0.5">Change between Buyer and Seller.</Text>
-          </TouchableOpacity>
+          {hasBothRoles ? (
+            <TouchableOpacity onPress={handleSwitchMode} className="py-4" activeOpacity={0.7}>
+              <Text className="font-semibold text-base text-primary">Switch mode</Text>
+              <Text className="text-xs text-text-secondary mt-0.5">Change between Buyer and Seller.</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={handleCreateAccount} className="py-4" activeOpacity={0.7}>
+              <Text className="font-semibold text-base text-primary">
+                {role === "buyer" && !profile?.is_seller
+                  ? "Create seller account"
+                  : role === "seller" && !profile?.is_buyer
+                    ? "Create buyer account"
+                    : "Switch mode"}
+              </Text>
+              <Text className="text-xs text-text-secondary mt-0.5">
+                {!profile?.is_seller
+                  ? "Add a seller account to list products and manage a shop."
+                  : !profile?.is_buyer
+                    ? "Add a buyer account to browse and purchase."
+                    : "Change between Buyer and Seller."}
+              </Text>
+            </TouchableOpacity>
+          )}
         </BottomSheetView>
       </BottomSheet>
 
@@ -290,6 +400,12 @@ export default function FeedScreen() {
       <ProductFormBottomSheet ref={productFormRef} />
       <PostFormBottomSheet ref={postFormRef}/>
       <BuyerRequestFormBottomSheet ref={requestFormRef}/>
+      {role === "seller" && (
+        <CreateNicheBottomSheet
+          ref={nicheFormRef}
+          onCreated={fetchMyNiches}
+        />
+      )}
 
       {/* FAB — bottom right, opens create menu */}
       <TouchableOpacity

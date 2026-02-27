@@ -15,17 +15,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input } from "../../components/inputs";
 import { useUser } from "../../hooks/userContextProvider";
-import { registerUser } from "../../services/sections/auth";
+import { checkUsername } from "../../services/sections/auth";
 import { useRouter } from "expo-router";
 import { SignupStepTwo, register, useRegData } from "../../models/signupSteps";
 import Button from "../../components/button";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useToast } from "../../components/ToastProvider";
-import * as ImagePicker from 'expo-image-picker';
+import * as ImagePicker from "expo-image-picker";
+import { useDebouncedCallback } from "../../hooks/useDebouncedCallback";
+import { useWatch } from "react-hook-form";
 
+const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 const schema = z.object({
   Buyername: z.string().min(1, "Name is required"),
-  username: z.string().min(1, "Username is required"),
+  username: z.string().min(3, "At least 3 characters").max(20, "Max 20 characters").regex(USERNAME_REGEX, "Letters, numbers, underscores only"),
   phone_number: z.string().min(1, "Phone number is required"),
 });
 
@@ -35,6 +38,8 @@ export default function UserInfoScreen() {
   const router = useRouter();
   const { show } =  useToast();
   const [profilePictureUri, setProfilePictureUri] = React.useState<string | null>(null);
+  const [usernameStatus, setUsernameStatus] = React.useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [usernameMessage, setUsernameMessage] = React.useState("");
 
   const {
     control,
@@ -44,6 +49,26 @@ export default function UserInfoScreen() {
     resolver: zodResolver(schema),
     mode: "onChange",
   });
+
+  const username = useWatch({ control, name: "username", defaultValue: "" });
+  const checkUsernameDebounced = useDebouncedCallback(async (value: string) => {
+    if (value.length < 3 || !USERNAME_REGEX.test(value)) {
+      setUsernameStatus("idle");
+      return;
+    }
+    setUsernameStatus("checking");
+    try {
+      const res = await checkUsername(value);
+      setUsernameStatus(res.available ? "available" : "taken");
+      setUsernameMessage(res.message ?? "");
+    } catch {
+      setUsernameStatus("idle");
+    }
+  }, 500);
+
+  React.useEffect(() => {
+    checkUsernameDebounced(username);
+  }, [username]);
 
   // Change this to the actual next screen in your flow if different
   const NEXT_ROUTE = "/emailVerification";
@@ -186,13 +211,19 @@ export default function UserInfoScreen() {
                 />
               </View>
 
-              {/* Username */}
+              {/* Username — debounced check per REGISTRATION_LOGIN_API §2.2 */}
               <View className="mb-4">
                 <Label>Username</Label>
                 {errors.username ? (
                   <Text className="mb-1 text-xs text-[#e9242a]">
                     {errors.username.message as string}
                   </Text>
+                ) : usernameStatus === "taken" ? (
+                  <Text className="mb-1 text-xs text-[#e9242a]">{usernameMessage}</Text>
+                ) : usernameStatus === "available" ? (
+                  <Text className="mb-1 text-xs text-green-600">✓ Available</Text>
+                ) : usernameStatus === "checking" ? (
+                  <Text className="mb-1 text-xs text-[#8e7a74]">Checking…</Text>
                 ) : (
                   <Text className="mb-1 text-xs text-[#8e7a74]">
                     This will be visible to other users.
@@ -230,11 +261,11 @@ export default function UserInfoScreen() {
                 />
               </View>
 
-              {/* CTA */}
+              {/* CTA — disable if username taken */}
               <View className="mt-6">
                 <Button
                   onPress={handleSubmit(handleSubmitForm)}
-                  disabled={!isValid}
+                  disabled={!isValid || usernameStatus === "taken" || usernameStatus === "checking"}
                   text="Next"
                 />
               </View>

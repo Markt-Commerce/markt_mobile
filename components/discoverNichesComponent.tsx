@@ -19,7 +19,7 @@ export default function DiscoverNiches() {
   const loadNiches = async () => {
     setLoading(true);
     try {
-      const res = await getNiches(1, 10);
+      const res = await getNiches({ page: 1, per_page: 10 });
       setNiches(res.items || []);
     } catch (err) {
       console.error("Failed to load niches:", err);

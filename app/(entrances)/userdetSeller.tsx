@@ -17,16 +17,19 @@ import { getAllCategories } from "../../services/sections/categories";
 import { Category } from "../../models/categories";
 import { useRouter } from "expo-router";
 import { CategoryAddition } from "../../components/categoryAddition";
-import { registerUser } from "../../services/sections/auth";
+import { checkUsername } from "../../services/sections/auth";
 import { Input } from "../../components/inputs";
 import Button from "../../components/button";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useToast } from "../../components/ToastProvider";
-import * as ImagePicker from 'expo-image-picker'; 
+import * as ImagePicker from "expo-image-picker";
+import { useDebouncedCallback } from "../../hooks/useDebouncedCallback";
+import { useWatch } from "react-hook-form"; 
 
+const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 const schema = z.object({
   shopName: z.string().min(1, "Shop name is required"),
-  userName: z.string().min(1, "Username is required"),
+  userName: z.string().min(3, "At least 3 characters").max(20, "Max 20 characters").regex(USERNAME_REGEX, "Letters, numbers, underscores only"),
   shopDescription: z.string().min(1, "Shop description is required"),
   phoneNumber: z.string().min(1, "Phone number is required"),
 });
@@ -41,11 +44,33 @@ const ShopInformationScreen = () => {
   const [selectedCategories, setSelectedCategories] = React.useState<Category[]>([]);
   const [modalVisible, setModalVisible] = React.useState(false);
   const [profilePictureUri, setProfilePictureUri] = React.useState<string | null>(null);
+  const [usernameStatus, setUsernameStatus] = React.useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [usernameMessage, setUsernameMessage] = React.useState("");
 
   const { control, handleSubmit, formState: { errors, isValid } } = useForm({
     resolver: zodResolver(schema),
     mode: "onChange",
   });
+
+  const username = useWatch({ control, name: "userName", defaultValue: "" });
+  const checkUsernameDebounced = useDebouncedCallback(async (value: string) => {
+    if (value.length < 3 || !USERNAME_REGEX.test(value)) {
+      setUsernameStatus("idle");
+      return;
+    }
+    setUsernameStatus("checking");
+    try {
+      const res = await checkUsername(value);
+      setUsernameStatus(res.available ? "available" : "taken");
+      setUsernameMessage(res.message ?? "");
+    } catch {
+      setUsernameStatus("idle");
+    }
+  }, 500);
+
+  React.useEffect(() => {
+    checkUsernameDebounced(username);
+  }, [username]);
 
   React.useEffect(() => {
     async function fetchCategories() {
@@ -182,9 +207,12 @@ const ShopInformationScreen = () => {
             {errors.shopName && <Text className="text-[#e9242a] text-xs font-medium mb-1">{errors.shopName.message as string}</Text>}
             <Input placeholder="Enter shop name" control={control} name="shopName" errors={errors} />
 
-            {/* Username */}
+            {/* Username — debounced check */}
             <View className="mt-4">
               {errors.userName && <Text className="text-[#e9242a] text-xs font-medium mb-1">{errors.userName.message as string}</Text>}
+              {usernameStatus === "taken" && !errors.userName && <Text className="text-[#e9242a] text-xs font-medium mb-1">{usernameMessage}</Text>}
+              {usernameStatus === "available" && <Text className="text-green-600 text-xs font-medium mb-1">✓ Available</Text>}
+              {usernameStatus === "checking" && <Text className="text-[#8e7a74] text-xs mb-1">Checking…</Text>}
               <Input placeholder="Enter username" control={control} name="userName" errors={errors} />
             </View>
 
@@ -233,7 +261,7 @@ const ShopInformationScreen = () => {
 
         {/* Save / Next */}
         <View className="px-4 mt-6">
-          <Button onPress={handleSubmit(handleSubmitForm)} disabled={!isValid} text="Next" />
+          <Button onPress={handleSubmit(handleSubmitForm)} disabled={!isValid || usernameStatus === "taken" || usernameStatus === "checking"} text="Next" />
         </View>
 
         {/* Modal */}
