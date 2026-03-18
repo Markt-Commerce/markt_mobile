@@ -30,6 +30,18 @@ export const initiatePayment = async (paymentData: PaymentInit): Promise<Transac
   }
 };
 
+export const getPaymentDetails = async (paymentId: string): Promise<Transaction> =>{
+  try {
+    const response = await request<any>(`${BASE_URL}/payments/${paymentId}`,{
+      method: "GET",
+    });
+    return response;
+  } catch (error) {
+    console.error("Error getting payment details: ",error);
+    throw error;
+  }
+}
+
 export const initializePayment = async (paymentData: PaymentInit): Promise<InitializeResponse> => {
   try {
     paymentData.method = "card"; // Ensure method is set to card for this 

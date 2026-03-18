@@ -22,7 +22,7 @@ export default function PaymentMethod() {
         amount: orderTotal,
         metadata: {},
       });
-      router.push(`/checkout/payscreen/${paymentInitialization.access_code}`) // id in this case should be the initialization id
+      router.push(`/checkout/payscreen/${paymentInitialization.payment_id}`) // id in this case should be the initialization id
     } catch (error) {
       console.log(error)
       show({
