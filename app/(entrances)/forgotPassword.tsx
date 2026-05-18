@@ -1,4 +1,5 @@
 import { Button, Text, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import React, { useState } from 'react'
 import { Input } from '../../components/inputs';
 import { z } from 'zod';
@@ -75,7 +76,7 @@ const forgotPassword = () => {
   }
 
   return (
-    <View className="flex-1 bg-white justify-center items-center px-4">
+    <SafeAreaView className="flex-1 bg-white justify-center items-center px-4">
       <View className="w-full max-w-[480px]">
         <Text className="text-[#171212] text-[28px] font-bold leading-tight text-center pb-3 pt-5">
           Forgot Password
@@ -93,7 +94,7 @@ const forgotPassword = () => {
         <Input placeholder="Confirm New Password" control={control} name="confirmNewPassword" errors={errors} secureTextEntry={true} />
         <Button color={"#e9242a"} title="Reset Password" onPress={handleSubmit(onSubmit)} disabled={!isValid || !emailSent} />
       </View>
-    </View>
+    </SafeAreaView>
   )
 }
 

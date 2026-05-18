@@ -1,10 +1,11 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft } from "lucide-react-native";
 
 export default function VerificationScreen() {
     return (
-      <View className="flex-1 bg-white justify-center items-center px-4">
+      <SafeAreaView className="flex-1 bg-white justify-center items-center px-4">
         <View className="w-full max-w-[480px]">
           <Text className="text-[#171212] text-[22px] font-bold leading-tight text-center pb-3 pt-5">
             Verify Your Email
@@ -25,6 +26,6 @@ export default function VerificationScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Switch } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft, ChevronsUpDown } from "lucide-react-native";
 
@@ -23,7 +24,7 @@ export default function PaymentInfo() {
   };
 
   return (
-    <View className="flex-1 bg-white justify-between">
+    <SafeAreaView className="flex-1 bg-white justify-between">
       <ScrollView>
 
         
@@ -126,6 +127,6 @@ export default function PaymentInfo() {
       </View>
 
       <View className="h-5 bg-white" />
-    </View>
+    </SafeAreaView>
   );
 }

@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft, FileText, Plus } from "lucide-react-native";
 import { useUser } from "../../hooks/userContextProvider";
@@ -49,7 +50,7 @@ export default function RequestsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white">
       <View className="px-4 py-3 border-b border-border">
         <View className="flex-row items-center justify-between mb-3">
           <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 rounded-full bg-bg-muted items-center justify-center">
@@ -122,6 +123,6 @@ export default function RequestsScreen() {
           }
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }

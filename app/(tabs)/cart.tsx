@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {View,Text,Image,TouchableOpacity,ScrollView,ActivityIndicator,RefreshControl} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {getCart,updateCartItem,deleteCartItem,getCartSummary,checkoutCart} from "../../services/sections/cart";
 import { Cart, CartItem, CartSummary, CheckoutRequest } from "../../models/cart";
 import { ArrowLeft, Trash2 } from "lucide-react-native";
@@ -111,16 +112,16 @@ export default function CartScreen() {
   // ---------- States ----------
   if (loading && !refreshing) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <SafeAreaView className="flex-1 items-center justify-center bg-white">
         <ActivityIndicator size="large" color="#e26136" />
         <Text className="mt-3 text-[#171311] font-medium">Loading your cart…</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (!cart || cart.items?.length === 0) {
     return (
-      <View className="flex-1 bg-white">
+      <SafeAreaView className="flex-1 bg-white">
         {/* Header */}
         <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
           <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 rounded-full items-center justify-center bg-[#f4f1f0]">
@@ -148,13 +149,13 @@ export default function CartScreen() {
             <Text className="text-white font-semibold">Start shopping</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   // ---------- Main ----------
   return (
-    <View className="flex-1 bg-[#faf9f8]">
+    <SafeAreaView className="flex-1 bg-[#faf9f8]">
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
         <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 rounded-full items-center justify-center bg-white border border-[#efe9e7]">
@@ -278,6 +279,6 @@ export default function CartScreen() {
 
         <View className="h-6" />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }

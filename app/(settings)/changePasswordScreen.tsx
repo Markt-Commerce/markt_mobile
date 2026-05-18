@@ -1,6 +1,7 @@
 // screens/ChangePasswordScreen.tsx
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePasswordResetConfirm } from '../../hooks/useAuth';
 
 export default function ChangePasswordScreen() {
@@ -19,6 +20,7 @@ export default function ChangePasswordScreen() {
   };
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
     <ScrollView className="p-4 bg-white">
       <Text className="text-base mb-2">Email</Text>
       <TextInput value={email} onChangeText={setEmail} className="border p-3 rounded mb-2" keyboardType="email-address" />
@@ -33,5 +35,6 @@ export default function ChangePasswordScreen() {
         <Text className="text-white font-bold">Change Password</Text>
       </TouchableOpacity>
     </ScrollView>
+    </SafeAreaView>
   );
 }

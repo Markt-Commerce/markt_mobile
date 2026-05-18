@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity, ImageBackground } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Search } from "lucide-react-native";
 import { ScrollView } from "react-native";
 
@@ -32,7 +33,7 @@ export default function ListingsScreen() {
   ];
 
   return (
-    <View className="flex-1 bg-[#fcf8f8]">
+    <SafeAreaView className="flex-1 bg-[#fcf8f8]">
       {/* Header */}
       <View className="px-4 pt-12 pb-3 bg-[#fcf8f8]">
         <Text className="text-2xl font-bold text-[#1b0e0e]">Listings</Text>
@@ -70,6 +71,6 @@ export default function ListingsScreen() {
         ))}
         <View className="h-6" />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }

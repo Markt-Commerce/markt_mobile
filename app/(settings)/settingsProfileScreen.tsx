@@ -1,6 +1,7 @@
 // screens/SettingsProfileScreen.tsx
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, ArrowRight, Bell, Sun, Globe, User, Lock, CreditCard, Truck, HelpCircle as Question, FileText, ShieldCheck, Info } from 'lucide-react-native';
 import { useUser } from '../../hooks/userContextProvider';
 import { request } from '../../services/api';
@@ -25,6 +26,7 @@ export default function SettingsProfileScreen() {
 
 
   return (
+    <SafeAreaView className="flex-1 bg-white">
     <ScrollView className="flex-1 bg-white">
       {/* Header */}
       <View className="flex-row items-center p-4 pb-2 justify-between">
@@ -87,5 +89,6 @@ export default function SettingsProfileScreen() {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }

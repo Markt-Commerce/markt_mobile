@@ -10,6 +10,7 @@ import {
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Plus, Search, Compass } from "lucide-react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import type { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
@@ -285,7 +286,7 @@ export default function FeedScreen() {
 
 
   return (
-    <View style={{ flex: 1, backgroundColor: "white" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
       <Header/>
       <FlatList
         className="bg-white"
@@ -443,6 +444,6 @@ export default function FeedScreen() {
           sheetRef={productChatSheetRef}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }

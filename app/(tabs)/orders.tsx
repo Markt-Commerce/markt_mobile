@@ -15,6 +15,7 @@ import {
   RefreshControl,
   Image,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Trash2, RefreshCw, Info } from "lucide-react-native";
 import { useUser } from "../../hooks/userContextProvider";
@@ -310,7 +311,7 @@ export default function OrdersScreen() {
       : [{ id: "ongoing" as const, label: "Orders" }];
 
   return (
-    <View className="flex-1 bg-bg-elevated">
+    <SafeAreaView className="flex-1 bg-bg-elevated">
       <View className="bg-white border-b border-border px-4 pt-4 pb-2">
         <View className="flex-row items-center justify-between mb-3">
           <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 rounded-full bg-bg-muted items-center justify-center">
@@ -350,6 +351,6 @@ export default function OrdersScreen() {
         />
       )}
       {role === "seller" && <SellerOrdersTab />}
-    </View>
+    </SafeAreaView>
   );
 }

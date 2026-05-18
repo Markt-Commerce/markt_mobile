@@ -11,6 +11,7 @@ import {
   RefreshControl,
   TextInput,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Search } from "lucide-react-native";
 import { getRooms } from "../../services/sections/chat";
@@ -80,7 +81,7 @@ export default function MessagesScreen() {
   }, [data?.rooms, search]);
 
   return (
-    <View className="flex-1 bg-[#fafafa]">
+    <SafeAreaView className="flex-1 bg-[#fafafa]">
       <View className="bg-white border-b border-[#efefef] px-4 pt-4 pb-3">
         <Text className="text-[22px] font-bold text-[#1a1a1a]">Messages</Text>
         <View className="flex-row items-center bg-[#efefef] rounded-[10px] mt-3 px-3 py-2.5">
@@ -185,6 +186,6 @@ export default function MessagesScreen() {
           </Text>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
