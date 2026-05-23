@@ -6,8 +6,9 @@
  * Profile: hidden (reached via drawer)
  */
 import React, { useState, useEffect } from "react";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Home, Search, FileText, ShoppingBag, MessageCircle } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DrawerProvider, useDrawer } from "../../hooks/drawerContext";
@@ -16,9 +17,16 @@ import AppBar from "../../components/AppBar";
 import NavDrawer from "../../components/NavDrawer";
 import type { UserProfile } from "../../models/profile";
 
+const TAB_BAR_CONTENT_HEIGHT = 56;
+const TAB_BAR_PADDING_TOP = 6;
+const TAB_BAR_PADDING_BOTTOM = 8;
+
 function TabsWithDrawer() {
   const { isOpen, closeDrawer } = useDrawer();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const insets = useSafeAreaInsets();
+  /** Android edge-to-edge: system nav bar overlaps unless we pad the tab bar (do not hide system nav). */
+  const tabBarBottomInset = Platform.OS === "android" ? insets.bottom : 0;
 
   useEffect(() => {
     getUserProfile()
@@ -50,9 +58,9 @@ function TabsWithDrawer() {
               backgroundColor: "white",
               borderTopWidth: 1,
               borderTopColor: "#efe9e7",
-              paddingBottom: 8,
-              paddingTop: 6,
-              height: 64,
+              paddingTop: TAB_BAR_PADDING_TOP,
+              paddingBottom: TAB_BAR_PADDING_BOTTOM + tabBarBottomInset,
+              height: TAB_BAR_CONTENT_HEIGHT + TAB_BAR_PADDING_TOP + TAB_BAR_PADDING_BOTTOM + tabBarBottomInset,
             },
           }}
         >

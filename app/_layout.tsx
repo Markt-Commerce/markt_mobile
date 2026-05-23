@@ -9,6 +9,7 @@ import { ThemeProvider} from "../components/themeProvider";
 import { useState } from "react";
 import { RegisterRequest } from "../models/auth";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import React from "react";
 
 export default function RootLayout() {
@@ -23,17 +24,19 @@ export default function RootLayout() {
   });
 
   return (
-    <ThemeProvider>
-    <ToastProvider>
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <UserProvider>
-        <RegisterProvider value={{ regData, setRegData }}>
-          <AppStack />
-        </RegisterProvider>
-      </UserProvider>
-    </GestureHandlerRootView>
-    </ToastProvider>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <UserProvider>
+              <RegisterProvider value={{ regData, setRegData }}>
+                <AppStack />
+              </RegisterProvider>
+            </UserProvider>
+          </GestureHandlerRootView>
+        </ToastProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 
