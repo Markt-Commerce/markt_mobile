@@ -10,12 +10,13 @@ import { useTheme } from "../../components/themeProvider";    // <- simple conte
 import { TView, TText } from "../../components/themed";       // <- Themed components (pick classes via context)
 import { useToast } from "../../components/ToastProvider";    // <- optional toast
 import { createBuyer, logoutUser, switchUserRole } from "../../services/sections/auth";
+import { navigateToGuestHome } from "../../utils/authNavigation";
 import CreateRoleBottomSheet from "../../components/createRoleBottomSheet";
 import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 
 export default function SettingsProfileScreen() {
   const nav = useRouter();
-  const { user, role, setRole } = useUser();
+  const { user, role, setRole, setUser } = useUser();
   const { resolvedTheme, setTheme } = useTheme();
   const { show } = useToast();
 
@@ -399,11 +400,12 @@ export default function SettingsProfileScreen() {
           <View className="w-full max-w-[640px] self-center px-4 pt-4 pb-6">
             <TouchableOpacity
               className="h-11 rounded-full justify-center items-center active:opacity-85"
-              onPress={() => {
+              onPress={async () => {
                 try {
-                 logoutUser(); 
-                 show({ variant: "info", title: "Logged out", message: "You’ve been signed out." });
-                 nav.push("/login")
+                  await logoutUser();
+                  setUser(null);
+                  show({ variant: "info", title: "Logged out", message: "You've been signed out." });
+                  navigateToGuestHome();
                 } catch (error) {
                   show({
                     variant: "error",

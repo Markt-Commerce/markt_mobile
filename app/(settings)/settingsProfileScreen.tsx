@@ -6,7 +6,8 @@ import { ArrowLeft, ArrowRight, Bell, Sun, Globe, User, Lock, CreditCard, Truck,
 import { useUser } from '../../hooks/userContextProvider';
 import { request } from '../../services/api';
 import { useTheme } from '../../hooks/themeContext';
-import { useRouter, Link } from 'expo-router';	
+import { useRouter, Link } from 'expo-router';
+import { navigateToGuestHome } from '../../utils/authNavigation';	
 
 export default function SettingsProfileScreen() {
   const { user, setUser } = useUser();
@@ -18,7 +19,7 @@ export default function SettingsProfileScreen() {
     try {
       await request('/users/logout', { method: 'POST' });
       setUser(null);
-      nav.push('/(entrances)/login');
+      navigateToGuestHome();
     } catch (err: any) {
       Alert.alert('Logout Failed', err.message || 'Try again');
     }

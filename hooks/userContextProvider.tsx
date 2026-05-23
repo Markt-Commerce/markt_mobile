@@ -5,10 +5,10 @@
  * - Session persistence: user + role + 7-day expiry
  */
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef, ReactNode } from "react";
-import { useRouter } from "expo-router";
 import { getStoredUser } from "../services/authStorage";
 import { setOnUnauthorized } from "../services/api";
 import { useToast } from "../components/ToastProvider";
+import { navigateToGuestHome } from "../utils/authNavigation";
 
 type UserRole = "buyer" | "seller" | null;
 
@@ -36,7 +36,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<UserRole>("buyer");
   const [isRestoringSession, setIsRestoringSession] = useState(true);
   const { show } = useToast();
-  const router = useRouter();
   const hasShownSessionExpiredRef = useRef(false);
 
   const checkAuthStatus = useCallback(async () => {
@@ -78,11 +77,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         hasShownSessionExpiredRef.current = true;
         show({ variant: "info", title: "Session expired", message: "Please sign in again." });
       }
-      router.replace("/introduction");
+      navigateToGuestHome();
     };
     setOnUnauthorized(handleUnauthorized);
     return () => setOnUnauthorized(null);
-  }, [show, router]);
+  }, [show]);
 
   return (
     <UserContext.Provider value={{ user, role, setUser, setRole, isRestoringSession, checkAuthStatus }}>

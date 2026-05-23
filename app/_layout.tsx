@@ -9,11 +9,9 @@ import { ThemeProvider} from "../components/themeProvider";
 import { useState } from "react";
 import { RegisterRequest } from "../models/auth";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-//import * as SecureStore from 'expo-secure-store';
 import React from "react";
 
 export default function RootLayout() {
-  // Temporary regData state until you move this into entrances/_layout.tsx
   const [regData, setRegData] = useState<RegisterRequest>({
     email: "",
     password: "",
@@ -24,9 +22,6 @@ export default function RootLayout() {
     seller_data: {} as RegisterRequest["seller_data"],
   });
 
-
-  // Persist user session on app load
-  // Firstly, check if there is a stored user information in SecureStore
   return (
     <ThemeProvider>
     <ToastProvider>
@@ -44,6 +39,7 @@ export default function RootLayout() {
 
 export function AppStack() {
   const { user, isRestoringSession } = useUser();
+  const isLoggedIn = !!user;
 
   if (isRestoringSession) {
     return (
@@ -54,9 +50,18 @@ export function AppStack() {
     );
   }
 
-  if (!user) {
-    return <Stack key="guest" screenOptions={{ headerShown: false }} initialRouteName="introduction" />;
-  }
+  // Single stack + Stack.Protected: when logged in, guest routes are removed from
+  // navigation history (fixes iOS swipe-back landing on introduction after login).
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={isLoggedIn}>
+        <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+      </Stack.Protected>
 
-  return <Stack key="auth" screenOptions={{ headerShown: false }} />;
+      <Stack.Protected guard={!isLoggedIn}>
+        <Stack.Screen name="introduction" />
+        <Stack.Screen name="(entrances)" />
+      </Stack.Protected>
+    </Stack>
+  );
 }

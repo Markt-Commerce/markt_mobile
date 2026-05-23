@@ -1,10 +1,22 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { ImageBackground, View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
+import { useUser } from "../hooks/userContextProvider";
+import { navigateToAppHome } from "../utils/authNavigation";
 
 export default function MarktLandingScreen() {
   const router = useRouter();
+  const { user } = useUser();
+
+  // Safety net if iOS swipe-back briefly surfaces this screen while authenticated.
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+        navigateToAppHome();
+      }
+    }, [user])
+  );
 
   // Fake starter progress (feel free to wire to real data)
   const level = 1;

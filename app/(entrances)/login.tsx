@@ -17,7 +17,8 @@ import { Input, PasswordInput } from "../../components/inputs";
 import Button from "../../components/button";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRegData } from "../../models/signupSteps";
-import { useToast } from "../../components/ToastProvider"; 
+import { useToast } from "../../components/ToastProvider";
+import { navigateToAppHome } from "../../utils/authNavigation"; 
 
 const schema = z.object({
   email: z.string().min(1, "Email is required"),
@@ -66,7 +67,7 @@ export default function LoginScreen() {
         message: `Signed in as ${userData.email.toLowerCase()}`,
       });
 
-      router.replace("/");
+      navigateToAppHome();
     } catch (error: any) {
       const errMsg =
         typeof error === "object" && error?.message
