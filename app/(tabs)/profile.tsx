@@ -405,6 +405,7 @@ export default function SettingsProfileScreen() {
                   await logoutUser();
                   setUser(null);
                   show({ variant: "info", title: "Logged out", message: "You've been signed out." });
+                  // Stack.Protected redirects guest routes when user clears; replace covers deep links.
                   navigateToGuestHome();
                 } catch (error) {
                   show({

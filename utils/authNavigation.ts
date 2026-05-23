@@ -1,17 +1,17 @@
 import { router } from "expo-router";
 
-/** Reset stack and land on the main app (post-login / session restore). */
+/**
+ * Auth navigation helpers.
+ * Use replace only — dismissAll() dispatches POP_TO_TOP and throws when the stack
+ * was already reset by Stack.Protected (e.g. on logout).
+ */
+
+/** Land on the main app (post-login / session restore). */
 export function navigateToAppHome() {
-  if (router.canDismiss()) {
-    router.dismissAll();
-  }
   router.replace("/(tabs)");
 }
 
-/** Reset stack and land on the guest landing screen (logout / session expired). */
+/** Land on the guest landing screen (logout / session expired). */
 export function navigateToGuestHome() {
-  if (router.canDismiss()) {
-    router.dismissAll();
-  }
   router.replace("/introduction");
 }

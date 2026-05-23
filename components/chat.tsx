@@ -175,6 +175,11 @@ export default function ChatScreen({ route }: ChatProps) {
   };
 
   useEffect(() => {
+    if (!roomId || roomId <= 0) {
+      setLoading(false);
+      setMessages([]);
+      return;
+    }
     loadInitial();
   }, [roomId]);
 
@@ -204,6 +209,8 @@ export default function ChatScreen({ route }: ChatProps) {
   }, [scrollToBottom]);
 
   useEffect(() => {
+    if (!roomId || roomId <= 0) return;
+
     chatSocket.connect();
     const offMsg = chatSocket.onMessage(onSocketMessage);
     const offTyping = chatSocket.onTyping(onTypingUpdate);

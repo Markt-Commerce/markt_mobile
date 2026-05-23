@@ -23,7 +23,8 @@ import ProductFormBottomSheet from "../../components/productCreateBottomSheet";
 import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BuyerRequestFormBottomSheet from "../../components/buyerRequestBottomSheet";
 import CreateNicheBottomSheet from "../../components/nicheCreateBottomSheet";
-import QuickChatBottomSheet from "../../components/quickChatBottomSheet"; //for buyer request reply chat
+import QuickChatBottomSheet from "../../components/quickChatBottomSheet";
+import { isOwnProductListing } from "../../utils/chatGuards";
 import { useToast } from "../../components/ToastProvider";
 import StartCards from "../../components/startCards";
 import FeedPostCard from "../../components/FeedPostCard";
@@ -93,6 +94,15 @@ export default function FeedScreen() {
   };
 
   const openProductChat = (product: FeedProduct) => {
+    const sellerUserId = product.seller?.user?.id;
+    if (isOwnProductListing(user?.user_id, sellerUserId)) {
+      show({
+        variant: "info",
+        title: "Cannot chat",
+        message: "You cannot message yourself about your own product.",
+      });
+      return;
+    }
     setProductForChat(product);
     productChatSheetRef.current?.expand();
   };

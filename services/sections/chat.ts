@@ -13,7 +13,8 @@ export async function getRooms(page = 1, per_page = 20): Promise<RoomListRespons
 }
 
 /**
- * Create or get a room with buyer/seller/product/request
+ * Create or get a room with buyer/seller/product/request.
+ * Idempotent per CHATS_API §1.2–1.3: returns existing room for same buyer+seller+product (or buyer+seller if no product_id).
  */
 export async function createOrGetRoom(payload: {
   buyer_id?: string;

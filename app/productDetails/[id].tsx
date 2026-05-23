@@ -13,6 +13,10 @@ import BottomSheet from "@gorhom/bottom-sheet";
 import QuickChatBottomSheet from "../../components/quickChatBottomSheet";
 import { useUser } from "../../hooks/userContextProvider";
 import { useToast } from "../../components/ToastProvider";
+import { formatNaira } from "../../utils/formatCurrency";
+import { isOwnProductListing } from "../../utils/chatGuards";
+import { normalizeUri, resolveMediaUri } from "../../utils/imageUri";
+import Avatar from "../../components/Avatar";
 
 
 export default function ProductDetails() {
@@ -102,6 +106,10 @@ const addProductToCart = async (product:ProductDetail)=>{
 
   if (!product) return <ActivityIndicator size="large" />;
 
+  const sellerUserId = product.seller_user?.id ?? (product as any).seller?.user?.id;
+  const isOwnProduct = isOwnProductListing(user?.user_id, sellerUserId);
+  const canMessageSeller = role === "buyer" && !isOwnProduct;
+
   return (
   <SafeAreaView className="flex-1 bg-white">
     <FlatList
@@ -113,7 +121,9 @@ const addProductToCart = async (product:ProductDetail)=>{
         <ScrollView className="flex-1 bg-white">
         {/* Header */}
         <View className="flex-row items-center justify-between p-4 pb-2">
-          <ArrowLeft color="#171311" size={24} />
+          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <ArrowLeft color="#171311" size={24} />
+          </TouchableOpacity>
           {role == "buyer" && <TouchableOpacity className="p-2" onPress={()=> router.navigate("/cart")}>
             <ShoppingBag color="#171311" size={24} />
           </TouchableOpacity>}
@@ -135,15 +145,24 @@ const addProductToCart = async (product:ProductDetail)=>{
                 const idx = Math.round(e.nativeEvent.contentOffset.x / Dimensions.get("window").width);
                 setCurrentImageIndex(idx);
               }}
-              renderItem={({ item }) => (
-                <View style={{ width: Dimensions.get("window").width }}>
-                  <ImageBackground
-                    source={{ uri: item?.media?.original_url || "" }}
-                    className="h-80 w-full justify-end p-5"
-                    imageStyle={{ borderRadius: 0 }}
-                  />
-                </View>
-              )}
+              renderItem={({ item }) => {
+                const uri = resolveMediaUri(item?.media);
+                return (
+                  <View style={{ width: Dimensions.get("window").width }}>
+                    {uri ? (
+                      <ImageBackground
+                        source={{ uri }}
+                        className="h-80 w-full justify-end p-5"
+                        imageStyle={{ borderRadius: 0 }}
+                      />
+                    ) : (
+                      <View className="h-80 w-full bg-[#f4f1f0] items-center justify-center">
+                        <Text className="text-text-secondary text-sm">No image</Text>
+                      </View>
+                    )}
+                  </View>
+                );
+              }}
             />
 
             {/* Dots indicator */}
@@ -163,33 +182,44 @@ const addProductToCart = async (product:ProductDetail)=>{
         )}
 
         {/* Buttons: Only active if user is a buyer*/}
-        {
-          role == "buyer" &&
-          (
+        {role === "buyer" && (
             <View className="flex-row justify-center gap-3 p-4">
-              <TouchableOpacity className="flex-1 rounded-lg h-10 justify-center items-center" disabled={addedToCart}
-              style={{
-                    backgroundColor: addedToCart ? "#178b1fff" : "#e2e2e2ff",
-                  }} 
-              onPress={() => addProductToCart(product)}>
-                <Text className="text-[#171311] font-bold"
+              <TouchableOpacity
+                className="flex-1 rounded-lg h-10 justify-center items-center"
+                disabled={addedToCart || isOwnProduct}
                 style={{
-                    color: addedToCart ? "#ffffff" : "#171311",
-                  }}>{!addedToCart ? "Add to Cart" : "Added"}</Text>
+                  backgroundColor: addedToCart ? "#178b1fff" : "#e2e2e2ff",
+                  opacity: isOwnProduct ? 0.5 : 1,
+                }}
+                onPress={() => addProductToCart(product)}
+              >
+                <Text
+                  className="text-[#171311] font-bold"
+                  style={{ color: addedToCart ? "#ffffff" : "#171311" }}
+                >
+                  {!addedToCart ? "Add to Cart" : "Added"}
+                </Text>
               </TouchableOpacity>
-              <TouchableOpacity className="flex-1 bg-[#e26136] rounded-lg h-10 justify-center items-center" onPress={()=> ChatBottomSheetRef.current?.expand()}>
-                <Text className="text-white font-bold">Message Seller</Text>
-              </TouchableOpacity>
+              {canMessageSeller ? (
+                <TouchableOpacity
+                  className="flex-1 bg-[#e26136] rounded-lg h-10 justify-center items-center"
+                  onPress={() => ChatBottomSheetRef.current?.expand()}
+                >
+                  <Text className="text-white font-bold">Message Seller</Text>
+                </TouchableOpacity>
+              ) : isOwnProduct ? (
+                <View className="flex-1 rounded-lg h-10 justify-center items-center bg-bg-muted px-2">
+                  <Text className="text-text-secondary text-xs text-center font-medium">Your listing</Text>
+                </View>
+              ) : null}
             </View>
-          )
-        }
+          )}
 
 
         {/* Product Info */}
         <Text className="px-4 pt-4 text-lg font-bold text-[#171311]">{product.name}</Text>
         <Text className="px-4 pt-1 pb-3 text-base text-[#171311]">sold by {product.seller.shop_name}</Text>
-        {/* Note to work on a way to determine or get the currency type */}
-        <Text className="px-4 pt-1 pb-3 text-base text-[#171311]">${product.price}</Text>
+        <Text className="px-4 pt-1 pb-3 text-base font-semibold text-[#171311]">{formatNaira(product.price)}</Text>
 
         {/* Quantity Selection */}
         <View className="px-4 py-2">
@@ -244,12 +274,10 @@ const addProductToCart = async (product:ProductDetail)=>{
         {/* Seller Info */}
         <Text className="px-4 pt-5 text-[22px] font-bold text-[#171311]">Seller Information</Text>
         <View className="flex-row items-center gap-4 px-4 py-2">
-          <ImageBackground
-            className="h-14 w-14 rounded-full bg-gray-300"
-            source={{
-              uri:
-                'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBPgKLgv9Gj5fb8il50qh4RJ7omsqpUBxvR5tYhU0iMUC2l64p0ORmCP4vp_yFD3jhgbTd-GteEkuyrFjpHpnl_xHUEedkYz4iC0ZZE6xgl_dfP7zm7QoNocJjfMAVs07fHHxYKw6A9q7a-ecglWwcHPFDnsxPBK2JrbAAf07o7GqGYNLW4VozfX8TFlJ205dTq7yvM3OINZcxXZLqz-3Z-iMZ1jqGne20WwBNKXx1ahWVtp3OrNH7nnCy5ulL0MOnBmZpcOci_Gg")',
-            }}
+          <Avatar
+            uri={normalizeUri(product.seller?.profile_picture_url) ?? undefined}
+            name={product.seller?.shop_name}
+            size={56}
           />
           <View>
             <Text className="text-[#171311] font-medium text-base">Shop: {product.seller.shop_name}</Text>
@@ -278,17 +306,23 @@ const addProductToCart = async (product:ProductDetail)=>{
           <View className="rounded-2xl overflow-hidden border border-[#efe9e7] bg-white">
             <Link href={`/productDetails/${item.id}`} asChild>
               <TouchableOpacity activeOpacity={0.85}>
-                <ImageBackground
-                  source={{ uri: item.images?.[0]?.media?.original_url }}
-                  className="w-full aspect-square"
-                  resizeMode="cover"
-                >
-                  <View className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-1">
-                    <Text className="text-[12px] font-semibold text-[#111418]">
-                      {item.price}
-                    </Text>
+                {resolveMediaUri(item.images?.[0]?.media) ? (
+                  <ImageBackground
+                    source={{ uri: resolveMediaUri(item.images?.[0]?.media)! }}
+                    className="w-full aspect-square"
+                    resizeMode="cover"
+                  >
+                    <View className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-1">
+                      <Text className="text-[12px] font-semibold text-[#111418]">
+                        {formatNaira(item.price)}
+                      </Text>
+                    </View>
+                  </ImageBackground>
+                ) : (
+                  <View className="w-full aspect-square bg-bg-muted items-center justify-center">
+                    <Text className="text-text-secondary text-sm">No image</Text>
                   </View>
-                </ImageBackground>
+                )}
                 <View className="px-3 pt-2">
                   <Text className="text-[14px] font-semibold text-[#171311]" numberOfLines={1}>
                     {item.name}
@@ -348,13 +382,16 @@ const addProductToCart = async (product:ProductDetail)=>{
       }
     />
 
-    {product && (
+    {canMessageSeller && product.seller_user && (
       <QuickChatBottomSheet
         sheetRef={ChatBottomSheetRef}
-        sellerId={product.seller_user.id}
+        sellerId={String(sellerUserId ?? product.seller_user.id)}
         buyerId={user?.user_id?.toString() ?? ""}
         product_id={product.id}
-        otherUser={{ username: product.seller_user.username, profile_picture: product.seller_user.profile_picture }}
+        otherUser={{
+          username: product.seller_user.username,
+          profile_picture: product.seller_user.profile_picture,
+        }}
         asBuyer
       />
     )}
