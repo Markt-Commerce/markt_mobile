@@ -26,6 +26,7 @@ export default function NicheDetailScreen() {
   const [totalPages, setTotalPages] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [postsRefreshKey, setPostsRefreshKey] = useState(0);
 
   const postFormRef = useRef<BottomSheetMethods | null>(null);
 
@@ -65,10 +66,18 @@ export default function NicheDetailScreen() {
   };
 
   useEffect(() => {
-    if (id && page > 1) {
+    if (!id) return;
+    setPage(1);
+    setPosts([]);
+    setHasMore(true);
+    setHasError(false);
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
       loadNichePosts();
     }
-  }, [page]);
+  }, [id, page, postsRefreshKey]);
 
   const checkMembershipStatus = async () => {
     if (!id) return;
@@ -109,19 +118,22 @@ export default function NicheDetailScreen() {
     setLoading(true);
     try {
       const res = await getNichePosts(id, page, 10);
-      setPosts((prev) => (page === 1 ? res.items || [] : [...prev, ...(res.items || [])]));
-      
-      // Update pagination info from response
-      setTotalPages(res.pagination.total_pages);
-      setHasMore(page < res.pagination.total_pages);
+      const items = res.items ?? [];
+      setPosts((prev) => (page === 1 ? items : [...prev, ...items]));
+
+      const totalPages = res.pagination?.total_pages ?? 1;
+      setTotalPages(totalPages);
+      setHasMore(page < totalPages);
       setHasError(false);
-      
-      if (res.items && res.items.length > 0) {
-        setNiche(res.items[0]?.niche);
+
+      if (items.length > 0 && items[0]?.niche) {
+        setNiche((prev) => prev ?? items[0].niche);
       }
     } catch (err) {
       console.error("Failed to load niche posts:", err);
-      show({ variant: "error", title: "Error", message: "Could not load posts." });
+      if (page === 1) {
+        show({ variant: "error", title: "Error", message: "Could not load posts." });
+      }
       setHasError(true);
     } finally {
       setLoading(false);
@@ -134,6 +146,11 @@ export default function NicheDetailScreen() {
       await joinNiche(id);
       setIsJoined(true);
       setIsBanned(false);
+      setHasError(false);
+      setPage(1);
+      setPosts([]);
+      setHasMore(true);
+      setPostsRefreshKey((k) => k + 1);
       show({ variant: "success", title: "Joined", message: "You joined this niche!" });
     } catch (err) {
       show({ variant: "error", title: "Error", message: "Could not join niche." });
@@ -152,9 +169,11 @@ export default function NicheDetailScreen() {
     }
   };
 
-  const renderPost = ({ item }: { item: NichePost }) => (
-    <PostDisplayComponent post={item.post} onLike={(postId) => likePost(postId)} />
-  );
+  const renderPost = ({ item }: { item: NichePost }) => {
+    const post = item.post;
+    if (!post?.id) return null;
+    return <PostDisplayComponent post={post} onLike={(postId) => likePost(postId)} />;
+  };
 
   const handleEndReached = () => {
     if (!loading && hasMore && !hasError) {
@@ -164,13 +183,17 @@ export default function NicheDetailScreen() {
 
   const handleRetry = () => {
     setHasError(false);
-    setPage(1);
     setPosts([]);
     setHasMore(true);
+    if (page === 1) {
+      loadNichePosts();
+    } else {
+      setPage(1);
+    }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
       <View className="flex-1">
         <View className="flex-row items-center justify-between px-4 py-3 border-b border-[#efe9e7]">
           <View className="flex-1">
@@ -250,10 +273,17 @@ export default function NicheDetailScreen() {
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.5}
           ListEmptyComponent={
-            !loading ? (
+            loading && posts.length === 0 ? (
               <View className="items-center justify-center py-16">
-                <Text className="text-[#876d64] text-sm">No posts yet</Text>
-                {isJoined && !isBanned && <Text className="text-[#876d64] text-xs mt-2">Be the first to post!</Text>}
+                <ActivityIndicator size="large" color="#e26136" />
+                <Text className="text-text-secondary text-sm mt-2">Loading posts…</Text>
+              </View>
+            ) : !loading && !hasError ? (
+              <View className="items-center justify-center py-16">
+                <Text className="text-text-secondary text-sm">No posts yet</Text>
+                {isJoined && !isBanned && (
+                  <Text className="text-text-secondary text-xs mt-2">Be the first to post!</Text>
+                )}
               </View>
             ) : null
           }

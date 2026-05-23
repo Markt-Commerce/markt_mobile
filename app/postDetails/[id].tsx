@@ -8,21 +8,20 @@ import { useToast } from "../../components/ToastProvider";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { parseDate } from "../../utils/parseDate";
 import { useUser } from "../../hooks/userContextProvider";
-import { defaultProfilePicture } from "../../models/defaults";
+import { getUserProfile } from "../../services/sections/profile";
+import Avatar from "../../components/Avatar";
+import type { UserProfile } from "../../models/profile";
 
 
 
 // Helper component for comment rendering
 const SingleCommentComponent = React.memo(({ comment }: { comment: CommentItem }) => {
-  /* we need to work on replies to comments in the backend. */
-  /* const paddingLeft = comment.isreply ? "pl-[68px]" : "pl-4"; */
   return (
-    <View
-      className={`flex w-full flex-row items-start justify-start gap-3 p-4 `}
-    >
-      <Image
-        source={{ uri: comment.user.profile_picture_url }}
-        className="aspect-square bg-cover rounded-full w-10 shrink-0"
+    <View className="flex w-full flex-row items-start justify-start gap-3 p-4">
+      <Avatar
+        uri={comment.user?.profile_picture_url}
+        name={comment.user?.username}
+        size={40}
       />
       <View className="flex h-full flex-1 flex-col items-start justify-start">
         <View className="flex w-full flex-row items-start justify-start gap-x-3">
@@ -56,7 +55,8 @@ export default function PostDetailsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { show } = useToast();
-  const {user, role} = useUser();
+  const { user } = useUser();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
 
   const FetchPost = async (id: string) => {
@@ -105,8 +105,14 @@ export default function PostDetailsScreen() {
   };
 
   useEffect(() => {
-    FetchPost(id);
+    if (id) FetchPost(id);
   }, [id]);
+
+  useEffect(() => {
+    getUserProfile()
+      .then(setProfile)
+      .catch(() => setProfile(null));
+  }, []);
 
   const createComment = async (comment: string, parentId?: number) => {
     try {
@@ -162,11 +168,16 @@ export default function PostDetailsScreen() {
     }
   }, [id, comments.length, loadComments]);
 
+  const myAvatarUri = profile?.profile_picture_url || profile?.profile_picture || undefined;
+  const myDisplayName = profile?.username || user?.email;
+
   if (!post) {
     return (
-      <View className="flex-1 justify-center items-center bg-white">
-        <ActivityIndicator size="large" color="#171311" />
-      </View>
+      <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color="#e26136" />
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -187,10 +198,7 @@ export default function PostDetailsScreen() {
       </View>
 
       <View className="flex flex-row gap-4 bg-white px-4 min-h-[72px] py-2">
-        <Image
-          source={{ uri: post.user.profile_picture_url || "https://i.pravatar.cc/150?img=7" }}
-          className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-14 w-fit"
-        />
+        <Avatar uri={post.user?.profile_picture_url} name={post.user?.username} size={56} />
         <View className="flex flex-col justify-center">
           <Text className="text-[#171311] text-base font-medium leading-normal line-clamp-1">
             {post.user.username}
@@ -360,10 +368,10 @@ export default function PostDetailsScreen() {
   };
 
   return (
-    <KeyboardAvoidingView behavior="padding" className="flex-1 bg-white">
-      <View className="relative flex-1 flex-col bg-white justify-between group/design-root overflow-x-hidden">
-        {/* Scrollable Content (Header and Comments) */}
-        <FlatList
+    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
+      <KeyboardAvoidingView behavior="padding" className="flex-1 bg-white">
+        <View className="relative flex-1 flex-col bg-white justify-between">
+          <FlatList
           data={comments}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderCommentItem}
@@ -375,15 +383,10 @@ export default function PostDetailsScreen() {
           contentContainerStyle={{ flexGrow: 1 }}
         />
 
-        {/* Comment Input Footer */}
-        <SafeAreaView edges={["bottom"]}>
-          <View className="bg-white px-4 py-3 border-t border-[#e6e2e0]">
-            <View className="flex-row items-center gap-3">
-              {/* User Avatar */}
-              <Image
-                source={{ uri: defaultProfilePicture }}
-                className="w-10 h-10 rounded-full bg-[#f4f1f0]"
-              />
+          <SafeAreaView edges={["bottom"]}>
+            <View className="bg-white px-4 py-3 border-t border-border">
+              <View className="flex-row items-center gap-3">
+                <Avatar uri={myAvatarUri} name={myDisplayName} size={40} />
 
               {/* Input + Icons */}
               <View className="flex-1 flex-row items-center bg-[#f4f1f0] rounded-lg px-3">
@@ -416,10 +419,11 @@ export default function PostDetailsScreen() {
                   </TouchableOpacity>
                 </View>
               </View>
+              </View>
             </View>
-          </View>
-        </SafeAreaView>
-      </View>
-    </KeyboardAvoidingView>
+          </SafeAreaView>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

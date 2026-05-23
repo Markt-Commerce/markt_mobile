@@ -258,7 +258,7 @@ export default function DiscoverNichesScreen() {
           renderItem={({ item }) => (
             <NicheCard
               niche={item}
-              onPress={() => router.push({ pathname: "/niches/[id]", params: { id: item.id } })}
+              onPress={() => router.push(`/niches/${item.id}`)}
               onJoin={() => handleJoin(item.id)}
               joining={joiningId === item.id}
             />
