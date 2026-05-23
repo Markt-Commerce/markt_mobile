@@ -3,6 +3,8 @@ import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator } from
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { Trash2 } from "lucide-react-native";
 import { ProductResponse } from "../models/products";
+import { resolveProductImageUri } from "../utils/imageUri";
+import { formatNaira } from "../utils/formatCurrency";
 
 type Product = {
   id: string;
@@ -90,6 +92,7 @@ export default function ProductPicker({
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => {
               const selected = isSelected(item);
+              const imageUri = resolveProductImageUri(item);
 
               return (
                 <TouchableOpacity
@@ -97,20 +100,18 @@ export default function ProductPicker({
                   disabled={disabled}
                   className={`flex-row items-center p-3 mb-2 rounded-lg ${selected ? "bg-blue-100" : "bg-gray-100"} ${disabled ? "opacity-50" : ""}`}
                   accessibilityRole="button"
-                  accessibilityLabel={`Select ${item.name}, priced at $${item.price}`}
+                  accessibilityLabel={`Select ${item.name}, priced at ${formatNaira(item.price)}`}
                 >
                   <Image
                     source={
-                      item.images?.[0]?.media?.mobile_url
-                        ? { uri: item.images?.[0]?.media?.mobile_url }
-                        : require("../assets/icon.png") // Make sure you have a placeholder image
+                      imageUri ? { uri: imageUri } : require("../assets/icon.png")
                     }
                     className="w-12 h-12 rounded-md bg-gray-300 mr-3"
                   />
 
                   <View className="flex-1">
                     <Text className="text-base font-medium">{item.name}</Text>
-                    <Text className="text-sm text-gray-500">${item.price}</Text>
+                    <Text className="text-sm text-gray-500">{formatNaira(item.price)}</Text>
                   </View>
 
                   {onRemove && (

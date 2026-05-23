@@ -1,6 +1,13 @@
 // /services/chatApi.ts
 import { request, BASE_URL } from "../api";
-import { ChatMessage, RoomListResponse, MessagesResponse, OfferPayload, ChatRoomLite } from "../../models/chat";
+import {
+  ChatMessage,
+  RoomListResponse,
+  MessagesResponse,
+  OfferPayload,
+  ChatRoomLite,
+  MessageReactionSummary,
+} from "../../models/chat";
 
 /**
  * Get user's rooms (paginated)
@@ -60,24 +67,26 @@ export async function markRoomRead(room_id: number): Promise<void> {
 }
 
 /**
- * Reactions
+ * Reactions — CHAT_MESSAGE_REACTIONS_API §1.2–1.4
  */
-export async function getReactions(message_id: number): Promise<any[]> {
-  const res = await request<any[]>(`${BASE_URL}/chats/messages/${message_id}/reactions`, {
-    method: "GET",
-  });
-  return res!;
+export async function getReactions(message_id: number): Promise<MessageReactionSummary[]> {
+  const res = await request<MessageReactionSummary[] | { data?: MessageReactionSummary[] }>(
+    `/chats/messages/${message_id}/reactions`,
+    { method: "GET" }
+  );
+  const raw = (res as { data?: MessageReactionSummary[] })?.data ?? res;
+  return Array.isArray(raw) ? raw : [];
 }
 
 export async function addReaction(message_id: number, reaction_type = "THUMBS_UP"): Promise<void> {
-  await request<void>(`${BASE_URL}/chats/messages/${message_id}/reactions`, {
+  await request<void>(`/chats/messages/${message_id}/reactions`, {
     method: "POST",
     body: JSON.stringify({ reaction_type }),
   });
 }
 
 export async function removeReaction(message_id: number, reaction_type = "THUMBS_UP"): Promise<void> {
-  await request<void>(`${BASE_URL}/chats/messages/${message_id}/reactions/${reaction_type}`, {
+  await request<void>(`/chats/messages/${message_id}/reactions/${encodeURIComponent(reaction_type)}`, {
     method: "DELETE",
   });
 }

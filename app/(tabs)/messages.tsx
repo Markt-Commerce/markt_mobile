@@ -111,7 +111,10 @@ export default function MessagesScreen() {
                     params: {
                       id: item.id,
                       username: item.other_user?.username,
-                      profilePicture: item.other_user?.profile_picture ?? "",
+                      profilePicture:
+                        item.other_user?.profile_picture ??
+                        item.other_user?.profile_picture_url ??
+                        "",
                     },
                   })
                 }
@@ -120,7 +123,7 @@ export default function MessagesScreen() {
               >
                 <View className="relative">
                   <Avatar
-                    uri={item.other_user?.profile_picture}
+                    uri={item.other_user?.profile_picture ?? item.other_user?.profile_picture_url}
                     name={item.other_user?.username}
                     size={56}
                   />

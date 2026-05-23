@@ -19,3 +19,22 @@ export function normalizeUri(raw?: string | null): string | null {
   if (cssMatch) u = cssMatch[1];
   return /^https?:\/\//i.test(u) ? u : null;
 }
+
+type ProductImageSource = {
+  images?: Array<{
+    url?: string | null;
+    media?: { original_url?: string; mobile_url?: string; thumbnail_url?: string } | null;
+  }> | null;
+  image_url?: string | null;
+  image?: string | null;
+};
+
+/** Resolve product thumbnail from list/detail payloads or chat `message_data.product` snapshots. */
+export function resolveProductImageUri(product?: ProductImageSource | null): string | null {
+  if (!product) return null;
+  const fromMedia = resolveMediaUri(product.images?.[0]?.media ?? undefined);
+  if (fromMedia) return fromMedia;
+  const fromFields = normalizeUri(product.image_url ?? product.image);
+  if (fromFields) return fromFields;
+  return normalizeUri(product.images?.[0]?.url);
+}

@@ -54,6 +54,7 @@ export interface RoomListResponse {
       id: string;
       username: string;
       profile_picture?: string;
+      profile_picture_url?: string;
       is_seller?: boolean;
     };
     product?: { id: string; name: string; price: number; image?: string };
@@ -82,6 +83,7 @@ export interface ChatRoomListItem {
     id: string;
     username: string;
     profile_picture?: string;
+    profile_picture_url?: string;
     is_seller: boolean;
   };
   product?: { id: string; name: string; price: number; image?: string };

@@ -11,6 +11,7 @@ import { Link } from "expo-router";
 import { ShoppingCart, Package } from "lucide-react-native";
 import { ProductDetail } from "../models/products";
 import { getProductById } from "../services/sections/product";
+import { resolveProductImageUri } from "../utils/imageUri";
 
 type EmbeddedProduct = {
   id: string;
@@ -44,42 +45,48 @@ export default function ChatProductDisplayComponent({
   const displayName = product?.name ?? embeddedProduct?.name ?? "Product";
   const displayPrice = product?.price ?? (typeof embeddedProduct?.price === "number" ? embeddedProduct.price : Number(embeddedProduct?.price) || 0);
   const displayImage =
-    product?.images?.[0]?.media?.original_url ??
-    product?.images?.[0]?.media?.mobile_url ??
-    (embeddedProduct as any)?.image_url ??
-    embeddedProduct?.image;
+    resolveProductImageUri(product) ?? resolveProductImageUri(embeddedProduct);
 
   useEffect(() => {
     setImageError(false);
   }, [displayImage]);
 
   useEffect(() => {
-    if (embeddedProduct?.id && (embeddedProduct?.name || embeddedProduct?.price != null)) {
+    const idToFetch = embeddedProduct?.id ?? productId;
+    const embeddedImage = resolveProductImageUri(embeddedProduct);
+    const hasEmbeddedMeta =
+      embeddedProduct?.id && (embeddedProduct?.name || embeddedProduct?.price != null);
+
+    if (hasEmbeddedMeta && embeddedImage) {
       setProduct(null);
       setLoading(false);
       setError(false);
       return;
     }
-    if (!productId) {
+
+    if (!idToFetch) {
       setLoading(false);
       setError(true);
       return;
     }
+
     let cancelled = false;
     setLoading(true);
     setError(false);
-    getProductById(productId)
+    getProductById(idToFetch)
       .then((p) => {
         if (!cancelled) setProduct(p);
       })
       .catch(() => {
-        if (!cancelled) setError(true);
+        if (!cancelled) setError(!hasEmbeddedMeta);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    return () => { cancelled = true; };
-  }, [productId, embeddedProduct?.id, embeddedProduct?.name]);
+    return () => {
+      cancelled = true;
+    };
+  }, [productId, embeddedProduct?.id, embeddedProduct?.name, embeddedProduct?.image_url, embeddedProduct?.image]);
 
   if (!id) return null;
 

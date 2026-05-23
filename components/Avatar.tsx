@@ -3,7 +3,7 @@
  * Shows initials when no profile picture (e.g. first letters of name).
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, Image, Platform } from "react-native";
 
 function getInitials(name: string | null | undefined, fallback = "?"): string {
@@ -37,6 +37,11 @@ interface AvatarProps {
 
 export default function Avatar({ uri, name, size = 40, className = "" }: AvatarProps) {
   const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [uri]);
+
   const initials = getInitials(name);
   const bgColor = getAvatarColor(name);
   const hasValidUri = uri && uri.length > 0 && !imageError;

@@ -26,6 +26,20 @@ const uuid = () => `${now()}-${Math.random().toString(36).slice(2)}`;
 
 type Listener<T> = (data: T) => void;
 
+export type MessageReactionSocketEvent = {
+  message_id: number;
+  user_id?: string;
+  username?: string;
+  reaction_type: string;
+  timestamp?: string;
+};
+
+export type MessageReactionStatsEvent = {
+  message_id: number;
+  reactions?: Record<string, number>;
+  timestamp?: string;
+};
+
 class ChatSocket {
   private socket: Socket | null = null;
   private connected = false;
@@ -37,6 +51,9 @@ class ChatSocket {
   private offerResponseListeners = new Set<Listener<any>>();
   private typingListeners = new Set<Listener<TypingUpdate>>();
   private statusListeners = new Set<Listener<"connected" | "disconnected">>();
+  private reactionAddedListeners = new Set<Listener<MessageReactionSocketEvent>>();
+  private reactionRemovedListeners = new Set<Listener<MessageReactionSocketEvent>>();
+  private reactionStatsListeners = new Set<Listener<MessageReactionStatsEvent>>();
 
   // typing throttle per room
   private typingGuards = new Map<number, number>();
@@ -104,6 +121,17 @@ class ChatSocket {
       this.typingListeners.forEach(fn => fn(data));
     });
 
+    // message reactions (CHAT_MESSAGE_REACTIONS §2)
+    this.socket.on("message_reaction_added", (data: MessageReactionSocketEvent) => {
+      this.reactionAddedListeners.forEach((fn) => fn(data));
+    });
+    this.socket.on("message_reaction_removed", (data: MessageReactionSocketEvent) => {
+      this.reactionRemovedListeners.forEach((fn) => fn(data));
+    });
+    this.socket.on("message_reaction_stats", (data: MessageReactionStatsEvent) => {
+      this.reactionStatsListeners.forEach((fn) => fn(data));
+    });
+
     // keep-alive
     this.socket.on("pong", () => {
       // no-op; could update lastPong timestamp
@@ -132,6 +160,14 @@ class ChatSocket {
 
   leaveRoom(room_id: number, user_id: string) {
     this.socket?.emit("leave_room", { room_id, user_id });
+  }
+
+  joinMessage(message_id: number, user_id: string) {
+    this.socket?.emit("join_message", { message_id, user_id });
+  }
+
+  leaveMessage(message_id: number, user_id: string) {
+    this.socket?.emit("leave_message", { message_id, user_id });
   }
 
   // ===== Typing =====
@@ -244,6 +280,18 @@ class ChatSocket {
   onOfferResponse(cb: Listener<any>) { this.offerResponseListeners.add(cb); return () => this.offerResponseListeners.delete(cb); }
   onTyping(cb: Listener<TypingUpdate>) { this.typingListeners.add(cb); return () => this.typingListeners.delete(cb); }
   onStatus(cb: Listener<"connected" | "disconnected">) { this.statusListeners.add(cb); return () => this.statusListeners.delete(cb); }
+  onReactionAdded(cb: Listener<MessageReactionSocketEvent>) {
+    this.reactionAddedListeners.add(cb);
+    return () => this.reactionAddedListeners.delete(cb);
+  }
+  onReactionRemoved(cb: Listener<MessageReactionSocketEvent>) {
+    this.reactionRemovedListeners.add(cb);
+    return () => this.reactionRemovedListeners.delete(cb);
+  }
+  onReactionStats(cb: Listener<MessageReactionStatsEvent>) {
+    this.reactionStatsListeners.add(cb);
+    return () => this.reactionStatsListeners.delete(cb);
+  }
 
   private emitStatus(s: "connected" | "disconnected") {
     this.statusListeners.forEach(fn => fn(s));

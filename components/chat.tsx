@@ -46,12 +46,28 @@ import Avatar from "./Avatar";
 import type { ProductResponse } from "../models/products";
 import { getSellerProducts, getMyProducts } from "../services/sections/product";
 import { COMMON_REACTIONS, getEmoji, type ReactionType } from "../utils/reactions";
+import {
+  attachReactionsToMessages,
+  applyReactionAdded,
+  applyReactionRemoved,
+  applyReactionStats,
+  fetchReactionsForMessages,
+  normalizeReactionSummaries,
+} from "../utils/chatReactions";
+import {
+  enrichChatMessage,
+  getMessageAvatarProps,
+  pickProfilePicture,
+  type ChatOtherUser,
+} from "../utils/chatAvatar";
+import { normalizeUri, resolveProductImageUri } from "../utils/imageUri";
+import { getUserProfile } from "../services/sections/profile";
 
 export type ChatProps = {
   route: {
     params: {
       roomId: number;
-      otherUser?: { username?: string; profile_picture?: string; user_id?: string };
+      otherUser?: ChatOtherUser & { user_id?: string };
     };
   };
   navigation: any;
@@ -88,18 +104,41 @@ export default function ChatScreen({ route }: ChatProps) {
   const [requestLoading, setRequestLoading] = useState(false);
   const [requestList, setRequestList] = useState<BuyerRequest[]>([]);
   const [reactionPickerFor, setReactionPickerFor] = useState<string | null>(null);
+  const [myProfile, setMyProfile] = useState<ChatOtherUser | undefined>();
   const didInitialScrollRef = useRef(false);
   const pendingScrollToBottomRef = useRef(false);
 
   const myId = user?.user_id?.toString() ?? "";
   const PER_PAGE = 30;
 
+  useEffect(() => {
+    let cancelled = false;
+    getUserProfile()
+      .then((p) => {
+        if (cancelled) return;
+        setMyProfile({
+          username: p.username,
+          profile_picture: p.profile_picture,
+          profile_picture_url: p.profile_picture_url,
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const avatarCtx = React.useMemo(
+    () => ({ myId, otherUser, myProfile }),
+    [myId, otherUser, myProfile]
+  );
+
   /** Display order: oldest first (chronological). API may return desc; we sort by created_at asc. */
   const sortedMessages = React.useMemo(() => {
-    return [...messages].sort(
-      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    );
-  }, [messages]);
+    return [...messages]
+      .map((m) => enrichChatMessage(m, avatarCtx))
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  }, [messages, avatarCtx]);
 
   const loadInitial = async () => {
     setLoading(true);
@@ -107,27 +146,13 @@ export default function ChatScreen({ route }: ChatProps) {
       if (!roomId || roomId === 0) return;
       const res = await getRoomMessages(roomId, 1, PER_PAGE);
       const list = res.messages ?? [];
-      // Fetch reactions for messages with numeric id (CHAT_MESSAGE_REACTIONS §1.2)
-      const numericMsgs = list.filter((m) => !isNaN(Number(m.id)) && Number(m.id) > 0);
-      const reactionPromises = numericMsgs.slice(0, 20).map(async (m) => {
-        try {
-          const reactions = await getReactions(Number(m.id));
-          return { id: m.id, reactions: reactions ?? [] };
-        } catch {
-          return { id: m.id, reactions: [] };
-        }
-      });
-      const reactionResults = await Promise.all(reactionPromises);
-      const reactionMap = new Map(reactionResults.map((r) => [r.id, r.reactions]));
-      const enriched = list.map((m) => {
-        const rx = reactionMap.get(m.id);
-        if (!rx || rx.length === 0) return m;
-        return {
-          ...m,
-          message_data: { ...m.message_data, reactions: rx },
-        };
-      });
+      const reactionMap = await fetchReactionsForMessages(list);
+      const enriched = attachReactionsToMessages(list, reactionMap);
       setMessages(enriched);
+      enriched.forEach((m) => {
+        const msgId = Number(m.id);
+        if (!isNaN(msgId) && msgId > 0) chatSocket.joinMessage(msgId, myId);
+      });
       setPage(2);
       const total = res.pagination?.total ?? 0;
       setHasMore(list.length < total);
@@ -146,21 +171,11 @@ export default function ChatScreen({ route }: ChatProps) {
       const res = await getRoomMessages(roomId, page, PER_PAGE);
       const list = res.messages ?? [];
       if (list.length > 0) {
-        const numericMsgs = list.filter((m) => !isNaN(Number(m.id)) && Number(m.id) > 0);
-        const reactionPromises = numericMsgs.slice(0, 20).map(async (m) => {
-          try {
-            const reactions = await getReactions(Number(m.id));
-            return { id: m.id, reactions: reactions ?? [] };
-          } catch {
-            return { id: m.id, reactions: [] };
-          }
-        });
-        const reactionResults = await Promise.all(reactionPromises);
-        const reactionMap = new Map(reactionResults.map((r) => [r.id, r.reactions]));
-        const enriched = list.map((m) => {
-          const rx = reactionMap.get(m.id);
-          if (!rx || rx.length === 0) return m;
-          return { ...m, message_data: { ...m.message_data, reactions: rx } };
+        const reactionMap = await fetchReactionsForMessages(list);
+        const enriched = attachReactionsToMessages(list, reactionMap);
+        enriched.forEach((m) => {
+          const msgId = Number(m.id);
+          if (!isNaN(msgId) && msgId > 0) chatSocket.joinMessage(msgId, myId);
         });
         setMessages((prev) => [...enriched, ...prev]);
         setPage((p) => p + 1);
@@ -208,6 +223,50 @@ export default function ChatScreen({ route }: ChatProps) {
     }
   }, [scrollToBottom]);
 
+  const updateMessageReactions = useCallback(
+    (
+      messageId: number | string,
+      updater: (reactions: import("../models/chat").MessageReactionSummary[]) => import("../models/chat").MessageReactionSummary[]
+    ) => {
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (String(m.id) !== String(messageId)) return m;
+          const rx = m.message_data?.reactions ?? [];
+          return {
+            ...m,
+            message_data: { ...(m.message_data ?? {}), reactions: updater(rx) },
+          };
+        })
+      );
+    },
+    []
+  );
+
+  const refreshMessageReactions = useCallback(async (messageId: number, targetId: number | string) => {
+    try {
+      const reactions = normalizeReactionSummaries(await getReactions(messageId));
+      setMessages((prev) =>
+        prev.map((m) =>
+          String(m.id) === String(targetId)
+            ? { ...m, message_data: { ...(m.message_data ?? {}), reactions } }
+            : m
+        )
+      );
+    } catch {
+      /* keep optimistic state */
+    }
+  }, []);
+
+  const syncMessageReactions = useCallback(
+    async (msg: ChatMessage) => {
+      const msgId = Number(msg.id);
+      if (isNaN(msgId) || msgId <= 0 || !myId) return;
+      chatSocket.joinMessage(msgId, myId);
+      await refreshMessageReactions(msgId, msg.id);
+    },
+    [myId, refreshMessageReactions]
+  );
+
   useEffect(() => {
     if (!roomId || roomId <= 0) return;
 
@@ -216,14 +275,44 @@ export default function ChatScreen({ route }: ChatProps) {
     const offTyping = chatSocket.onTyping(onTypingUpdate);
     chatSocket.onStatus(() => {});
 
+    const offReactionAdded = chatSocket.onReactionAdded((data) => {
+      const isMine = data.user_id === myId || String(data.user_id) === myId;
+      updateMessageReactions(data.message_id, (rx) =>
+        applyReactionAdded(rx, data.reaction_type, isMine)
+      );
+    });
+    const offReactionRemoved = chatSocket.onReactionRemoved((data) => {
+      const isMine = data.user_id === myId || String(data.user_id) === myId;
+      updateMessageReactions(data.message_id, (rx) =>
+        applyReactionRemoved(rx, data.reaction_type, isMine)
+      );
+    });
+    const offReactionStats = chatSocket.onReactionStats((data) => {
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (String(m.id) !== String(data.message_id)) return m;
+          return {
+            ...m,
+            message_data: {
+              ...(m.message_data ?? {}),
+              reactions: applyReactionStats(m.message_data?.reactions, data.reactions),
+            },
+          };
+        })
+      );
+    });
+
     chatSocket.joinRoom(roomId, myId);
 
     return () => {
       offMsg();
       offTyping();
+      offReactionAdded();
+      offReactionRemoved();
+      offReactionStats();
       chatSocket.leaveRoom(roomId, myId);
     };
-  }, [roomId, myId]);
+  }, [roomId, myId, updateMessageReactions]);
 
   function onSocketMessage(msg: ChatMessage) {
     if (msg.room_id !== roomId) return;
@@ -237,6 +326,7 @@ export default function ChatScreen({ route }: ChatProps) {
       }
       return [...prev, msg];
     });
+    void syncMessageReactions(msg);
     markRoomRead(roomId).catch(() => {});
     setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
   }
@@ -487,8 +577,27 @@ export default function ChatScreen({ route }: ChatProps) {
     if (sending) return;
     setSending(true);
     try {
+      const selected = productList.find((p) => p.id === productId);
+      const imageUrl = resolveProductImageUri(selected);
       const mock = await sendProductMessageMock(roomId, myId, productId);
-      setMessages((prev) => [...prev, { ...mock, pending: false }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          ...mock,
+          pending: false,
+          message_data: {
+            product_id: productId,
+            product: selected
+              ? {
+                  id: selected.id,
+                  name: selected.name,
+                  price: selected.price,
+                  image_url: imageUrl ?? undefined,
+                }
+              : { product_id: productId },
+          },
+        },
+      ]);
       await chatSocket.sendProduct(roomId, myId, productId, "Sharing product");
       setProductVisible(false);
       show({ variant: "success", title: "Sent", message: "Product shared in chat." });
@@ -515,23 +624,24 @@ export default function ChatScreen({ route }: ChatProps) {
     if (isNaN(msgId) || msgId <= 0) return;
     const rx = message.message_data?.reactions ?? [];
     const existing = rx.find((r) => r.reaction_type === reactionType);
-    if (existing?.has_reacted) return; // already have it; API is idempotent
+    if (existing?.has_reacted) return;
     setReactionPickerFor(null);
+    updateMessageReactions(message.id, (current) =>
+      applyReactionAdded(current, reactionType, true)
+    );
     try {
       await addReaction(msgId, reactionType);
-      setMessages((prev) =>
-        prev.map((m) => {
-          if (m.id !== message.id) return m;
-          const rxn = m.message_data?.reactions ?? [];
-          const idx = rxn.findIndex((r) => r.reaction_type === reactionType);
-          let next: typeof rxn;
-          if (idx >= 0) next = rxn.map((r, i) => (i === idx ? { ...r, count: r.count + 1, has_reacted: true } : r));
-          else next = [...rxn, { reaction_type: reactionType, emoji: getEmoji(reactionType), count: 1, has_reacted: true }];
-          return { ...m, message_data: { ...m.message_data, reactions: next } };
-        })
+      await refreshMessageReactions(msgId, message.id);
+    } catch (err) {
+      updateMessageReactions(message.id, (current) =>
+        applyReactionRemoved(current, reactionType, true)
       );
-    } catch {
-      show({ variant: "error", title: "Error", message: "Could not add reaction." });
+      const status = (err as Error & { status?: number }).status;
+      show({
+        variant: "error",
+        title: "Reaction",
+        message: status === 400 ? "Invalid reaction." : "Could not add reaction.",
+      });
     }
   }
 
@@ -539,22 +649,22 @@ export default function ChatScreen({ route }: ChatProps) {
     const msgId = Number(message.id);
     if (isNaN(msgId) || msgId <= 0) return;
     setReactionPickerFor(null);
+    updateMessageReactions(message.id, (current) =>
+      applyReactionRemoved(current, reactionType, true)
+    );
     try {
       await removeReaction(msgId, reactionType);
-      setMessages((prev) =>
-        prev.map((m) => {
-          if (m.id !== message.id) return m;
-          const rx = m.message_data?.reactions ?? [];
-          const idx = rx.findIndex((r) => r.reaction_type === reactionType);
-          if (idx < 0) return m;
-          const r = rx[idx];
-          const next = r.count <= 1 ? rx.filter((_, i) => i !== idx) : rx.map((re, i) => (i === idx ? { ...re, count: re.count - 1, has_reacted: false } : re));
-          return { ...m, message_data: { ...m.message_data, reactions: next } };
-        })
-      );
+      await refreshMessageReactions(msgId, message.id);
     } catch {
+      await refreshMessageReactions(msgId, message.id);
       show({ variant: "error", title: "Error", message: "Could not remove reaction." });
     }
+  }
+
+  function handlePickerReaction(message: ChatMessage, reactionType: ReactionType) {
+    const existing = getReactionSummaries(message).find((r) => r.reaction_type === reactionType);
+    if (existing?.has_reacted) handleRemoveReaction(message, reactionType);
+    else handleAddReaction(message, reactionType);
   }
 
   function handleReactionTap(message: ChatMessage, r: { reaction_type: string; count: number; has_reacted: boolean }) {
@@ -574,12 +684,18 @@ export default function ChatScreen({ route }: ChatProps) {
 
   function renderMessage({ item }: { item: ChatMessage }) {
     const isMe = item.sender_id === myId || String(item.sender_id) === myId;
+    const avatar = getMessageAvatarProps(item, isMe, avatarCtx);
 
     return (
       <View className={`flex-row px-4 py-1.5 ${isMe ? "justify-end" : "justify-start"}`}>
         {!isMe && (
           <View className="mr-2 mt-1">
-            <Avatar uri={(item as any).sender?.profile_picture} name={(item as any).sender?.username} size={32} />
+            <Avatar
+              key={`peer-${item.id}-${avatar.uri ?? "init"}`}
+              uri={avatar.uri}
+              name={avatar.name}
+              size={32}
+            />
           </View>
         )}
         <View className={`max-w-[80%] ${isMe ? "items-end" : "items-start"}`}>
@@ -628,10 +744,23 @@ export default function ChatScreen({ route }: ChatProps) {
             );
           })()}
 
-          {item.message_type === "image" && (
+          {item.message_type === "image" && (() => {
+            const imageUri = normalizeUri(
+              item.message_data?.url ??
+                item.message_data?.image_url ??
+                item.content
+            );
+            if (!imageUri) {
+              return (
+                <View className="w-56 h-40 rounded-2xl bg-bg-muted items-center justify-center px-3">
+                  <Text className="text-text-secondary text-sm text-center">Image unavailable</Text>
+                </View>
+              );
+            }
+            return (
             <TouchableOpacity activeOpacity={0.9}>
               <Image
-                source={{ uri: item.content || item.message_data?.url }}
+                source={{ uri: imageUri }}
                 className="w-56 h-40 rounded-2xl bg-bg-muted"
                 resizeMode="cover"
               />
@@ -639,7 +768,8 @@ export default function ChatScreen({ route }: ChatProps) {
                 <Text className="text-text-secondary text-xs mt-1">Sending…</Text>
               )}
             </TouchableOpacity>
-          )}
+            );
+          })()}
 
           {item.message_type === "video" && (
             <View className="w-56 h-40 rounded-2xl bg-black items-center justify-center">
@@ -711,11 +841,13 @@ export default function ChatScreen({ route }: ChatProps) {
                     key={r.reaction_type}
                     onPress={() => handleReactionTap(item, r)}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    className="flex-row items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-bg-muted/70"
+                    className={`flex-row items-center gap-0.5 px-1.5 py-0.5 rounded-full ${
+                      r.has_reacted ? "bg-primary/15 border border-primary/35" : "bg-bg-muted/70"
+                    }`}
                   >
                     <Text className="text-sm">{r.emoji}</Text>
-                    {r.count > 1 && (
-                      <Text className={`text-[11px] ${r.has_reacted ? "text-primary font-medium" : "text-text-secondary"}`}>
+                    {(r.count > 1 || r.has_reacted) && (
+                      <Text className={`text-[11px] ${r.has_reacted ? "text-primary font-semibold" : "text-text-secondary"}`}>
                         {r.count}
                       </Text>
                     )}
@@ -731,15 +863,20 @@ export default function ChatScreen({ route }: ChatProps) {
                 </TouchableOpacity>
                 {reactionPickerFor === String(item.id) && (
                   <View className="flex-row gap-1 mt-0.5">
-                    {COMMON_REACTIONS.map((type) => (
+                    {COMMON_REACTIONS.map((type) => {
+                      const active = getReactionSummaries(item).some(
+                        (r) => r.reaction_type === type && r.has_reacted
+                      );
+                      return (
                       <TouchableOpacity
                         key={type}
-                        onPress={() => handleAddReaction(item, type)}
-                        className="px-2 py-1 rounded-full bg-bg-muted"
+                        onPress={() => handlePickerReaction(item, type)}
+                        className={`px-2 py-1 rounded-full ${active ? "bg-primary/15 border border-primary/35" : "bg-bg-muted"}`}
                       >
                         <Text className="text-base">{getEmoji(type)}</Text>
                       </TouchableOpacity>
-                    ))}
+                      );
+                    })}
                     <TouchableOpacity
                       onPress={() => setReactionPickerFor(null)}
                       className="px-2 py-1 rounded-full bg-bg-muted"
@@ -757,7 +894,12 @@ export default function ChatScreen({ route }: ChatProps) {
         </View>
         {isMe && (
           <View className="ml-2 mt-1">
-            <Avatar uri={null} name={user?.email} size={32} />
+            <Avatar
+              key={`me-${item.id}-${avatar.uri ?? "init"}`}
+              uri={avatar.uri}
+              name={avatar.name ?? user?.email}
+              size={32}
+            />
           </View>
         )}
       </View>
@@ -783,7 +925,7 @@ export default function ChatScreen({ route }: ChatProps) {
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <ArrowLeft size={24} color="#171311" />
         </TouchableOpacity>
-        <Avatar uri={otherUser?.profile_picture} name={otherUser?.username} size={40} />
+        <Avatar uri={pickProfilePicture(otherUser)} name={otherUser?.username} size={40} />
         <Text className="ml-3 text-text-primary font-semibold text-base flex-1" numberOfLines={1}>
           {otherUser?.username ?? "Chat"}
         </Text>
