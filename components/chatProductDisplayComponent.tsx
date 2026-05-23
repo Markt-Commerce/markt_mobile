@@ -85,15 +85,15 @@ export default function ChatProductDisplayComponent({
 
   if (loading) {
     return (
-      <View className="rounded-2xl overflow-hidden border border-border bg-white p-4">
-        <View className="flex-row gap-3">
-          <View className="w-20 h-20 rounded-xl bg-bg-muted" />
+      <View className="rounded-2xl overflow-hidden border border-border bg-white min-w-[240px] max-w-[280px] p-3">
+        <View className="flex-row gap-3 items-stretch">
+          <View className="w-[100px] h-[72px] rounded-xl bg-bg-muted shrink-0" />
           <View className="flex-1 justify-center">
             <View className="h-4 bg-bg-muted rounded w-3/4 mb-2" />
             <View className="h-3 bg-bg-muted rounded w-1/3" />
           </View>
         </View>
-        <ActivityIndicator size="small" color="#e26136" className="mt-3" />
+        <ActivityIndicator size="small" color="#e26136" className="mt-2" />
       </View>
     );
   }
@@ -107,11 +107,11 @@ export default function ChatProductDisplayComponent({
   }
 
   return (
-    <View className="rounded-2xl overflow-hidden border border-border bg-white">
+    <View className="rounded-2xl overflow-hidden border border-border bg-white min-w-[240px] max-w-[280px]">
       <Link href={`/productDetails/${id}`} asChild>
         <TouchableOpacity activeOpacity={0.85}>
-          <View className="flex-row p-3 gap-3">
-            <View className="w-20 h-20 rounded-xl bg-bg-muted overflow-hidden items-center justify-center">
+          <View className="flex-row p-3 gap-3 items-stretch">
+            <View className="w-[100px] h-[72px] rounded-xl bg-bg-muted overflow-hidden items-center justify-center shrink-0">
               {displayImage && !imageError ? (
                 <Image
                   source={{ uri: displayImage }}
@@ -121,12 +121,12 @@ export default function ChatProductDisplayComponent({
                 />
               ) : (
                 <View className="items-center justify-center p-2">
-                  <Package size={24} color="#876d64" />
-                  <Text className="text-text-secondary text-[10px] mt-0.5">Product</Text>
+                  <Package size={20} color="#876d64" />
+                  <Text className="text-text-secondary text-[9px] mt-0.5">Product</Text>
                 </View>
               )}
             </View>
-            <View className="flex-1 justify-center min-w-0">
+            <View className="flex-1 justify-center min-w-0 py-0.5">
               <Text className="text-text-primary font-semibold text-sm" numberOfLines={2}>
                 {displayName}
               </Text>

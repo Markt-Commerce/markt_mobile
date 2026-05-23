@@ -15,6 +15,7 @@ type Props = {
   visible: boolean;
   products: ProductResponse[];
   loading?: boolean;
+  disabled?: boolean;
   onClose: () => void;
   onSelect: (p: Product) => void;
   onRemove?: (p: Product) => void;
@@ -25,6 +26,7 @@ export default function ProductPicker({
   visible,
   products,
   loading = false,
+  disabled = false,
   selectedProducts,
   onClose,
   onSelect,
@@ -41,8 +43,8 @@ export default function ProductPicker({
     selectedProducts.some((p) => p.id === product.id);
 
   const handleSelect = (item: Product) => {
+    if (disabled) return;
     onSelect(item);
-    //requestAnimationFrame(onClose); // smoother close
   };
 
   const handleRemove = (item: Product) => {
@@ -92,7 +94,8 @@ export default function ProductPicker({
               return (
                 <TouchableOpacity
                   onPress={() => handleSelect(item)}
-                  className={`flex-row items-center p-3 mb-2 rounded-lg ${selected ? "bg-blue-100" : "bg-gray-100"}`}
+                  disabled={disabled}
+                  className={`flex-row items-center p-3 mb-2 rounded-lg ${selected ? "bg-blue-100" : "bg-gray-100"} ${disabled ? "opacity-50" : ""}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Select ${item.name}, priced at $${item.price}`}
                 >

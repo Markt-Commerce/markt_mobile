@@ -9,6 +9,7 @@ import { Camera, Image as ImageIcon, ShoppingBag, FileText, Percent } from "luci
 
 type Props = {
   visible: boolean;
+  busy?: boolean;
   onClose: () => void;
   onCamera: () => void;
   onPhotos: () => void;
@@ -23,16 +24,19 @@ const OptionCard = ({
   label,
   onPress,
   subtitle,
+  disabled = false,
 }: {
   icon: React.ComponentType<{ size?: number; color?: string }>;
   label: string;
   onPress: () => void;
   subtitle?: string;
+  disabled?: boolean;
 }) => (
   <TouchableOpacity
     onPress={onPress}
+    disabled={disabled}
     activeOpacity={0.7}
-    className="flex-1 min-w-[100px] max-w-[110px] rounded-2xl bg-white border border-[#efefef] p-4 items-center shadow-sm"
+    className={`flex-1 min-w-[100px] max-w-[110px] rounded-2xl bg-white border border-[#efefef] p-4 items-center shadow-sm ${disabled ? "opacity-50" : ""}`}
   >
     <View className="w-14 h-14 rounded-full bg-primary/10 items-center justify-center mb-3">
       <Icon size={28} color="#e26136" />
@@ -50,6 +54,7 @@ const OptionCard = ({
 
 export default function ChatAttachmentSheet({
   visible,
+  busy = false,
   onClose,
   onCamera,
   onPhotos,
@@ -65,6 +70,7 @@ export default function ChatAttachmentSheet({
   if (!visible) return null;
 
   const handleOption = (fn: () => void) => {
+    if (busy) return;
     onClose();
     fn();
   };
@@ -97,12 +103,14 @@ export default function ChatAttachmentSheet({
               label="Camera"
               onPress={() => handleOption(onCamera)}
               subtitle="Take photo"
+              disabled={busy}
             />
             <OptionCard
               icon={ImageIcon}
               label="Photos"
               onPress={() => handleOption(onPhotos)}
               subtitle="From gallery"
+              disabled={busy}
             />
           </View>
 
@@ -118,6 +126,7 @@ export default function ChatAttachmentSheet({
                     label="Products"
                     onPress={() => handleOption(onProducts)}
                     subtitle="Share listing"
+                    disabled={busy}
                   />
                 )}
                 {role === "buyer" && onRequests && (
@@ -126,6 +135,7 @@ export default function ChatAttachmentSheet({
                     label="Requests"
                     onPress={() => handleOption(onRequests)}
                     subtitle="Share request"
+                    disabled={busy}
                   />
                 )}
                 {onDiscounts && (
@@ -134,6 +144,7 @@ export default function ChatAttachmentSheet({
                     label="Discounts"
                     onPress={() => handleOption(onDiscounts)}
                     subtitle="View offers"
+                    disabled={busy}
                   />
                 )}
               </View>
@@ -150,6 +161,7 @@ export default function ChatAttachmentSheet({
                     label="Discounts"
                     onPress={() => handleOption(onDiscounts)}
                     subtitle="View offers"
+                    disabled={busy}
                   />
                 </View>
               </>

@@ -27,6 +27,7 @@ import {
   addReaction,
   removeReaction,
   sendProductMessageMock,
+  sendMessageREST,
   getRoomDiscounts,
   respondToDiscount,
 } from "../services/sections/chat";
@@ -35,7 +36,10 @@ import { addToCart } from "../services/sections/cart";
 import { useUser } from "../hooks/userContextProvider";
 import { useToast } from "./ToastProvider";
 import ProductPicker from "./productPicker";
+import RequestPicker from "./requestPicker";
 import ChatAttachmentSheet from "./chatAttachmentSheet";
+import type { BuyerRequest } from "../models/feed";
+import { getBuyerRequests } from "../services/sections/feed";
 import { attemptMultipleUpload } from "../services/sections/media";
 import ChatProductDisplayComponent from "./chatProductDisplayComponent";
 import Avatar from "./Avatar";
@@ -80,8 +84,12 @@ export default function ChatScreen({ route }: ChatProps) {
   const [productLoading, setProductLoading] = useState(false);
   const [productVisible, setProductVisible] = useState(false);
   const [productList, setProductList] = useState<ProductResponse[]>([]);
-  const [currentProductIds, setCurrentProductIds] = useState<string[]>([]);
+  const [requestVisible, setRequestVisible] = useState(false);
+  const [requestLoading, setRequestLoading] = useState(false);
+  const [requestList, setRequestList] = useState<BuyerRequest[]>([]);
   const [reactionPickerFor, setReactionPickerFor] = useState<string | null>(null);
+  const didInitialScrollRef = useRef(false);
+  const pendingScrollToBottomRef = useRef(false);
 
   const myId = user?.user_id?.toString() ?? "";
   const PER_PAGE = 30;
@@ -170,17 +178,30 @@ export default function ChatScreen({ route }: ChatProps) {
     loadInitial();
   }, [roomId]);
 
-  const justLoadedRef = useRef(false);
+  const scrollToBottom = useCallback((animated = false) => {
+    requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated }));
+  }, []);
+
   useEffect(() => {
-    if (!loading && sortedMessages.length > 0) justLoadedRef.current = true;
-  }, [loading, sortedMessages.length]);
+    didInitialScrollRef.current = false;
+    pendingScrollToBottomRef.current = false;
+  }, [roomId]);
+
+  useEffect(() => {
+    if (loading || sortedMessages.length === 0 || didInitialScrollRef.current) return;
+    didInitialScrollRef.current = true;
+    pendingScrollToBottomRef.current = true;
+    scrollToBottom(false);
+    const retry = setTimeout(() => scrollToBottom(false), 200);
+    return () => clearTimeout(retry);
+  }, [loading, sortedMessages.length, scrollToBottom]);
 
   const handleContentSizeChange = useCallback(() => {
-    if (justLoadedRef.current && sortedMessages.length > 0) {
-      justLoadedRef.current = false;
-      requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: false }));
+    if (pendingScrollToBottomRef.current) {
+      pendingScrollToBottomRef.current = false;
+      scrollToBottom(false);
     }
-  }, [sortedMessages.length]);
+  }, [scrollToBottom]);
 
   useEffect(() => {
     chatSocket.connect();
@@ -257,6 +278,7 @@ export default function ChatScreen({ route }: ChatProps) {
   }
 
   async function handlePickMedia(kind: "image" | "video") {
+    if (sending) return;
     try {
       const perms = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perms.granted) {
@@ -268,6 +290,8 @@ export default function ChatScreen({ route }: ChatProps) {
         quality: 0.8,
       });
       if (res.canceled) return;
+
+      setSending(true);
       const uri = res.assets?.[0]?.uri;
       const uploadResult = await attemptMultipleUpload(
         res.assets!.map((a) => ({ id: a?.assetId || "", uri: a?.uri || "" }))
@@ -293,13 +317,17 @@ export default function ChatScreen({ route }: ChatProps) {
         };
         setMessages((prev) => [...prev, temp]);
       }
+      show({ variant: "success", title: "Sent", message: kind === "image" ? "Photo sent." : "Video sent." });
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch {
       show({ variant: "error", title: "Error", message: "Could not send media." });
+    } finally {
+      setSending(false);
     }
   }
 
   async function openProductPicker() {
+    if (sending) return;
     setAttachmentVisible(false);
     Keyboard.dismiss();
     setProductVisible(true);
@@ -327,11 +355,13 @@ export default function ChatScreen({ route }: ChatProps) {
   }
 
   function openAttachmentSheet() {
+    if (sending) return;
     Keyboard.dismiss();
     setAttachmentVisible(true);
   }
 
   async function handleCamera() {
+    if (sending) return;
     try {
       const perms = await ImagePicker.requestCameraPermissionsAsync();
       if (!perms.granted) {
@@ -340,6 +370,8 @@ export default function ChatScreen({ route }: ChatProps) {
       }
       const res = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
       if (res.canceled) return;
+
+      setSending(true);
       const uri = res.assets?.[0]?.uri;
       const uploadResult = await attemptMultipleUpload(res.assets!.map((a) => ({ id: a?.assetId || "", uri: a?.uri || "" })));
       for (const result of uploadResult) {
@@ -357,14 +389,62 @@ export default function ChatScreen({ route }: ChatProps) {
         };
         setMessages((prev) => [...prev, temp]);
       }
+      show({ variant: "success", title: "Sent", message: "Photo sent." });
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch {
       show({ variant: "error", title: "Error", message: "Could not send photo." });
+    } finally {
+      setSending(false);
     }
   }
 
-  function handleRequests() {
-    show({ variant: "info", title: "Requests", message: "Share a request from the Requests tab." });
+  async function openRequestPicker() {
+    if (sending) return;
+    setAttachmentVisible(false);
+    Keyboard.dismiss();
+    setRequestVisible(true);
+    if (requestList.length === 0) {
+      setRequestLoading(true);
+      try {
+        const all = await getBuyerRequests(1, 50);
+        const mine = all.filter((r) => String(r.buyer?.id) === myId);
+        setRequestList(mine);
+      } catch {
+        show({ variant: "error", title: "Error", message: "Could not load your requests." });
+      } finally {
+        setRequestLoading(false);
+      }
+    }
+  }
+
+  async function sendRequest(req: BuyerRequest) {
+    if (sending) return;
+    setSending(true);
+    try {
+      const title = req.title?.trim() || "Untitled request";
+      const content = `Sharing request: ${title}`;
+      const msg = await sendMessageREST(roomId, {
+        content,
+        message_type: "text",
+        message_data: {
+          request_id: req.id,
+          request: {
+            id: req.id,
+            title: req.title,
+            description: req.description,
+            budget: req.budget,
+          },
+        },
+      });
+      setMessages((prev) => [...prev, msg]);
+      setRequestVisible(false);
+      show({ variant: "success", title: "Sent", message: "Request shared in chat." });
+      setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
+    } catch {
+      show({ variant: "error", title: "Error", message: "Could not share request." });
+    } finally {
+      setSending(false);
+    }
   }
 
   const [discountVisible, setDiscountVisible] = useState(false);
@@ -372,6 +452,7 @@ export default function ChatScreen({ route }: ChatProps) {
   const [discountLoading, setDiscountLoading] = useState(false);
 
   async function handleDiscounts() {
+    if (sending) return;
     setDiscountVisible(true);
     setDiscountLoading(true);
     try {
@@ -395,16 +476,15 @@ export default function ChatScreen({ route }: ChatProps) {
     }
   }
 
-  async function sendSelectedProducts() {
-    if (currentProductIds.length === 0) return;
+  async function sendProduct(productId: string) {
+    if (sending) return;
     setSending(true);
     try {
-      for (const product_id of currentProductIds) {
-        const mock = await sendProductMessageMock(roomId, myId, product_id);
-        setMessages((prev) => [...prev, { ...mock, pending: false }]);
-        await chatSocket.sendProduct(roomId, myId, product_id, "Sharing product");
-      }
-      setCurrentProductIds([]);
+      const mock = await sendProductMessageMock(roomId, myId, productId);
+      setMessages((prev) => [...prev, { ...mock, pending: false }]);
+      await chatSocket.sendProduct(roomId, myId, productId, "Sharing product");
+      setProductVisible(false);
+      show({ variant: "success", title: "Sent", message: "Product shared in chat." });
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch {
       show({ variant: "error", title: "Error", message: "Could not share product." });
@@ -497,6 +577,30 @@ export default function ChatScreen({ route }: ChatProps) {
         )}
         <View className={`max-w-[80%] ${isMe ? "items-end" : "items-start"}`}>
           {item.message_type === "text" && (() => {
+            const sharedRequest = item.message_data?.request as { title?: string; description?: string; budget?: number } | undefined;
+            const requestId = item.message_data?.request_id as string | undefined;
+            if (requestId && (item.content?.includes("Sharing request") || sharedRequest)) {
+              return (
+                <View className={`px-4 py-3 rounded-2xl min-w-[200px] ${isMe ? "rounded-br-md bg-primary" : "rounded-bl-md bg-white border border-border"}`}>
+                  <Text className={`text-xs font-medium uppercase tracking-wide ${isMe ? "text-white/80" : "text-text-secondary"}`}>
+                    Buyer request
+                  </Text>
+                  <Text className={`text-base font-semibold mt-1 ${isMe ? "text-white" : "text-text-primary"}`} numberOfLines={2}>
+                    {sharedRequest?.title || item.content.replace(/^Sharing request:\s*/i, "")}
+                  </Text>
+                  {sharedRequest?.description ? (
+                    <Text className={`text-sm mt-1 ${isMe ? "text-white/90" : "text-text-secondary"}`} numberOfLines={3}>
+                      {sharedRequest.description}
+                    </Text>
+                  ) : null}
+                  {sharedRequest?.budget != null && (
+                    <Text className={`text-sm font-semibold mt-2 ${isMe ? "text-white" : "text-primary"}`}>
+                      Budget: ₦{Number(sharedRequest.budget).toLocaleString()}
+                    </Text>
+                  )}
+                </View>
+              );
+            }
             const productIdInContent = (item.content || "").match(/PRD_[\w]+/)?.[0];
             if (productIdInContent && (item.content?.includes("Sharing product") || /^PRD_[\w]+$/.test(item.content.trim()))) {
               return (
@@ -728,7 +832,7 @@ export default function ChatScreen({ route }: ChatProps) {
             maxLength={1000}
             textAlignVertical="center"
           />
-          <TouchableOpacity onPress={openAttachmentSheet} className="p-2">
+          <TouchableOpacity onPress={openAttachmentSheet} disabled={sending} className={`p-2 ${sending ? "opacity-50" : ""}`}>
             <Plus size={22} color="#876d64" />
           </TouchableOpacity>
         </View>
@@ -743,13 +847,14 @@ export default function ChatScreen({ route }: ChatProps) {
 
       <ChatAttachmentSheet
         visible={attachmentVisible}
+        busy={sending}
         onClose={() => setAttachmentVisible(false)}
         onCamera={handleCamera}
         onPhotos={() => handlePickMedia("image")}
         onProducts={role === "seller" ? openProductPicker : undefined}
-        onRequests={role === "buyer" ? handleRequests : undefined}
+        onRequests={role === "buyer" ? openRequestPicker : undefined}
         onDiscounts={handleDiscounts}
-        role={role}
+        role={role === "buyer" || role === "seller" ? role : "buyer"}
       />
       {discountVisible && (
         <View className="absolute inset-0 z-[1000] bg-black/40 justify-end">
@@ -796,16 +901,18 @@ export default function ChatScreen({ route }: ChatProps) {
         visible={productVisible}
         products={productList}
         loading={productLoading}
-        selectedProducts={productList.filter((p) => currentProductIds.includes(p.id))}
-        onClose={() => {
-          if (currentProductIds.length > 0) sendSelectedProducts();
-          setProductVisible(false);
-          setCurrentProductIds([]);
-        }}
-        onSelect={(product) => {
-          if (!currentProductIds.includes(product.id)) setCurrentProductIds((prev) => [...prev, product.id]);
-        }}
-        onRemove={(product) => setCurrentProductIds((prev) => prev.filter((id) => id !== product.id))}
+        disabled={sending}
+        selectedProducts={[]}
+        onClose={() => setProductVisible(false)}
+        onSelect={(product) => sendProduct(product.id)}
+      />
+      <RequestPicker
+        visible={requestVisible}
+        requests={requestList}
+        loading={requestLoading}
+        disabled={sending}
+        onClose={() => setRequestVisible(false)}
+        onSelect={sendRequest}
       />
     </KeyboardAvoidingView>
   );
