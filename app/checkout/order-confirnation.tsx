@@ -1,9 +1,11 @@
 import React from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { CheckCircle2 } from "lucide-react-native";
 
 export default function OrderConfirmationScreen({ navigation }: any) {
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
     <ScrollView
       className="flex-1 bg-white"
       contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 24 }}
@@ -59,5 +61,6 @@ export default function OrderConfirmationScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }

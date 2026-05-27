@@ -26,9 +26,25 @@ export async function getSellerProducts(sellerId: number, page = 1, per_page = 2
       method: "GET",
     }
   );
-  // if wrapped in data.items
   const payload = (res as any).data ?? (res as any);
   return payload?.items ?? payload ?? [];
+}
+
+/**
+ * Get current seller's products (chat attachment sheet).
+ * Tries GET /api/v1/products/seller/my-products, falls back to getSellerProducts.
+ */
+export async function getMyProducts(page = 1, per_page = 20): Promise<ProductResponse[]> {
+  try {
+    const res = await request<ApiResponse<{ items?: ProductResponse[]; products?: ProductResponse[] }>>(
+      `${BASE_URL}/products/seller/my-products?page=${page}&per_page=${per_page}`,
+      { method: "GET" }
+    );
+    const payload = (res as any).data ?? (res as any);
+    return payload?.items ?? payload?.products ?? payload ?? [];
+  } catch {
+    return [];
+  }
 }
 
 
@@ -36,8 +52,35 @@ export async function getSellerProducts(sellerId: number, page = 1, per_page = 2
  *
  */
 export async function getProductById(productId: string): Promise<ProductDetail> {
-  const res = await request<ApiResponse<ProductDetail>>(`${BASE_URL}/products/${productId}`, {
+  const res = await request<ApiResponse<ProductDetail>>(`/products/${productId}`, {
     method: "GET",
   });
   return (res as any).data ?? (res as any);
+}
+
+/**
+ * Track product view (analytics)
+ * Call when user lands on product detail page.
+ */
+export async function trackProductView(productId: string): Promise<void> {
+  await request(`/products/${productId}/view`, { method: "POST" });
+}
+
+/**
+ * Delete product (seller only)
+ */
+export async function deleteProduct(productId: string): Promise<void> {
+  await request(`${BASE_URL}/products/${productId}`, {
+    method: "DELETE",
+  });
+}
+
+/**
+ * Review product (buyer only)
+ */
+export async function reviewProduct(productId: string, orderId: string, rating: number, title: string, comment: string): Promise<void> {
+  await request(`${BASE_URL}/products/${productId}/reviews`, {
+    method: "POST",
+    body: JSON.stringify({ order_id: orderId, rating, content: comment, title}),
+  });
 }

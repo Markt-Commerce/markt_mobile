@@ -1,6 +1,13 @@
 // /services/chatApi.ts
 import { request, BASE_URL } from "../api";
-import { ChatMessage, RoomListResponse, MessagesResponse, OfferPayload, ChatRoomLite } from "../../models/chat";
+import {
+  ChatMessage,
+  RoomListResponse,
+  MessagesResponse,
+  OfferPayload,
+  ChatRoomLite,
+  MessageReactionSummary,
+} from "../../models/chat";
 
 /**
  * Get user's rooms (paginated)
@@ -13,7 +20,8 @@ export async function getRooms(page = 1, per_page = 20): Promise<RoomListRespons
 }
 
 /**
- * Create or get a room with buyer/seller/product/request
+ * Create or get a room with buyer/seller/product/request.
+ * Idempotent per CHATS_API §1.2–1.3: returns existing room for same buyer+seller+product (or buyer+seller if no product_id).
  */
 export async function createOrGetRoom(payload: {
   buyer_id?: string;
@@ -59,24 +67,26 @@ export async function markRoomRead(room_id: number): Promise<void> {
 }
 
 /**
- * Reactions
+ * Reactions — CHAT_MESSAGE_REACTIONS_API §1.2–1.4
  */
-export async function getReactions(message_id: number): Promise<any[]> {
-  const res = await request<any[]>(`${BASE_URL}/chats/messages/${message_id}/reactions`, {
-    method: "GET",
-  });
-  return res!;
+export async function getReactions(message_id: number): Promise<MessageReactionSummary[]> {
+  const res = await request<MessageReactionSummary[] | { data?: MessageReactionSummary[] }>(
+    `/chats/messages/${message_id}/reactions`,
+    { method: "GET" }
+  );
+  const raw = (res as { data?: MessageReactionSummary[] })?.data ?? res;
+  return Array.isArray(raw) ? raw : [];
 }
 
 export async function addReaction(message_id: number, reaction_type = "THUMBS_UP"): Promise<void> {
-  await request<void>(`${BASE_URL}/chats/messages/${message_id}/reactions`, {
+  await request<void>(`/chats/messages/${message_id}/reactions`, {
     method: "POST",
     body: JSON.stringify({ reaction_type }),
   });
 }
 
 export async function removeReaction(message_id: number, reaction_type = "THUMBS_UP"): Promise<void> {
-  await request<void>(`${BASE_URL}/chats/messages/${message_id}/reactions/${reaction_type}`, {
+  await request<void>(`/chats/messages/${message_id}/reactions/${encodeURIComponent(reaction_type)}`, {
     method: "DELETE",
   });
 }
@@ -97,17 +107,35 @@ export async function sendOfferREST(room_id: number, payload: OfferPayload): Pro
 }
 
 /**
+ * Room discounts (CHATS_API §2.8)
+ */
+export async function getRoomDiscounts(room_id: number): Promise<any[]> {
+  const res = await request<any>(`${BASE_URL}/chats/rooms/${room_id}/discounts`, { method: "GET" });
+  if (Array.isArray(res)) return res;
+  if (res && typeof res === "object" && Array.isArray((res as any).items)) return (res as any).items;
+  if (res && typeof res === "object" && Array.isArray((res as any).discounts)) return (res as any).discounts;
+  return [];
+}
+
+export async function respondToDiscount(discount_id: number, body: { response: "accepted" | "rejected"; response_message?: string }): Promise<void> {
+  await request<void>(`${BASE_URL}/chats/discounts/${discount_id}/respond`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+/**
  * Mock: attach product to chat via REST (since server doesn't expose it yet).
  * We'll pretend it returns a message with message_type 'product'.
  */
-export async function sendProductMessageMock(room_id: number, product_id: string, note?: string): Promise<ChatMessage> {
+export async function sendProductMessageMock(room_id: number, user_id: string, product_id: string, note?: string): Promise<ChatMessage> {
   // This is a mock — you should replace with real endpoint once available
   const now = new Date().toISOString();
   return {
     id: Math.floor(Math.random() * 1000000),
     room_id,
-    sender_id: "ME",
-    content: note ?? "",
+    sender_id: user_id,
+    content: product_id,
     message_type: "product",
     message_data: { product_id },
     is_read: false,

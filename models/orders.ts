@@ -48,6 +48,7 @@ export interface OrderItem {
   variant_id?: number;
   seller_id?: number;
   product_id: string;
+  order_id?: string;
   price: number;
   variant?: {
     name: string;
@@ -57,6 +58,30 @@ export interface OrderItem {
     name: string;
   };
 }
+
+export interface SellerOrderItem {
+  id: number;
+  created_at: string;
+  order_id: string;
+  price: number;
+  quantity: number;
+  status: 'pending' | 'completed' | 'cancelled' | string;
+  variant: string | null;
+  product: {
+    name: string;
+  };
+  order: {
+    id: string;
+    created_at: string;
+    order_number: string | null;
+    buyer: {
+      id: number;
+      buyername: string;
+      profile_picture_url: string;
+    };
+  };
+}
+
 
 export interface CreateOrderPayload {
   customer_note?: string;

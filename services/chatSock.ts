@@ -26,6 +26,20 @@ const uuid = () => `${now()}-${Math.random().toString(36).slice(2)}`;
 
 type Listener<T> = (data: T) => void;
 
+export type MessageReactionSocketEvent = {
+  message_id: number;
+  user_id?: string;
+  username?: string;
+  reaction_type: string;
+  timestamp?: string;
+};
+
+export type MessageReactionStatsEvent = {
+  message_id: number;
+  reactions?: Record<string, number>;
+  timestamp?: string;
+};
+
 class ChatSocket {
   private socket: Socket | null = null;
   private connected = false;
@@ -37,6 +51,9 @@ class ChatSocket {
   private offerResponseListeners = new Set<Listener<any>>();
   private typingListeners = new Set<Listener<TypingUpdate>>();
   private statusListeners = new Set<Listener<"connected" | "disconnected">>();
+  private reactionAddedListeners = new Set<Listener<MessageReactionSocketEvent>>();
+  private reactionRemovedListeners = new Set<Listener<MessageReactionSocketEvent>>();
+  private reactionStatsListeners = new Set<Listener<MessageReactionStatsEvent>>();
 
   // typing throttle per room
   private typingGuards = new Map<number, number>();
@@ -104,6 +121,17 @@ class ChatSocket {
       this.typingListeners.forEach(fn => fn(data));
     });
 
+    // message reactions (CHAT_MESSAGE_REACTIONS §2)
+    this.socket.on("message_reaction_added", (data: MessageReactionSocketEvent) => {
+      this.reactionAddedListeners.forEach((fn) => fn(data));
+    });
+    this.socket.on("message_reaction_removed", (data: MessageReactionSocketEvent) => {
+      this.reactionRemovedListeners.forEach((fn) => fn(data));
+    });
+    this.socket.on("message_reaction_stats", (data: MessageReactionStatsEvent) => {
+      this.reactionStatsListeners.forEach((fn) => fn(data));
+    });
+
     // keep-alive
     this.socket.on("pong", () => {
       // no-op; could update lastPong timestamp
@@ -130,8 +158,16 @@ class ChatSocket {
     this.socket?.emit("join_room", { room_id, user_id });
   }
 
-  leaveRoom(room_id: number) {
-    this.socket?.emit("leave_room", { room_id });
+  leaveRoom(room_id: number, user_id: string) {
+    this.socket?.emit("leave_room", { room_id, user_id });
+  }
+
+  joinMessage(message_id: number, user_id: string) {
+    this.socket?.emit("join_message", { message_id, user_id });
+  }
+
+  leaveMessage(message_id: number, user_id: string) {
+    this.socket?.emit("leave_message", { message_id, user_id });
   }
 
   // ===== Typing =====
@@ -159,7 +195,14 @@ class ChatSocket {
     user_id: string,
     message_data?: Record<string, any> | null
   ): Promise<boolean /*client_id*/> {
-    const payload = { room_id, message: content, message_type, user_id, message_data };
+    // Contract §3.3: message (content), message_type, product_id?, user_id
+    const payload = {
+      room_id,
+      message: content,
+      message_type,
+      product_id: message_data?.product_id ?? null,
+      user_id,
+    };
 
     if (this.connected) {
       // try with ack first, fallback to fire-and-forget
@@ -191,21 +234,19 @@ class ChatSocket {
   sendText(room_id: number, user_id:string, text: string) {
     // server validation caps are 1–1000; we trim client-side to be safe
     const trimmed = (text ?? "").slice(0, 1000);
-    return this.sendMessage(room_id, "text", trimmed, user_id, null);
+    return this.sendMessage(room_id, "text", trimmed, user_id, {text: trimmed});
   }
 
-  sendImage(room_id: number, user_id:string, url: string, mime = "image/jpeg", meta?: Record<string, any>) {
-    if (!/^image\//.test(mime)) throw new Error("Invalid image mime");
-    return this.sendMessage(room_id, "image", url, user_id, { url, mime, ...meta });
+  sendImage(room_id: number, user_id:string, url: string, meta?: Record<string, any>) {
+    return this.sendMessage(room_id, "image", "Shared Image", user_id, { image_url:url, thumbnail_url:url, ...meta });
   }
 
-  sendVideo(room_id: number, user_id:string, url: string, mime = "video/mp4", meta?: Record<string, any>) {
-    if (!/^video\//.test(mime)) throw new Error("Invalid video mime");
-    return this.sendMessage(room_id, "video", url, user_id, { url, mime, ...meta });
+  sendVideo(room_id: number, user_id:string, url: string, meta?: Record<string, any>) {
+    return this.sendMessage(room_id, "video", "Shared Video", user_id, { video_url:url, thumbnail_url:url, ...meta });
   }
 
   sendProduct(room_id: number, user_id:string, product_id: string, note?: string) {
-    return this.sendMessage(room_id, "product", note ?? "", user_id, { product_id });
+    return this.sendMessage(room_id, "product", "Shared Product", user_id, { product_id });
   }
 
   // ===== Offers =====
@@ -218,7 +259,7 @@ class ChatSocket {
     }
   }
 
-  async respondToOffer(data: OfferResponsePayload): Promise<void> {
+  async respondToOffer(data: OfferResponsePayload & { user_id?: string }): Promise<void> {
     const payload = { ...data };
     if (this.connected) {
       this.socket?.emit("respond_to_offer", payload);
@@ -239,6 +280,18 @@ class ChatSocket {
   onOfferResponse(cb: Listener<any>) { this.offerResponseListeners.add(cb); return () => this.offerResponseListeners.delete(cb); }
   onTyping(cb: Listener<TypingUpdate>) { this.typingListeners.add(cb); return () => this.typingListeners.delete(cb); }
   onStatus(cb: Listener<"connected" | "disconnected">) { this.statusListeners.add(cb); return () => this.statusListeners.delete(cb); }
+  onReactionAdded(cb: Listener<MessageReactionSocketEvent>) {
+    this.reactionAddedListeners.add(cb);
+    return () => this.reactionAddedListeners.delete(cb);
+  }
+  onReactionRemoved(cb: Listener<MessageReactionSocketEvent>) {
+    this.reactionRemovedListeners.add(cb);
+    return () => this.reactionRemovedListeners.delete(cb);
+  }
+  onReactionStats(cb: Listener<MessageReactionStatsEvent>) {
+    this.reactionStatsListeners.add(cb);
+    return () => this.reactionStatsListeners.delete(cb);
+  }
 
   private emitStatus(s: "connected" | "disconnected") {
     this.statusListeners.forEach(fn => fn(s));

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Ref, useState } from "react";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import { useForm, Controller } from "react-hook-form";
@@ -13,6 +13,10 @@ import InstagramGrid, { InstagramGridProps, PickedImage } from "./imagePicker";
 import { pickImage } from "../services/imageSelection";
 import { uploadImage, attemptMultipleUpload } from "../services/sections/media";
 import { MediaResponse } from "../models/media";
+import { createBuyerRequest } from "../services/sections/request";
+import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
+import { CreateRequestPayload } from "../models/request";
+import { useToast } from "./ToastProvider";
 
 //temporary date parser to create an expiry date. This default expiry date would be seven days from when the request was first placed
 function getDateSevenDaysFromNow() {
@@ -37,9 +41,14 @@ const requestSchema = z.object({
 
 export type RequestFormData = z.infer<typeof requestSchema>;
 
-const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (data: RequestFormData) => void, requestImages:string[] }>(
-  ({ onSubmit, requestImages }, ref) => {
+const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheetMethods | null, {}>(
+  (props, ref) => {
+    const sheetRef = React.useRef<BottomSheetMethods | null>(null);
+    React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
+    const {show} = useToast();
+
     const snapPoints = React.useMemo(() => ["50%", "85%"], []);
+    const [requestImages, setRequestImages] = useState<string[]>([]);
 
     requestSchema.refine(()=> selectedCategories?.length ?? 0 > 0,{
       path: ["category_ids"]
@@ -49,13 +58,14 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (d
       resolver: zodResolver(requestSchema) as any // todo: remember to solve later
     });
     
-    // images state: store PickedImage[] from InstagramGrid
     const [Imagevalue, setImageValue] = React.useState<InstagramGridProps["value"]>(requestImages ? requestImages.map((uri, index) => ({ id: index.toString(), uri })) : []);
 
     //categories
     const [modalVisible, setModalVisible] = React.useState(false);
     const [categories, setCategories] = React.useState<Category[]>([]);
     const [selectedCategories, setSelectedCategories] = React.useState<Category[]>([]);
+
+    const [sending, setSending] = React.useState(false);
 
     React.useEffect(() => {
       async function fetchCategories() {
@@ -74,6 +84,26 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (d
       setSelectedCategories(prev => prev.filter(c => c.id !== id));
     };
 
+
+    const createRequest = async(request: CreateRequestPayload) => {
+        try {
+          setSending(true);
+          const newRequest = await createBuyerRequest(request);
+          show({
+            variant: "success",
+            title: "Request Created",
+            message: "Your request has been successfully created."
+          });
+          setSending(false);
+          sheetRef.current?.close();
+        } catch (error) {
+          show({
+            variant: "error",
+            title: "Error creating buyer request",
+            message: "There was a problem creating the buyer request. Please try again later."
+          });
+        }
+      }
 
     const handleLocalSubmit = async (data: RequestFormData) => {
     try{
@@ -97,7 +127,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (d
       };
 
       // call parent-provided onSubmit
-      await onSubmit(payload);
+      await createRequest(payload);
       console.log("all done, created request successfully")
     } catch (err) {
       console.error("Create product failed:", err);
@@ -106,25 +136,22 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (d
   }
 
     return (
-      <BottomSheet ref={ref} index={-1} snapPoints={snapPoints} enablePanDownToClose>
-        <BottomSheetScrollView>
-        <Text className="text-lg font-bold mb-3">Create Buyer Request</Text>
+      <BottomSheet ref={sheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose>
+        <BottomSheetScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}>
+        <Text className="text-lg font-bold mb-4">Create Buyer Request</Text>
 
           {/* Title */}
-          <Input name="title" control={control} placeholder="Title"></Input>
-          {errors && errors.title && <Text className="text-red-500">{errors.title.message}</Text>}
+          <Input name="title" control={control} placeholder="Title" errors={errors} />
 
           {/* Description */}
-          <Input name="description" control={control} placeholder="Description" multiline numberOfLines={4} style={{height: 100, textAlignVertical: 'top'}}></Input>
-          {errors && errors.description && <Text className="text-red-500">{errors.description.message}</Text>}
-          
+          <Input name="description" control={control} placeholder="Description" errors={errors} multiline numberOfLines={4} style={{height: 100, textAlignVertical: 'top'}} />
+
           {/* Budget */}
-          <Input name="budget" control={control} placeholder="Budget" keyboardType="numeric"></Input>
-          {errors && errors.budget && <Text className="text-red-500">{errors.budget.message}</Text>}
+          <Input name="budget" control={control} placeholder="Budget" errors={errors} keyboardType="numeric" />
 
           {/* Category IDs */}
-          <Text className="mb-1">Categories</Text>
-          <View className="flex-row flex-wrap gap-3 p-3 pr-4">
+          <Text className="mb-2 text-text-primary font-medium">Categories</Text>
+          <View className="flex-row flex-wrap gap-3 mb-4">
             {selectedCategories.map(cat => (
               <View key={cat.id.toString()} className="flex-row items-center bg-[#f4f0f0] rounded-full px-3 py-1">
                 <Text className="text-[#181111] text-sm font-medium mr-2">{cat.name}</Text>
@@ -142,13 +169,25 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (d
           </View>
 
           {/* Images Select */}
-          <Text className="mb-1">Images</Text>
-          {Imagevalue?.length && Imagevalue.length > 0 && <Text className="text-neutral-500 mb-2">Long press on each image to remove it</Text>}
-          {/* <<< IMPORTANT: pass value & onChange so we can receive images >>> */}
-          <InstagramGrid value={Imagevalue} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} />
+          <Text className="mb-2 text-text-primary font-medium">Images</Text>
+          {Array.isArray(Imagevalue) && Imagevalue.length > 0 && (
+            <Text className="text-text-secondary text-xs mb-2">Long press on each image to remove it</Text>
+          )}
+          <View className="mb-6">
+            <InstagramGrid
+              value={Imagevalue}
+              onChange={(imgs) => setImageValue(imgs)}
+              emptyPlaceholdersCount={3}
+              emptyLabel="No images yet"
+            />
+          </View>
 
-          <TouchableOpacity className="bg-[#E94C2A] p-3 rounded" onPress={handleSubmit(handleLocalSubmit)}>
-            <Text className="text-white text-center">Create Request</Text>
+          <TouchableOpacity
+            disabled={sending}
+            className="bg-primary py-4 rounded-button items-center justify-center"
+            onPress={handleSubmit(handleLocalSubmit)}
+          >
+            <Text className="text-white font-semibold">{sending ? "Sending…" : "Create Request"}</Text>
           </TouchableOpacity>
 
 
@@ -166,3 +205,4 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheet, { onSubmit: (d
 );
 
 export default BuyerRequestFormBottomSheet;
+

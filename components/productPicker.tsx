@@ -1,8 +1,10 @@
 import React, { useMemo, useRef } from "react";
-import { View, Text, FlatList, TouchableOpacity, Image } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator } from "react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { Trash2 } from "lucide-react-native";
 import { ProductResponse } from "../models/products";
+import { resolveProductImageUri } from "../utils/imageUri";
+import { formatNaira } from "../utils/formatCurrency";
 
 type Product = {
   id: string;
@@ -14,6 +16,8 @@ type Product = {
 type Props = {
   visible: boolean;
   products: ProductResponse[];
+  loading?: boolean;
+  disabled?: boolean;
   onClose: () => void;
   onSelect: (p: Product) => void;
   onRemove?: (p: Product) => void;
@@ -23,13 +27,16 @@ type Props = {
 export default function ProductPicker({
   visible,
   products,
+  loading = false,
+  disabled = false,
   selectedProducts,
   onClose,
   onSelect,
   onRemove,
 }: Props) {
   
-  const sheetRef = useRef<BottomSheet>(null);
+  const sheetRef = useRef<BottomSheet>(null); //refs should control the bottomsheet state and not bools
+  //note to work on this later and expose refs to parent
   const snapPoints = useMemo(() => ["60%", "100%"], []);
 
   if (!visible) return null;
@@ -38,8 +45,8 @@ export default function ProductPicker({
     selectedProducts.some((p) => p.id === product.id);
 
   const handleSelect = (item: Product) => {
+    if (disabled) return;
     onSelect(item);
-    requestAnimationFrame(onClose); // smoother close
   };
 
   const handleRemove = (item: Product) => {
@@ -65,36 +72,46 @@ export default function ProductPicker({
       <BottomSheetView className="flex-1 px-4">
         <Text className="text-lg font-semibold mt-4 mb-2">Select Product</Text>
 
-        {products.length === 0 ? (
-          <Text className="text-center text-gray-500 mt-10">
-            No products available.
-          </Text>
+        {loading ? (
+          <View className="flex-1 items-center justify-center py-12">
+            <ActivityIndicator size="large" color="#e26136" />
+            <Text className="text-text-secondary text-sm mt-3">Loading products…</Text>
+          </View>
+        ) : products.length === 0 ? (
+          <View className="flex-1 items-center justify-center py-12">
+            <Text className="text-center text-text-secondary">
+              No products available.
+            </Text>
+            <Text className="text-center text-text-secondary text-sm mt-1">
+              Create products in your dashboard first.
+            </Text>
+          </View>
         ) : (
           <FlatList
             data={products}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => {
               const selected = isSelected(item);
+              const imageUri = resolveProductImageUri(item);
 
               return (
                 <TouchableOpacity
                   onPress={() => handleSelect(item)}
-                  className={`flex-row items-center p-3 mb-2 rounded-lg ${selected ? "bg-blue-100" : "bg-gray-100"}`}
+                  disabled={disabled}
+                  className={`flex-row items-center p-3 mb-2 rounded-lg ${selected ? "bg-blue-100" : "bg-gray-100"} ${disabled ? "opacity-50" : ""}`}
                   accessibilityRole="button"
-                  accessibilityLabel={`Select ${item.name}, priced at $${item.price}`}
+                  accessibilityLabel={`Select ${item.name}, priced at ${formatNaira(item.price)}`}
                 >
                   <Image
                     source={
-                      item.images?.[0]?.media?.mobile_url
-                        ? { uri: item.images?.[0]?.media?.mobile_url }
-                        : require("../assets/icon.png") // Make sure you have a placeholder image
+                      imageUri ? { uri: imageUri } : require("../assets/icon.png")
                     }
                     className="w-12 h-12 rounded-md bg-gray-300 mr-3"
                   />
 
                   <View className="flex-1">
                     <Text className="text-base font-medium">{item.name}</Text>
-                    <Text className="text-sm text-gray-500">${item.price}</Text>
+                    <Text className="text-sm text-gray-500">{formatNaira(item.price)}</Text>
                   </View>
 
                   {onRemove && (

@@ -204,3 +204,8 @@ export interface CheckoutRequest {
   shipping_address: Record<string, string>;
   notes: string;
 }
+
+export interface CheckoutResponse {
+  message: string;
+  order_id: string;
+}

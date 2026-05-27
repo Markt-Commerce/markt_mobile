@@ -86,6 +86,8 @@ export interface MediaVariant {
     created_at: string;
     comment_count: number;
     like_count: number;
+    /** true if current user liked this post — use for orange filled heart (API_CONTRACT_FEED_AND_FOLLOW) */
+    liked_by_me?: boolean;
     status: string;
     categories: string;
     seller?: Seller;
@@ -122,6 +124,6 @@ export interface BuyerRequest {
   export type FeedItem =
     | { type: "product"; data: Product[] }
     | { type: "post"; data: Post }
-    | { type: "startCard"; data: SellerStartCard[] }
-    | { type: "request"; data: BuyerRequest };
+    | { type: "request"; data: BuyerRequest }
+    | {type: "niche_discover"; data: any[]};
   

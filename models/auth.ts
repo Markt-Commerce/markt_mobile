@@ -1,3 +1,5 @@
+import { AddressData, CommonBuyerResponseData, CommonSellerResponseData } from "./user";
+
 // types.ts
 export type AccountType = 'buyer' | 'seller';
 
@@ -7,6 +9,7 @@ export interface RegisterRequest {
   password: string;
   account_type: AccountType;
   email: string;
+  profile_picture?: string;
   seller_data?: {
     policies: Record<string, string>;
     description: string;
@@ -17,6 +20,7 @@ export interface RegisterRequest {
     shipping_address: Record<string, string>;
     buyername: string;
   };
+  address?: AddressData;
 }
 
 export interface LoginRequest {
@@ -44,8 +48,22 @@ export interface AuthUser {
   is_buyer: boolean;
   is_seller: boolean;
   email_verified: boolean;
-  current_role: string;
+  current_role: AccountType;
   created_at: string;
   updated_at: string;
   account_type: AccountType;
+}
+
+export interface UserSwitchResponse {
+  message: string,
+  success: boolean,
+  previous_role: string,
+  user: AuthUser & {last_login_at: string},
+  current_role: boolean
+}
+
+export interface RoleCreationResult extends AuthUser{
+  seller_account: CommonSellerResponseData
+  buyer_account: CommonBuyerResponseData,
+  address: AddressData,
 }

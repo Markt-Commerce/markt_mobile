@@ -1,6 +1,6 @@
 // /services/postService.ts
 import { request, BASE_URL } from "../api";
-import { CommentResponse, CreatePostRequest, PostDetails, PostResponse } from "../../models/post";
+import { CommentCreatedResponse, CommentResponse, CreatePostRequest, PostDetails, PostResponse } from "../../models/post";
 import { ApiResponse } from "../../models/auth";
 
 /**
@@ -31,6 +31,18 @@ export async function getPostById(postId:string):Promise<PostDetails>{
 export async function getPostComments(postId:string, page: number):Promise<CommentResponse> {
   const res = await request<ApiResponse<CommentResponse>>(`${BASE_URL}/socials/posts/${postId}/comments`, {
     method: "GET"
+  });
+  return (res as any).data ?? (res as any);
+}
+
+export async function commentOnPost(postId:string, comment: string, parentId?: number) : Promise<CommentCreatedResponse> {
+  const payload: { content: string; parent_id?: number } = {
+    content:comment,
+  };
+  if (parentId) payload.parent_id = parentId;
+  const res = await request<ApiResponse<CommentCreatedResponse>>(`${BASE_URL}/socials/posts/${postId}/comments`, {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
   return (res as any).data ?? (res as any);
 }

@@ -106,6 +106,8 @@ export interface CreatePostRequest {
   }[];
   caption: string;
   like_count: number;
+  /** true if current user liked this post — use for orange filled heart (API_CONTRACT_FEED_AND_FOLLOW) */
+  liked_by_me?: boolean;
   comment_count: number;
   categories: string;
   created_at: string;
@@ -142,3 +144,24 @@ export type CommentItem = {
       profile_picture_url: string;
     };
   }
+
+export interface CommentRequest {
+    content: string;
+    parent_id?: number;
+}
+
+interface User {
+  id: string;
+  profile_picture_url: string;
+  username: string;
+}
+
+export interface CommentCreatedResponse {
+  id: number;
+  user_id: string;
+  content: string;
+  post_id: string;
+  created_at: string;
+  user: User;
+}
+

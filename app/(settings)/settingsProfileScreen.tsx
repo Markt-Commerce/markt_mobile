@@ -1,11 +1,13 @@
 // screens/SettingsProfileScreen.tsx
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, ArrowRight, Bell, Sun, Globe, User, Lock, CreditCard, Truck, HelpCircle as Question, FileText, ShieldCheck, Info } from 'lucide-react-native';
 import { useUser } from '../../hooks/userContextProvider';
 import { request } from '../../services/api';
 import { useTheme } from '../../hooks/themeContext';
-import { useRouter, Link } from 'expo-router';	
+import { useRouter, Link } from 'expo-router';
+import { navigateToGuestHome } from '../../utils/authNavigation';	
 
 export default function SettingsProfileScreen() {
   const { user, setUser } = useUser();
@@ -17,7 +19,7 @@ export default function SettingsProfileScreen() {
     try {
       await request('/users/logout', { method: 'POST' });
       setUser(null);
-      nav.push('/(entrances)/login');
+      navigateToGuestHome();
     } catch (err: any) {
       Alert.alert('Logout Failed', err.message || 'Try again');
     }
@@ -25,6 +27,7 @@ export default function SettingsProfileScreen() {
 
 
   return (
+    <SafeAreaView className="flex-1 bg-white">
     <ScrollView className="flex-1 bg-white">
       {/* Header */}
       <View className="flex-row items-center p-4 pb-2 justify-between">
@@ -87,5 +90,6 @@ export default function SettingsProfileScreen() {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }

@@ -6,6 +6,8 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Image,
+  Alert,
 } from "react-native";
 import { ArrowLeft, Image as ImageIcon } from "lucide-react-native";
 import { useForm } from "react-hook-form";
@@ -13,16 +15,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input } from "../../components/inputs";
 import { useUser } from "../../hooks/userContextProvider";
-import { registerUser } from "../../services/sections/auth";
+import { checkUsername } from "../../services/sections/auth";
 import { useRouter } from "expo-router";
 import { SignupStepTwo, register, useRegData } from "../../models/signupSteps";
 import Button from "../../components/button";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useToast } from "../../components/ToastProvider";
+import * as ImagePicker from "expo-image-picker";
+import { useDebouncedCallback } from "../../hooks/useDebouncedCallback";
+import { useWatch } from "react-hook-form";
 
+const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 const schema = z.object({
   Buyername: z.string().min(1, "Name is required"),
-  username: z.string().min(1, "Username is required"),
+  username: z.string().min(3, "At least 3 characters").max(20, "Max 20 characters").regex(USERNAME_REGEX, "Letters, numbers, underscores only"),
   phone_number: z.string().min(1, "Phone number is required"),
 });
 
@@ -31,6 +37,9 @@ export default function UserInfoScreen() {
   const { regData, setRegData } = useRegData();
   const router = useRouter();
   const { show } =  useToast();
+  const [profilePictureUri, setProfilePictureUri] = React.useState<string | null>(null);
+  const [usernameStatus, setUsernameStatus] = React.useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [usernameMessage, setUsernameMessage] = React.useState("");
 
   const {
     control,
@@ -41,8 +50,46 @@ export default function UserInfoScreen() {
     mode: "onChange",
   });
 
+  const username = useWatch({ control, name: "username", defaultValue: "" });
+  const checkUsernameDebounced = useDebouncedCallback(async (value: string) => {
+    if (value.length < 3 || !USERNAME_REGEX.test(value)) {
+      setUsernameStatus("idle");
+      return;
+    }
+    setUsernameStatus("checking");
+    try {
+      const res = await checkUsername(value);
+      setUsernameStatus(res.available ? "available" : "taken");
+      setUsernameMessage(res.message ?? "");
+    } catch {
+      setUsernameStatus("idle");
+    }
+  }, 500);
+
+  React.useEffect(() => {
+    checkUsernameDebounced(username);
+  }, [username]);
+
   // Change this to the actual next screen in your flow if different
   const NEXT_ROUTE = "/emailVerification";
+
+  const changeProfilePicture = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert("Permission to access camera roll is required!");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      setProfilePictureUri(uri); // Store local URI in state
+    }
+  };
 
   const handleSubmitForm = async (data: z.infer<typeof schema>) => {
     const userData: SignupStepTwo = {
@@ -62,23 +109,18 @@ export default function UserInfoScreen() {
     // send the user data to the backend here
     // may move this later to a another signup step
     try {
-      const userRegResult = await registerUser(regData)
       //store user in secure store
       /* await SecureStore.setItemAsync('user', JSON.stringify({
         email: regData.email,
         password: regData.password,
         userType: regData.account_type,
       })); */
-      setUser({
-        email: userRegResult.email.toLowerCase(),
-        account_type: userRegResult.account_type,
-      }); //store user data in context
       show({
         variant: "success",
         title: "Registration Successful",
-        message: "Your account has been created successfully. Please verify your email to continue.",
+        message: "Well done! Your information has been saved.",
       })
-      router.push("/emailVerification");
+      router.push("/locationdet");
     } catch (error) {
       show({
         variant: "error",
@@ -134,15 +176,20 @@ export default function UserInfoScreen() {
 
             {/* Card */}
             <View className="rounded-2xl border border-[#efe9e7] bg-white px-5 py-6">
-              {/* Avatar placeholder (UI only) */}
+              {/* Avatar placeholder with image picker */}
               <View className="items-end mb-2">
                 <TouchableOpacity
                   activeOpacity={0.85}
+                  onPress={changeProfilePicture}
                   className="flex-row items-center gap-2 rounded-full border border-[#e5dedc] bg-white px-3 h-9"
                 >
-                  <ImageIcon size={16} color="#876d64" />
+                  {profilePictureUri ? (
+                    <Image source={{ uri: profilePictureUri }} className="w-5 h-5 rounded-full" />
+                  ) : (
+                    <ImageIcon size={16} color="#876d64" />
+                  )}
                   <Text className="text-[#171311] text-xs font-medium">
-                    Add profile photo
+                    {profilePictureUri ? "Change photo" : "Add profile photo"}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -164,13 +211,19 @@ export default function UserInfoScreen() {
                 />
               </View>
 
-              {/* Username */}
+              {/* Username — debounced check per REGISTRATION_LOGIN_API §2.2 */}
               <View className="mb-4">
                 <Label>Username</Label>
                 {errors.username ? (
                   <Text className="mb-1 text-xs text-[#e9242a]">
                     {errors.username.message as string}
                   </Text>
+                ) : usernameStatus === "taken" ? (
+                  <Text className="mb-1 text-xs text-[#e9242a]">{usernameMessage}</Text>
+                ) : usernameStatus === "available" ? (
+                  <Text className="mb-1 text-xs text-green-600">✓ Available</Text>
+                ) : usernameStatus === "checking" ? (
+                  <Text className="mb-1 text-xs text-[#8e7a74]">Checking…</Text>
                 ) : (
                   <Text className="mb-1 text-xs text-[#8e7a74]">
                     This will be visible to other users.
@@ -208,11 +261,11 @@ export default function UserInfoScreen() {
                 />
               </View>
 
-              {/* CTA */}
+              {/* CTA — disable if username taken */}
               <View className="mt-6">
                 <Button
                   onPress={handleSubmit(handleSubmitForm)}
-                  disabled={!isValid}
+                  disabled={!isValid || usernameStatus === "taken" || usernameStatus === "checking"}
                   text="Next"
                 />
               </View>

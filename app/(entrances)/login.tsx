@@ -13,11 +13,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginUser } from "../../services/sections/auth";
 import { useUser } from "../../hooks/userContextProvider";
-import { Input } from "../../components/inputs";
+import { Input, PasswordInput } from "../../components/inputs";
 import Button from "../../components/button";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRegData } from "../../models/signupSteps";
-import { useToast } from "../../components/ToastProvider"; 
+import { useToast } from "../../components/ToastProvider";
+import { navigateToAppHome } from "../../utils/authNavigation"; 
 
 const schema = z.object({
   email: z.string().min(1, "Email is required"),
@@ -52,11 +53,13 @@ export default function LoginScreen() {
       });
 
       setError(null);
+      const accountType = (userData.current_role ?? userData.account_type) as "buyer" | "seller";
       setUser({
         email: userData.email.toLowerCase(),
-        account_type: userData.account_type,
+        account_type: accountType,
         user_id: userData.id,
       });
+      setRole(accountType);
 
       show({
         variant: "success",
@@ -64,7 +67,7 @@ export default function LoginScreen() {
         message: `Signed in as ${userData.email.toLowerCase()}`,
       });
 
-      router.replace("/");
+      navigateToAppHome();
     } catch (error: any) {
       const errMsg =
         typeof error === "object" && error?.message
@@ -140,14 +143,14 @@ export default function LoginScreen() {
 
             {/* Error banner */}
             {error ? (
-              <View className="mb-4 rounded-xl bg-[#ffe8e9] px-3 py-3">
-                <Text className="text-[#b0161a] text-sm">{error}</Text>
+              <View className="mb-4 rounded-xl bg-error-bg px-4 py-3">
+                <Text className="text-error text-sm">{error}</Text>
               </View>
             ) : null}
 
             {/* Email */}
             <View className="mb-4">
-              <Text className="mb-1 text-[13px] text-[#5f4f4f]">Email</Text>
+              <Text className="mb-1 text-[13px] text-text-secondary">Email</Text>
               <Input
                 placeholder="Enter your email"
                 control={control}
@@ -158,29 +161,17 @@ export default function LoginScreen() {
                 autoComplete="email"
                 textContentType="emailAddress"
               />
-              {errors.email ? (
-                <Text className="mt-1 text-xs text-[#e9242a]">
-                  {errors.email.message as string}
-                </Text>
-              ) : null}
             </View>
 
-            {/* Password */}
+            {/* Password — eye toggle */}
             <View className="mb-2">
-              <Text className="mb-1 text-[13px] text-[#5f4f4f]">Password</Text>
-              <Input
+              <Text className="mb-1 text-[13px] text-text-secondary">Password</Text>
+              <PasswordInput
                 placeholder="Enter your password"
                 control={control}
                 name="password"
                 errors={errors}
-                secureTextEntry
-                textContentType="password"
               />
-              {errors.password ? (
-                <Text className="mt-1 text-xs text-[#e9242a]">
-                  {errors.password.message as string}
-                </Text>
-              ) : null}
             </View>
 
             {/* Forgot password */}
@@ -192,26 +183,15 @@ export default function LoginScreen() {
 
             {/* Role toggle */}
             <View className="mt-6">
-              <Text className="mb-2 text-[13px] text-[#5f4f4f]">Continue as</Text>
-              <View className="flex-row items-center rounded-full bg-[#f2efee] p-1">
+              <Text className="mb-2 text-[13px] text-text-secondary">Continue as</Text>
+              <View className="flex-row items-center rounded-full bg-bg-muted p-1">
                 <TouchableOpacity
                   onPress={() => setRole("buyer")}
                   accessibilityRole="button"
                   accessibilityState={{ selected: role === "buyer" }}
-                  style={{
-                    flex: 1,
-                    backgroundColor: role === "buyer" ? "#E94C2A" : "transparent",
-                    borderRadius: 999,
-                    paddingVertical: 10,
-                    alignItems: "center",
-                  }}
+                  className={`flex-1 rounded-button py-2.5 items-center ${role === "buyer" ? "bg-primary" : ""}`}
                 >
-                  <Text
-                    style={{
-                      color: role === "buyer" ? "#fff" : "#171212",
-                      fontWeight: role === "buyer" ? "700" : "500",
-                    }}
-                  >
+                  <Text className={`font-medium ${role === "buyer" ? "text-white" : "text-text-primary"}`}>
                     Buyer
                   </Text>
                 </TouchableOpacity>
@@ -220,20 +200,9 @@ export default function LoginScreen() {
                   onPress={() => setRole("seller")}
                   accessibilityRole="button"
                   accessibilityState={{ selected: role === "seller" }}
-                  style={{
-                    flex: 1,
-                    backgroundColor: role === "seller" ? "#E94C2A" : "transparent",
-                    borderRadius: 999,
-                    paddingVertical: 10,
-                    alignItems: "center",
-                  }}
+                  className={`flex-1 rounded-button py-2.5 items-center ${role === "seller" ? "bg-primary" : ""}`}
                 >
-                  <Text
-                    style={{
-                      color: role === "seller" ? "#fff" : "#171212",
-                      fontWeight: role === "seller" ? "700" : "500",
-                    }}
-                  >
+                  <Text className={`font-medium ${role === "seller" ? "text-white" : "text-text-primary"}`}>
                     Seller
                   </Text>
                 </TouchableOpacity>
@@ -245,7 +214,8 @@ export default function LoginScreen() {
               <Button
                 onPress={handleSubmit(onsubmit)}
                 disabled={!isValid || isLoading}
-                text={isLoading ? "Signing in..." : "Login"}
+                loading={isLoading}
+                text="Sign in"
               />
             </View>
 
@@ -256,7 +226,7 @@ export default function LoginScreen() {
                 onPress={() => router.navigate("/signup")}
               >
                 Don’t have an account?{" "}
-                <Text className="text-[#E94C2A] underline">Sign up</Text>
+                <Text className="text-primary underline">Sign up</Text>
               </Text>
             </View>
           </View>

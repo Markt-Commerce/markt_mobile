@@ -1,5 +1,5 @@
 import { BASE_URL,request } from "../api";
-import { ProductImageResponse,SocialPostMediaResponse, RequestImageResponse, MediaResponse } from "../../models/media";
+import { ProductImageResponse,SocialPostMediaResponse, RequestImageResponse, MediaResponse, MediaUploadResponse } from "../../models/media";
 import { InstagramGridProps } from '../../components/imagePicker'
 import { Media } from "../../models/feed";
 import { Buffer } from 'buffer';
@@ -11,8 +11,8 @@ import { Buffer } from 'buffer';
  */
 export async function uploadImage(
   formData: FormData
-) : Promise<MediaResponse>{
-  const res = await request<MediaResponse>(`${BASE_URL}/media/upload`, {
+) : Promise<MediaUploadResponse>{
+  const res = await request<MediaUploadResponse>(`${BASE_URL}/media/upload`, {
     method: 'POST',
     body: formData,
   });
@@ -26,7 +26,7 @@ export async function uploadImage(
  */
 export async function attemptMultipleUpload(
   formList: InstagramGridProps['value']
-): Promise<MediaResponse[]>{
+): Promise<MediaUploadResponse[]>{
   const ImageResponse = await Promise.all(
       formList?.map(
       async (img)=>{
@@ -93,7 +93,7 @@ export async function attemptMultipleUpload(
           console.error("Upload failed:", error);
         }
         //return result
-      }) as Promise<MediaResponse>[]
+      }) as Promise<MediaUploadResponse>[]
     );
     return ImageResponse;
 }

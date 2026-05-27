@@ -1,44 +1,62 @@
-import React, { useRef, useState, useEffect, useMemo } from "react";
-import { View, Text, FlatList, TouchableOpacity, Image, ImageBackground, ActivityIndicator, Pressable } from "react-native";
-import { Plus, ShoppingCart, MessageCircle, Heart, Send, Star, Bell, Search } from "lucide-react-native";
+import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  ScrollView,
+  Animated,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Plus, Search, Compass } from "lucide-react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
-import { Link, useRouter } from "expo-router";
-import { FeedItem } from "../../models/feed";
-import { getProducts, getPosts, getBuyerRequests } from "../../services/sections/feed";
+import type { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
+import { useRouter, useFocusEffect } from "expo-router";
+import type { FeedItem, FeedProduct } from "../../types/feed";
 import { useUser } from "../../hooks/userContextProvider";
+import { switchUserRole } from "../../services/sections/auth";
+import { setUserSession } from "../../services/authStorage";
 import ProductFormBottomSheet from "../../components/productCreateBottomSheet";
 import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BuyerRequestFormBottomSheet from "../../components/buyerRequestBottomSheet";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { createPost,likePost } from "../../services/sections/post";
-import { createProduct } from "../../services/sections/product";
-import { createBuyerRequest } from "../../services/sections/request";
-import { CreateProductRequest, PlaceholderProduct } from "../../models/products";
-import { Category } from "../../models/categories";
+import CreateNicheBottomSheet from "../../components/nicheCreateBottomSheet";
+import QuickChatBottomSheet from "../../components/quickChatBottomSheet";
+import { isOwnProductListing } from "../../utils/chatGuards";
 import { useToast } from "../../components/ToastProvider";
 import StartCards from "../../components/startCards";
+import FeedPostCard from "../../components/FeedPostCard";
+import FeedProductCard from "../../components/FeedProductCard";
+import ShopStrip from "../../components/ShopStrip";
+import { useFeed } from "../../hooks/useFeed";
+import { isFeedPost, isFeedProduct } from "../../types/feed";
+import { getMyNiches } from "../../services/sections/niches";
+import { getUserProfile } from "../../services/sections/profile";
+import type { Niches } from "../../models/niches";
+import type { UserProfile } from "../../models/profile";
+
+const MAIN_TABS = [
+  { id: "for_you" as const, label: "For You" },
+  { id: "discover" as const, label: "Discover" },
+  { id: "trending" as const, label: "Trending" },
+  { id: "following" as const, label: "Following" },
+];
+
+type TabId = "for_you" | "discover" | "trending" | "following" | string;
 
 export default function FeedScreen() {
   const router = useRouter();
-  const [feed, setFeed] = useState<FeedItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [selectedTab, setSelectedTab] = useState<TabId>("for_you");
+  const [myNiches, setMyNiches] = useState<Niches[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loadedStartCards, setLoadedStartCards] = useState(false);
-  const [page, setPage] = useState(1);
   const { show } = useToast();
 
-  //for create product
-  const [productCategories, setProductCategories] = useState<Category[]>([]);
-  const [productImages, setProductImages] = useState<string[]>([]);
-
-  //for create post
-  const [postCategories, setPostCategories] = useState<Category[]>([]);
-  const [postProducts, setPostProducts] = useState<PlaceholderProduct[]>([]);
-  const [postImages, setpostImages] = useState<string[]>([]);
-
-  //for request
-  const [requestImages, setRequestImages] = useState<string[]>([]);
-
-  const { role, setUser, user } = useUser();
+  const { role, user, setRole } = useUser();
+  const feedTab = selectedTab;
+  const { items, loading, loadingMore, hasNext, error, refresh, loadMore } = useFeed(feedTab);
   const snapPoints = useMemo(() => ["30%"], []);
 
   // Bottom sheet refs
@@ -46,257 +64,281 @@ export default function FeedScreen() {
   const productFormRef = useRef<BottomSheet>(null);
   const postFormRef = useRef<BottomSheet>(null);
   const requestFormRef = useRef<BottomSheet>(null);
+  const nicheFormRef = useRef<BottomSheetMethods | null>(null);
+
+  const chatSheetRef = useRef<BottomSheet>(null);
+  const productChatSheetRef = useRef<BottomSheet>(null);
+  const [chatRoomOpen, setChatRoomOpen] = useState(false);
+  const [selectedBuyerId, setSelectedBuyerId] = useState<string>("");
+  const [productForChat, setProductForChat] = useState<FeedProduct | null>(null);
+
+  // Shop strip collapse on scroll: hide when scrolling down, show when scrolling up
+  const [stripCollapsed, setStripCollapsed] = useState(false);
+  const lastScrollY = useRef(0);
+  const stripHeight = useRef(new Animated.Value(1)).current; // 1 = expanded, 0 = collapsed
+
+  useEffect(() => {
+    Animated.timing(stripHeight, {
+      toValue: stripCollapsed ? 0 : 1,
+      duration: 200,
+      useNativeDriver: false, // height/maxHeight requires false
+    }).start();
+  }, [stripCollapsed]);
+
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const y = e.nativeEvent.contentOffset.y;
+    const dy = y - lastScrollY.current;
+    lastScrollY.current = y;
+    if (dy > 8 && y > 60) setStripCollapsed(true);
+    else if (dy < -8) setStripCollapsed(false);
+  };
+
+  const openProductChat = (product: FeedProduct) => {
+    const sellerUserId = product.seller?.user?.id;
+    if (isOwnProductListing(user?.user_id, sellerUserId)) {
+      show({
+        variant: "info",
+        title: "Cannot chat",
+        message: "You cannot message yourself about your own product.",
+      });
+      return;
+    }
+    setProductForChat(product);
+    productChatSheetRef.current?.expand();
+  };
 
   const openMenu = () => {
     createMenuRef.current?.expand();
   };
   const closeMenu = () => createMenuRef.current?.close();
 
-  const openForm = (form: "product" | "post" | "request") => {
+  const openForm = (form: "product" | "post" | "request" | "niche") => {
     closeMenu();
     if (form === "product") productFormRef.current?.expand();
     if (form === "post") postFormRef.current?.expand();
     if (form === "request") requestFormRef.current?.expand();
+    if (form === "niche") nicheFormRef.current?.expand?.();
   };
 
-  const loadFeed = async () => {
-    if (loading) return;
-    setLoading(true);
+  const hasBothRoles = (profile?.is_buyer && profile?.is_seller) ?? false;
 
-    const options = ["product", "post"];
-    if (user?.account_type === "seller") options.push("request");
-    let fetchType = options[Math.floor(Math.random() * options.length)];
-    if (!loadedStartCards) {
-      //start cards are only loaded once at the start of the feed
-      fetchType = "startCard";
-      setLoadedStartCards(true);
-    }
-
+  const handleSwitchMode = async () => {
+    closeMenu();
     try {
-      let newItems: FeedItem[] = [];
-      if (fetchType === "startCard") {
-        //load start cards
-        newItems = [{ type: "startCard", data: [] }]; //start cards component can handle its own data fetching with population
+      const res = await switchUserRole();
+      const newRole = (res.user?.current_role ?? res.current_role) as "buyer" | "seller";
+      setRole(newRole);
+      if (res.user?.email) {
+        await setUserSession(
+          { email: res.user.email, account_type: newRole, user_id: res.user.id },
+          newRole
+        );
       }
-      if (fetchType === "product") {
-        const products = await getProducts(page, 6);
-        const groupedProducts = [];
-        for (let i = 0; i < products.length; i += 2) {
-          groupedProducts.push(products.slice(i, i + 2));
-        }
-        newItems = groupedProducts.map((group) => ({ type: "product", data: group }));
-      } else if (fetchType === "post") {
-        const posts = await getPosts(page, 7);
-        newItems = posts.map((p) => ({ type: "post", data: p }));
+      show({ variant: "success", title: "Mode switched", message: `Now in ${newRole === "seller" ? "Seller" : "Buyer"} mode` });
+    } catch (e) {
+      // Switch fails when user doesn't have both accounts; offer Create account
+      if (!profile?.is_seller) {
+        show({ variant: "info", title: "Create seller account", message: "This action requires a seller account. Create one from Profile." });
+        router.push("/(tabs)/profile");
+      } else if (!profile?.is_buyer) {
+        show({ variant: "info", title: "Create buyer account", message: "This action requires a buyer account. Create one from Profile." });
+        router.push("/(tabs)/profile");
       } else {
-        const requests = await getBuyerRequests(page, 5);
-        newItems = requests.map((r) => ({ type: "request", data: r }));
+        show({ variant: "error", title: "Could not switch", message: "Please try again." });
       }
-      setFeed((prev) => [...prev, ...newItems]);
-    } catch (err) {
-      show({
-        variant: "error",
-        title: "Error loading feed",
-        message: "There was a problem loading the feed. Please try again later."
-      })
-    } finally {
-      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadFeed();
+  const handleCreateAccount = () => {
+    closeMenu();
+    router.push("/(tabs)/profile");
+  };
+
+  const fetchMyNiches = useCallback(async () => {
+    try {
+      const res = await getMyNiches(1, 20);
+      setMyNiches(res.items.map((m) => m.niche));
+    } catch {
+      // ignore; niches optional for feed chips
+    }
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyNiches();
+      getUserProfile().then(setProfile).catch(() => setProfile(null));
+    }, [fetchMyNiches])
+  );
 
-  //social functions
+  useEffect(() => {
+    refresh();
+  }, [selectedTab]);
 
+  useEffect(() => {
+    if (!error) return;
+    // Don't toast "Unauthorized" — we redirect to login; avoid spam from parallel 401s
+    if (error.toLowerCase().includes("unauthorized")) return;
+    show({ variant: "error", title: "Feed error", message: error });
+  }, [error]);
 
-  // Header Component (visuals only)
+  // Header: shop strip + tabs (search lives in nav Search tab only to avoid duplicate)
   const Header = () => (
     <>
-    <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-[#f0e9e7]">
-      <Text className="text-xl font-extrabold text-[#111418]">Marketplace</Text>
-      <View className="flex-row justify-between items-center">
-        <TouchableOpacity onPress={openMenu} className="p-2 rounded-full bg-[#f5f2f1] mx-1" hitSlop={{top:8,bottom:8,left:8,right:8}}>
-          <Plus size={22} color="#111418" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/notifications')} className="p-2 rounded-full bg-[#f5f2f1] mx-1" hitSlop={{top:8,bottom:8,left:8,right:8}}>
-          <Bell size={22} color="#111418" />
-      </TouchableOpacity>
+      <Animated.View
+        style={{
+          overflow: "hidden",
+          maxHeight: stripHeight.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 130],
+          }),
+        }}
+      >
+        <ShopStrip />
+      </Animated.View>
+
+      <View className="bg-white border-b border-border pb-1 mb-3">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 16 }}
+        >
+          {MAIN_TABS.map((t) => (
+            <TouchableOpacity
+              key={t.id}
+              onPress={() => setSelectedTab(t.id)}
+              className="py-2 min-h-[44px] justify-center relative"
+              accessibilityRole="tab"
+              accessibilityState={{ selected: selectedTab === t.id }}
+              accessibilityLabel={t.label}
+            >
+              <Text
+                className={`font-semibold text-sm ${selectedTab === t.id ? "text-text-primary" : "text-text-secondary"}`}
+              >
+                {t.label}
+              </Text>
+              {selectedTab === t.id && (
+                <View
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 2,
+                    backgroundColor: "#e26136",
+                    borderRadius: 1,
+                  }}
+                />
+              )}
+            </TouchableOpacity>
+          ))}
+          {myNiches.map((n) => (
+            <TouchableOpacity
+              key={n.id}
+              onPress={() => setSelectedTab(n.id)}
+              className="py-2 px-3 min-h-[44px] justify-center rounded-full bg-bg-muted relative"
+              accessibilityRole="tab"
+              accessibilityState={{ selected: selectedTab === n.id }}
+              accessibilityLabel={n.name}
+            >
+              <Text
+                className={`font-semibold text-sm ${selectedTab === n.id ? "text-text-primary" : "text-text-secondary"}`}
+                numberOfLines={1}
+                style={{ maxWidth: 80 }}
+              >
+                {n.name}
+              </Text>
+              {selectedTab === n.id && (
+                <View
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 2,
+                    backgroundColor: "#e26136",
+                    borderRadius: 1,
+                  }}
+                />
+              )}
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity
+            onPress={() => router.push("/discoverNiches")}
+            className="py-2 px-3 min-h-[44px] flex-row items-center gap-1"
+            accessibilityRole="button"
+            accessibilityLabel="Explore communities"
+          >
+            <Compass size={18} color="#e26136" />
+            <Text className="font-semibold text-sm text-primary">Explore</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
-    </View>
-    <View className="px-4 py-3 bg-white border-b border-[#f0e9e7]">
-      {/* search bar but like button that leads to search page */}
-      <TouchableOpacity onPress={() => router.push('/search')} className="p-2 rounded-full bg-[#f5f2f1] mx-1" hitSlop={{top:8,bottom:8,left:8,right:8}}>
-        {/* button that looks like a search bar */}
-        <View className="flex-row items-center bg-[#f5f2f1] rounded-full px-3 py-1">
-          <Search size={18} color="#886963" />
-          <Text className="text-[#886963] ml-2">What are you looking for?</Text>
+
+      {role === "seller" && loadedStartCards && (
+        <View className="bg-bg-muted">
+          <StartCards onRemoved={() => setLoadedStartCards(false)} />
         </View>
-      </TouchableOpacity>
-    </View>
+      )}
     </>
   );
 
   const renderItem = ({ item }: { item: FeedItem }) => {
-    if (item.type === "request") {
-      const req = item.data;
+    if (isFeedPost(item)) return <FeedPostCard post={item} />;
+    if (isFeedProduct(item))
       return (
-        <View className="px-4 pt-3">
-          <View className="rounded-2xl border border-[#efe9e7] bg-white p-4">
-            <View className="flex-row items-center mb-3">
-              <Image source={{ uri: req.buyer.profile_picture_url }} className="w-10 h-10 rounded-full mr-3" />
-              <View>
-                <Text className="font-semibold text-[#111418]">{req.buyer.username}</Text>
-                <Text className="text-xs text-[#876d64]">Buyer request</Text>
-              </View>
-            </View>
-
-            <Text className="font-bold text-[#111418] text-[16px] mb-1" numberOfLines={2}>
-              {req.title}
-            </Text>
-            <Text className="text-[#60758a] mb-3" numberOfLines={3}>
-              {req.description}
-            </Text>
-
-            <View className="flex-row items-center justify-between">
-              <View>
-                <Text className="text-sm text-[#e26136] font-semibold">Budget: ${req.budget}</Text>
-                <Text className="text-[11px] text-[#60758a]">Deadline: {new Date(req.deadline).toDateString()}</Text>
-              </View>
-              <TouchableOpacity className="px-3 py-2 bg-[#e26136] rounded-full">
-                <Text className="text-white text-sm font-semibold">Message Buyer</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+        <FeedProductCard
+          product={item}
+          onMessageSeller={openProductChat}
+        />
       );
-    } else if (item.type === "product") {
-      const products = item.data;
-      return (
-        <View className="px-4 pt-3">
-          <View className="flex-row justify-between gap-3">
-            {products.map((product) => (
-              <View key={product.id} className="w-[48%]">
-                <Link href={`/productDetails/${product.id}`} asChild>
-                  <TouchableOpacity activeOpacity={0.85}>
-                    <View className="rounded-2xl overflow-hidden border border-[#efe9e7] bg-white">
-                      <ImageBackground
-                        source={{ uri: product.images?.[0]?.media?.original_url }}
-                        className="w-full aspect-square"
-                        resizeMode="cover"
-                      >
-                        {/* price pill */}
-                        <View className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-1">
-                          <Text className="text-[12px] font-semibold text-[#111418]">
-                            {product.price}
-                          </Text>
-                        </View>
-                      </ImageBackground>
-
-                      <View className="px-3 pt-2 pb-3">
-                        <Text className="text-[14px] font-semibold text-[#171311]" numberOfLines={1}>
-                          {product.name}
-                        </Text>
-                        <View className="flex-row justify-between mt-2">
-                          <TouchableOpacity className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-[#f5f2f1]">
-                            <ShoppingCart size={16} color="#60758a" />
-                            <Text className="text-[12px] text-[#111418]">Add</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity className="flex-row items-center gap-1 px-2 py-1 rounded-full bg-[#f5f2f1]">
-                            <MessageCircle size={16} color="#60758a" />
-                            <Text className="text-[12px] text-[#111418]">Chat</Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                </Link>
-              </View>
-            ))}
-          </View>
-        </View>
-      );
-    } else if (item.type === "post"){
-      const post = item.data;
-      return (
-        <Link href={`/postDetails/${post.id}`} asChild>
-          <TouchableOpacity activeOpacity={0.85} className="px-4 pt-3">
-            <View className="rounded-2xl border border-[#efe9e7] bg-white p-4">
-              <View className="flex-row items-center mb-3">
-                <Image source={{ uri: post.user?.profile_picture_url.length > 0 ? post.user?.profile_picture_url : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" }} className="w-10 h-10 rounded-full mr-3" />
-                <View>
-                  <Text className="font-semibold text-[#111418]">{post.user?.username}</Text> {/* Ask the backend to provide the actual name i.e shop or buyer name to include here */}
-                  <Text className="text-xs text-[#876d64]">Post</Text>
-                </View>
-              </View>
-
-              {post.caption ? (
-                <Text className="mb-3 text-[#111418]" numberOfLines={3}>{post.caption}</Text>
-              ) : null}
-
-              {post.social_media[0]?.media?.original_url && (
-                <Image
-                  source={{ uri: post.social_media[0].media.original_url }}
-                  className="w-full h-56 rounded-xl"
-                />
-              )}
-
-              <View className="flex-row justify-between mt-3">
-                <Pressable className="flex-row items-center gap-2" onPress={async ()=>{
-                  console.log("liking")
-                  try {
-                    //work on this later... liking should be toggled for each post
-                    const res = await likePost(post.id);
-                    post.like_count++;
-                  } catch (error) {
-                   console.error("unable to like this post") 
-                  }
-                }}>
-                  <Heart size={18} color="#60758a" />
-                  <Text className="text-[#111418]">{post.like_count}</Text>
-                </Pressable>
-                <Pressable className="flex-row items-center gap-2">
-                  <MessageCircle size={18} color="#60758a" />
-                  <Text className="text-[#111418]">{post.comment_count}</Text>
-                </Pressable>
-                <Pressable>
-                  <Send size={18} color="#60758a" />
-                </Pressable>
-              </View>
-            </View>
-          </TouchableOpacity>
-        </Link>
-      );
-    }
-    else {
-      return <StartCards />;
-    }
+    return null;
   };
 
+
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
+      <Header/>
       <FlatList
-        data={feed}
-        keyExtractor={(_, idx) => idx.toString()}
+        className="bg-white"
+        data={items}
+        keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        onEndReached={loadFeed}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        onEndReached={() => hasNext && loadMore()}
         onEndReachedThreshold={0.5}
-        ListHeaderComponent={<Header />}
-        stickyHeaderIndices={[0]}
+        refreshing={loading}
+        onRefresh={refresh}
         ListFooterComponent={
-          loading ? (
-            <View className="py-5">
+          loadingMore ? (
+            <View className="py-8 items-center">
               <ActivityIndicator size="large" color="#e26136" />
+              <Text className="text-text-secondary text-sm mt-2">Loading more…</Text>
             </View>
           ) : null
         }
         ListEmptyComponent={
           !loading ? (
-            <View className="items-center justify-center py-16">
-              <Text className="text-[#171311] font-semibold text-base">No items yet</Text>
-              <Text className="text-[#876d64] text-sm mt-1">Pull up to load more or create something new.</Text>
+            <View className="items-center justify-center py-16 px-6">
+              <View className="w-20 h-20 rounded-full bg-bg-muted items-center justify-center mb-4">
+                <Search size={32} color="#876d64" />
+              </View>
+              <Text className="text-text-primary font-semibold text-lg text-center">
+                {selectedTab === "following" ? "Follow sellers to see their products" : "No items yet"}
+              </Text>
+              <Text className="text-text-secondary text-sm mt-2 text-center">
+                {role === "buyer"
+                  ? "Pull to refresh or tap + to create a post or buyer request."
+                  : "Pull to refresh or tap + to create a post or product."}
+              </Text>
+              <TouchableOpacity
+                onPress={openMenu}
+                className="mt-6 h-12 px-6 rounded-full bg-primary items-center justify-center min-h-[48px]"
+                accessibilityRole="button"
+                accessibilityLabel="Create something new"
+              >
+                <Text className="text-white font-semibold">Create</Text>
+              </TouchableOpacity>
             </View>
           ) : null
         }
@@ -305,89 +347,113 @@ export default function FeedScreen() {
 
       <BottomSheet ref={createMenuRef} index={-1} snapPoints={snapPoints} enablePanDownToClose>
         <BottomSheetView className="flex-1 p-4">
-          <Text className="text-lg font-extrabold mb-2 text-[#111418]">Create</Text>
+          <Text className="text-lg font-bold mb-4 text-text-primary">Create</Text>
 
           {role === "buyer" && (
             <>
-              <TouchableOpacity onPress={() => openForm("request")} className="border-b border-[#f0e9e7] py-4" hitSlop={{top:8,bottom:8,left:8,right:8}}>
-                <Text className="font-semibold text-[16px] text-[#171311]">Create Buyer Request</Text>
-                <Text className="text-xs text-[#876d64]">Describe what you need and your budget.</Text>
+              <TouchableOpacity onPress={() => openForm("request")} className="border-b border-border-light py-4" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create Buyer Request</Text>
+                <Text className="text-xs text-text-secondary mt-0.5">Describe what you need and your budget.</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => openForm("post")} className="border-b border-[#f0e9e7] py-4" hitSlop={{top:8,bottom:8,left:8,right:8}}>
-                <Text className="font-semibold text-[16px] text-[#171311]">Create Post</Text>
-                <Text className="text-xs text-[#876d64]">Share updates, photos, or deals.</Text>
+              <TouchableOpacity onPress={() => openForm("post")} className="border-b border-border-light py-4" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create Post</Text>
+                <Text className="text-xs text-text-secondary mt-0.5">Share updates, photos, or deals.</Text>
               </TouchableOpacity>
             </>
           )}
           {role === "seller" && (
             <>
-              <TouchableOpacity onPress={() => openForm("product")} className="border-b border-[#f0e9e7] py-4" hitSlop={{top:8,bottom:8,left:8,right:8}}>
-                <Text className="font-semibold text-[16px] text-[#171311]">Create Product</Text>
-                <Text className="text-xs text-[#876d64]">Add a new item to your shop.</Text>
+              <TouchableOpacity onPress={() => openForm("product")} className="border-b border-border-light py-4" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create Product</Text>
+                <Text className="text-xs text-text-secondary mt-0.5">Add a new item to your shop.</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => openForm("post")} className="border-b border-[#f0e9e7] py-4" hitSlop={{top:8,bottom:8,left:8,right:8}}>
-                <Text className="font-semibold text-[16px] text-[#171311]">Create Post</Text>
-                <Text className="text-xs text-[#876d64]">Share updates, photos, or deals.</Text>
+              <TouchableOpacity onPress={() => openForm("post")} className="border-b border-border-light py-4" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create Post</Text>
+                <Text className="text-xs text-text-secondary mt-0.5">Share updates, photos, or deals.</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { closeMenu(); router.push("/(tabs)/requests"); }} className="border-b border-border-light py-4" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Make offer</Text>
+                <Text className="text-xs text-text-secondary mt-0.5">Browse requests and submit offers.</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => openForm("niche")} className="border-b border-border-light py-4" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create community</Text>
+                <Text className="text-xs text-text-secondary mt-0.5">Start a topic-based niche for your audience.</Text>
               </TouchableOpacity>
             </>
+          )}
+          {hasBothRoles ? (
+            <TouchableOpacity onPress={handleSwitchMode} className="py-4" activeOpacity={0.7}>
+              <Text className="font-semibold text-base text-primary">Switch mode</Text>
+              <Text className="text-xs text-text-secondary mt-0.5">Change between Buyer and Seller.</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={handleCreateAccount} className="py-4" activeOpacity={0.7}>
+              <Text className="font-semibold text-base text-primary">
+                {role === "buyer" && !profile?.is_seller
+                  ? "Create seller account"
+                  : role === "seller" && !profile?.is_buyer
+                    ? "Create buyer account"
+                    : "Switch mode"}
+              </Text>
+              <Text className="text-xs text-text-secondary mt-0.5">
+                {!profile?.is_seller
+                  ? "Add a seller account to list products and manage a shop."
+                  : !profile?.is_buyer
+                    ? "Add a buyer account to browse and purchase."
+                    : "Change between Buyer and Seller."}
+              </Text>
+            </TouchableOpacity>
           )}
         </BottomSheetView>
       </BottomSheet>
 
       {/* Imported Bottom Sheets */}
-      <ProductFormBottomSheet ref={productFormRef} productCategories={productCategories} onSubmit={async (product) => {
-        try {
-          const newProduct = await createProduct(product as CreateProductRequest);
-          show({
-            variant: "success",
-            title: "Product Created",
-            message: "Your product has been successfully created."
-          });
-          productFormRef.current?.close();
-        } catch (error) {
-          show({
-            variant: "error",
-            title: "Error creating product",
-            message: "There was a problem creating the product. Please try again later."
-          });
-        }
-      }}/>
-      <PostFormBottomSheet ref={postFormRef} productCategories={productCategories} products={postProducts} postImages={postImages} onSubmit={async (data) => {
-        try {
-          data.products = postProducts.map((prod) => { return { product_id: prod.id }; });
-          const newPost = await createPost(data);
-          show({
-            variant: "success",
-            title: "Post Created",
-            message: "Your post has been successfully created."
-          });
-          //set feed later to show new post on top
-          postFormRef.current?.close();
-        } catch (error) {
-          show({
-            variant: "error",
-            title: "Error creating post",
-            message: "There was a problem creating the post. Please try again later."
-          });
-        }
-      }}/>
-      <BuyerRequestFormBottomSheet ref={requestFormRef} requestImages={requestImages} onSubmit={async(request) => {
-        try {
-          const newRequest = await createBuyerRequest(request);
-          show({
-            variant: "success",
-            title: "Request Created",
-            message: "Your request has been successfully created."
-          });
-          requestFormRef.current?.close();
-        } catch (error) {
-          show({
-            variant: "error",
-            title: "Error creating buyer request",
-            message: "There was a problem creating the buyer request. Please try again later."
-          });
-        }
-      }}/>
+      <ProductFormBottomSheet ref={productFormRef} />
+      <PostFormBottomSheet ref={postFormRef}/>
+      <BuyerRequestFormBottomSheet ref={requestFormRef}/>
+      {role === "seller" && (
+        <CreateNicheBottomSheet
+          ref={nicheFormRef}
+          onCreated={fetchMyNiches}
+        />
+      )}
+
+      {/* FAB — bottom right, opens create menu */}
+      <TouchableOpacity
+        onPress={openMenu}
+        className="absolute bottom-20 right-4 w-14 h-14 rounded-full bg-primary items-center justify-center shadow-lg"
+        style={{
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.2,
+          shadowRadius: 6,
+          elevation: 8,
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Create post or product"
+      >
+        <Plus size={26} color="white" />
+      </TouchableOpacity>
+
+      {chatRoomOpen && role === "seller" && (
+        <QuickChatBottomSheet
+          sellerId={user?.user_id ?? ""}
+          buyerId={selectedBuyerId}
+          asBuyer={false}
+          sheetRef={chatSheetRef}
+        />
+      )}
+
+      {productForChat && role === "buyer" && (
+        <QuickChatBottomSheet
+          sellerId={productForChat.seller.user.id}
+          buyerId={user?.user_id ?? ""}
+          product_id={productForChat.id}
+          otherUser={{ username: productForChat.seller.user.username, profile_picture: productForChat.seller.user.profile_picture ?? undefined }}
+          asBuyer
+          sheetRef={productChatSheetRef}
+        />
+      )}
     </SafeAreaView>
   );
 }

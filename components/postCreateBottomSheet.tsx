@@ -16,6 +16,10 @@ import { getSellerProducts } from "../services/sections/product";
 import { PlaceholderProduct } from "../models/products";
 import { uploadImage, attemptMultipleUpload } from "../services/sections/media";
 import { MediaResponse } from "../models/media";
+import { createPost } from "../services/sections/post";
+import { createNichePost } from "../services/sections/niches";
+import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
+import { useToast } from "./ToastProvider";
 
 const postSchema = z.object({
   caption: z.string().max(1000, "Caption too long").optional(),
@@ -28,11 +32,20 @@ const postSchema = z.object({
 
 export type PostFormData = z.infer<typeof postSchema>;
 
-const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormData) => void, products:PlaceholderProduct[], productCategories:Category[], postImages:string[]}>(
-  ({ onSubmit, productCategories, products, postImages }, ref) => {
+interface PostFormBottomSheetProps {
+  nicheId?: string;
+}
 
+const PostFormBottomSheet = React.forwardRef<BottomSheetMethods | null, PostFormBottomSheetProps>(
+  ({ nicheId }, ref) => {
+
+    const sheetRef = React.useRef<BottomSheetMethods | null>(null);
+    React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
     //user
     const { user } = useUser();
+    const { show } = useToast();
+
+    const [postImages, setpostImages] = useState<string[]>([]);
 
     // images state: store PickedImage[] from InstagramGrid
     const [Imagevalue, setImageValue] = React.useState<InstagramGridProps["value"]>(postImages ? postImages.map((uri, index) => ({ id: index.toString(), uri })) : []);
@@ -50,13 +63,48 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
     const [categories, setCategories] = React.useState<Category[]>([]);
     const [selectedCategories, setSelectedCategories] = React.useState<Category[]>([]);
 
+    //for create post
+    const [postCategories, setPostCategories] = useState<Category[]>([]);
+    const [postProducts, setPostProducts] = useState<PlaceholderProduct[]>([]);
+
+    const [sending, setSending] = React.useState(false);
+
     postSchema.refine(()=> selectedCategories?.length ?? 0 > 0,{
       path: ["category_ids"]
     });
 
+    const submitForm = async (data: PostFormData) => {
+      try {
+        setSending(true);
+        data.products = postProducts.map((prod) => { return { product_id: prod.id }; });
+        
+        // If nicheId is provided, create a niche post instead
+        if (nicheId) {
+          await createNichePost(nicheId, data);
+        } else {
+          await createPost(data);
+        }
+        
+        show({
+          variant: "success",
+          title: "Post Created",
+          message: "Your post has been successfully created."
+        });
+        sheetRef.current?.close();
+        
+      } catch (error) {
+        show({
+          variant: "error",
+          title: "Error creating post",
+          message: "There was a problem creating the post. Please try again later."
+        });
+      }
+    }
+
 
     const handleLocalSubmit = async (data: PostFormData) => {
     try {
+      setSending(true);
       const ImageResponse = await attemptMultipleUpload(Imagevalue);
 
       const imageIds = ImageResponse.map((imgId)=>imgId.media.id)
@@ -73,17 +121,23 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
         products: currentProducts.map((val)=>{
           return {product_id:val}
         }),
-        // include raw image objects for parent to handle upload or attach to request body
-        //remember to work on this later
         media_ids: imageIds ?? [],
       };
 
       // call parent-provided onSubmit
-      onSubmit(payload);
-      console.log("all done, created post successfully")
+      submitForm(payload);
+      setSending(false);
+      show({
+        variant: "success",
+        title: "Post Created",
+        message: "Your post has been created successfully."
+      })
     } catch (err) {
-      console.error("Create post failed:", err);
-      // optionally: show UI feedback here
+      show({
+        variant: "error",
+        title: "Error creating post",
+        message: "There was a problem creating the post. Please try again later."
+      })
     }
   };
 
@@ -137,7 +191,7 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
 
           {/* Images */}
           <Text className="mb-1">Images</Text>
-          {Imagevalue?.length && Imagevalue.length > 0 && <Text className="text-neutral-500 mb-2">Long press on each image to remove it</Text>}
+          {Array.isArray(Imagevalue) && Imagevalue.length > 0 && <Text>Long press on each image to remove it</Text>}
           {/* <<< IMPORTANT: pass value & onChange so we can receive images >>> */}
           <InstagramGrid value={Imagevalue} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} />
   
@@ -194,8 +248,8 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
           {/* Submit Button */}
           <TouchableOpacity className="bg-[#E94C2A] p-3 rounded" onPress={
               handleSubmit(handleLocalSubmit)
-          }>
-            <Text className="text-white text-center">Create Post</Text>
+          } disabled={sending}>
+            <Text className="text-white text-center">{sending ? "Sending..." : "Create Post"}</Text>
           </TouchableOpacity>
 
           <CategoryAddition
@@ -229,3 +283,4 @@ const PostFormBottomSheet = forwardRef<BottomSheet, { onSubmit: (data: PostFormD
 );
 
 export default PostFormBottomSheet;
+

@@ -12,13 +12,25 @@ export interface ChatRoomLite {
   unread_count_seller: number;
 }
 
+export interface MessageReactionSummary {
+  reaction_type: string;
+  emoji: string;
+  count: number;
+  has_reacted: boolean;
+}
+
 export interface ChatMessage {
   id: number | string;
   room_id: number;
   sender_id: string;
   content: string;
   message_type: MessageType;
-  message_data?: Record<string, any> | null;
+  message_data?: (Record<string, any> & {
+    /** Reaction summaries from GET /chats/messages/:id/reactions (CHAT_MESSAGE_REACTIONS_API) */
+    reactions?: MessageReactionSummary[];
+    /** Legacy: total count (fallback when reactions array absent) */
+    reactions_count?: number;
+  }) | null;
   is_read: boolean;
   created_at: string;
   read_at?: string | null;
@@ -42,6 +54,7 @@ export interface RoomListResponse {
       id: string;
       username: string;
       profile_picture?: string;
+      profile_picture_url?: string;
       is_seller?: boolean;
     };
     product?: { id: string; name: string; price: number; image?: string };
@@ -70,6 +83,7 @@ export interface ChatRoomListItem {
     id: string;
     username: string;
     profile_picture?: string;
+    profile_picture_url?: string;
     is_seller: boolean;
   };
   product?: { id: string; name: string; price: number; image?: string };

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Pressable } from "react-native";
 import { Link } from "expo-router";
 import {
   Bell,
@@ -10,6 +10,7 @@ import {
   Upload,
   UserCheck,
   ArrowRight,
+  X,
 } from "lucide-react-native";
 import { getSellerStartCards } from "../services/sections/analytics";
 import { useToast } from "./ToastProvider";
@@ -37,6 +38,8 @@ type Props = {
   showWhenEmpty?: boolean;
   // Title override
   title?: string;
+  //what the parent should do if the component is removed
+  onRemoved?: (() => void)
 };
 
 const iconMap: Record<string, React.ComponentType<any>> = {
@@ -54,6 +57,14 @@ function pickIcon(name?: string) {
   const key = name.toLowerCase().replace(/[^a-z]/g, "");
   return iconMap[key] || Bell;
 }
+
+function safeText(value: any, fallback?: string) {
+  if (value == null) return fallback;
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && "label" in value) return value.label;
+  return fallback;
+}
+
 
 // ---- Adapter: made the UI shape tolerant to backend naming ----
 function normalizeResponse(raw: any): Normalized {
@@ -81,9 +92,9 @@ function normalizeResponse(raw: any): Normalized {
   const cards: StartCardUI[] = (rawCards as any[]).map((c, i) => {
     const ui: StartCardUI = {
       id: String(c?.id ?? c?.key ?? i),
-      title: c?.title ?? c?.label ?? "Action required",
-      subtitle: c?.subtitle ?? c?.description ?? undefined,
-      ctaText: c?.ctaText ?? c?.cta_label ?? c?.cta ?? "Open",
+      title: safeText(c?.title, "Action required"),
+      subtitle: safeText(c?.subtitle),
+      ctaText: safeText(c?.ctaText, "Open"),
       status:
         c?.status === "done" || c?.completed === true ? "done" : "pending",
       actionHref: c?.actionHref ?? c?.route ?? c?.link ?? undefined,
@@ -100,6 +111,7 @@ function normalizeResponse(raw: any): Normalized {
 }
 
 export default function StartCards({
+  onRemoved,
   fetcher = getSellerStartCards,
   showWhenEmpty = false,
   title = "Get started on Markt",
@@ -112,7 +124,9 @@ export default function StartCards({
 
   const { show } = useToast?.() ?? { show: (_: any) => {} };
 
-  const load = useCallback(async () => {
+  const [removed, setRemoved ] = useState<boolean>(false);
+
+  const load = async () => {
     try {
       setState((s) => ({ ...s, loading: true, error: null }));
       const res = await fetcher();
@@ -125,15 +139,15 @@ export default function StartCards({
       // toast (optional)
       show?.({
         variant: "error",
-        title: "Couldn’t load",
+        title: "Could not load",
         message,
       });
     }
-  }, [fetcher]);
+  }
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [removed]);
 
   const total = state.data?.totalSteps ?? 0;
   const done = state.data?.completedSteps ?? 0;
@@ -145,32 +159,41 @@ export default function StartCards({
 
   const cards = state.data?.cards?.filter((c) => c.status !== "done") ?? [];
 
+  if (removed) {
+    return null
+  }
+
   // Hide the whole block when no work left (unless showWhenEmpty=true)
-  if (!state.loading && !state.error && !showWhenEmpty && (!cards.length || done >= total)) {
+  if (!state.loading && !state.error && !showWhenEmpty && !cards.length) {
     return null;
   }
 
   return (
     <View className="px-4 pt-2 pb-3">
       {/* Header */}
-      <View className="mb-2">
+      <View className="mb-2 flex-row justify-between">
         <Text className="text-[20px] font-extrabold text-[#171311]">{title}</Text>
+        <Pressable onPress={() => { onRemoved?.(); setRemoved(true); }}>
+          <X size={20}/>
+        </Pressable>
       </View>
 
-      {/* Progress row */}
+      {/* Progress row — show "X of Y" only when total > 0 (avoid "0 of —") */}
       <View className="mb-3">
         <View className="flex-row items-center justify-between">
           <Text className="text-sm text-[#5f4f4f]">
-            {done} of {total || "—"} steps completed
+            {total > 0 ? `${done} of ${total} steps completed` : "Complete these steps to start selling."}
           </Text>
-          <Text className="text-sm font-semibold text-[#171311]">{pct}%</Text>
+          {total > 0 && <Text className="text-sm font-semibold text-[#171311]">{pct}%</Text>}
         </View>
-        <View className="mt-2 h-2 w-full rounded-full bg-[#f1ecea] overflow-hidden">
-          <View
-            className="h-2 bg-[#171311] rounded-full"
-            style={{ width: `${pct}%` }}
-          />
-        </View>
+        {total > 0 && (
+          <View className="mt-2 h-2 w-full rounded-full bg-[#f1ecea] overflow-hidden">
+            <View
+              className="h-2 bg-[#171311] rounded-full"
+              style={{ width: `${pct}%` }}
+            />
+          </View>
+        )}
       </View>
 
       {/* Loading skeleton */}
@@ -198,7 +221,7 @@ export default function StartCards({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingRight: 8 }}
         >
-          {(cards.length ? cards : state.data?.cards ?? []).map((card) => {
+          {(cards.length ? cards : []).map((card) => {
             const Icon = pickIcon(card.icon);
             const body = (
               <View className="mr-3 w-64 rounded-2xl bg-white border border-[#efe9e7] p-4">
@@ -211,7 +234,7 @@ export default function StartCards({
                   </Text>
                 </View>
 
-                {!!card.subtitle && (
+                {card.subtitle && (
                   <Text className="mt-2 text-sm text-[#7b6660]" numberOfLines={2}>
                     {card.subtitle}
                   </Text>
@@ -232,17 +255,14 @@ export default function StartCards({
               </View>
             );
 
-            // If we have a route, make the card CTA navigable
             if (card.actionHref) {
               return (
-                <Link key={card.id} href={card.actionHref} asChild>
+                <Link key={card.id} href={card.actionHref || ""} asChild>
                   <TouchableOpacity activeOpacity={0.9}>{body}</TouchableOpacity>
                 </Link>
               );
             }
-            return (
-              <View key={card.id}>{body}</View>
-            );
+            return <View key={card.id}>{body}</View>;
           })}
         </ScrollView>
       )}

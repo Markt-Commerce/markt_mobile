@@ -1,14 +1,21 @@
+// ...existing code...
 import React, { useState, useCallback } from "react";
-import { FlatList, ActivityIndicator, Text } from "react-native";
+import { FlatList, ActivityIndicator, Text, TouchableOpacity } from "react-native";
 import OrderCard from "./orderCard";
+import { Order, OrderItem, SellerOrderItem } from "../models/orders";
 
-interface OrdersListProps {
-  fetchOrders: (page: number) => Promise<any[]>;
+interface OrdersListProps<T> {
+  fetchOrders: (page: number) => Promise<T[]>;
+  pressed?: (item: T) => any;
   isSeller?: boolean;
 }
 
-export default function OrdersList({ fetchOrders, isSeller }: OrdersListProps) {
-  const [orders, setOrders] = useState<any[]>([]);
+export default function OrdersList<T extends Order | OrderItem | SellerOrderItem>({
+  fetchOrders,
+  isSeller,
+  pressed,
+}: OrdersListProps<T>) {
+  const [orders, setOrders] = useState<T[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -32,7 +39,7 @@ export default function OrdersList({ fetchOrders, isSeller }: OrdersListProps) {
         setRefreshing(false);
       }
     },
-    [loading, page, hasMore, orders]
+    [loading, page, hasMore, orders, fetchOrders]
   );
 
   const onRefresh = () => {
@@ -43,14 +50,15 @@ export default function OrdersList({ fetchOrders, isSeller }: OrdersListProps) {
   return (
     <FlatList
       data={orders}
-      keyExtractor={(item, idx) => idx.toString()}
-      renderItem={({ item }) => <OrderCard order={item} isSeller={isSeller} />}
-      onEndReached={() => loadOrders()}
+      renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => pressed && pressed(item)} activeOpacity={0.7}>
+            <OrderCard order={item} isSeller={isSeller} />
+          </TouchableOpacity>
+      )}
       onEndReachedThreshold={0.5}
       refreshing={refreshing}
       onRefresh={onRefresh}
-      ListFooterComponent={loading && !refreshing ? <ActivityIndicator size="large" color="#e26136" /> : null}
-      ListEmptyComponent={<Text className="text-center text-[#876d64] mt-5">No orders found</Text>}
+      ListEmptyComponent={<Text className="text-center text-[#876d64] mt-5">No orders found</Text>} 
     />
   );
 }

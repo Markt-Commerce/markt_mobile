@@ -1,22 +1,88 @@
-// /screens/ChatScreen.tsx
-import React, { useEffect, useRef, useState } from "react";
-import { View, Text, FlatList, Image, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from "react-native";
-import { ArrowLeft, Phone, Image as ImageIcon, Camera, Send as SendIcon, ThumbsUp, ShoppingBag } from "lucide-react-native";
+/**
+ * ChatScreen — 1:1 conversation
+ */
+
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Keyboard,
+  Platform,
+  Alert,
+} from "react-native";
+import { ArrowLeft, Plus, Send, SmilePlus } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 import chatSocket from "../services/chatSock";
-import { getRoomMessages, markRoomRead, sendMessageREST, sendProductMessageMock, addReaction, removeReaction } from "../services/sections/chat";
+import {
+  getRoomMessages,
+  markRoomRead,
+  getReactions,
+  addReaction,
+  removeReaction,
+  sendProductMessageMock,
+  sendMessageREST,
+  getRoomDiscounts,
+  respondToDiscount,
+} from "../services/sections/chat";
 import { ChatMessage } from "../models/chat";
 import { addToCart } from "../services/sections/cart";
 import { useUser } from "../hooks/userContextProvider";
-import { useRouter } from "expo-router";
+import { useToast } from "./ToastProvider";
+import ProductPicker from "./productPicker";
+import RequestPicker from "./requestPicker";
+import ChatAttachmentSheet from "./chatAttachmentSheet";
+import type { BuyerRequest } from "../models/feed";
+import { getBuyerRequests } from "../services/sections/feed";
+import { attemptMultipleUpload } from "../services/sections/media";
+import ChatProductDisplayComponent from "./chatProductDisplayComponent";
+import Avatar from "./Avatar";
+import type { ProductResponse } from "../models/products";
+import { getSellerProducts, getMyProducts } from "../services/sections/product";
+import { COMMON_REACTIONS, getEmoji, type ReactionType } from "../utils/reactions";
+import {
+  attachReactionsToMessages,
+  applyReactionAdded,
+  applyReactionRemoved,
+  applyReactionStats,
+  fetchReactionsForMessages,
+  normalizeReactionSummaries,
+} from "../utils/chatReactions";
+import {
+  enrichChatMessage,
+  getMessageAvatarProps,
+  pickProfilePicture,
+  type ChatOtherUser,
+} from "../utils/chatAvatar";
+import { normalizeUri, resolveProductImageUri } from "../utils/imageUri";
+import { getUserProfile } from "../services/sections/profile";
 
 export type ChatProps = {
-  route: { params: { roomId: number; otherUser?: { username?: string; profile_picture?: string, user_id: string } } };
+  route: {
+    params: {
+      roomId: number;
+      otherUser?: ChatOtherUser & { user_id?: string };
+    };
+  };
   navigation: any;
 };
 
-export default function ChatScreen({ route, navigation }: ChatProps) {
-  const {user, role} = useUser();
+function formatTime(iso: string) {
+  const d = new Date(iso);
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  if (isToday) return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleDateString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+export default function ChatScreen({ route }: ChatProps) {
+  const { user, role } = useUser();
   const { roomId, otherUser } = route.params;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,101 +90,274 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
   const [input, setInput] = useState("");
   const [typingUser, setTypingUser] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const router = useRouter();
+  const { show } = useToast();
 
+  const [attachmentVisible, setAttachmentVisible] = useState(false);
+  const [productLoading, setProductLoading] = useState(false);
+  const [productVisible, setProductVisible] = useState(false);
+  const [productList, setProductList] = useState<ProductResponse[]>([]);
+  const [requestVisible, setRequestVisible] = useState(false);
+  const [requestLoading, setRequestLoading] = useState(false);
+  const [requestList, setRequestList] = useState<BuyerRequest[]>([]);
+  const [reactionPickerFor, setReactionPickerFor] = useState<string | null>(null);
+  const [myProfile, setMyProfile] = useState<ChatOtherUser | undefined>();
+  const didInitialScrollRef = useRef(false);
+  const pendingScrollToBottomRef = useRef(false);
 
-  // load messages (first page)
+  const myId = user?.user_id?.toString() ?? "";
+  const PER_PAGE = 30;
+
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        if (!roomId || roomId === 0) return;
-        // fetch messages
-        const res = await getRoomMessages(roomId, 1, 50);
-        console.log("loaded messages: ", res.messages[0]);
-        setMessages(res.messages ?? []);
-        setPage(2);
-        // mark read
-        await markRoomRead(roomId);
-      } catch (e) {
-        console.error("Failed loading messages", e);
-        Alert.alert("Error", "Could not load messages.");
-      } finally {
-        setLoading(false);
+    let cancelled = false;
+    getUserProfile()
+      .then((p) => {
+        if (cancelled) return;
+        setMyProfile({
+          username: p.username,
+          profile_picture: p.profile_picture,
+          profile_picture_url: p.profile_picture_url,
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const avatarCtx = React.useMemo(
+    () => ({ myId, otherUser, myProfile }),
+    [myId, otherUser, myProfile]
+  );
+
+  /** Display order: oldest first (chronological). API may return desc; we sort by created_at asc. */
+  const sortedMessages = React.useMemo(() => {
+    return [...messages]
+      .map((m) => enrichChatMessage(m, avatarCtx))
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  }, [messages, avatarCtx]);
+
+  const loadInitial = async () => {
+    setLoading(true);
+    try {
+      if (!roomId || roomId === 0) return;
+      const res = await getRoomMessages(roomId, 1, PER_PAGE);
+      const list = res.messages ?? [];
+      const reactionMap = await fetchReactionsForMessages(list);
+      const enriched = attachReactionsToMessages(list, reactionMap);
+      setMessages(enriched);
+      enriched.forEach((m) => {
+        const msgId = Number(m.id);
+        if (!isNaN(msgId) && msgId > 0) chatSocket.joinMessage(msgId, myId);
+      });
+      setPage(2);
+      const total = res.pagination?.total ?? 0;
+      setHasMore(list.length < total);
+      await markRoomRead(roomId);
+    } catch {
+      show({ variant: "error", title: "Error", message: "Could not load messages." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadOlder = async () => {
+    if (loadingOlder || !hasMore || !roomId) return;
+    setLoadingOlder(true);
+    try {
+      const res = await getRoomMessages(roomId, page, PER_PAGE);
+      const list = res.messages ?? [];
+      if (list.length > 0) {
+        const reactionMap = await fetchReactionsForMessages(list);
+        const enriched = attachReactionsToMessages(list, reactionMap);
+        enriched.forEach((m) => {
+          const msgId = Number(m.id);
+          if (!isNaN(msgId) && msgId > 0) chatSocket.joinMessage(msgId, myId);
+        });
+        setMessages((prev) => [...enriched, ...prev]);
+        setPage((p) => p + 1);
       }
-    })();
+      const total = res.pagination?.total ?? 0;
+      setHasMore(list.length === PER_PAGE && page * PER_PAGE < total);
+    } catch {
+      show({ variant: "error", title: "Error", message: "Could not load older messages." });
+    } finally {
+      setLoadingOlder(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!roomId || roomId <= 0) {
+      setLoading(false);
+      setMessages([]);
+      return;
+    }
+    loadInitial();
   }, [roomId]);
 
-  // socket connection & listeners
-  useEffect(() => {
-    chatSocket.connect();
+  const scrollToBottom = useCallback((animated = false) => {
+    requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated }));
+  }, []);
 
+  useEffect(() => {
+    didInitialScrollRef.current = false;
+    pendingScrollToBottomRef.current = false;
+  }, [roomId]);
+
+  useEffect(() => {
+    if (loading || sortedMessages.length === 0 || didInitialScrollRef.current) return;
+    didInitialScrollRef.current = true;
+    pendingScrollToBottomRef.current = true;
+    scrollToBottom(false);
+    const retry = setTimeout(() => scrollToBottom(false), 200);
+    return () => clearTimeout(retry);
+  }, [loading, sortedMessages.length, scrollToBottom]);
+
+  const handleContentSizeChange = useCallback(() => {
+    if (pendingScrollToBottomRef.current) {
+      pendingScrollToBottomRef.current = false;
+      scrollToBottom(false);
+    }
+  }, [scrollToBottom]);
+
+  const updateMessageReactions = useCallback(
+    (
+      messageId: number | string,
+      updater: (reactions: import("../models/chat").MessageReactionSummary[]) => import("../models/chat").MessageReactionSummary[]
+    ) => {
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (String(m.id) !== String(messageId)) return m;
+          const rx = m.message_data?.reactions ?? [];
+          return {
+            ...m,
+            message_data: { ...(m.message_data ?? {}), reactions: updater(rx) },
+          };
+        })
+      );
+    },
+    []
+  );
+
+  const refreshMessageReactions = useCallback(async (messageId: number, targetId: number | string) => {
+    try {
+      const reactions = normalizeReactionSummaries(await getReactions(messageId));
+      setMessages((prev) =>
+        prev.map((m) =>
+          String(m.id) === String(targetId)
+            ? { ...m, message_data: { ...(m.message_data ?? {}), reactions } }
+            : m
+        )
+      );
+    } catch {
+      /* keep optimistic state */
+    }
+  }, []);
+
+  const syncMessageReactions = useCallback(
+    async (msg: ChatMessage) => {
+      const msgId = Number(msg.id);
+      if (isNaN(msgId) || msgId <= 0 || !myId) return;
+      chatSocket.joinMessage(msgId, myId);
+      await refreshMessageReactions(msgId, msg.id);
+    },
+    [myId, refreshMessageReactions]
+  );
+
+  useEffect(() => {
+    if (!roomId || roomId <= 0) return;
+
+    chatSocket.connect();
     const offMsg = chatSocket.onMessage(onSocketMessage);
     const offTyping = chatSocket.onTyping(onTypingUpdate);
-    const offStatus = chatSocket.onStatus((s) => {
-      // optionally show connection status
-      console.log("socket status", s);
+    chatSocket.onStatus(() => {});
+
+    const offReactionAdded = chatSocket.onReactionAdded((data) => {
+      const isMine = data.user_id === myId || String(data.user_id) === myId;
+      updateMessageReactions(data.message_id, (rx) =>
+        applyReactionAdded(rx, data.reaction_type, isMine)
+      );
+    });
+    const offReactionRemoved = chatSocket.onReactionRemoved((data) => {
+      const isMine = data.user_id === myId || String(data.user_id) === myId;
+      updateMessageReactions(data.message_id, (rx) =>
+        applyReactionRemoved(rx, data.reaction_type, isMine)
+      );
+    });
+    const offReactionStats = chatSocket.onReactionStats((data) => {
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (String(m.id) !== String(data.message_id)) return m;
+          return {
+            ...m,
+            message_data: {
+              ...(m.message_data ?? {}),
+              reactions: applyReactionStats(m.message_data?.reactions, data.reactions),
+            },
+          };
+        })
+      );
     });
 
-    // join room
-    chatSocket.joinRoom(roomId, user?.user_id || "");
+    chatSocket.joinRoom(roomId, myId);
 
     return () => {
       offMsg();
       offTyping();
-      offStatus();
-      chatSocket.leaveRoom(roomId);
+      offReactionAdded();
+      offReactionRemoved();
+      offReactionStats();
+      chatSocket.leaveRoom(roomId, myId);
     };
-  }, [roomId]);
+  }, [roomId, myId, updateMessageReactions]);
 
   function onSocketMessage(msg: ChatMessage) {
-    // only messages for this room
     if (msg.room_id !== roomId) return;
     setMessages((prev) => {
-      // if already present (same id), skip
-      if (prev.some(m => m.id === msg.id || m.client_id && m.client_id === msg.client_id)) {
-        // merge ack/pending removal
-        return prev.map(m => {
-          if (m.client_id && msg.client_id && m.client_id === msg.client_id) {
-            return { ...msg, pending: false, client_id: undefined };
-          }
-          return m;
-        });
+      if (prev.some((m) => m.id === msg.id || (m.client_id && m.client_id === (msg as any).client_id))) {
+        return prev.map((m) =>
+          m.client_id && (msg as any).client_id && m.client_id === (msg as any).client_id
+            ? { ...msg, pending: false, client_id: undefined }
+            : m
+        );
       }
       return [...prev, msg];
     });
-    // mark read immediately
-    markRoomRead(roomId).catch(_ => {});
-    // scroll to bottom
+    void syncMessageReactions(msg);
+    markRoomRead(roomId).catch(() => {});
     setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
   }
+
+  const handleRespondToOffer = async (offerId: number, response: "accept" | "reject") => {
+    try {
+      await chatSocket.respondToOffer({ offer_id: offerId, response, user_id: myId });
+      show({ variant: "success", title: "Offer", message: response === "accept" ? "Offer accepted." : "Offer declined." });
+    } catch {
+      show({ variant: "error", title: "Error", message: "Could not respond to offer." });
+    }
+  };
 
   function onTypingUpdate(update: any) {
     if (update.room_id !== roomId) return;
     if (update.action === "start") setTypingUser(update.username ?? "Someone");
     else setTypingUser(null);
-    // clear typing indicator after a short time
-    if (update.action === "start") {
-      setTimeout(() => setTypingUser(null), 2500);
-    }
+    if (update.action === "start") setTimeout(() => setTypingUser(null), 2500);
   }
 
-  // send text message
   async function handleSendText() {
     if (!input.trim()) return;
     const content = input.trim();
     setInput("");
     setSending(true);
-
     try {
-      // try socket send first (chatSocket queues if offline)
-      const success = await chatSocket.sendText(roomId, user?.user_id || "", content);
-      // add optimistic message to UI
+      const success = await chatSocket.sendText(roomId, myId, content);
       const temp: ChatMessage = {
-        id: `c_${user?.user_id || "0"}`,
+        id: `c_${myId}`,
         room_id: roomId,
-        sender_id: user?.user_id || "",
+        sender_id: myId,
         content,
         message_type: "text",
         message_data: null,
@@ -126,19 +365,17 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
         created_at: new Date().toISOString(),
         pending: !success,
       };
-      setMessages(prev => [...prev, temp]);
-      // scroll
+      setMessages((prev) => [...prev, temp]);
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
-    } catch (e) {
-      console.error("send text error", e);
-      Alert.alert("Send failed", "Could not send message.");
+    } catch {
+      show({ variant: "error", title: "Error", message: "Could not send message." });
     } finally {
       setSending(false);
     }
   }
 
-  // pick image or video
   async function handlePickMedia(kind: "image" | "video") {
+    if (sending) return;
     try {
       const perms = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perms.granted) {
@@ -150,218 +387,682 @@ export default function ChatScreen({ route, navigation }: ChatProps) {
         quality: 0.8,
       });
       if (res.canceled) return;
-      // res.uri | res.type? For expo, res.type is 'image' or 'video' (legacy). Use res.uri and determine mime
-      const uri = res.assets?.[0]?.uri;
-      const mime = kind === "image" ? "image/jpeg" : "video/mp4";
-      // NOTE: upload flow - upload to your media server or S3, then send URL to chat
-      const uploadedUrl = await uploadMediaMock(uri); // replace with real upload
-      // send via socket
-      const client_id = kind === "image"
-        ? await chatSocket.sendImage(roomId, uploadedUrl, mime, user?.user_id || "", { localUri: uri })
-        : await chatSocket.sendVideo(roomId, uploadedUrl, mime, user?.user_id || "", { localUri: uri });
 
-      const temp: ChatMessage = {
-        id: `c_${client_id}`,
-        room_id: roomId,
-        sender_id: user?.user_id || "",
-        content: uploadedUrl,
-        message_type: kind === "image" ? "image" : "video",
-        message_data: { url: uploadedUrl },
-        is_read: false,
-        created_at: new Date().toISOString(),
-        pending: true,
-      };
-      setMessages(prev => [...prev, temp]);
-      setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
-    } catch (e) {
-      console.error("pick media error", e);
-      Alert.alert("Error", "Could not pick media.");
-    }
-  }
-
-  // send product (mock)
-  async function handleSendProduct(product_id: string) {
-    try {
       setSending(true);
-      // optimistic ui
-      const mock = await sendProductMessageMock(roomId, product_id, `Product shared: ${product_id}`);
-      setMessages(prev => [...prev, { ...mock, pending: false }]);
-      // optionally also inform server via socket (chatSocket.sendProduct) — better if supported
-      await chatSocket.sendProduct(roomId, user?.user_id || "", product_id, `Sharing product ${product_id}`);
+      const uri = res.assets?.[0]?.uri;
+      const uploadResult = await attemptMultipleUpload(
+        res.assets!.map((a) => ({ id: a?.assetId || "", uri: a?.uri || "" }))
+      );
+      for (const result of uploadResult) {
+        const isImage = kind === "image";
+        await (isImage ? chatSocket.sendImage : chatSocket.sendVideo)(
+          roomId,
+          myId,
+          result.media?.original_url || result.urls?.["original"] || uri!,
+          { localUri: uri }
+        );
+        const temp: ChatMessage = {
+          id: `c_${Date.now()}`,
+          room_id: roomId,
+          sender_id: myId,
+          content: result.media?.original_url || uri!,
+          message_type: kind,
+          message_data: { url: result.media?.original_url },
+          is_read: false,
+          created_at: new Date().toISOString(),
+          pending: true,
+        };
+        setMessages((prev) => [...prev, temp]);
+      }
+      show({ variant: "success", title: "Sent", message: kind === "image" ? "Photo sent." : "Video sent." });
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
-    } catch (e) {
-      console.error("send product", e);
-      Alert.alert("Error", "Could not send product.");
+    } catch {
+      show({ variant: "error", title: "Error", message: "Could not send media." });
     } finally {
       setSending(false);
     }
   }
 
-  // Todo: remember to replace with the backend media API
-  async function uploadMediaMock(localUri: string): Promise<string> {
-    return localUri;
-  }
-
-  // Reaction toggle (thumbs up)
-  async function toggleReaction(message: ChatMessage) {
-    try {
-      // For this demo, we check message.message_data?.reacted_by_me boolean (not provided by backend model).
-      const alreadyReacted = !!(message as any).hasReactedClient;
-      if (!alreadyReacted) {
-        await addReaction(Number(message.id), "THUMBS_UP");
-        // update local UI
-        setMessages(prev => prev.map(m => (m.id === message.id ? { ...m, message_data: { ...m.message_data, reactions_count: (m.message_data?.reactions_count ?? 0) + 1 }, hasReactedClient: true } : m)));
-      } else {
-        await removeReaction(Number(message.id), "THUMBS_UP");
-        setMessages(prev => prev.map(m => (m.id === message.id ? { ...m, message_data: { ...m.message_data, reactions_count: Math.max(0, (m.message_data?.reactions_count ?? 1) - 1) }, hasReactedClient: false } : m)));
+  async function openProductPicker() {
+    if (sending) return;
+    setAttachmentVisible(false);
+    Keyboard.dismiss();
+    setProductVisible(true);
+    if (productList.length === 0) {
+      setProductLoading(true);
+      try {
+        const products = await getMyProducts(1, 30);
+        if (products.length === 0) {
+          const fallback = await getSellerProducts(Number(user?.user_id) || 0);
+          setProductList(fallback);
+        } else {
+          setProductList(products);
+        }
+      } catch {
+        try {
+          const fallback = await getSellerProducts(Number(user?.user_id) || 0);
+          setProductList(fallback);
+        } catch {
+          show({ variant: "error", title: "Error", message: "Could not load products." });
+        }
+      } finally {
+        setProductLoading(false);
       }
-    } catch (e) {
-      console.error("reaction fail", e);
     }
   }
 
-  // render items
-  function renderMessage({ item }: { item: ChatMessage }) {
-    const isMe = (item.sender_id === user?.user_id || item.sender_id === user?.user_id?.toString());
-    const time = new Date(item.created_at).toLocaleTimeString();
-    return (
-      <View style={{ padding: 8, flexDirection: "row", justifyContent: isMe ? "flex-end" : "flex-start" }}>
-        {!isMe && (
-          <Image source={{ uri: item.message_data?.avatar ?? otherUser?.profile_picture ?? undefined }} style={{ width: 36, height: 36, borderRadius: 18, marginRight: 8, backgroundColor: "#ddd" } as any} />
-        )}
-        <View style={{ maxWidth: "78%", alignItems: isMe ? "flex-end" : "flex-start" }}>
-          {item.message_type === "text" && (
-            <View style={{
-              backgroundColor: isMe ? "#ea2832" : "#f3e7e8",
-              paddingHorizontal: 12,
-              paddingVertical: 10,
-              borderRadius: 12,
-            }}>
-              <Text style={{ color: isMe ? "#fff" : "#1b0e0e" }}>{item.content}</Text>
-            </View>
-          )}
+  function openAttachmentSheet() {
+    if (sending) return;
+    Keyboard.dismiss();
+    setAttachmentVisible(true);
+  }
 
-          {item.message_type === "image" && (
-            <TouchableOpacity onPress={() => {/* image preview */}}>
-              <Image source={{ uri: item.content }} style={{ width: 220, height: 140, borderRadius: 10, backgroundColor: "#eee" } as any} />
-              {item.pending && <Text style={{ fontSize: 12, color: "#999" }}>Sending...</Text>}
+  async function handleCamera() {
+    if (sending) return;
+    try {
+      const perms = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perms.granted) {
+        Alert.alert("Permission required", "We need camera access to take photos.");
+        return;
+      }
+      const res = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+      if (res.canceled) return;
+
+      setSending(true);
+      const uri = res.assets?.[0]?.uri;
+      const uploadResult = await attemptMultipleUpload(res.assets!.map((a) => ({ id: a?.assetId || "", uri: a?.uri || "" })));
+      for (const result of uploadResult) {
+        await chatSocket.sendImage(roomId, myId, result.media?.original_url || result.urls?.["original"] || uri!, { localUri: uri });
+        const temp: ChatMessage = {
+          id: `c_${Date.now()}`,
+          room_id: roomId,
+          sender_id: myId,
+          content: result.media?.original_url || uri!,
+          message_type: "image",
+          message_data: { url: result.media?.original_url },
+          is_read: false,
+          created_at: new Date().toISOString(),
+          pending: true,
+        };
+        setMessages((prev) => [...prev, temp]);
+      }
+      show({ variant: "success", title: "Sent", message: "Photo sent." });
+      setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
+    } catch {
+      show({ variant: "error", title: "Error", message: "Could not send photo." });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function openRequestPicker() {
+    if (sending) return;
+    setAttachmentVisible(false);
+    Keyboard.dismiss();
+    setRequestVisible(true);
+    if (requestList.length === 0) {
+      setRequestLoading(true);
+      try {
+        const all = await getBuyerRequests(1, 50);
+        const mine = all.filter((r) => String(r.buyer?.id) === myId);
+        setRequestList(mine);
+      } catch {
+        show({ variant: "error", title: "Error", message: "Could not load your requests." });
+      } finally {
+        setRequestLoading(false);
+      }
+    }
+  }
+
+  async function sendRequest(req: BuyerRequest) {
+    if (sending) return;
+    setSending(true);
+    try {
+      const title = req.title?.trim() || "Untitled request";
+      const content = `Sharing request: ${title}`;
+      const msg = await sendMessageREST(roomId, {
+        content,
+        message_type: "text",
+        message_data: {
+          request_id: req.id,
+          request: {
+            id: req.id,
+            title: req.title,
+            description: req.description,
+            budget: req.budget,
+          },
+        },
+      });
+      setMessages((prev) => [...prev, msg]);
+      setRequestVisible(false);
+      show({ variant: "success", title: "Sent", message: "Request shared in chat." });
+      setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
+    } catch {
+      show({ variant: "error", title: "Error", message: "Could not share request." });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const [discountVisible, setDiscountVisible] = useState(false);
+  const [discounts, setDiscounts] = useState<any[]>([]);
+  const [discountLoading, setDiscountLoading] = useState(false);
+
+  async function handleDiscounts() {
+    if (sending) return;
+    setDiscountVisible(true);
+    setDiscountLoading(true);
+    try {
+      const list = await getRoomDiscounts(roomId);
+      setDiscounts(Array.isArray(list) ? list : []);
+    } catch {
+      setDiscounts([]);
+      show({ variant: "error", title: "Error", message: "Could not load discounts." });
+    } finally {
+      setDiscountLoading(false);
+    }
+  }
+
+  async function handleRespondToDiscount(discountId: number, response: "accepted" | "rejected") {
+    try {
+      await respondToDiscount(discountId, { response });
+      setDiscounts((prev) => (Array.isArray(prev) ? prev : []).filter((d) => d.id !== discountId));
+      show({ variant: "success", title: "Discount", message: response === "accepted" ? "Discount accepted." : "Discount declined." });
+    } catch {
+      show({ variant: "error", title: "Error", message: "Could not respond to discount." });
+    }
+  }
+
+  async function sendProduct(productId: string) {
+    if (sending) return;
+    setSending(true);
+    try {
+      const selected = productList.find((p) => p.id === productId);
+      const imageUrl = resolveProductImageUri(selected);
+      const mock = await sendProductMessageMock(roomId, myId, productId);
+      setMessages((prev) => [
+        ...prev,
+        {
+          ...mock,
+          pending: false,
+          message_data: {
+            product_id: productId,
+            product: selected
+              ? {
+                  id: selected.id,
+                  name: selected.name,
+                  price: selected.price,
+                  image_url: imageUrl ?? undefined,
+                }
+              : { product_id: productId },
+          },
+        },
+      ]);
+      await chatSocket.sendProduct(roomId, myId, productId, "Sharing product");
+      setProductVisible(false);
+      show({ variant: "success", title: "Sent", message: "Product shared in chat." });
+      setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
+    } catch {
+      show({ variant: "error", title: "Error", message: "Could not share product." });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  /** Get reaction summaries for display; fallback to legacy reactions_count/hasReactedClient for THUMBS_UP */
+  function getReactionSummaries(m: ChatMessage): { reaction_type: string; emoji: string; count: number; has_reacted: boolean }[] {
+    const rx = m.message_data?.reactions;
+    if (Array.isArray(rx) && rx.length > 0) return rx.filter((r) => r.count > 0);
+    const legacy = (m as any).hasReactedClient ?? false;
+    const count = m.message_data?.reactions_count ?? 0;
+    if (count > 0 || legacy) return [{ reaction_type: "THUMBS_UP", emoji: "👍", count: count || (legacy ? 1 : 0), has_reacted: legacy }];
+    return [];
+  }
+
+  async function handleAddReaction(message: ChatMessage, reactionType: ReactionType) {
+    const msgId = Number(message.id);
+    if (isNaN(msgId) || msgId <= 0) return;
+    const rx = message.message_data?.reactions ?? [];
+    const existing = rx.find((r) => r.reaction_type === reactionType);
+    if (existing?.has_reacted) return;
+    setReactionPickerFor(null);
+    updateMessageReactions(message.id, (current) =>
+      applyReactionAdded(current, reactionType, true)
+    );
+    try {
+      await addReaction(msgId, reactionType);
+      await refreshMessageReactions(msgId, message.id);
+    } catch (err) {
+      updateMessageReactions(message.id, (current) =>
+        applyReactionRemoved(current, reactionType, true)
+      );
+      const status = (err as Error & { status?: number }).status;
+      show({
+        variant: "error",
+        title: "Reaction",
+        message: status === 400 ? "Invalid reaction." : "Could not add reaction.",
+      });
+    }
+  }
+
+  async function handleRemoveReaction(message: ChatMessage, reactionType: ReactionType) {
+    const msgId = Number(message.id);
+    if (isNaN(msgId) || msgId <= 0) return;
+    setReactionPickerFor(null);
+    updateMessageReactions(message.id, (current) =>
+      applyReactionRemoved(current, reactionType, true)
+    );
+    try {
+      await removeReaction(msgId, reactionType);
+      await refreshMessageReactions(msgId, message.id);
+    } catch {
+      await refreshMessageReactions(msgId, message.id);
+      show({ variant: "error", title: "Error", message: "Could not remove reaction." });
+    }
+  }
+
+  function handlePickerReaction(message: ChatMessage, reactionType: ReactionType) {
+    const existing = getReactionSummaries(message).find((r) => r.reaction_type === reactionType);
+    if (existing?.has_reacted) handleRemoveReaction(message, reactionType);
+    else handleAddReaction(message, reactionType);
+  }
+
+  function handleReactionTap(message: ChatMessage, r: { reaction_type: string; count: number; has_reacted: boolean }) {
+    if (r.has_reacted) handleRemoveReaction(message, r.reaction_type as ReactionType);
+    else handleAddReaction(message, r.reaction_type as ReactionType);
+  }
+
+  async function handleAddProductToCart(productId?: string) {
+    if (!productId) return;
+    try {
+      await addToCart({ product_id: productId, variant_id: 0, quantity: 1 });
+      show({ variant: "success", title: "Success", message: "Product added to cart." });
+    } catch {
+      show({ variant: "error", title: "Error", message: "Could not add to cart." });
+    }
+  }
+
+  function renderMessage({ item }: { item: ChatMessage }) {
+    const isMe = item.sender_id === myId || String(item.sender_id) === myId;
+    const avatar = getMessageAvatarProps(item, isMe, avatarCtx);
+
+    return (
+      <View className={`flex-row px-4 py-1.5 ${isMe ? "justify-end" : "justify-start"}`}>
+        {!isMe && (
+          <View className="mr-2 mt-1">
+            <Avatar
+              key={`peer-${item.id}-${avatar.uri ?? "init"}`}
+              uri={avatar.uri}
+              name={avatar.name}
+              size={32}
+            />
+          </View>
+        )}
+        <View className={`max-w-[80%] ${isMe ? "items-end" : "items-start"}`}>
+          {item.message_type === "text" && (() => {
+            const sharedRequest = item.message_data?.request as { title?: string; description?: string; budget?: number } | undefined;
+            const requestId = item.message_data?.request_id as string | undefined;
+            if (requestId && (item.content?.includes("Sharing request") || sharedRequest)) {
+              return (
+                <View className={`px-4 py-3 rounded-2xl min-w-[200px] ${isMe ? "rounded-br-md bg-primary" : "rounded-bl-md bg-white border border-border"}`}>
+                  <Text className={`text-xs font-medium uppercase tracking-wide ${isMe ? "text-white/80" : "text-text-secondary"}`}>
+                    Buyer request
+                  </Text>
+                  <Text className={`text-base font-semibold mt-1 ${isMe ? "text-white" : "text-text-primary"}`} numberOfLines={2}>
+                    {sharedRequest?.title || item.content.replace(/^Sharing request:\s*/i, "")}
+                  </Text>
+                  {sharedRequest?.description ? (
+                    <Text className={`text-sm mt-1 ${isMe ? "text-white/90" : "text-text-secondary"}`} numberOfLines={3}>
+                      {sharedRequest.description}
+                    </Text>
+                  ) : null}
+                  {sharedRequest?.budget != null && (
+                    <Text className={`text-sm font-semibold mt-2 ${isMe ? "text-white" : "text-primary"}`}>
+                      Budget: ₦{Number(sharedRequest.budget).toLocaleString()}
+                    </Text>
+                  )}
+                </View>
+              );
+            }
+            const productIdInContent = (item.content || "").match(/PRD_[\w]+/)?.[0];
+            if (productIdInContent && (item.content?.includes("Sharing product") || /^PRD_[\w]+$/.test(item.content.trim()))) {
+              return (
+                <ChatProductDisplayComponent
+                  productId={productIdInContent}
+                  embeddedProduct={null}
+                  showAddToCart={role === "buyer"}
+                  onAddToCart={handleAddProductToCart}
+                />
+              );
+            }
+            return (
+              <View
+                className={`px-4 py-3 rounded-2xl ${isMe ? "rounded-br-md bg-primary" : "rounded-bl-md bg-white border border-border"}`}
+              >
+                <Text className={`text-base ${isMe ? "text-white" : "text-text-primary"}`}>{item.content}</Text>
+              </View>
+            );
+          })()}
+
+          {item.message_type === "image" && (() => {
+            const imageUri = normalizeUri(
+              item.message_data?.url ??
+                item.message_data?.image_url ??
+                item.content
+            );
+            if (!imageUri) {
+              return (
+                <View className="w-56 h-40 rounded-2xl bg-bg-muted items-center justify-center px-3">
+                  <Text className="text-text-secondary text-sm text-center">Image unavailable</Text>
+                </View>
+              );
+            }
+            return (
+            <TouchableOpacity activeOpacity={0.9}>
+              <Image
+                source={{ uri: imageUri }}
+                className="w-56 h-40 rounded-2xl bg-bg-muted"
+                resizeMode="cover"
+              />
+              {item.pending && (
+                <Text className="text-text-secondary text-xs mt-1">Sending…</Text>
+              )}
             </TouchableOpacity>
-          )}
+            );
+          })()}
 
           {item.message_type === "video" && (
-            <View style={{ width: 220, height: 140, borderRadius: 10, backgroundColor: "#000", justifyContent: "center", alignItems: "center" }}>
-              <Text style={{ color: "#fff" }}>Video</Text>
+            <View className="w-56 h-40 rounded-2xl bg-black items-center justify-center">
+              <Text className="text-white">Video</Text>
             </View>
           )}
 
-          {item.message_type === "product" && (
-            <View style={{ borderRadius: 10, padding: 8, backgroundColor: "#fff", borderWidth: 1, borderColor: "#eee" }}>
-              <Text style={{ fontWeight: "700" }}>{item.message_data?.product_name ?? `Product ${item.message_data?.product_id ?? ""}`}</Text>
-              <Text style={{ color: "#666" }}>{item.message_data?.product_price ? `$${item.message_data.product_price}` : ""}</Text>
-              <TouchableOpacity onPress={() => handleAddProductToCart(item.message_data?.product_id)} style={{ marginTop: 8, padding: 8, backgroundColor: "#e26136", borderRadius: 8 }}>
-                <Text style={{ color: "#fff", textAlign: "center" }}>Add to Cart</Text>
-              </TouchableOpacity>
+          {item.message_type === "product" && (() => {
+            const productId = item.message_data?.product_id ? String(item.message_data.product_id) : (item.content || "").match(/PRD_[\w]+/)?.[0];
+            const embeddedProduct = item.message_data?.product;
+            if (!productId && !embeddedProduct?.id) {
+              return (
+                <View className="rounded-2xl border border-border bg-bg-muted px-4 py-3">
+                  <Text className="text-text-secondary text-sm">Product no longer available</Text>
+                </View>
+              );
+            }
+            return (
+              <ChatProductDisplayComponent
+                productId={productId}
+                embeddedProduct={embeddedProduct}
+                showAddToCart={role === "buyer"}
+                onAddToCart={handleAddProductToCart}
+              />
+            );
+          })()}
+
+          {item.message_type === "offer" && (
+            <View className="rounded-2xl overflow-hidden border border-border bg-white min-w-[200px]">
+              <View className="px-4 py-3 bg-[#f8f8f8]">
+                <Text className="text-text-secondary text-xs font-medium uppercase tracking-wide">Price offer</Text>
+                <Text className="text-text-primary text-lg font-bold mt-0.5">
+                  ₦{Number((item as any).offer?.price ?? (item as any).offer?.offer_amount ?? item.content ?? 0).toLocaleString()}
+                </Text>
+                {(item as any).offer?.message && (
+                  <Text className="text-text-secondary text-sm mt-1" numberOfLines={2}>{(item as any).offer.message}</Text>
+                )}
+              </View>
+              {role === "buyer" && (item as any).offer?.status === "pending" && (item as any).offer?.id && (
+                <View className="flex-row p-2 gap-2">
+                  <TouchableOpacity
+                    onPress={() => handleRespondToOffer(Number((item as any).offer.id), "accept")}
+                    className="flex-1 py-2.5 rounded-xl bg-primary items-center"
+                  >
+                    <Text className="text-white font-semibold text-sm">Accept</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleRespondToOffer(Number((item as any).offer.id), "reject")}
+                    className="flex-1 py-2.5 rounded-xl bg-[#efefef] items-center"
+                  >
+                    <Text className="text-text-primary font-semibold text-sm">Decline</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              {(item as any).offer?.status && (item as any).offer?.status !== "pending" && (
+                <View className="px-4 py-2">
+                  <Text className="text-text-secondary text-xs capitalize">{(item as any).offer.status}</Text>
+                </View>
+              )}
             </View>
           )}
 
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 6 }}>
-            <Text style={{ color: "#8b8b8b", fontSize: 11, marginRight: 8 }}>{time}</Text>
-            <TouchableOpacity onPress={() => toggleReaction(item)} style={{ padding: 4 }}>
-              <ThumbsUp size={16} color={(item as any).hasReactedClient ? "#2b8a3e" : "#60758a"} />
-            </TouchableOpacity>
+          <View className="flex-row items-center mt-1.5 gap-2 flex-wrap">
+            <Text className="text-text-secondary text-[11px]">{formatTime(item.created_at)}</Text>
+            {!isNaN(Number(item.id)) && Number(item.id) > 0 && (
+              <>
+                {getReactionSummaries(item).map((r) => (
+                  <TouchableOpacity
+                    key={r.reaction_type}
+                    onPress={() => handleReactionTap(item, r)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    className={`flex-row items-center gap-0.5 px-1.5 py-0.5 rounded-full ${
+                      r.has_reacted ? "bg-primary/15 border border-primary/35" : "bg-bg-muted/70"
+                    }`}
+                  >
+                    <Text className="text-sm">{r.emoji}</Text>
+                    {(r.count > 1 || r.has_reacted) && (
+                      <Text className={`text-[11px] ${r.has_reacted ? "text-primary font-semibold" : "text-text-secondary"}`}>
+                        {r.count}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                  onPress={() => setReactionPickerFor(reactionPickerFor === String(item.id) ? null : String(item.id))}
+                  onLongPress={() => setReactionPickerFor(String(item.id))}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  className="p-1"
+                >
+                  <SmilePlus size={14} color="#876d64" />
+                </TouchableOpacity>
+                {reactionPickerFor === String(item.id) && (
+                  <View className="flex-row gap-1 mt-0.5">
+                    {COMMON_REACTIONS.map((type) => {
+                      const active = getReactionSummaries(item).some(
+                        (r) => r.reaction_type === type && r.has_reacted
+                      );
+                      return (
+                      <TouchableOpacity
+                        key={type}
+                        onPress={() => handlePickerReaction(item, type)}
+                        className={`px-2 py-1 rounded-full ${active ? "bg-primary/15 border border-primary/35" : "bg-bg-muted"}`}
+                      >
+                        <Text className="text-base">{getEmoji(type)}</Text>
+                      </TouchableOpacity>
+                      );
+                    })}
+                    <TouchableOpacity
+                      onPress={() => setReactionPickerFor(null)}
+                      className="px-2 py-1 rounded-full bg-bg-muted"
+                    >
+                      <Text className="text-xs text-text-secondary">✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </>
+            )}
           </View>
-
-          {item.pending && <Text style={{ fontSize: 11, color: "#999", marginTop: 4 }}>Pending…</Text>}
+          {item.pending && (
+            <Text className="text-text-secondary text-[10px] mt-0.5">Pending…</Text>
+          )}
         </View>
-
         {isMe && (
-          <Image source={{ uri: "https://placehold.co/80x80" }} style={{ width: 36, height: 36, borderRadius: 18, marginLeft: 8, backgroundColor: "#ddd" } as any} />
+          <View className="ml-2 mt-1">
+            <Avatar
+              key={`me-${item.id}-${avatar.uri ?? "init"}`}
+              uri={avatar.uri}
+              name={avatar.name ?? user?.email}
+              size={32}
+            />
+          </View>
         )}
       </View>
     );
   }
 
-  async function handleAddProductToCart(productId?: string) {
-    if (!productId) return Alert.alert("Missing product id");
-    // implement addToCart using your cart service
-    try {
-      await addToCart({ product_id: productId, variant_id: 0, quantity: 1 });
-      Alert.alert("Added to cart", `Product ${productId} added to cart (mock).`);
-    } catch (e) {
-      Alert.alert("Error", "Could not add to cart.");
-    }
-  }
-
-  // load older messages on scroll up
-  async function loadMore() {
-    try {
-      const res = await getRoomMessages(roomId, page, 50);
-      if (res.messages && res.messages.length) {
-        setMessages(prev => [...res.messages, ...prev]);
-        setPage(p => p + 1);
-      }
-    } catch (e) {
-      console.error("load more error", e);
-    }
-  }
-
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View className="flex-1 items-center justify-center bg-bg-elevated">
         <ActivityIndicator size="large" color="#e26136" />
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#fcf8f8" }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={90}>
+    <KeyboardAvoidingView
+      className="flex-1 bg-bg-elevated"
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={0}
+    >
+      {/* Header */}
+      <View className="flex-row items-center px-4 py-3 bg-white border-b border-border">
+        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <ArrowLeft size={24} color="#171311" />
+        </TouchableOpacity>
+        <Avatar uri={pickProfilePicture(otherUser)} name={otherUser?.username} size={40} />
+        <Text className="ml-3 text-text-primary font-semibold text-base flex-1" numberOfLines={1}>
+          {otherUser?.username ?? "Chat"}
+        </Text>
+      </View>
+
       <FlatList
         ref={listRef}
-        data={messages}
+        data={sortedMessages}
         keyExtractor={(it) => String(it.id)}
         renderItem={renderMessage}
-        onEndReachedThreshold={0.2}
-        ListHeaderComponent={<View style={{ padding: 12 }}>
-          <ArrowLeft size={24} color="#171312" onPress={() => router.back()} />
-          <Text style={{ fontWeight: "bold" }}>Chat Messages</Text>
-          </View>}
-        //onEndReached={loadMore}
-        contentContainerStyle={{ paddingVertical: 8, paddingBottom: 12 }}
+        onContentSizeChange={handleContentSizeChange}
+        contentContainerStyle={{ paddingVertical: 12, paddingBottom: 8 }}
         showsVerticalScrollIndicator={false}
-        //inverted
+        onScroll={({ nativeEvent }) => {
+          const { contentOffset, contentSize, layoutMeasurement } = nativeEvent;
+          const padding = 80;
+          if (contentOffset.y < padding && hasMore && !loadingOlder) loadOlder();
+        }}
+        scrollEventThrottle={400}
+        ListHeaderComponent={
+          hasMore && (loadingOlder ? (
+            <View className="py-3 items-center">
+              <ActivityIndicator size="small" color="#e26136" />
+            </View>
+          ) : null)
+        }
       />
 
-      {typingUser && <Text style={{ paddingHorizontal: 16, color: "#60758a" }}>{typingUser} is typing...</Text>}
+      {typingUser && (
+        <View className="px-4 py-2 flex-row items-center">
+          <View className="flex-row gap-1 px-3 py-2 rounded-full bg-[#efefef] self-start">
+            <View className="w-2 h-2 rounded-full bg-text-secondary opacity-60" />
+            <View className="w-2 h-2 rounded-full bg-text-secondary opacity-80" />
+            <View className="w-2 h-2 rounded-full bg-text-secondary" />
+          </View>
+          <Text className="text-text-secondary text-sm ml-2">{typingUser} is typing</Text>
+        </View>
+      )}
 
-      <View style={{ padding: 12, flexDirection: "row", gap: 8, alignItems: "center" }}>
-        <View style={{ flexDirection: "row", backgroundColor: "#f3e7e8", flex: 1, borderRadius: 28, paddingHorizontal: 12, alignItems: "center" }}>
+      {/* Input bar — send button aligned with input; keyboard dismissed when opening attachment sheet */}
+      <View className="flex-row items-center px-4 py-2 pb-2 bg-white border-t border-border gap-2 min-h-[52px]">
+        <View className="flex-1 flex-row items-center bg-bg-muted rounded-full pl-4 pr-1 py-1.5 h-11">
           <TextInput
             value={input}
             onChangeText={(t) => {
               setInput(t);
-              chatSocket.typingStart(roomId, user?.user_id || "");
+              chatSocket.typingStart(roomId, myId);
             }}
-            placeholder="Message..."
-            placeholderTextColor="#994d51"
-            style={{ flex: 1, paddingVertical: 10, color: "#1b0e0e" }}
+            placeholder="Type a message…"
+            placeholderTextColor="#876d64"
+            className="flex-1 text-text-primary text-base min-h-[24px] max-h-[80px]"
             multiline
+            maxLength={1000}
+            textAlignVertical="center"
           />
-
-          <TouchableOpacity onPress={() => handlePickMedia("image")} style={{ padding: 8 }}>
-            <ImageIcon color="#994d51" size={20} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => handlePickMedia("video")} style={{ padding: 8 }}>
-            <Camera color="#994d51" size={20} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => { /* open product picker */ handleSendProduct("PRD_001"); }} style={{ padding: 8 }}>
-            <ShoppingBag color="#994d51" size={20} />
+          <TouchableOpacity onPress={openAttachmentSheet} disabled={sending} className={`p-2 ${sending ? "opacity-50" : ""}`}>
+            <Plus size={22} color="#876d64" />
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity onPress={handleSendText} disabled={sending} style={{ backgroundColor: "#ea2832", borderRadius: 24, height: 44, width: 44, alignItems: "center", justifyContent: "center" }}>
-          <SendIcon size={18} color="#fff" />
+        <TouchableOpacity
+          onPress={handleSendText}
+          disabled={sending}
+          className="w-11 h-11 rounded-full bg-primary items-center justify-center"
+        >
+          <Send size={20} color="white" />
         </TouchableOpacity>
       </View>
+
+      <ChatAttachmentSheet
+        visible={attachmentVisible}
+        busy={sending}
+        onClose={() => setAttachmentVisible(false)}
+        onCamera={handleCamera}
+        onPhotos={() => handlePickMedia("image")}
+        onProducts={role === "seller" ? openProductPicker : undefined}
+        onRequests={role === "buyer" ? openRequestPicker : undefined}
+        onDiscounts={handleDiscounts}
+        role={role === "buyer" || role === "seller" ? role : "buyer"}
+      />
+      {discountVisible && (
+        <View className="absolute inset-0 z-[1000] bg-black/40 justify-end">
+          <TouchableOpacity style={{ flex: 1 }} onPress={() => setDiscountVisible(false)} activeOpacity={1} />
+          <View className="bg-white rounded-t-3xl max-h-[50%] px-4 pt-4 pb-10">
+            <View className="flex-row justify-between mb-4">
+              <Text className="text-text-primary font-semibold text-base">Active discounts</Text>
+              <TouchableOpacity onPress={() => setDiscountVisible(false)}>
+                <Text className="text-primary font-semibold">Done</Text>
+              </TouchableOpacity>
+            </View>
+            {discountLoading ? (
+              <ActivityIndicator size="small" color="#e26136" />
+            ) : (Array.isArray(discounts) ? discounts : []).length === 0 ? (
+              <Text className="text-text-secondary text-sm">No active discounts for this chat.</Text>
+            ) : (
+              (Array.isArray(discounts) ? discounts : []).map((d) => (
+                <View key={d.id} className="bg-bg-muted rounded-xl p-3 mb-2">
+                  <Text className="text-text-primary font-medium text-sm">{d.discount_message ?? d.discount_type ?? "Discount"}</Text>
+                  <Text className="text-primary font-semibold text-sm mt-1">₦{Number(d.discount_value ?? 0).toLocaleString()}</Text>
+                  {role === "buyer" && (d.status === "pending" || !d.status) && (
+                    <View className="flex-row gap-2 mt-2">
+                      <TouchableOpacity
+                        onPress={() => handleRespondToDiscount(d.id, "accepted")}
+                        className="flex-1 py-2 rounded-lg bg-primary items-center"
+                      >
+                        <Text className="text-white font-semibold text-sm">Accept</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleRespondToDiscount(d.id, "rejected")}
+                        className="flex-1 py-2 rounded-lg bg-[#efefef] items-center"
+                      >
+                        <Text className="text-text-primary font-semibold text-sm">Decline</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              ))
+            )}
+          </View>
+        </View>
+      )}
+      <ProductPicker
+        visible={productVisible}
+        products={productList}
+        loading={productLoading}
+        disabled={sending}
+        selectedProducts={[]}
+        onClose={() => setProductVisible(false)}
+        onSelect={(product) => sendProduct(product.id)}
+      />
+      <RequestPicker
+        visible={requestVisible}
+        requests={requestList}
+        loading={requestLoading}
+        disabled={sending}
+        onClose={() => setRequestVisible(false)}
+        onSelect={sendRequest}
+      />
     </KeyboardAvoidingView>
   );
 }

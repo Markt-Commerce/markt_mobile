@@ -1,5 +1,7 @@
-import { RegisterRequest, LoginRequest, AuthUser, ApiResponse } from '../../models/auth';
-import { BASE_URL,request } from '../api';
+import { RegisterRequest, LoginRequest, AuthUser, ApiResponse, UserSwitchResponse, RoleCreationResult } from "../../models/auth";
+import { CommonBuyerResponseData, CommonSellerResponseData } from "../../models/user";
+import { BASE_URL, request } from "../api";
+import { setAuthToken, extractTokenFromResponse, setUserSession, clearUserSession } from "../authStorage";
 
 
 /**
@@ -10,11 +12,20 @@ import { BASE_URL,request } from '../api';
  * @returns 
  */
 export async function registerUser(data: RegisterRequest): Promise<AuthUser> {
-  const res = await request<AuthUser>(`${BASE_URL}/users/register`, {
-    method: 'POST',
+  const res = await request<any>(`${BASE_URL}/users/register`, {
+    method: "POST",
     body: JSON.stringify(data),
   });
-  return res;
+  const token = extractTokenFromResponse(res);
+  if (token) await setAuthToken(token);
+  const user = (res?.user ?? res?.data ?? res) as AuthUser;
+  if (user?.email) {
+    await setUserSession(
+      { email: user.email, account_type: user.current_role ?? user.account_type, user_id: user.id },
+      (user.current_role ?? user.account_type) as "buyer" | "seller"
+    );
+  }
+  return user;
 }
 
 
@@ -25,11 +36,20 @@ export async function registerUser(data: RegisterRequest): Promise<AuthUser> {
  * @returns 
  */
 export async function loginUser(data: LoginRequest): Promise<AuthUser> {
-  const res = await request<AuthUser>(`${BASE_URL}/users/login`, {
-    method: 'POST',
+  const res = await request<any>(`${BASE_URL}/users/login`, {
+    method: "POST",
     body: JSON.stringify(data),
   });
-  return res;
+  const token = extractTokenFromResponse(res);
+  if (token) await setAuthToken(token);
+  const user = (res?.user ?? res?.data ?? res) as AuthUser;
+  if (user?.email) {
+    await setUserSession(
+      { email: user.email, account_type: user.current_role ?? user.account_type, user_id: user.id },
+      (user.current_role ?? user.account_type) as "buyer" | "seller"
+    );
+  }
+  return user;
 }
 
 /**
@@ -38,10 +58,13 @@ export async function loginUser(data: LoginRequest): Promise<AuthUser> {
  * @returns 
  */
 export async function logoutUser(): Promise<void> {
-    await request<void>(`${BASE_URL}/users/logout`, {
-      method: 'POST',
-    });
+  try {
+    await request<void>(`${BASE_URL}/users/logout`, { method: "POST" });
+  } finally {
+    await setAuthToken(null);
+    await clearUserSession();
   }
+}
   
 /**
  * This function sends a verification email to the user.
@@ -100,4 +123,67 @@ export async function resetPassword(email: string, code: string, newPassword: st
     body: JSON.stringify({ email, code:code, new_password: newPassword }),
   });
   return res.message;
+}
+
+/** Check if username is available. Debounce calls. */
+export async function checkUsername(username: string): Promise<{ available: boolean; message: string }> {
+  const res = await request<{ available: boolean; message: string }>(
+    `${BASE_URL}/users/check-username?username=${encodeURIComponent(username)}`,
+    { method: "GET" }
+  );
+  return res;
+}
+
+/** Upload profile picture. Call after registration. */
+export async function uploadProfilePicture(uri: string, fileName = "profile.jpg"): Promise<{ url?: string; profile_picture?: string }> {
+  const formData = new FormData();
+  formData.append("file", {
+    uri,
+    name: fileName,
+    type: "image/jpeg",
+  } as any);
+
+  const res = await request<any>(`${BASE_URL}/users/profile/picture`, {
+    method: "POST",
+    body: formData,
+  });
+  return res;
+}
+
+/**
+ * Switch the current user's active role to buyer or seller.
+ * @param toRole The role to switch to ('buyer' | 'seller')
+ * @returns Updated authenticated user object
+ */
+export async function switchUserRole(): Promise<UserSwitchResponse> {
+  const res = await request<UserSwitchResponse>(`${BASE_URL}/users/switch-role`, {
+    method: 'POST'
+  });
+  return res;
+}
+
+/**
+ * Create a buyer profile for the current user (or create a new buyer account).
+ * @param data Buyer creation data (reuses RegisterRequest shape)
+ * @returns Created/updated authenticated user object
+ */
+export async function createBuyer(data: RegisterRequest['buyer_data']): Promise<RoleCreationResult> {
+  const res = await request<RoleCreationResult>(`${BASE_URL}/users/create-buyer`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return res;
+}
+
+/**
+ * Create a seller profile for the current user (or create a new seller account).
+ * @param data Seller creation data (reuses RegisterRequest shape)
+ * @returns Created/updated authenticated user object
+ */
+export async function createSeller(data: RegisterRequest['seller_data']): Promise<RoleCreationResult> {
+  const res = await request<RoleCreationResult>(`${BASE_URL}/users/create-seller`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return res;
 }

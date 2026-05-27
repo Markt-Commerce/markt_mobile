@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Image, Switch } from "react-native";
 import { ArrowLeft, Bell, Sun, Globe, User, Lock, CreditCard, Truck, Link as LinkIcon, HelpCircle as Question, FileText, ShieldCheck, Info, ArrowRight } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,10 +9,14 @@ import { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";    // <- simple context (no NativeWind)
 import { TView, TText } from "../../components/themed";       // <- Themed components (pick classes via context)
 import { useToast } from "../../components/ToastProvider";    // <- optional toast
+import { createBuyer, logoutUser, switchUserRole } from "../../services/sections/auth";
+import { navigateToGuestHome } from "../../utils/authNavigation";
+import CreateRoleBottomSheet from "../../components/createRoleBottomSheet";
+import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 
 export default function SettingsProfileScreen() {
   const nav = useRouter();
-  const { user, role } = useUser();
+  const { user, role, setRole, setUser } = useUser();
   const { resolvedTheme, setTheme } = useTheme();
   const { show } = useToast();
 
@@ -21,10 +25,24 @@ export default function SettingsProfileScreen() {
   const [language, setLanguage] = useState<"EN" | "FR">("EN");
   const [profileData, setProfileData] = useState<UserProfile>();
 
+  const createRoleRef = useRef<BottomSheetMethods | null>(null);
+  const [createMode, setCreateMode] = useState<"buyer" | "seller" | null>(null);
+
+  // open sheet when createMode set
+  useEffect(() => {
+    if (createMode) {
+      // small delay ensures mode prop is set before expanding
+      requestAnimationFrame(() => {
+        createRoleRef.current?.expand?.();
+      });
+    }
+  }, [createMode]);
+
   //get and set api functions.
   const getUserData = async () => {
     try {
       const result = await getUserProfile();
+      console.log("Profile data retrieved:", result);
       setProfileData(result);
     } catch (error) {
       show({
@@ -34,34 +52,29 @@ export default function SettingsProfileScreen() {
       })
     }
   }
-  const getBuyerData = async () => {
+
+  const SwitchRole = async () => {
     try {
-      
-    } catch (error) {
+      const switchResult = await switchUserRole();
+      setRole(switchResult.user.current_role);
+    } catch {
+      // Switch fails when user doesn't have both accounts
+      const missingRole = role === "buyer" ? "seller" : "buyer";
       show({
+        message: `You need a ${missingRole} account. Use "Create A ${missingRole === "seller" ? "Seller" : "Buyer"} Account" below.`,
+        title: "Could not switch",
         variant: "error",
-        title: "Error getting profile data",
-        message: "There was an issue retrieving your profile information.",
-      })
+      });
     }
-  }
-  const getsellerData = async () => {
-    try {
-      
-    } catch (error) {
-      show({
-        variant: "error",
-        title: "Error getting profile data",
-        message: "There was an issue retrieving your profile information.",
-      })
-    }
-  }
+  };
 
   useEffect(()=>{
     getUserData()
   },[user])
 
   useEffect(() => setAppearance(resolvedTheme), [resolvedTheme]);
+
+
 
   // ---------- UI Helpers ----------
   const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
@@ -83,6 +96,38 @@ export default function SettingsProfileScreen() {
       </TView>
     </View>
   );
+
+  // update DetermineSwitchType to open sheet when account missing
+  const DetermineSwitchType: React.FC<{ hasBuyerAccount: boolean; hasSellerAccount: boolean }> = ({
+    hasBuyerAccount,
+    hasSellerAccount,
+  }) => {
+    const oppAccount: "Buyer" | "Seller" = role === "buyer" ? "Seller" : "Buyer";
+    return role === "buyer" && hasSellerAccount ? (
+      <TouchableOpacity onPress={() => SwitchRole()} className="rounded-button h-11 justify-center items-center bg-primary" activeOpacity={0.85}>
+        <Text className="text-white font-semibold">Switch To Seller Account</Text>
+      </TouchableOpacity>
+    ) : role === "seller" && hasBuyerAccount ? (
+      <TouchableOpacity onPress={() => SwitchRole()} className="rounded-button h-11 justify-center items-center bg-primary" activeOpacity={0.85}>
+        <Text className="text-white font-semibold">Switch To Buyer Account</Text>
+      </TouchableOpacity>
+    ) : (
+      <TouchableOpacity
+        onPress={() => setCreateMode(role === "buyer" ? "seller" : "buyer")}
+        className="rounded-button h-11 justify-center items-center bg-primary"
+        activeOpacity={0.85}
+      >
+        <Text className="text-white font-semibold">Create A {oppAccount} Account</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const handleCreated = (newRole: "buyer" | "seller") => {
+    setRole(newRole);
+    setCreateMode(null);
+    // Refresh profile data after creating a new role
+    getUserData();
+  };
 
   const Row: React.FC<{
     children: React.ReactNode;
@@ -181,7 +226,7 @@ export default function SettingsProfileScreen() {
               dark="bg-neutral-900 border-neutral-800"
               className="items-center rounded-2xl border px-5 py-6"
             >
-              <Image source={{  uri: profileData?.profile_picture_url ?? "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=320&q=80&crop=faces,entropy" }} className="w-28 h-28 rounded-full" />
+              <Image source={{  uri: profileData?.profile_picture_url || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" }} className="w-28 h-28 rounded-full" />
               <TText
                 light="text-[#171311]"
                 dark="text-neutral-100"
@@ -204,6 +249,23 @@ export default function SettingsProfileScreen() {
                 Joined {profileData?.created_at ? String(new Date(profileData.created_at).getFullYear()) : "now maybe"}
               </TText>
             </TView>
+          </View>
+
+          {/* Edit Profile */}
+          <View className="w-full max-w-[640px] self-center px-4 mb-4">
+            <TouchableOpacity
+              className="bg-primary rounded-button h-12 items-center justify-center"
+              onPress={() => nav.push("/accountInfoScreen")}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile"
+            >
+              <Text className="text-white font-semibold">Edit Profile</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View className="w-full max-w-[640px] self-center px-4 mb-2">
+            <DetermineSwitchType hasBuyerAccount={profileData?.is_buyer ?? false} hasSellerAccount={profileData?.is_seller ?? false} />
           </View>
 
 
@@ -284,11 +346,9 @@ export default function SettingsProfileScreen() {
           {/* Account Management */}
           <Section title="Account Management">
             {[
-              { label: "Account Information", icon: User, route: "/account/info" },
-              { label: "Change Password", icon: Lock, route: "/account/change-password" },
-              { label: "Payment Methods", icon: CreditCard, route: "/account/payments" },
+              { label: "Edit Profile", icon: User, route: "/accountInfoScreen" },
+              { label: "Change Password", icon: Lock, route: "/forgotPassword" },
               { label: "Shipping Addresses", icon: Truck, route: "/account/addresses" },
-              { label: "Linked Accounts", icon: LinkIcon, route: "/account/linked" },
             ].map((item, i, arr) => {
               const Icon = item.icon;
               return (
@@ -340,9 +400,20 @@ export default function SettingsProfileScreen() {
           <View className="w-full max-w-[640px] self-center px-4 pt-4 pb-6">
             <TouchableOpacity
               className="h-11 rounded-full justify-center items-center active:opacity-85"
-              onPress={() => {
-                // your logout logic
-                show({ variant: "info", title: "Logged out", message: "You’ve been signed out." });
+              onPress={async () => {
+                try {
+                  await logoutUser();
+                  setUser(null);
+                  show({ variant: "info", title: "Logged out", message: "You've been signed out." });
+                  // Stack.Protected redirects guest routes when user clears; replace covers deep links.
+                  navigateToGuestHome();
+                } catch (error) {
+                  show({
+                    variant: "error",
+                    title: "Error Logging out",
+                    message: "We could not log you out of your account. Please try again"
+                  })
+                }
               }}
               style={{ backgroundColor: resolvedTheme === "dark" ? "#111827" : "#f4f1f0" }}
             >
@@ -353,6 +424,7 @@ export default function SettingsProfileScreen() {
           </View>
         </ScrollView>
       </TView>
+      <CreateRoleBottomSheet ref={createRoleRef} mode={createMode} onClose={() => setCreateMode(null)} onCreated={handleCreated} />
     </SafeAreaView>
   );
 }
