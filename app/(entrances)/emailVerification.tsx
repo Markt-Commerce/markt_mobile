@@ -6,10 +6,12 @@ import { sendVerificationEmail, verifyEmail } from "../../services/sections/auth
 import { useRegData } from "../../models/signupSteps";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Input } from "../../components/inputs";
+import { OTPInput } from "../../components/inputs";
 import { useToast } from "../../components/ToastProvider"; // <-- toast
+import Button from "../../components/button";
+import { useTheme } from "../../components/themeProvider";
 
 const schema = z.object({
   code: z
@@ -23,6 +25,9 @@ const EmailVerification = () => {
   const router = useRouter();
   const { regData } = useRegData();
   const { show } = useToast(); // <-- toast API
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const iconColor = isDark ? "#f0f1f2" : "#000000";
 
   const [verificationCodeSent, setVerificationCodeSent] = useState(false);
   const [sending, setSending] = useState(false);
@@ -99,80 +104,84 @@ const EmailVerification = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
       >
-        <View className="flex-1 bg-white">
+        <View className={`flex-1 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
           {/* Header */}
-          <View className="flex-row items-center p-4 pb-2 justify-between border-b border-neutral-200">
-            <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <ArrowLeft color="#181111" size={24} />
+          <View className="flex-row items-center p-4 pb-2 justify-between">
+            <TouchableOpacity 
+              onPress={() => router.back()} 
+              className={`h-10 w-10 items-center justify-center rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <ArrowLeft color={iconColor} size={20} />
             </TouchableOpacity>
-            <Text className="text-[#181111] text-lg font-extrabold text-center flex-1 pr-12">Email Verification</Text>
+            <Text className={`text-xl font-geist font-bold text-center flex-1 pr-10 ${isDark ? "text-[#f0f1f2]" : "text-[#000000]"}`}>Verification</Text>
           </View>
 
           {/* Body */}
-          <View className="flex-1 px-4">
-            <View className="mt-8 rounded-2xl border border-neutral-200 bg-white p-5">
+          <View className="flex-1 px-4 justify-center">
+            <View className={`rounded border px-6 py-8 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
               {!verificationCodeSent ? (
                 <>
-                  <Text className="text-[#171212] text-[24px] font-extrabold leading-tight">
-                    Verify your email
+                  <Text className={`text-[32px] font-geist font-bold leading-tight mb-2 text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                    Check your email
                   </Text>
-                  <Text className="text-neutral-700 mt-2">
-                    We’ll send a one-time 6-digit code to your email address.
+                  <Text className={`font-inter text-center mb-8 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                    We’ll send a one-time 6-digit code to your email address to secure your account.
                   </Text>
 
-                  <TouchableOpacity
-                    className={`mt-5 h-12 rounded-full items-center justify-center ${sending ? "bg-[#e9242a]/60" : "bg-[#e9242a]"}`}
+                  <Button
+                    text={sending ? "Sending…" : "Send code"}
                     onPress={handleSendVerificationCode}
                     disabled={sending}
-                    activeOpacity={0.9}
-                  >
-                    <Text className="text-white font-bold">{sending ? "Sending…" : "Send verification code"}</Text>
-                  </TouchableOpacity>
+                    variant="conversion"
+                  />
                 </>
               ) : (
                 <>
-                  <Text className="text-[#171212] text-[22px] font-extrabold leading-tight">
-                    Enter verification code
+                  <Text className={`text-[32px] font-geist font-bold leading-tight mb-2 text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                    Enter code
                   </Text>
-                  <Text className="text-neutral-700 mt-2">
-                    We sent a 6-digit code to <Text className="font-semibold">{regData?.email}</Text>.
+                  <Text className={`font-inter text-center mb-10 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                    We sent a 6-digit code to{"\n"}
+                    <Text className={`font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>{regData?.email}</Text>
                   </Text>
 
                   {/* Code input */}
-                  <View className="mt-4">
-                    <Input placeholder="6-digit code" control={control} name="code" errors={errors} />
-                    {errors.code && (
-                      <Text className="text-[#e9242a] text-xs mt-1">{errors.code.message as string}</Text>
-                    )}
+                  <View className="mb-10">
+                    <Controller
+                      control={control}
+                      name="code"
+                      render={({ field: { onChange, value }, fieldState: { error } }) => (
+                        <OTPInput 
+                          value={value || ""} 
+                          onChange={onChange} 
+                          error={error?.message} 
+                        />
+                      )}
+                    />
                   </View>
 
                   {/* Actions */}
-                  <View className="mt-4 flex-row items-center justify-between">
-                    <TouchableOpacity onPress={handleSendVerificationCode} className="active:opacity-80">
-                      <Text className="text-[#e9242a] font-semibold">Resend code</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      className={`h-11 px-6 rounded-full items-center justify-center ${isValid ? "bg-[#181111]" : "bg-neutral-200"}`}
-                      onPress={handleSubmit(handleSubmitCode)}
-                      disabled={!isValid || verifying}
-                      activeOpacity={0.9}
-                    >
-                      <Text className={`font-semibold ${isValid ? "text-white" : "text-neutral-500"}`}>
-                        {verifying ? "Verifying…" : "Submit"}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                  <Button
+                    text={verifying ? "Verifying…" : "Submit"}
+                    onPress={handleSubmit(handleSubmitCode)}
+                    disabled={!isValid || verifying}
+                    variant="conversion"
+                  />
 
-                  {/* Tiny helper under actions */}
-                  <View className="mt-3">
-                    <Text className="text-neutral-500 text-xs">
-                      Didn’t get it? Check spam or resend. Your code expires shortly.
+                  <View className="mt-8 items-center gap-4">
+                    <TouchableOpacity onPress={handleSendVerificationCode}>
+                      <Text className={`font-geist font-bold text-sm underline uppercase tracking-widest ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Resend code</Text>
+                    </TouchableOpacity>
+                    
+                    <Text className={`font-inter text-xs text-center px-4 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                      Didn’t get it? Check your spam folder or try resending.
                     </Text>
                   </View>
                 </>
@@ -180,7 +189,7 @@ const EmailVerification = () => {
             </View>
 
             {/* subtle footer space */}
-            <View className="h-8" />
+            <View className="h-10" />
           </View>
         </View>
       </KeyboardAvoidingView>

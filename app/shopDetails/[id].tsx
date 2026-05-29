@@ -1,4 +1,4 @@
-import React, { useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { View, Text, ImageBackground, ScrollView, Image, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -37,17 +37,17 @@ export default function Shop() {
           message: "There was an error fetching the shop information. Please try again later." + error,
           variant: "error"
         })
-      } 
+      }
     };
     fetchShopData();
   }, [id]);
 
   const groupProducts = (products: ProductResponse[]) => {
     const groupedProducts = [];
-        for (let i = 0; i < products?.length; i += 2) {
-          groupedProducts.push(products.slice(i, i + 2));
-        }
-        return groupedProducts;
+    for (let i = 0; i < products?.length; i += 2) {
+      groupedProducts.push(products.slice(i, i + 2));
+    }
+    return groupedProducts;
   }
 
   const handleFollowToggle = async () => {
@@ -89,13 +89,13 @@ export default function Shop() {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
 
         {/* Header with back button */}
-        <View className="flex-row items-center justify-between px-4 py-3 border-b border-[#efe9e7]">
-          <TouchableOpacity onPress={() => router.back()} className="p-2">
-            <ArrowLeft size={24} color="#171311" />
+        <View className="flex-row items-center justify-between px-6 py-4 border-b border-border">
+          <TouchableOpacity onPress={() => router.back()} className="p-1 -ml-1">
+            <ArrowLeft size={24} color="#000000" />
           </TouchableOpacity>
-          <Text className="text-[#171311] text-lg font-bold flex-1 text-center pr-8">Shop</Text>
-          <TouchableOpacity className="p-2">
-            <Share size={24} color="#171311" />
+          <Text className="text-black text-xl font-geist font-bold flex-1 text-center pr-4">Shop</Text>
+          <TouchableOpacity className="p-1">
+            <Share size={24} color="#000000" />
           </TouchableOpacity>
         </View>
 
@@ -104,113 +104,108 @@ export default function Shop() {
           source={{
             uri: shop?.user.profile_picture || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
           }}
-          className="w-full h-56 overflow-hidden bg-[#f4f1f0]"
+          className="w-full h-56 overflow-hidden bg-surface"
           resizeMode="cover"
         />
 
         {/* Profile Section */}
-        <View className="px-4 py-4">
+        <View className="px-6 py-6">
           {/* Profile Picture Overlap */}
-          <View className="flex-row items-end gap-3 mb-4">
+          <View className="flex-row items-end gap-4 mb-6">
             <Image
               source={{
                 uri: shop?.user.profile_picture || defaultProfilePicture,
               }}
-              className="w-24 h-24 rounded-full border-4 border-white bg-[#f4f1f0]"
+              className="w-24 h-24 rounded border-4 border-white bg-surface"
             />
             <View className="flex-1 pb-1">
-              <View className="flex-row items-center gap-2 mb-1">
-                <Text className="text-[#171311] text-xl font-bold">{shop?.shop_name}</Text>
+              <View className="flex-row items-center gap-2">
+                <Text className="text-black text-2xl font-geist font-bold">{shop?.shop_name}</Text>
               </View>
-              <View className="flex-row items-center gap-1 mt-1">
-                <Text className="text-[#e26136] text-sm font-semibold">{shop?.average_rating || 0}</Text>
-                <Text className="text-[#876d64] text-xs bg-[#f4f1f0] px-2 py-1 rounded">
-                  {shop?.verification_status || "Unverified"}
-                </Text>
+              <View className="flex-row items-center gap-2 mt-2">
+                <Text className="text-black text-sm font-geist font-bold">{shop?.average_rating || 0}</Text>
+                <View className="px-2 py-0.5 rounded bg-surface">
+                  <Text className="text-tertiary text-[10px] font-geist font-bold uppercase tracking-wider">
+                    {shop?.verification_status || "Unverified"}
+                  </Text>
+                </View>
               </View>
             </View>
           </View>
 
           {/* Action Buttons */}
-          <View className="flex-row gap-3 mb-4">
+          <View className="flex-row gap-3 mb-6">
             {shop?.user && (shop as any).can_follow !== false && (
-            <TouchableOpacity
-              className={`flex-1 rounded-lg py-3 items-center justify-center ${
-                isFollowing ? "bg-bg-muted" : "bg-primary"
-              }`}
-              onPress={handleFollowToggle}
-              disabled={followLoading}
-            >
-              <Text className={`font-semibold text-sm ${isFollowing ? "text-text-primary" : "text-white"}`}>
-                {followLoading ? "Loading…" : isFollowing ? "Following" : "Follow"}
-              </Text>
-            </TouchableOpacity>
-          )}
+              <TouchableOpacity
+                className={`flex-1 rounded h-12 items-center justify-center ${isFollowing ? "bg-surface" : "bg-primary"
+                  }`}
+                onPress={handleFollowToggle}
+                disabled={followLoading}
+              >
+                <Text className={`font-geist font-bold text-sm ${isFollowing ? "text-black" : "text-white"}`}>
+                  {followLoading ? "Loading…" : isFollowing ? "Following" : "Follow"}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Stats Row */}
-          <View className="flex-row justify-between gap-4 py-3 border-t border-b border-[#efe9e7]">
+          <View className="flex-row justify-between gap-4 py-6 border-t border-b border-border">
             <View className="flex-1 items-center">
-              <Text className="text-[#171311] text-lg font-bold">{shop?.stats.product_count || 0}</Text>
-              <Text className="text-[#876d64] text-xs mt-1">Products</Text>
+              <Text className="text-black text-xl font-geist font-bold">{shop?.stats.product_count || 0}</Text>
+              <Text className="text-tertiary font-inter text-xs mt-1">Products</Text>
             </View>
             <View className="flex-1 items-center">
-              <Text className="text-[#171311] text-lg font-bold">{shop?.stats.post_count || 0}</Text>
-              <Text className="text-[#876d64] text-xs mt-1">Posts</Text>
+              <Text className="text-black text-xl font-geist font-bold">{shop?.stats.post_count || 0}</Text>
+              <Text className="text-tertiary font-inter text-xs mt-1">Posts</Text>
             </View>
             <View className="flex-1 items-center">
-              <Text className="text-[#171311] text-lg font-bold">{shop?.stats.follower_count || 0}</Text>
-              <Text className="text-[#876d64] text-xs mt-1">Followers</Text>
+              <Text className="text-black text-xl font-geist font-bold">{shop?.stats.follower_count || 0}</Text>
+              <Text className="text-tertiary font-inter text-xs mt-1">Followers</Text>
             </View>
           </View>
         </View>
 
         {/* Description */}
         {shop?.description && (
-          <View className="px-4 py-4 border-b border-[#efe9e7]">
-            <Text className="text-[#171311] text-base leading-relaxed">{shop?.description}</Text>
+          <View className="px-6 py-6 border-b border-border">
+            <Text className="text-black font-inter text-base leading-7">{shop?.description}</Text>
           </View>
         )}
 
-      {/* Tabs */}
-      <View className="flex-row border-b border-[#e5dedc] px-4 gap-8">
-        <View className="flex-1 items-center border-b-[3px] border-[#171311] pb-3 pt-4">
-          <Text className="text-[#171311] text-sm font-bold">Products</Text>
+        {/* Tabs */}
+        <View className="flex-row border-b border-border px-6 gap-8">
+          <View className="flex-1 items-center border-b-[2px] border-primary pb-4 pt-6">
+            <Text className="text-black text-sm font-geist font-bold">Products</Text>
+          </View>
+          <View className="flex-1 items-center border-b-[2px] border-transparent pb-4 pt-6">
+            <Text className="text-tertiary text-sm font-geist font-bold">Posts</Text>
+          </View>
         </View>
-        <View className="flex-1 items-center border-b-[3px] border-transparent pb-3 pt-4">
-          <Text className="text-[#876d64] text-sm font-bold">Posts</Text>
-        </View>
-      </View>
 
-      {/* Featured */}
-      <Text className="text-[#171311] text-lg font-bold px-4 pb-2 pt-4">Featured</Text>
+        {/* Featured */}
+        <Text className="text-black text-xl font-geist font-bold px-6 pb-4 pt-8">Featured</Text>
 
-      {groupProducts(shop?.recent_products!).map((item, idx) => (
+        {groupProducts(shop?.recent_products!).map((item, idx) => (
           <ProductDisplayComponent
             key={idx}
             products={item.map(p => ({ ...p, description: p.description ?? "" })) as Product[]}
           />
         ))}
 
-      {/* All Products */}
-      <Text className="text-[#171311] text-lg font-bold px-4 pb-2 pt-4">All Products</Text>
+        {/* All Products */}
+        <Text className="text-black text-xl font-geist font-bold px-6 pb-4 pt-8">All Products</Text>
 
-      <View className="flex-row flex-wrap justify-between px-4">
-        {shopProducts.map((item, i) => (
-          <ProductDisplayComponent
-            key={i}
-            products={item.map(p => ({ ...p, description: p.description ?? "" })) as Product[]}
-          />
-        ))}
-      </View>
+        <View className="px-2">
+          {shopProducts.map((item, i) => (
+            <ProductDisplayComponent
+              key={i}
+              products={item.map(p => ({ ...p, description: p.description ?? "" })) as Product[]}
+            />
+          ))}
+        </View>
 
-      {/* All Posts */}
-      <Text className="text-[#171311] text-lg font-bold px-4 pb-2 pt-4">All Posts</Text>
-
-      {/* <View className="flex-row flex-wrap justify-between px-4">
-        {shop?.recent_posts.map((item, i) => (
-          <PostDisplayComponent key={i} post={{ }} />
-      </View> */}
+        <View className="h-10" />
       </ScrollView>
     </SafeAreaView>
   );

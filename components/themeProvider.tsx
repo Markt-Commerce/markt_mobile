@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { Appearance } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useColorScheme } from "nativewind";
 
 type Theme = "light" | "dark" | "system";
 type Resolved = "light" | "dark";
@@ -23,19 +24,34 @@ export const useTheme = () => {
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [theme, setTheme] = useState<Theme>("system");
-  const system: Resolved = Appearance.getColorScheme() === "dark" ? "dark" : "light";
+  const [systemTheme, setSystemTheme] = useState<Resolved>(
+   Appearance.getColorScheme() === "dark" ? "dark" : "light"
+  );
+  const { setColorScheme } = useColorScheme();
+  const system: Resolved = systemTheme;
   const resolved: Resolved = theme === "system" ? system : theme;
 
   useEffect(() => {
-    (async () => {
-      const saved = await AsyncStorage.getItem(STORAGE_KEY);
-      if (saved === "light" || saved === "dark" || saved === "system") setTheme(saved);
-    })();
+   (async () => {
+     const saved = await AsyncStorage.getItem(STORAGE_KEY);
+     if (saved === "light" || saved === "dark" || saved === "system") setTheme(saved);
+   })();
   }, []);
 
   useEffect(() => {
-    AsyncStorage.setItem(STORAGE_KEY, theme).catch(() => {});
+   const listener = Appearance.addChangeListener(({ colorScheme }) => {
+     setSystemTheme(colorScheme === "dark" ? "dark" : "light");
+   });
+   return () => listener.remove();
+  }, []);
+
+  useEffect(() => {
+   AsyncStorage.setItem(STORAGE_KEY, theme).catch(() => {});
   }, [theme]);
+
+  useEffect(() => {
+   setColorScheme(resolved);
+  }, [resolved, setColorScheme]);
 
   const value = useMemo<Ctx>(
     () => ({

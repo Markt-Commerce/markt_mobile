@@ -26,7 +26,7 @@ export default function SkeletonImage({
     <View className={`relative ${containerClassName}`}>
       {!loaded && (
         <View
-          className="absolute inset-0 bg-bg-muted"
+          className="absolute inset-0 bg-surface"
         />
       )}
       <Image

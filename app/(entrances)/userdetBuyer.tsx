@@ -9,7 +9,7 @@ import {
   Image,
   Alert,
 } from "react-native";
-import { ArrowLeft, Image as ImageIcon } from "lucide-react-native";
+import { ArrowLeft, Image as ImageIcon, Check } from "lucide-react-native";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,6 +24,7 @@ import { useToast } from "../../components/ToastProvider";
 import * as ImagePicker from "expo-image-picker";
 import { useDebouncedCallback } from "../../hooks/useDebouncedCallback";
 import { useWatch } from "react-hook-form";
+import { useTheme } from "../../components/themeProvider";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 const schema = z.object({
@@ -37,6 +38,10 @@ export default function UserInfoScreen() {
   const { regData, setRegData } = useRegData();
   const router = useRouter();
   const { show } =  useToast();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const iconColor = isDark ? "#f0f1f2" : "#000000";
+  const mutedIconColor = isDark ? "#c6c5cf" : "#A1A1AA";
   const [profilePictureUri, setProfilePictureUri] = React.useState<string | null>(null);
   const [usernameStatus, setUsernameStatus] = React.useState<"idle" | "checking" | "available" | "taken">("idle");
   const [usernameMessage, setUsernameMessage] = React.useState("");
@@ -131,11 +136,11 @@ export default function UserInfoScreen() {
   };
 
   const Label = ({ children }: { children: React.ReactNode }) => (
-    <Text className="mb-1 text-[13px] text-[#5f4f4f]">{children}</Text>
+    <Text className={`mb-2 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>{children}</Text>
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -154,56 +159,58 @@ export default function UserInfoScreen() {
         >
           <View className="w-full max-w-[520px]">
             {/* Header */}
-            <View className="flex-row items-center justify-between pb-2">
+            <View className="flex-row items-center justify-between pb-8 pt-4">
               <TouchableOpacity
                 onPress={() => router.back()}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                className="size-12 justify-center items-start"
+                className={`h-10 w-10 items-center justify-center rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
               >
-                <ArrowLeft size={24} color="#181111" />
+                <ArrowLeft size={20} color={iconColor} />
               </TouchableOpacity>
-              <Text className="text-[#181111] text-lg font-bold text-center flex-1 pr-12">
-                Your info
+            </View>
+
+            {/* Title */}
+            <View className="mb-8">
+              <Text className={`text-[32px] font-geist font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                Your{"\n"}profile
+              </Text>
+              <Text className={`font-inter text-base mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                Let's get to know you better.
               </Text>
             </View>
 
             {/* Progress hint */}
-            <View className="flex-row gap-1 items-center justify-center mb-2 px-2">
-              <View className="h-1.5 flex-1 rounded-full bg-[#E94C2A]" />
-              <View className="h-1.5 flex-1 rounded-full bg-[#f0e9e7]" />
-              <View className="h-1.5 flex-1 rounded-full bg-[#f0e9e7]" />
+            <View className="flex-row gap-2 items-center justify-center mb-10 px-2">
+              <View className={`h-1.5 flex-1 rounded ${isDark ? "bg-[#f0f1f2]" : "bg-secondary"}`} />
+              <View className={`h-1.5 flex-1 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`} />
+              <View className={`h-1.5 flex-1 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`} />
             </View>
 
             {/* Card */}
-            <View className="rounded-2xl border border-[#efe9e7] bg-white px-5 py-6">
+            <View className={`rounded border px-6 py-8 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
               {/* Avatar placeholder with image picker */}
-              <View className="items-end mb-2">
+              <View className="items-center mb-10">
                 <TouchableOpacity
                   activeOpacity={0.85}
                   onPress={changeProfilePicture}
-                  className="flex-row items-center gap-2 rounded-full border border-[#e5dedc] bg-white px-3 h-9"
+                  className={`h-24 w-24 rounded border-2 border-dashed items-center justify-center overflow-hidden ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
                 >
                   {profilePictureUri ? (
-                    <Image source={{ uri: profilePictureUri }} className="w-5 h-5 rounded-full" />
+                    <Image source={{ uri: profilePictureUri }} className="w-full h-full" />
                   ) : (
-                    <ImageIcon size={16} color="#876d64" />
+                    <View className="items-center">
+                      <ImageIcon size={32} color={mutedIconColor} />
+                      <Text className={`text-[10px] font-geist font-bold mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>ADD PHOTO</Text>
+                    </View>
                   )}
-                  <Text className="text-[#171311] text-xs font-medium">
-                    {profilePictureUri ? "Change photo" : "Add profile photo"}
-                  </Text>
                 </TouchableOpacity>
               </View>
 
               {/* Name */}
-              <View className="mb-4">
-                <Label>Name</Label>
-                {errors.Buyername ? (
-                  <Text className="mb-1 text-xs text-[#e9242a]">
-                    {errors.Buyername.message as string}
-                  </Text>
-                ) : null}
+              <View className="mb-6">
+                <Label>Full Name</Label>
                 <Input
-                  placeholder="Full name"
+                  placeholder="e.g. John Doe"
                   control={control}
                   name="Buyername"
                   errors={errors}
@@ -212,47 +219,37 @@ export default function UserInfoScreen() {
               </View>
 
               {/* Username — debounced check per REGISTRATION_LOGIN_API §2.2 */}
-              <View className="mb-4">
+              <View className="mb-6">
                 <Label>Username</Label>
-                {errors.username ? (
-                  <Text className="mb-1 text-xs text-[#e9242a]">
-                    {errors.username.message as string}
-                  </Text>
-                ) : usernameStatus === "taken" ? (
-                  <Text className="mb-1 text-xs text-[#e9242a]">{usernameMessage}</Text>
-                ) : usernameStatus === "available" ? (
-                  <Text className="mb-1 text-xs text-green-600">✓ Available</Text>
-                ) : usernameStatus === "checking" ? (
-                  <Text className="mb-1 text-xs text-[#8e7a74]">Checking…</Text>
-                ) : (
-                  <Text className="mb-1 text-xs text-[#8e7a74]">
-                    This will be visible to other users.
-                  </Text>
-                )}
                 <Input
-                  placeholder="Enter username"
+                  placeholder="choose_a_unique_id"
                   control={control}
                   name="username"
                   errors={errors}
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
+                <View className="mt-2 h-4">
+                  {usernameStatus === "taken" ? (
+                    <Text className="text-xs text-error font-inter">{usernameMessage || "Username is already taken"}</Text>
+                  ) : usernameStatus === "available" ? (
+                    <View className="flex-row items-center gap-1">
+                      <Check size={12} color="#178b1f" strokeWidth={3} />
+                      <Text className="text-xs text-success font-inter">Username is available</Text>
+                    </View>
+                  ) : usernameStatus === "checking" ? (
+                    <Text className={`text-xs font-inter italic ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Checking availability...</Text>
+                  ) : (
+                    <Text className={`text-xs font-inter ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>This will be your unique identifier.</Text>
+                  )}
+                </View>
               </View>
 
               {/* Phone Number */}
-              <View className="mb-1">
-                <Label>Phone number</Label>
-                {errors.phone_number ? (
-                  <Text className="mb-1 text-xs text-[#e9242a]">
-                    {errors.phone_number.message as string}
-                  </Text>
-                ) : (
-                  <Text className="mb-1 text-xs text-[#8e7a74]">
-                    We’ll use this for order updates.
-                  </Text>
-                )}
+              <View className="mb-10">
+                <Label>Phone Number</Label>
                 <Input
-                  placeholder="Enter phone number"
+                  placeholder="+1 (555) 000-0000"
                   control={control}
                   name="phone_number"
                   errors={errors}
@@ -262,17 +259,16 @@ export default function UserInfoScreen() {
               </View>
 
               {/* CTA — disable if username taken */}
-              <View className="mt-6">
-                <Button
-                  onPress={handleSubmit(handleSubmitForm)}
-                  disabled={!isValid || usernameStatus === "taken" || usernameStatus === "checking"}
-                  text="Next"
-                />
-              </View>
+              <Button
+                onPress={handleSubmit(handleSubmitForm)}
+                disabled={!isValid || usernameStatus === "taken" || usernameStatus === "checking"}
+                text="Continue"
+                variant="primary"
+              />
             </View>
 
             {/* Bottom spacer */}
-            <View className="h-6" />
+            <View className="h-10" />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

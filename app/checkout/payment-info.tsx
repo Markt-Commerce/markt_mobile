@@ -3,11 +3,14 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, Switch } from "rea
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft, ChevronsUpDown } from "lucide-react-native";
+import { useTheme } from "../../components/themeProvider";
 
 
 
 export default function PaymentInfo() {
   const router = useRouter();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   const [useLinkedPhone, setUseLinkedPhone] = useState(false);
   const [useLinkedEmail, setUseLinkedEmail] = useState(false);
@@ -24,16 +27,16 @@ export default function PaymentInfo() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white justify-between">
+    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}>
       <ScrollView>
 
         
         {/* Header */}
-        <View className="flex-row items-center bg-white p-4 pb-2 justify-between">
+        <View className={`flex-row items-center p-4 pb-2 justify-between ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
           <TouchableOpacity onPress={() => router.back()} className="size-12 items-center justify-center">
-            <ArrowLeft size={24} color="#171311" />
+            <ArrowLeft size={24} color={isDark ? "#f0f1f2" : "#000000"} />
           </TouchableOpacity>
-          <Text className="text-[#171311] text-lg font-bold text-center flex-1 pr-12">
+          <Text className={`text-lg font-geist font-bold text-center flex-1 pr-12 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
             Direct from Account
           </Text>
         </View>
@@ -42,10 +45,10 @@ export default function PaymentInfo() {
         <View className="px-4 py-3">
           <TextInput
             placeholder="Account Number"
-            placeholderTextColor="#876d64"
+            placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
             value={accountNumber}
             onChangeText={setAccountNumber}
-            className="w-full bg-[#f4f1f0] text-[#171311] rounded-lg h-14 p-4 text-base"
+            className={`w-full rounded h-14 p-4 text-base ${isDark ? "bg-[#2f3132] text-[#f0f1f2]" : "bg-surface text-black"}`}
           />
         </View>
 
@@ -53,23 +56,23 @@ export default function PaymentInfo() {
         <View className="px-4 py-3">
           <TextInput
             placeholder="Phone Number"
-            placeholderTextColor="#876d64"
+            placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
             value={phoneNumber}
             onChangeText={setPhoneNumber}
-            className="w-full bg-[#f4f1f0] text-[#171311] rounded-lg h-14 p-4 text-base"
+            className={`w-full rounded h-14 p-4 text-base ${isDark ? "bg-[#2f3132] text-[#f0f1f2]" : "bg-surface text-black"}`}
           />
         </View>
 
         {/* Use App-linked Phone */}
         <View className="flex-row items-center justify-between px-4 py-3">
-          <Text className="text-[#171311] text-base flex-1">
+          <Text className={`text-base flex-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
             Use app-linked phone number
           </Text>
           <Switch
             value={useLinkedPhone}
             onValueChange={setUseLinkedPhone}
-            trackColor={{ false: "#f4f1f0", true: "#e26136" }}
-            thumbColor="#ffffff"
+            trackColor={{ false: isDark ? "#46464e" : "#E4E4E7", true: "#000000" }}
+            thumbColor={isDark ? "#f0f1f2" : "#FFFFFF"}
           />
         </View>
 
@@ -77,48 +80,48 @@ export default function PaymentInfo() {
         <View className="px-4 py-3">
           <TextInput
             placeholder="Email"
-            placeholderTextColor="#876d64"
+            placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
             value={email}
             onChangeText={setEmail}
-            className="w-full bg-[#f4f1f0] text-[#171311] rounded-lg h-14 p-4 text-base"
+            className={`w-full rounded h-14 p-4 text-base ${isDark ? "bg-[#2f3132] text-[#f0f1f2]" : "bg-surface text-black"}`}
           />
         </View>
 
         {/* Use App-linked Email */}
         <View className="flex-row items-center justify-between px-4 py-3">
-          <Text className="text-[#171311] text-base flex-1">
+          <Text className={`text-base flex-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
             Use app-linked email address
           </Text>
           <Switch
             value={useLinkedEmail}
             onValueChange={setUseLinkedEmail}
-            trackColor={{ false: "#f4f1f0", true: "#e26136" }}
-            thumbColor="#ffffff"
+            trackColor={{ false: isDark ? "#46464e" : "#E4E4E7", true: "#000000" }}
+            thumbColor={isDark ? "#f0f1f2" : "#FFFFFF"}
           />
         </View>
 
         {/* Select Bank */}
         <View className="px-4 py-3">
-          <View className="flex-row items-center bg-[#f4f1f0] rounded-lg h-14 overflow-hidden">
+          <View className={`flex-row items-center rounded h-14 overflow-hidden ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
             <TextInput
               placeholder="Select Bank"
-              placeholderTextColor="#876d64"
+              placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
               value={bank}
               onChangeText={setBank}
-              className="flex-1 text-[#171311] h-14 p-4 text-base"
+              className={`flex-1 h-14 p-4 text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
             />
             <View className="pr-4">
-              <ChevronsUpDown size={24} color="#876d64" />
+              <ChevronsUpDown size={24} color={isDark ? "#c6c5cf" : "#71717A"} />
             </View>
           </View>
         </View>
       </ScrollView>
 
       {/* Pay Button */}
-      <View className="px-4 py-3">
+      <View className={`px-4 py-3 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
         <TouchableOpacity
           onPress={() => router.push("/checkout/confirmation")}
-          className="flex items-center justify-center bg-[#e26136] h-12 rounded-lg"
+          className="flex items-center justify-center bg-primary h-12 rounded"
         >
           <Text className="text-white text-base font-bold tracking-[0.015em]">
             Pay
@@ -126,7 +129,7 @@ export default function PaymentInfo() {
         </TouchableOpacity>
       </View>
 
-      <View className="h-5 bg-white" />
+      <View className={`h-5 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`} />
     </SafeAreaView>
   );
 }

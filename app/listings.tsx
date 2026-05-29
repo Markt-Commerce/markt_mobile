@@ -33,39 +33,39 @@ export default function ListingsScreen() {
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-[#fcf8f8]">
+    <SafeAreaView className="flex-1 bg-white">
       {/* Header */}
-      <View className="px-4 pt-12 pb-3 bg-[#fcf8f8]">
-        <Text className="text-2xl font-bold text-[#1b0e0e]">Listings</Text>
+      <View className="px-4 pt-12 pb-3 bg-white">
+        <Text className="text-2xl font-geist font-bold text-black">Listings</Text>
       </View>
 
       {/* Search Bar */}
       <View className="flex-row items-center px-4 pb-3">
-        <View className="flex-row items-center bg-[#f3e7e8] flex-1 rounded-lg h-12 px-4">
-          <Search size={18} color="#994d51" />
+        <View className="flex-row items-center bg-surface flex-1 rounded h-12 px-4">
+          <Search size={18} color="#71717A" />
           <TextInput
             placeholder="Search listings"
-            placeholderTextColor="#994d51"
-            className="ml-2 flex-1 text-[#1b0e0e] text-base"
+            placeholderTextColor="#A1A1AA"
+            className="ml-2 flex-1 text-black text-base"
           />
         </View>
-        <TouchableOpacity className="ml-3 h-12 px-4 rounded-lg bg-[#ea2832] justify-center items-center">
-          <Text className="text-sm text-[#fcf8f8] font-medium">Search</Text>
+        <TouchableOpacity className="ml-3 h-12 px-4 rounded bg-primary justify-center items-center">
+          <Text className="text-sm text-white font-medium">Search</Text>
         </TouchableOpacity>
       </View>
 
       {/* Listings */}
       <ScrollView className="flex-1 px-4">
         {listings.map((item) => (
-          <View key={item.id} className="mb-4 rounded-xl overflow-hidden bg-white shadow">
+          <View key={item.id} className="mb-4 rounded overflow-hidden bg-white border border-border">
             <ImageBackground
               source={{ uri: item.image }}
-              className="h-48 w-full bg-cover"
-              imageStyle={{ borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
+              className="h-48 w-full bg-cover bg-surface"
+              imageStyle={{ borderTopLeftRadius: 8, borderTopRightRadius: 8 }}
             />
             <View className="p-4">
-              <Text className="text-lg font-semibold text-[#1b0e0e]">{item.title}</Text>
-              <Text className="text-[#994d51] mt-1 font-medium">{item.price}</Text>
+              <Text className="text-lg font-geist font-semibold text-black">{item.title}</Text>
+              <Text className="text-tertiary mt-1 font-medium">{item.price}</Text>
             </View>
           </View>
         ))}
