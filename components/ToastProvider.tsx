@@ -17,9 +17,9 @@ export const useToast = () => {
 };
 
 const variantUI = {
-  error: { icon: AlertCircle, container: "bg-red-50 border-red-200", title: "text-red-900", message: "text-red-700" },
-  success:{ icon: CheckCircle2, container: "bg-emerald-50 border-emerald-200", title: "text-emerald-900", message: "text-emerald-700" },
-  info:  { icon: Info, container: "bg-sky-50 border-sky-200", title: "text-sky-900", message: "text-sky-700" },
+  error: { icon: AlertCircle, container: "bg-error-bg border-error/20", title: "text-error", message: "text-error/80" },
+  success:{ icon: CheckCircle2, container: "bg-success/10 border-success/20", title: "text-success", message: "text-success/80" },
+  info:  { icon: Info, container: "bg-surface border-border", title: "text-black", message: "text-tertiary" },
 } as const;
 
 const ToastBubble = ({ item, onClose, index }: { item: ToastItem; onClose: (id: string) => void; index: number }) => {
@@ -51,18 +51,18 @@ const ToastBubble = ({ item, onClose, index }: { item: ToastItem; onClose: (id: 
     <Animated.View
       pointerEvents="auto"
       style={{ opacity, transform: [{ translateY }], zIndex: 1000 - index }}
-      className={`mx-4 mt-2 rounded-2xl border ${v.container} shadow-sm`}
+      className={`mx-6 mt-3 rounded border ${v.container} shadow-sm bg-white`}
     >
-      <View className="flex-row items-start px-4 py-3">
+      <View className="flex-row items-start px-5 py-4">
         <View className="mt-0.5 mr-3">
-          <Icon size={20} color="#0f172a" />
+          <Icon size={20} color={item.variant === 'error' ? '#ba1a1a' : item.variant === 'success' ? '#178b1f' : '#000000'} strokeWidth={1.5} />
         </View>
         <View className="flex-1">
-          {!!item.title && <Text className={`font-semibold ${v.title}`}>{item.title}</Text>}
-          {!!item.message && <Text className={`mt-0.5 ${v.message}`}>{item.message}</Text>}
+          {!!item.title && <Text className={`font-geist font-bold text-sm ${v.title}`}>{item.title}</Text>}
+          {!!item.message && <Text className={`mt-1 font-inter text-xs leading-5 ${v.message}`}>{item.message}</Text>}
         </View>
-        <TouchableOpacity onPress={handleClose} className="ml-3 p-1 active:opacity-70">
-          <X size={18} color="#0f172a" />
+        <TouchableOpacity onPress={handleClose} className="ml-4 p-1 active:opacity-70">
+          <X size={18} color="#71717A" strokeWidth={1.5} />
         </TouchableOpacity>
       </View>
     </Animated.View>

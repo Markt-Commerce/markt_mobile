@@ -26,17 +26,20 @@ import { getAllCategories } from "../services/sections/categories";
 import type { Niches } from "../models/niches";
 import type { Category } from "../models/categories";
 import { useToast } from "../components/ToastProvider";
+import { useTheme } from "../components/themeProvider";
 
 function NicheCard({
   niche,
   onPress,
   onJoin,
   joining,
+  isDark,
 }: {
   niche: Niches;
   onPress: () => void;
   onJoin: () => void;
   joining: boolean;
+  isDark: boolean;
 }) {
   const visibilityLabel =
     niche.visibility === "public"
@@ -48,24 +51,24 @@ function NicheCard({
           : (niche.visibility as string) ?? "Public";
 
   return (
-    <View className="mx-4 mb-3 bg-white rounded-2xl overflow-hidden border border-[#efe9e7] flex-row p-4">
+    <View className={`mx-4 mb-4 rounded overflow-hidden border flex-row p-4 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
       <TouchableOpacity onPress={onPress} activeOpacity={0.9} className="flex-1 flex-row">
-        <View className="w-14 h-14 rounded-xl bg-[#f5f2f1] justify-center items-center">
-          <Text className="text-2xl">{(niche.name ?? "").charAt(0).toUpperCase() || "?"}</Text>
+        <View className={`w-14 h-14 rounded justify-center items-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+          <Text className={`text-2xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{(niche.name ?? "").charAt(0).toUpperCase() || "?"}</Text>
         </View>
         <View className="flex-1 ml-4">
-          <Text className="font-semibold text-[#111418] text-base" numberOfLines={1}>
+          <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
             {niche.name ?? "Unnamed"}
           </Text>
-          <Text className="text-xs text-[#876d64] mt-0.5" numberOfLines={2}>
+          <Text className={`font-inter text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={2}>
             {niche.description ?? ""}
           </Text>
-          <View className="flex-row gap-4 mt-2 flex-wrap">
-            <Text className="text-xs text-[#876d64]">
+          <View className="flex-row gap-3 mt-3 flex-wrap items-center">
+            <Text className={`font-inter text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
               {niche.member_count ?? 0} members · {niche.post_count ?? 0} posts
             </Text>
-            <View className="px-2 py-0.5 rounded bg-[#f5f2f1]">
-              <Text className="text-xs text-[#876d64]">{visibilityLabel}</Text>
+            <View className={`px-2 py-0.5 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+              <Text className={`font-geist font-medium text-[10px] uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{visibilityLabel}</Text>
             </View>
           </View>
         </View>
@@ -73,14 +76,14 @@ function NicheCard({
       <TouchableOpacity
         onPress={onJoin}
         disabled={joining}
-        className="self-center ml-3 px-4 py-2 rounded-full bg-primary min-h-[36px] justify-center"
+        className="self-center ml-3 px-5 py-2 rounded bg-primary min-h-[36px] justify-center"
         accessibilityRole="button"
         accessibilityLabel="Join community"
       >
         {joining ? (
           <ActivityIndicator size="small" color="white" />
         ) : (
-          <Text className="text-white font-semibold text-sm">Join</Text>
+          <Text className="text-white font-geist font-semibold text-sm">Join</Text>
         )}
       </TouchableOpacity>
     </View>
@@ -90,6 +93,8 @@ function NicheCard({
 export default function DiscoverNichesScreen() {
   const router = useRouter();
   const { show } = useToast();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const [niches, setNiches] = useState<Niches[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -179,45 +184,45 @@ export default function DiscoverNichesScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-      <View className="flex-row items-center px-4 py-3 border-b border-border">
+    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top"]}>
+      <View className={`flex-row items-center px-6 py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
         <TouchableOpacity
           onPress={() => router.back()}
-          className="p-2 -ml-2"
+          className="p-1 -ml-1"
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={24} color="#171311" />
+          <ArrowLeft size={24} color={isDark ? "#f0f1f2" : "#000000"} />
         </TouchableOpacity>
-        <Text className="flex-1 text-xl font-bold text-text-primary text-center pr-10">
+        <Text className={`flex-1 text-xl font-geist font-bold text-center pr-8 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
           Discover Communities
         </Text>
       </View>
 
-      <View className="px-4 py-3 flex-row items-center bg-bg-muted rounded-xl mx-4 mt-3">
-        <Search size={20} color="#876d64" />
+      <View className={`px-4 py-3 flex-row items-center rounded mx-6 mt-4 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+        <Search size={20} color={isDark ? "#c6c5cf" : "#71717A"} />
         <TextInput
-          className="ml-3 flex-1 text-text-primary text-base"
+          className={`ml-3 flex-1 font-inter text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
           placeholder="Search communities..."
-          placeholderTextColor="#876d64"
+          placeholderTextColor={isDark ? "#c6c5cf" : "#71717A"}
           value={search}
           onChangeText={setSearch}
         />
       </View>
 
       {categories.length > 0 && (
-        <View className="border-b border-border pb-1 mb-2">
+        <View className="pb-1 mb-2 mt-2">
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 16 }}
+            contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 12, gap: 12 }}
           >
             <TouchableOpacity
               onPress={() => setSelectedCategory(null)}
-              className="py-2 px-3 min-h-[40px] justify-center rounded-full bg-bg-muted"
+              className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === null ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-surface"}`}
             >
               <Text
-                className={`font-semibold text-sm ${selectedCategory === null ? "text-text-primary" : "text-text-secondary"}`}
+                className={`font-geist font-semibold text-sm ${selectedCategory === null ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
               >
                 All
               </Text>
@@ -226,10 +231,10 @@ export default function DiscoverNichesScreen() {
               <TouchableOpacity
                 key={c.id}
                 onPress={() => setSelectedCategory(c.id)}
-                className="py-2 px-3 min-h-[40px] justify-center rounded-full bg-bg-muted"
+                className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === c.id ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-surface"}`}
               >
                 <Text
-                  className={`font-semibold text-sm ${selectedCategory === c.id ? "text-text-primary" : "text-text-secondary"}`}
+                  className={`font-geist font-semibold text-sm ${selectedCategory === c.id ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
                 >
                   {c.name}
                 </Text>
@@ -241,13 +246,13 @@ export default function DiscoverNichesScreen() {
 
       {loading ? (
         <View className="flex-1 justify-center items-center py-16">
-          <ActivityIndicator size="large" color="#e26136" />
-          <Text className="text-text-secondary text-sm mt-2">Loading communities…</Text>
+          <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+          <Text className={`text-sm mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading communities…</Text>
         </View>
       ) : niches.length === 0 ? (
         <View className="flex-1 justify-center items-center px-6 py-16">
-          <Text className="text-text-primary font-semibold text-lg text-center">No communities found</Text>
-          <Text className="text-text-secondary text-sm mt-2 text-center">
+          <Text className={`font-semibold text-lg text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>No communities found</Text>
+          <Text className={`text-sm mt-2 text-center ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
             Try a different search or filter.
           </Text>
         </View>
@@ -261,15 +266,16 @@ export default function DiscoverNichesScreen() {
               onPress={() => router.push(`/niches/${item.id}`)}
               onJoin={() => handleJoin(item.id)}
               joining={joiningId === item.id}
+              isDark={isDark}
             />
           )}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "#f0f1f2" : "#000000"} />}
           ListFooterComponent={
             loadingMore ? (
               <View className="py-6 items-center">
-                <ActivityIndicator size="small" color="#e26136" />
+                <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
               </View>
             ) : null
           }

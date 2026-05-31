@@ -5,6 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Search } from "lucide-react-native";
@@ -16,6 +17,7 @@ import {
 } from "../../services/sections/orders";
 import { OrderItem, SellerOrderItem } from "../../models/orders";
 import { Seller } from "../../models/search";
+import { useTheme } from "../../components/themeProvider";
 
 type OrderStatus = "pending" | "shipped" | "delivered" | "canceled";
 
@@ -26,6 +28,8 @@ export default function SellerOrders() {
     "latest"
   );
   const [refreshKey, setRefreshKey] = useState(0);
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   const pageSize = 10;
 
@@ -124,18 +128,16 @@ export default function SellerOrders() {
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.85}
-      className={`h-9 px-3 rounded-full items-center justify-center border ${
+      className={`h-9 px-4 rounded items-center justify-center border ${
         active
-          ? "bg-[#e26136] border-[#e26136]"
-          : "bg-white border-[#e5dedc]"
+          ? "bg-primary border-primary"
+          : isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"
       }`}
     >
       <Text
-        className={
-          active
-            ? "text-white font-semibold"
-            : "text-[#171311] font-medium"
-        }
+        className={`text-xs font-geist font-bold ${
+          active ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"
+        }`}
       >
         {children}
       </Text>
@@ -145,40 +147,40 @@ export default function SellerOrders() {
   const SortBtn = ({ label, v }: { label: string; v: typeof sort }) => (
     <TouchableOpacity
       onPress={() => setSort(v)}
-      className={`h-9 px-3 rounded-full border ${
+      className={`h-9 px-4 rounded border ${
         sort === v
-          ? "bg-[#f5f2f1] border-[#e5dedc]"
-          : "bg-white border-[#e5dedc]"
+          ? "bg-primary border-primary"
+          : isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"
       } items-center justify-center`}
       activeOpacity={0.85}
     >
-      <Text className="text-[#171311] text-xs font-medium">{label}</Text>
+      <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${sort === v ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{label}</Text>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
       {/* Header */}
-      <View className="px-4 pt-2 pb-3 border-b border-[#efe9e7]">
-        <Text className="text-lg font-extrabold text-[#171311]">
+      <View className={`px-6 py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+        <Text className={`text-xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
           Shop Orders
         </Text>
-        <Text className="text-xs text-[#876d64] mt-0.5">
+        <Text className={`text-xs font-inter mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
           Manage and fulfill customer orders
         </Text>
       </View>
 
       {/* Search + Filters */}
-      <View className="px-4 pt-3">
+      <View className="px-6 pt-6">
         {/* Search */}
-        <View className="flex-row items-center rounded-full overflow-hidden border border-[#e5dedc]">
-          <View className="bg-[#f4f1f0] h-11 w-11 items-center justify-center">
-            <Search size={18} color="#876d64" />
+        <View className={`flex-row items-center rounded overflow-hidden border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
+          <View className="w-12 items-center justify-center">
+            <Search size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
           </View>
           <TextInput
-            className="flex-1 h-11 bg-[#f4f1f0] px-4 text-[#171311]"
+            className={`flex-1 h-11 px-3 font-inter text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
             placeholder="Search product name"
-            placeholderTextColor="#9a8a85"
+            placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
             value={query}
             onChangeText={setQuery}
             returnKeyType="search"
@@ -186,32 +188,38 @@ export default function SellerOrders() {
         </View>
 
         {/* Status pills */}
-        <View className="flex-row flex-wrap gap-2 mt-3">
-          <Pill active={status === "all"} onPress={() => setStatus("all")}>
-            All
-          </Pill>
-          <Pill active={status === "pending"} onPress={() => setStatus("pending")}>
-            Pending
-          </Pill>
-          <Pill active={status === "shipped"} onPress={() => setStatus("shipped")}>
-            Shipped
-          </Pill>
-          <Pill
-            active={status === "delivered"}
-            onPress={() => setStatus("delivered")}
+        <View className="mt-4">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 8 }}
           >
-            Delivered
-          </Pill>
-          <Pill
-            active={status === "canceled"}
-            onPress={() => setStatus("canceled")}
-          >
-            Canceled
-          </Pill>
+            <Pill active={status === "all"} onPress={() => setStatus("all")}>
+              All
+            </Pill>
+            <Pill active={status === "pending"} onPress={() => setStatus("pending")}>
+              Pending
+            </Pill>
+            <Pill active={status === "shipped"} onPress={() => setStatus("shipped")}>
+              Shipped
+            </Pill>
+            <Pill
+              active={status === "delivered"}
+              onPress={() => setStatus("delivered")}
+            >
+              Delivered
+            </Pill>
+            <Pill
+              active={status === "canceled"}
+              onPress={() => setStatus("canceled")}
+            >
+              Canceled
+            </Pill>
+          </ScrollView>
         </View>
 
         {/* Sort */}
-        <View className="flex-row gap-2 mt-3">
+        <View className="flex-row gap-3 mt-4">
           <SortBtn label="Latest" v="latest" />
           <SortBtn label="Price ↑" v="price_asc" />
           <SortBtn label="Price ↓" v="price_desc" />
@@ -219,7 +227,7 @@ export default function SellerOrders() {
       </View>
 
       {/* Orders */}
-      <View className="flex-1 mt-2">
+      <View className="flex-1 mt-4">
         <OrdersList
           key={listKey}
           fetchOrders={fetchSellerOrders}

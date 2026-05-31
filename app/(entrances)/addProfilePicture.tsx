@@ -11,10 +11,15 @@ import { Camera } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { uploadProfilePicture } from "../../services/sections/auth";
 import { useToast } from "../../components/ToastProvider";
+import Button from "../../components/button";
+import { useTheme } from "../../components/themeProvider";
 
 export default function AddProfilePictureScreen() {
   const router = useRouter();
   const { show } = useToast();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const iconColor = isDark ? "#c6c5cf" : "#A1A1AA";
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -57,45 +62,46 @@ export default function AddProfilePictureScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
       <View className="flex-1 items-center justify-center px-6">
-        <Text className="text-[#171212] text-xl font-bold text-center mb-2">
-          Add your profile picture
+        <Text className={`text-[32px] font-geist font-bold text-center leading-tight mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          Profile picture
         </Text>
-        <Text className="text-[#876d64] text-sm text-center mb-8">
-          Help others recognize you. You can skip and add one later.
+        <Text className={`font-inter text-sm text-center mb-12 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          Help others recognize you on Markt.{"\n"}You can change this later in settings.
         </Text>
 
         <TouchableOpacity
           onPress={pickImage}
           activeOpacity={0.85}
-          className="w-36 h-36 rounded-full bg-bg-muted border-2 border-dashed border-[#d5cfcd] items-center justify-center mb-8"
+          className={`w-48 h-48 rounded border-2 border-dashed items-center justify-center mb-12 overflow-hidden shadow-sm ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
         >
           {imageUri ? (
-            <Image source={{ uri: imageUri }} className="w-full h-full rounded-full" resizeMode="cover" />
+            <Image source={{ uri: imageUri }} className="w-full h-full" resizeMode="cover" />
           ) : (
-            <Camera size={48} color="#876d64" />
+            <View className="items-center">
+              <Camera size={48} color={iconColor} strokeWidth={1.5} />
+              <Text className={`text-[10px] font-geist font-bold mt-2 tracking-widest ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>TAP TO UPLOAD</Text>
+            </View>
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={handleContinue}
-          disabled={uploading}
-          className="w-full max-w-[320px] h-12 rounded-full bg-primary items-center justify-center mb-3"
-        >
-          {uploading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text className="text-white font-bold text-base">{imageUri ? "Continue" : "Choose photo"}</Text>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleSkip}
-          disabled={uploading}
-          className="w-full max-w-[320px] h-12 rounded-full bg-bg-muted items-center justify-center"
-        >
-          <Text className="text-text-primary font-semibold text-base">Skip for now</Text>
-        </TouchableOpacity>
+        <View className="w-full max-w-[320px] gap-4">
+          <Button
+            text={imageUri ? "Continue" : "Choose photo"}
+            onPress={handleContinue}
+            loading={uploading}
+            variant="conversion"
+          />
+          
+          <TouchableOpacity
+            onPress={handleSkip}
+            disabled={uploading}
+            className="h-12 items-center justify-center"
+          >
+            <Text className={`font-inter font-semibold text-sm underline ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Skip for now</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );

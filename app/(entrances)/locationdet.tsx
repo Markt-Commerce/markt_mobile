@@ -13,12 +13,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useToast } from "../../components/ToastProvider";
 import * as Location from 'expo-location';
 import { registerUser } from "../../services/sections/auth";
+import Button from "../../components/button";
+import { useTheme } from "../../components/themeProvider";
 
 export default function AddAddressScreen() {
   const { show } = useToast();
   const router = useRouter();
   const { setUser, setRole } = useUser();
   const { regData, setRegData } = useRegData();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const iconColor = isDark ? "#f0f1f2" : "#000000";
   const [location, setLocation] = React.useState<Location.LocationObject | null>(null);
   const [geocoding, setGeocoding] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -135,92 +140,109 @@ export default function AddAddressScreen() {
     }
   };
 
+  const Label = ({ children }: { children: React.ReactNode }) => (
+    <Text className={`mb-2 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>{children}</Text>
+  );
+
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <ScrollView className="flex-1 bg-white px-4" contentContainerStyle={{ justifyContent: 'space-between', flexGrow: 1 }}>
+    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
+      <ScrollView 
+        className="flex-1" 
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View className="w-full max-w-[480px] mx-auto">
-          <View className="flex-row items-center justify-between pb-2 pt-4">
-            <View className="size-12 justify-center">
-              <ArrowLeft color="#171212" size={24} />
-            </View>
-          <Text className="text-[#171212] text-lg font-bold text-center pr-12 flex-1">
-            Add Address
-          </Text>
+          {/* Header */}
+          <View className="flex-row items-center justify-between pb-8 pt-4 px-6">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className={`h-10 w-10 items-center justify-center rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
+            >
+              <ArrowLeft color={iconColor} size={20} />
+            </TouchableOpacity>
+            <Text className={`text-xl font-geist font-bold text-center flex-1 pr-10 ${isDark ? "text-[#f0f1f2]" : "text-[#000000]"}`}>
+              Your location
+            </Text>
           </View>
 
-          <Text className="text-[#171212] text-[22px] font-bold leading-tight text-left pb-3 pt-5">
-            Where are you located?
-          </Text>
+          {/* Progress hint */}
+          <View className="flex-row gap-2 items-center justify-center mb-10 px-10">
+            <View className={`h-1.5 flex-1 rounded ${isDark ? "bg-[#f0f1f2]" : "bg-secondary"}`} />
+            <View className={`h-1.5 flex-1 rounded ${isDark ? "bg-[#f0f1f2]" : "bg-secondary"}`} />
+            <View className={`h-1.5 flex-1 rounded ${isDark ? "bg-[#f0f1f2]" : "bg-secondary"}`} />
+          </View>
 
-          <TouchableOpacity
-            className="min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#f4f1f1] text-[#171212] text-sm font-bold mb-4"
-            onPress={useCurrentLocation}
-            disabled={geocoding}
-          >
-            {geocoding ? <ActivityIndicator size="small" color="#171212" /> : <Text className="truncate">Use Current Location</Text>}
-          </TouchableOpacity>
+          <View className="px-4">
+            <View className={`rounded border px-6 py-8 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+              <Text className={`text-[24px] font-geist font-bold leading-tight mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                Where are you based?
+              </Text>
+              <Text className={`font-inter text-sm mb-8 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                This helps us show you relevant products and calculate shipping.
+              </Text>
 
-          <View className="gap-4">
-            <View>
-              <Text className="text-[#171212] text-base font-medium pb-2">Street Address</Text>
-              <Input placeholder="Street Address" control={control} name="street" errors={errors} />
-              {errors.street && <Text className="text-[#e9242a] text-xs font-medium mb-1">{errors.street.message as string}</Text>}
-              {location && !geocoding && (
-                <Text className="text-sm text-gray-500 mt-1">Detected: {location.coords.latitude.toFixed(4)}, {location.coords.longitude.toFixed(4)}</Text>
-              )}
-            </View>
+              <TouchableOpacity
+                className={`flex-row items-center justify-center rounded h-11 px-6 border mb-8 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+                onPress={useCurrentLocation}
+                disabled={geocoding}
+              >
+                {geocoding ? <ActivityIndicator size="small" color={iconColor} /> : <Text className={`font-geist font-bold text-xs tracking-widest uppercase ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Use Current Location</Text>}
+              </TouchableOpacity>
 
-            <View>
-              <Text className="text-[#171212] text-base font-medium pb-2">House Number</Text>
-              <Input placeholder="House Number" control={control} name="house_number" errors={errors} />
-              {errors.house_number && <Text className="text-[#e9242a] text-xs font-medium mb-1">{errors.house_number.message as string}</Text>}
-            </View>
+              <View className="gap-6">
+                <View>
+                  <Label>Street Address</Label>
+                  <Input placeholder="123 Main St" control={control} name="street" errors={errors} />
+                  {location && !geocoding && (
+                    <Text className={`text-[10px] font-inter mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Detected near you</Text>
+                  )}
+                </View>
 
-            <View>
-              <Text className="text-[#171212] text-base font-medium pb-2">City</Text>
-              <Input placeholder="City" control={control} name="city" errors={errors} />
-              {errors.city && <Text className="text-[#e9242a] text-xs font-medium mb-1">{errors.city.message as string}</Text>}
-            </View>
+                <View className="flex-row gap-4">
+                  <View className="flex-1">
+                    <Label>House No.</Label>
+                    <Input placeholder="A-1" control={control} name="house_number" errors={errors} />
+                  </View>
+                  <View className="flex-[2]">
+                    <Label>Postal Code</Label>
+                    <Input placeholder="10001" control={control} name="postal_code" errors={errors} />
+                  </View>
+                </View>
 
-            <View>
-              <Text className="text-[#171212] text-base font-medium pb-2">State</Text>
-              <Input placeholder="State" control={control} name="state" errors={errors} />
-              {errors.state && <Text className="text-[#e9242a] text-xs font-medium mb-1">{errors.state.message as string}</Text>}
-            </View>
+                <View>
+                  <Label>City</Label>
+                  <Input placeholder="New York" control={control} name="city" errors={errors} />
+                </View>
 
-            <View>
-              <Text className="text-[#171212] text-base font-medium pb-2">Country</Text>
-              <Input placeholder="Country" control={control} name="country" errors={errors} />
-              {errors.country && <Text className="text-[#e9242a] text-xs font-medium mb-1">{errors.country.message as string}</Text>}
-            </View>
+                <View>
+                  <Label>State / Region</Label>
+                  <Input placeholder="NY" control={control} name="state" errors={errors} />
+                </View>
 
-            <View>
-              <Text className="text-[#171212] text-base font-medium pb-2">Postal Code</Text>
-              <Input placeholder="Postal Code" control={control} name="postal_code" errors={errors} />
+                <View className="mb-4">
+                  <Label>Country</Label>
+                  <Input placeholder="United States" control={control} name="country" errors={errors} />
+                </View>
+              </View>
+
+              <View className="mt-6 gap-3">
+                <Button
+                  onPress={handleSubmit(onSubmit)}
+                  disabled={isFormSubmitting || isSubmitting}
+                  text="Save & Finish"
+                  variant="conversion"
+                />
+                <TouchableOpacity
+                  className="h-12 items-center justify-center"
+                  onPress={onSkip}
+                  disabled={isSubmitting}
+                >
+                  <Text className={`font-inter text-sm underline ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Skip for now</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-
-        <View className="w-full max-w-[480px] mx-auto py-4 gap-3">
-          <TouchableOpacity
-            className="min-w-[84px] items-center justify-center rounded-full h-12 px-5 bg-primary"
-            onPress={handleSubmit(onSubmit)}
-            disabled={isFormSubmitting || isSubmitting}
-            accessibilityRole="button"
-            accessibilityLabel="Save address"
-          >
-            <Text className="text-white text-base font-bold">{isSubmitting ? "Saving…" : "Save"}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="min-w-[84px] items-center justify-center rounded-full h-12 px-5 bg-bg-muted"
-            onPress={onSkip}
-            disabled={isSubmitting}
-            accessibilityRole="button"
-            accessibilityLabel="Skip and continue without address"
-          >
-            <Text className="text-text-primary text-base font-semibold">{isSubmitting ? "Processing…" : "Skip"}</Text>
-          </TouchableOpacity>
-          <View className="h-5" />
         </View>
       </ScrollView>
     </SafeAreaView>
