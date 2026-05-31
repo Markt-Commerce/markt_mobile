@@ -13,19 +13,16 @@ import { SellerAnalyticsOverview, SellerAnalyticsTimeseries } from '../../models
 import { ProductResponse } from '../../models/products';
 import { OrderItem, SellerOrderItem } from '../../models/orders';
 import { useToast } from '../../components/ToastProvider';
-import ProductFormBottomSheet from '../../components/productCreateBottomSheet';
+import ProductFormBottomSheet from '../../components/productCreateBottomSheet'; 
 import CreateNicheBottomSheet from '../../components/nicheCreateBottomSheet';
 import BottomSheet from '@gorhom/bottom-sheet';
 import StartCards from '../../components/startCards';
-import { useTheme } from '../../components/themeProvider';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function SellerDashboard() {
   const router = useRouter();
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   //chart width
   const chartWidth = Math.min(screenWidth - 32, 800);
 
@@ -43,7 +40,7 @@ export default function SellerDashboard() {
   const [exportMenuVisible, setExportMenuVisible] = useState(false);
 
   // Bottom sheet ref for product creation
-  const productFormRef = useRef<BottomSheet>(null);
+  const productFormRef = useRef<any>(null);
 
   const nicheFormRef = useRef<BottomSheet>(null);
 
@@ -70,7 +67,7 @@ export default function SellerDashboard() {
           end_date: toDate,
           metric: "sales"
         });
-        const ordersData = await getSellerOrders(1, 5);
+        const ordersData = await getSellerOrders(1,5);
         const productsData = await getMyProducts(1, 50);
         if (!mounted) return;
         setAnalyticsOverview(analyticsOverviewData);
@@ -190,10 +187,8 @@ export default function SellerDashboard() {
         return () => loop.stop();
       }, [opacity]);
 
-      const pulseColor = isDark ? "#f0f1f2" : "#000000";
-
       return (
-        <View style={{ width: 4, backgroundColor: pulseColor, position: 'relative' }}>
+        <View style={{ width: 4, backgroundColor: '#e26136', position: 'relative' }}>
           <Animated.View
             style={{
               position: 'absolute',
@@ -201,7 +196,7 @@ export default function SellerDashboard() {
               bottom: -6,
               left: -4,
               right: -4,
-              backgroundColor: pulseColor,
+              backgroundColor: '#e26136',
               opacity,
               borderRadius: 8,
             }}
@@ -209,11 +204,11 @@ export default function SellerDashboard() {
         </View>
       );
     };
-  }, [isDark]);
+  }, []);
 
   // Safe color fn for chart config (accepts opacity)
-  const chartColor = (opacity = 1) => isDark ? `rgba(240,241,242,${opacity})` : `rgba(0,0,0,${opacity})`;
-  const chartLabelColor = (opacity = 1) => isDark ? `rgba(198,197,207,${opacity})` : `rgba(113,113,122,${opacity})`;
+  const chartColor = (opacity = 1) => `rgba(226,97,54,${opacity})`;
+  const chartLabelColor = (opacity = 1) => `rgba(135,109,100,${opacity})`;
 
   // Handlers (now wired)
   const handleExport = () => {
@@ -270,46 +265,46 @@ export default function SellerDashboard() {
 
   // Render helpers
   const renderOrderItem = ({ item }: { item: SellerOrderItem }) => (
-    <View className={`px-4 py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+    <View className="px-4 py-3 border-b border-[#efe9e7] bg-white">
       <View className="flex-row justify-between items-start">
         <View style={{ flex: 1 }}>
-          <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.product?.name}</Text>
-          <Text className={`font-inter text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{formatCurrency(item.price)}</Text>
-          <Text className={`font-inter text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Order #: {item.order.order_number ?? item.order_id}</Text>
-          <View className="flex-row items-center mt-3">
+          <Text className="text-[#171311] text-base font-medium">{item.product?.name}</Text>
+          <Text className="text-[#876d64] text-xs">{formatCurrency(item.price)}</Text>
+          <Text className="text-[#876d64] text-xs">Order #: {item.order.order_number ?? item.order_id}</Text>
+          <View className="flex-row items-center mt-1">
             <Image
               source={{ uri: item.order?.buyer?.profile_picture ?? item.order?.buyer?.profile_picture_url }}
-              className={`w-6 h-6 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+              className="w-6 h-6 rounded-full bg-bg-muted"
             />
-            <Text className={`font-inter text-xs ml-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.order?.buyer?.buyername ?? item.order?.buyer?.username ?? "Buyer"}</Text>
+            <Text className="text-[#171311] text-xs ml-2">{item.order?.buyer?.buyername ?? item.order?.buyer?.username ?? "Buyer"}</Text>
           </View>
         </View>
 
         <View className="items-end ml-3">
           {item.status === 'pending' ? (
             <>
-              <TouchableOpacity onPress={() => handleAcceptOrder(item)} className="bg-primary rounded px-4 py-2 mb-2">
-                <Text className="text-white font-geist font-bold text-xs">Accept</Text>
+              <TouchableOpacity onPress={() => handleAcceptOrder(item)} className="bg-[#0f8b3a] rounded-full px-3 py-1 mb-2">
+                <Text className="text-white text-sm">Accept</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeclineOrder(item)} className={`rounded px-4 py-2 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-                <Text className={`font-geist font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Decline</Text>
+              <TouchableOpacity onPress={() => handleDeclineOrder(item)} className="bg-[#f4dedc] rounded-full px-3 py-1">
+                <Text className="text-[#b51f08] text-sm">Decline</Text>
               </TouchableOpacity>
             </>
           ) : item.status === 'processing' ? (
             <>
-              <TouchableOpacity onPress={() => handleUpdateOrderStatus(item, 'shipped')} className="bg-primary rounded px-4 py-2 mb-2">
-                <Text className="text-white font-geist font-bold text-xs">Mark Shipped</Text>
+              <TouchableOpacity onPress={() => handleUpdateOrderStatus(item, 'shipped')} className="bg-[#e26136] rounded-full px-3 py-1 mb-2">
+                <Text className="text-white text-sm">Mark Shipped</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeclineOrder(item)} className={`rounded px-4 py-2 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-                <Text className={`font-geist font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Cancel</Text>
+              <TouchableOpacity onPress={() => handleDeclineOrder(item)} className="bg-[#f4dedc] rounded-full px-3 py-1">
+                <Text className="text-[#b51f08] text-sm">Cancel</Text>
               </TouchableOpacity>
             </>
           ) : item.status === 'shipped' ? (
-            <TouchableOpacity onPress={() => handleUpdateOrderStatus(item, 'delivered')} className="bg-primary rounded px-4 py-2">
-              <Text className="text-white font-geist font-bold text-xs">Mark Delivered</Text>
+            <TouchableOpacity onPress={() => handleUpdateOrderStatus(item, 'delivered')} className="bg-[#0f8b3a] rounded-full px-3 py-1">
+              <Text className="text-white text-sm">Mark Delivered</Text>
             </TouchableOpacity>
           ) : (
-            <Text className={`font-geist font-bold text-sm capitalize ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.status}</Text>
+            <Text className="text-[#171311] text-base font-semibold capitalize">{item.status}</Text>
           )}
         </View>
       </View>
@@ -317,42 +312,42 @@ export default function SellerDashboard() {
   );
 
   const renderProductItem = ({ item }: { item: any }) => (
-    <View className={`flex-row items-center justify-between px-4 py-4 border-b ${isDark ? "border-[#46464e]" : "border-border"}`}>
+    <View className="flex-row items-center justify-between px-4 py-3 border-b border-[#efe9e7]">
       <View className="flex-1 pr-3">
-        <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>{item.name}</Text>
-        <Text className={`font-inter text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Status: {item.status}</Text>
-        <Text className={`font-inter text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Price: {formatCurrency(item.price)}, Stock: {item.stock}</Text>
+        <Text className="text-[#171311] text-base font-medium" numberOfLines={1}>{item.name}</Text>
+        <Text className="text-[#876d64] text-xs">Status: {item.status}</Text>
+        <Text className="text-[#876d64] text-xs">Price: {formatCurrency(item.price)}, Stock: {item.stock}</Text>
       </View>
 
       <TouchableOpacity
         accessibilityLabel={`delete-${item.id || item.name}`}
         onPress={() => handleDeleteProduct(item.id)}
-        className={`rounded px-4 h-9 items-center justify-center border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+        className="rounded-full px-4 h-9 items-center justify-center border border-[#f1dede] bg-white"
       >
-        <Text className="text-error font-geist font-bold text-xs">Delete</Text>
+        <Text className="text-[#b51f08] text-sm font-semibold">Delete</Text>
       </TouchableOpacity>
     </View>
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-white">
       <ScrollView
-        className={isDark ? "bg-[#1a1c1d]" : "bg-white"}
-        contentContainerStyle={{ paddingBottom: 60 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "#f0f1f2" : "#000000"} />}
+        className="bg-white"
+        contentContainerStyle={{ paddingBottom: 40 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Time selector (7d / 30d / 90d) + Export menu */}
-        <View className="flex-row items-center justify-between px-6 py-4">
-          <View className={`flex-row rounded p-1 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
+        <View className="flex-row items-center justify-between px-4 py-3">
+          <View className="flex-row rounded-full bg-[#f5f2f1] p-1 border border-[#e5dedc]">
             {([7, 30, 90] as const).map((d) => (
               <TouchableOpacity
                 key={d}
                 onPress={() => { setWindowDays(d); setExportMenuVisible(false); }}
-                className={`px-5 py-2 rounded ${windowDays === d ? "bg-primary shadow-sm" : ""}`}
+                className={`px-4 py-2 rounded-full ${windowDays === d ? "bg-white shadow-sm" : ""}`}
                 accessibilityLabel={`${d} days`}
                 accessibilityState={{ selected: windowDays === d }}
               >
-                <Text className={`text-xs font-geist font-bold ${windowDays === d ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                <Text className={`text-sm font-semibold ${windowDays === d ? "text-[#171311]" : "text-[#876d64]"}`}>
                   {d}d
                 </Text>
               </TouchableOpacity>
@@ -363,49 +358,49 @@ export default function SellerDashboard() {
             className="p-2 -mr-2"
             accessibilityLabel="More options"
           >
-            <MoreVertical size={22} color={isDark ? "#f0f1f2" : "#000000"} />
+            <MoreVertical size={22} color="#171311" />
           </TouchableOpacity>
         </View>
         {exportMenuVisible && (
           <TouchableOpacity
             onPress={handleExport}
-            className={`mx-6 mb-4 py-4 px-5 rounded border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}
+            className="mx-4 mb-2 py-3 px-4 rounded-xl bg-white border border-[#e5dedc]"
           >
-            <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Export report</Text>
+            <Text className="text-[#171311] font-semibold text-sm">Export report</Text>
           </TouchableOpacity>
         )}
 
         {/* Period label */}
-        <Text className={`font-inter text-xs px-6 -mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{periodLabel}</Text>
+        <Text className="text-[#876d64] text-sm px-4 -mt-1">{periodLabel}</Text>
 
         {/* Metrics cards — Revenue first, visual hierarchy, empty states */}
-        <View className="flex-row flex-wrap gap-4 p-6">
-          <View className={`min-w-[160px] flex-1 rounded p-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`} style={{ borderLeftWidth: 4, borderLeftColor: isDark ? '#f0f1f2' : '#000000' }}>
-            <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Revenue</Text>
-            <Text className={`text-2xl font-geist font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+        <View className="flex-row flex-wrap gap-3 p-4">
+          <View className="min-w-[160px] flex-1 rounded-2xl p-5 border border-[#e5dedc] bg-white" style={{ borderLeftWidth: 4, borderLeftColor: '#e26136' }}>
+            <Text className="text-[#6f5d57] text-xs font-semibold uppercase tracking-wider">Revenue</Text>
+            <Text className="text-[#171311] text-[22px] font-extrabold mt-1">
               {formatCurrency(analyticsOverview?.revenue_30d)}
             </Text>
             {(analyticsOverview?.revenue_30d ?? 0) === 0 && (
-              <Text className={`font-inter text-[10px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No sales yet. Share your products to get started.</Text>
+              <Text className="text-[#876d64] text-xs mt-0.5">No sales yet. Share your products to get started.</Text>
             )}
           </View>
-          <View className={`min-w-[158px] flex-1 rounded p-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Orders</Text>
-            <Text className={`text-2xl font-geist font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{analyticsOverview?.orders_30d ?? 0}</Text>
+          <View className="min-w-[158px] flex-1 rounded-2xl p-5 border border-[#e5dedc] bg-white">
+            <Text className="text-[#6f5d57] text-xs font-semibold uppercase tracking-wider">Orders</Text>
+            <Text className="text-[#171311] text-2xl font-extrabold mt-1">{analyticsOverview?.orders_30d ?? 0}</Text>
             {(analyticsOverview?.orders_30d ?? 0) === 0 && (
-              <Text className={`font-inter text-[10px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No orders yet.</Text>
+              <Text className="text-[#876d64] text-xs mt-0.5">No orders yet.</Text>
             )}
           </View>
-          <View className={`min-w-[158px] flex-1 rounded p-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Product Views</Text>
-            <Text className={`text-2xl font-geist font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{analyticsOverview?.views_30d ?? 0}</Text>
+          <View className="min-w-[158px] flex-1 rounded-2xl p-5 border border-[#e5dedc] bg-white">
+            <Text className="text-[#6f5d57] text-xs font-semibold uppercase tracking-wider">Product Views</Text>
+            <Text className="text-[#171311] text-2xl font-extrabold mt-1">{analyticsOverview?.views_30d ?? 0}</Text>
             {(analyticsOverview?.views_30d ?? 0) === 0 && (
-              <Text className={`font-inter text-[10px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No product views yet.</Text>
+              <Text className="text-[#876d64] text-xs mt-0.5">No product views yet.</Text>
             )}
           </View>
-          <View className={`min-w-[158px] flex-1 rounded p-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Conversion Rate</Text>
-            <Text className={`text-2xl font-geist font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{(analyticsOverview?.conversion_30d ?? 0)}%</Text>
+          <View className="min-w-[158px] flex-1 rounded-2xl p-5 border border-[#e5dedc] bg-white">
+            <Text className="text-[#6f5d57] text-xs font-semibold uppercase tracking-wider">Conversion Rate</Text>
+            <Text className="text-[#171311] text-2xl font-extrabold mt-1">{(analyticsOverview?.conversion_30d ?? 0)}%</Text>
           </View>
         </View>
 
@@ -413,60 +408,60 @@ export default function SellerDashboard() {
         <StartCards title="Getting started" />
 
         {/* Primary CTA — Create Product */}
-        <View className="px-6 py-4">
+        <View className="px-4 py-3">
           <TouchableOpacity
             accessibilityLabel="create-product-btn"
             onPress={handleCreateProduct}
-            className="rounded h-12 items-center justify-center bg-primary"
+            className="rounded-full h-12 items-center justify-center bg-[#e26136]"
           >
-            <Text className="text-white font-geist font-bold text-base">Create Product</Text>
+            <Text className="text-white text-base font-semibold">Create Product</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => nicheFormRef.current?.expand()}
-            className={`mt-3 rounded h-12 items-center justify-center border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+            className="mt-2 rounded-full h-10 items-center justify-center border border-[#e5dedc] bg-white"
           >
-            <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Community</Text>
+            <Text className="text-[#171311] text-sm font-semibold">Create Community</Text>
           </TouchableOpacity>
         </View>
 
         {/* Quick actions — with badges */}
-        <View className="flex-row flex-wrap gap-4 px-6 py-4">
+        <View className="flex-row flex-wrap gap-3 px-4 py-3">
           <TouchableOpacity
             accessibilityLabel="orders-quicknav"
             onPress={() => router.push("/(tabs)/sellerOrders")}
-            className={`flex-row items-center rounded h-12 px-6 ${pendingOrderCount > 0 ? "bg-primary border border-primary" : (isDark ? "border-[#46464e] bg-[#2f3132]" : "border border-border bg-white")}`}
+            className={`flex-row items-center rounded-full h-10 px-4 ${pendingOrderCount > 0 ? "bg-[#fff5f3] border border-[#ffd9d2]" : "border border-[#e5dedc] bg-white"}`}
           >
-            <Text className={`font-geist font-bold text-sm ${pendingOrderCount > 0 ? "text-white" : (isDark ? "text-[#f0f1f2]" : "text-black")}`}>Orders</Text>
+            <Text className="text-[#171311] text-sm font-semibold">Orders</Text>
             {pendingOrderCount > 0 && (
-              <View className={`ml-2 min-w-[20px] h-5 rounded items-center justify-center px-1.5 ${isDark ? "bg-[#1a1c1d]" : "bg-primary"}`}>
-                <Text className={`${isDark ? "text-primary" : "text-white"} text-[10px] font-bold`}>{pendingOrderCount}</Text>
+              <View className="ml-2 min-w-[20px] h-5 rounded-full bg-[#e26136] items-center justify-center px-1.5">
+                <Text className="text-white text-xs font-bold">{pendingOrderCount}</Text>
               </View>
             )}
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push("/(tabs)/messages")}
-            className={`rounded h-12 px-6 items-center justify-center border ${isDark ? "border-[#46464e] bg-[#2f3132]" : "border border-border bg-white"}`}
+            className="rounded-full h-10 px-4 items-center justify-center border border-[#e5dedc] bg-white"
           >
-            <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Chats</Text>
+            <Text className="text-[#171311] text-sm font-semibold">Chats</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push("/(tabs)/requests")}
-            className={`rounded h-12 px-6 items-center justify-center border ${isDark ? "border-[#46464e] bg-[#2f3132]" : "border border-border bg-white"}`}
+            className="rounded-full h-10 px-4 items-center justify-center border border-[#e5dedc] bg-white"
           >
-            <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Requests</Text>
+            <Text className="text-[#171311] text-sm font-semibold">Requests</Text>
           </TouchableOpacity>
         </View>
 
         {/* Sales trends card */}
-        <View className="px-6 py-6">
-          <View className={`rounded border p-6 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Sales Trends</Text>
-            <Text className={`text-[32px] font-geist font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatCurrency(analyticsOverview?.revenue_30d ?? 0)}</Text>
-            <View className="flex-row gap-2 items-center mt-2">
-              <Text className={`font-inter text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Last 30 Days</Text>
-              <Text className="text-success font-inter text-sm font-bold">+15%</Text>
+        <View className="px-4 py-4">
+          <View className="rounded-2xl border border-[#e5dedc] bg-white p-4">
+            <Text className="text-[#171311] text-base font-semibold">Sales Trends</Text>
+            <Text className="text-[#171311] text-[28px] font-extrabold mt-1">{formatCurrency(analyticsOverview?.revenue_30d ?? 0)}</Text>
+            <View className="flex-row gap-2 items-center mt-1">
+              <Text className="text-[#876d64] text-sm">Last 30 Days</Text>
+              <Text className="text-[#07880b] text-sm font-semibold">+15%</Text>
             </View>
-            <View className="py-6">
+            <View className="py-4">
               <LineChart
                 data={(analyticsTimeseries && analyticsTimeseries.series && analyticsTimeseries.series.length > 0) ? {
                   labels: analyticsTimeseries.series.map(d => {
@@ -475,21 +470,21 @@ export default function SellerDashboard() {
                   datasets: [{ data: analyticsTimeseries.series.map(d => d.value || 0), strokeWidth: 3 }]
                 } : {
                   labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                  datasets: [{ data: [0, 0, 0, 0, 0, 0], strokeWidth: 3 }]
+                  datasets: [{ data: [0,0,0,0,0,0], strokeWidth: 3 }]
                 }}
-                width={chartWidth - 48}
+                width={chartWidth}
                 height={160}
                 chartConfig={{
-                  backgroundGradientFrom: isDark ? '#1a1c1d' : '#ffffff',
-                  backgroundGradientTo: isDark ? '#1a1c1d' : '#ffffff',
-                  color: (opacity = 1) => `rgba(233, 76, 42, ${opacity})`,
+                  backgroundGradientFrom: '#ffffff',
+                  backgroundGradientTo: '#ffffff',
+                  color: (opacity = 1) => chartColor(opacity),
                   labelColor: (opacity = 1) => chartLabelColor(opacity),
                   decimalPlaces: 0,
                   propsForDots: { r: '3' },
                   strokeWidth: 3,
                 }}
                 bezier
-                style={{ borderRadius: 8 }}
+                style={{ borderRadius: 12 }}
                 withInnerLines={false}
                 withOuterLines={false}
               />
@@ -498,14 +493,14 @@ export default function SellerDashboard() {
         </View>
 
         {/* Recent Orders card */}
-        <View className="px-6 pt-4">
-          <Text className={`text-xl font-geist font-bold px-1 pb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Recent Orders</Text>
+        <View className="px-4 pt-2">
+          <Text className="text-[#171311] text-[18px] font-extrabold px-1 pb-2">Recent Orders</Text>
           {loading && !sellerRecentOrders.length ? (
-            <Text className={`font-inter text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading recent orders...</Text>
+            <Text className="text-[#876d64] text-sm px-1">Loading recent orders...</Text>
           ) : sellerRecentOrders.length === 0 ? (
-            <Text className={`font-inter text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No recent orders</Text>
+            <Text className="text-[#876d64] text-sm px-1">No recent orders</Text>
           ) : (
-            <View className={`rounded border overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+            <View className="rounded-2xl border border-[#e5dedc] bg-white overflow-hidden">
               <FlatList
                 data={sellerRecentOrders}
                 keyExtractor={(it) => String(it.id)}
@@ -514,49 +509,49 @@ export default function SellerDashboard() {
               />
             </View>
           )}
-          {error ? <Text className="text-error font-inter text-sm mt-3 px-1">{error}</Text> : null}
+          {error ? <Text className="text-[#b51f08] text-sm mt-2 px-1">{error}</Text> : null}
         </View>
 
         {/* Low Stock Alerts (pulsing red-accent) */}
-        <View className="px-6 pt-10">
-          <Text className={`text-xl font-geist font-bold px-1 pb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Low Stock Alerts</Text>
+        <View className="px-4 pt-6">
+          <Text className="text-[#171311] text-[18px] font-extrabold px-1 pb-2">Low Stock Alerts</Text>
 
-          <View className={`rounded border overflow-hidden ${isDark ? "bg-[#2f3132] border-[#ba1a1a]" : "bg-error-bg border-error"}`}>
-            {sellerInventory.filter((item) => (item.stock ?? 0) < 5).length === 0 ? (
-              <Text className={`font-inter text-sm px-6 py-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No low stock items</Text>
+          <View className="rounded-2xl bg-[#fff5f3] border border-[#ffd9d2] overflow-hidden">
+            {sellerInventory.filter((item)=> (item.stock ?? 0) < 5).length === 0 ? (
+              <Text className="text-[#876d64] text-sm px-4 py-3">No low stock items</Text>
             ) : (
-              sellerInventory.filter((item) => (item.stock ?? 0) < 5).map((a, idx, arr) => (
+              sellerInventory.filter((item)=> (item.stock ?? 0) < 5).map((a, idx, arr) => (
                 <View
                   key={a.id ?? a.name ?? idx}
-                  className={`flex-row items-stretch ${idx < arr.length - 1 ? (isDark ? 'border-b border-[#ba1a1a]/20' : 'border-b border-error/20') : ''}`}
+                  className={`flex-row items-stretch ${idx < arr.length - 1 ? 'border-b border-[#ffd9d2]' : ''}`}
                 >
                   {/* Left accent bar  */}
                   <LeftAccentPulse />
 
                   {/* Content */}
-                  <View className="flex-1 flex-row items-center justify-between px-6 py-5">
-                    <View className="flex-1 pr-4">
+                  <View className="flex-1 flex-row items-center justify-between px-4 py-3">
+                    <View className="flex-1 pr-3">
                       <View className="flex-row items-center gap-2">
-                        <AlertTriangle size={16} color="#ba1a1a" />
-                        <Text className="text-error font-geist font-bold text-xs uppercase tracking-wider">Low stock</Text>
+                        <AlertTriangle size={16} color="#b51f08" />
+                        <Text className="text-[#b51f08] text-[13px] font-semibold">Low stock</Text>
                       </View>
 
-                      <Text className={`font-geist font-bold text-base mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{a.name}</Text>
-                      <Text className={`font-inter text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Last Updated: {formatDate(a.created_at)}</Text>
-                      <Text className={`font-inter text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Stock Left: {a.stock}</Text>
+                      <Text className="text-[#171311] text-base font-medium mt-1">{a.name}</Text>
+                      <Text className="text-[#8a6c66] text-xs mt-0.5">Last Updated: {formatDate(a.created_at)}</Text>
+                      <Text className="text-[#8a6c66] text-xs">Stock Left: {a.stock}</Text>
 
                       {/* Visual urgency bar*/}
-                      <View className={`mt-3 h-1.5 rounded overflow-hidden ${isDark ? "bg-[#1a1c1d]" : "bg-error/10"}`}>
+                      <View className="mt-2 h-2 rounded-full bg-[#ffe6e1] overflow-hidden">
                         <View
                           style={{ width: `${Math.min(Number(a.stock ?? 0), 20) * 5}%` }}
-                          className="h-1.5 bg-error"
+                          className="h-2 bg-[#e26136]"
                         />
                       </View>
                     </View>
 
                     {/* Badge */}
-                    <View className={`rounded px-3 py-1 border ${isDark ? "bg-[#1a1c1d] border-[#ba1a1a]" : "bg-white border-error"}`}>
-                      <Text className="text-error font-geist font-bold text-[10px] uppercase tracking-wider">Action needed</Text>
+                    <View className="rounded-full px-3 py-1 bg-[#ffe9e6] border border-[#ffcdc4]">
+                      <Text className="text-[#b51f08] text-[12px] font-semibold">Action needed</Text>
                     </View>
                   </View>
                 </View>
@@ -566,46 +561,46 @@ export default function SellerDashboard() {
         </View>
 
         {/* Inventory search + filters */}
-        <View className="px-6 pt-10">
-          <Text className={`text-xl font-geist font-bold px-1 pb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Inventory</Text>
-          <View className={`rounded border p-6 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-            <View className={`flex-row items-center rounded overflow-hidden border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-              <View className="w-12 items-center justify-center">
-                <Search size={20} color={isDark ? "#c6c5cf" : "#71717A"} />
+        <View className="px-4 pt-6">
+          <Text className="text-[#171311] text-[18px] font-extrabold px-1 pb-2">Inventory</Text>
+          <View className="rounded-2xl border border-[#e5dedc] bg-white p-4">
+            <View className="flex-row items-center rounded-full overflow-hidden border border-[#e5dedc]">
+              <View className="bg-[#f4f1f0] h-12 w-12 items-center justify-center">
+                <Search size={20} color="#876d64" />
               </View>
               <TextInput
                 placeholder="Search products"
-                className={`flex-1 h-12 px-3 font-inter text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
-                placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
+                className="flex-1 h-12 bg-[#f4f1f0] px-4 text-[#171311]"
+                placeholderTextColor="#9a8a85"
                 value={searchText}
                 onChangeText={setSearchText}
                 accessibilityLabel="inventory-search"
               />
             </View>
 
-            <View className="flex-row gap-3 mt-4">
-              <TouchableOpacity className={`h-10 items-center justify-center rounded pl-5 pr-4 flex-row gap-2 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-                <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Status</Text>
-                <CaretDown size={16} color={isDark ? "#f0f1f2" : "#000000"} />
+            <View className="flex-row gap-3 mt-3">
+              <TouchableOpacity className="h-8 items-center justify-center rounded-full bg-[#f5f2f1] pl-4 pr-3 flex-row gap-2 border border-[#e5dedc]">
+                <Text className="text-[#171311] text-sm font-medium">Status</Text>
+                <CaretDown size={16} color="#171311" />
               </TouchableOpacity>
-              <TouchableOpacity className="h-10 items-center justify-center rounded bg-primary px-5">
-                <Text className="text-white font-geist font-bold text-sm">All</Text>
+              <TouchableOpacity className="h-8 items-center justify-center rounded-full bg-[#f5f2f1] px-3 border border-[#e5dedc]">
+                <Text className="text-[#171311] text-sm font-medium">All</Text>
               </TouchableOpacity>
-              <TouchableOpacity className={`h-10 items-center justify-center rounded px-5 border ${isDark ? "bg-[#ba1a1a]/10 border-[#ba1a1a]" : "bg-error-bg border-error"}`}>
-                <Text className="text-error font-geist font-bold text-sm">Low</Text>
+              <TouchableOpacity className="h-8 items-center justify-center rounded-full bg-[#fff2f0] px-3 border border-[#ffd9d2]">
+                <Text className="text-[#b51f08] text-sm font-medium">Low</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
 
         {/* Inventory list card */}
-        <View className="px-6 pt-4">
+        <View className="px-4 pt-3">
           {loading && !filteredInventory.length ? (
-            <Text className={`font-inter text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading inventory...</Text>
+            <Text className="text-[#876d64] text-sm px-1">Loading inventory...</Text>
           ) : filteredInventory.length === 0 ? (
-            <Text className={`font-inter text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No products in inventory</Text>
+            <Text className="text-[#876d64] text-sm px-1">No products in inventory</Text>
           ) : (
-            <View className={`rounded border overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+            <View className="rounded-2xl border border-[#e5dedc] bg-white overflow-hidden">
               <FlatList
                 data={filteredInventory}
                 keyExtractor={(it) => String(it.id ?? it.name)}
@@ -617,17 +612,17 @@ export default function SellerDashboard() {
         </View>
 
         {/* Pager dots */}
-        <View className="flex-row w-full items-center justify-center gap-3 py-10">
-          <View className="h-2 w-2 rounded bg-primary" />
-          <View className={`h-2 w-2 rounded ${isDark ? "bg-[#46464e]" : "bg-border"}`} />
-          <View className={`h-2 w-2 rounded ${isDark ? "bg-[#46464e]" : "bg-border"}`} />
+        <View className="flex-row w-full items-center justify-center gap-2 py-6">
+          <View className="h-2 w-2 rounded-full bg-[#171311]" />
+          <View className="h-2 w-2 rounded-full bg-[#e5dedc]" />
+          <View className="h-2 w-2 rounded-full bg-[#e5dedc]" />
         </View>
 
         <View className="h-4" />
-      </ScrollView>
+       </ScrollView>
 
-      <ProductFormBottomSheet ref={productFormRef} />
-      <CreateNicheBottomSheet ref={nicheFormRef} />
-    </SafeAreaView>
+       <ProductFormBottomSheet ref={productFormRef} />
+        <CreateNicheBottomSheet ref={nicheFormRef} />
+     </SafeAreaView>
   );
 }

@@ -127,7 +127,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
     <BottomSheet ref={sheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose onClose={onClose}>
       <BottomSheetScrollView contentContainerStyle={{ padding: 16 }}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 12, color: "#000000" }}>
+          <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 12 }}>
             {mode === "buyer" ? "Create Buyer Account" : mode === "seller" ? "Create Seller Account" : "Create Account"}
           </Text>
 
@@ -144,7 +144,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                     onChangeText={onChange}
                     style={{
                       borderWidth: 1,
-                      borderColor: "#E4E4E7",
+                      borderColor: "#e5dedc",
                       padding: 10,
                       borderRadius: 8,
                       marginBottom: 6,
@@ -152,10 +152,10 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                   />
                 )}
               />
-              {buyerErrors.buyername && <Text style={{ color: "#ba1a1a", marginBottom: 6 }}>{buyerErrors.buyername.message}</Text>}
+              {buyerErrors.buyername && <Text style={{ color: "#e9242a", marginBottom: 6 }}>{buyerErrors.buyername.message}</Text>}
               <TouchableOpacity
                 onPress={handleSubmitBuyer(submitBuyer)}
-                style={{ backgroundColor: "#000000", padding: 12, borderRadius: 8, alignItems: "center" }}
+                style={{ backgroundColor: "#e26136", padding: 12, borderRadius: 8, alignItems: "center" }}
               >
                 <Text style={{ color: "#fff", fontWeight: "700" }}>Create Buyer Account</Text>
               </TouchableOpacity>
@@ -175,7 +175,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                     onChangeText={onChange}
                     style={{
                       borderWidth: 1,
-                      borderColor: "#E4E4E7",
+                      borderColor: "#e5dedc",
                       padding: 10,
                       borderRadius: 8,
                       marginBottom: 6,
@@ -183,7 +183,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                   />
                 )}
               />
-              {sellerErrors.shop_name && <Text style={{ color: "#ba1a1a", marginBottom: 6 }}>{sellerErrors.shop_name.message}</Text>}
+              {sellerErrors.shop_name && <Text style={{ color: "#e9242a", marginBottom: 6 }}>{sellerErrors.shop_name.message}</Text>}
 
               <Text style={{ marginBottom: 6 }}>Description</Text>
               <Controller
@@ -197,7 +197,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                     multiline
                     style={{
                       borderWidth: 1,
-                      borderColor: "#E4E4E7",
+                      borderColor: "#e5dedc",
                       padding: 10,
                       borderRadius: 8,
                       marginBottom: 6,
@@ -207,12 +207,12 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                   />
                 )}
               />
-              {sellerErrors.description && <Text style={{ color: "#ba1a1a", marginBottom: 6 }}>{sellerErrors.description.message}</Text>}
+              {sellerErrors.description && <Text style={{ color: "#e9242a", marginBottom: 6 }}>{sellerErrors.description.message}</Text>}
 
               <Text style={{ marginBottom: 6 }}>Categories</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                 {selectedCategories.map((c) => (
-                  <View key={c.id} style={{ backgroundColor: "#F4F4F5", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, marginRight: 8, marginBottom: 8 }}>
+                  <View key={c.id} style={{ backgroundColor: "#f4f1f0", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, marginRight: 8, marginBottom: 8 }}>
                     <Text>{c.name}</Text>
                   </View>
                 ))}
@@ -220,14 +220,14 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
 
               <TouchableOpacity
                 onPress={() => setCategoryModalVisible(true)}
-                style={{ borderWidth: 1, borderColor: "#E4E4E7", padding: 10, borderRadius: 8, marginBottom: 12 }}
+                style={{ borderWidth: 1, borderColor: "#e5dedc", padding: 10, borderRadius: 8, marginBottom: 12 }}
               >
                 <Text>Select categories</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={handleSubmitSeller(submitSeller)}
-                style={{ backgroundColor: "#000000", padding: 12, borderRadius: 8, alignItems: "center" }}
+                style={{ backgroundColor: "#e26136", padding: 12, borderRadius: 8, alignItems: "center" }}
               >
                 <Text style={{ color: "#fff", fontWeight: "700" }}>Create Seller Account</Text>
               </TouchableOpacity>

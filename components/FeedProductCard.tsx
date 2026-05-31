@@ -16,7 +16,6 @@ import { followSeller, unfollowSeller } from "../services/sections/users";
 import SkeletonImage from "./SkeletonImage";
 import { useUser } from "../hooks/userContextProvider";
 import { useToast } from "./ToastProvider";
-import { useTheme } from "./themeProvider";
 
 interface Props {
   product: FeedProduct;
@@ -30,8 +29,6 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
   const [adding, setAdding] = useState(false);
   const [isFollowing, setIsFollowing] = useState(product.seller?.is_followed ?? false);
   const [followLoading, setFollowLoading] = useState(false);
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
 
   const followeeId = product.seller?.user?.id;
   const followerCount = product.seller?.follower_count ?? 0;
@@ -91,12 +88,12 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
   };
 
   return (
-    <View className="mb-8 px-6">
-      <View className={`rounded overflow-hidden border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+    <View className="px-4 pt-4">
+      <View className="rounded-card overflow-hidden border border-border bg-white">
         <Link href={`/productDetails/${product.id}`} asChild>
-          <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}>
-            {/* Image occupying ~70% of the card layout as per DESIGN.md mandata */}
-            <View className={`w-full aspect-[4/5] relative ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+          <Pressable>
+            {/* Image */}
+            <View className="w-full aspect-square bg-bg-muted">
               {imageUrl ? (
                 <SkeletonImage
                   source={{ uri: imageUrl }}
@@ -106,82 +103,89 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
                 />
               ) : (
                 <View className="flex-1 items-center justify-center">
-                  <Text className={`font-geist font-bold text-xs tracking-widest uppercase ${isDark ? "text-[#46464e]" : "text-surface-dim"}`}>Image Pending</Text>
+                  <Text className="text-text-secondary text-sm">No image</Text>
                 </View>
               )}
-              
-              {/* Floating Price Badge */}
-              <View className="absolute left-6 bottom-6 rounded h-10 px-4 bg-primary items-center justify-center border border-primary/20">
-                <Text className="text-sm font-geist font-bold text-white tracking-widest">
+              <View className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-1">
+                <Text className="text-xs font-semibold text-text-primary">
                   ₦{product.price.toLocaleString()}
                 </Text>
               </View>
             </View>
 
             {/* Info */}
-            <View className="p-6">
-              <View className="flex-row justify-between items-start gap-4 mb-2">
-                <Text
-                  className={`flex-1 text-lg font-geist font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
-                  numberOfLines={2}
-                >
-                  {product.name}
+            <View className="px-4 pt-3 pb-3">
+              <Text
+                className="text-sm font-semibold text-text-primary"
+                numberOfLines={2}
+              >
+                {product.name}
+              </Text>
+
+              {(product.rating > 0 || product.reviews_count > 0) && (
+                <Text className="text-xs text-text-secondary mt-1">
+                  ★ {product.rating.toFixed(1)}
+                  {product.reviews_count > 0 && ` · ${product.reviews_count} reviews`}
+                </Text>
+              )}
+
+              <View className="flex-row items-center justify-between mt-2 gap-2">
+                <Text className="text-xs text-text-secondary flex-1" numberOfLines={1}>
+                  By {product.seller?.shop_name ?? "Seller"}
+                  {followerCount > 0 && ` · ${followerCount} follower${followerCount !== 1 ? "s" : ""}`}
                 </Text>
                 {followeeId && !isOwnProduct && (
                   <TouchableOpacity
                     onPress={(e) => handleFollowToggle(e)}
                     disabled={followLoading}
-                    activeOpacity={0.8}
-                    className={`h-8 px-4 rounded items-center justify-center border ${isFollowing ? (isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border") : "bg-primary border-primary"}`}
+                    activeOpacity={0.7}
+                    className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full min-h-[32px] justify-center ${isFollowing ? "bg-bg-muted" : "bg-primary"}`}
                     accessibilityRole="button"
-                    accessibilityLabel={isFollowing ? "Unfollow" : "Follow"}
+                    accessibilityLabel={isFollowing ? "Unfollow seller" : "Follow seller"}
                   >
-                    <Text className={`text-[10px] font-geist font-bold tracking-widest uppercase ${isFollowing ? (isDark ? "text-[#c6c5cf]" : "text-tertiary") : "text-white"}`}>
+                    <UserPlus size={14} color={isFollowing ? "#876d64" : "#fff"} />
+                    <Text className={`text-xs font-semibold ${isFollowing ? "text-text-primary" : "text-white"}`}>
                       {followLoading ? "…" : isFollowing ? "Following" : "Follow"}
                     </Text>
                   </TouchableOpacity>
                 )}
               </View>
 
-              <View className="flex-row items-center gap-2 mb-6">
-                <Text className={`font-geist font-bold text-[10px] tracking-widest uppercase ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={1}>
-                  {product.seller?.shop_name ?? "Independent Seller"}
-                </Text>
-                <View className={`h-1 w-1 rounded ${isDark ? "bg-[#46464e]" : "bg-surface-dim"}`} />
-                <Text className={`font-inter text-[11px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                  {followerCount.toLocaleString()} Shapers
-                </Text>
-              </View>
-
-              {/* Action Bar: RESERVING PRIMARY FOR CONVERSION ONLY */}
-              <View className={`flex-row gap-4 pt-2 border-t mt-2 ${isDark ? "border-[#46464e]" : "border-border"}`}>
-                <TouchableOpacity
-                  onPress={handleAddToCart}
-                  disabled={adding}
-                  activeOpacity={0.8}
-                  className="flex-1 h-14 rounded bg-primary flex-row items-center justify-center gap-3 shadow-sm"
-                  accessibilityRole="button"
-                >
-                  <ShoppingCart size={20} color="#ffffff" strokeWidth={2} />
-                  <Text className="text-white font-geist font-bold text-xs tracking-widest uppercase">
-                    {adding ? "Adding" : "Add to collection"}
-                  </Text>
-                </TouchableOpacity>
-
-                {!isOwnProduct && isBuyer && (
-                  <TouchableOpacity
-                    onPress={handleMessageSeller}
-                    activeOpacity={0.8}
-                    className={`w-14 h-14 rounded border border-primary items-center justify-center ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
-                    accessibilityRole="button"
-                  >
-                    <MessageCircle size={22} color="#E94C2A" strokeWidth={1.5} />
-                  </TouchableOpacity>
-                )}
+              <View className="mt-3 h-10 rounded-full bg-primary items-center justify-center">
+                <Text className="text-white font-semibold text-sm">View</Text>
               </View>
             </View>
           </Pressable>
         </Link>
+
+        {/* Actions: Add to cart, Message seller (buyers only; hide Message when own product) */}
+        {isBuyer && (
+          <View className="flex-row gap-2 px-4 pb-4 border-t border-border-light pt-3">
+            <TouchableOpacity
+              onPress={handleAddToCart}
+              disabled={adding}
+              className="flex-1 flex-row items-center justify-center gap-2 h-10 rounded-full bg-bg-muted"
+              accessibilityRole="button"
+              accessibilityLabel={`Add ${product.name} to cart`}
+            >
+              <ShoppingCart size={18} color="#876d64" />
+              <Text className="text-text-primary font-semibold text-sm">
+                {adding ? "Adding…" : "Add to cart"}
+              </Text>
+            </TouchableOpacity>
+            {!isOwnProduct && (
+            <TouchableOpacity
+              onPress={handleMessageSeller}
+              className="flex-1 flex-row items-center justify-center gap-2 h-10 rounded-full bg-bg-muted"
+              accessibilityRole="button"
+              accessibilityLabel={`Message seller about ${product.name}`}
+            >
+              <MessageCircle size={18} color="#876d64" />
+              <Text className="text-text-primary font-semibold text-sm">Chat</Text>
+            </TouchableOpacity>
+            )}
+          </View>
+        )}
       </View>
     </View>
   );

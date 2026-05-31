@@ -1,4 +1,3 @@
-import 'react-native-reanimated';
 import React, { forwardRef, useMemo, useState } from "react";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
@@ -19,8 +18,8 @@ import { uploadImage, attemptMultipleUpload } from "../services/sections/media";
 import { MediaResponse } from "../models/media";
 import { createPost } from "../services/sections/post";
 import { createNichePost } from "../services/sections/niches";
+import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { useToast } from "./ToastProvider";
-import { useTheme } from "./themeProvider";
 
 const postSchema = z.object({
   caption: z.string().max(1000, "Caption too long").optional(),
@@ -37,16 +36,14 @@ interface PostFormBottomSheetProps {
   nicheId?: string;
 }
 
-const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomSheetProps>(
+const PostFormBottomSheet = React.forwardRef<BottomSheetMethods | null, PostFormBottomSheetProps>(
   ({ nicheId }, ref) => {
 
-    const sheetRef = React.useRef<BottomSheet | null>(null);
+    const sheetRef = React.useRef<BottomSheetMethods | null>(null);
     React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
     //user
     const { user } = useUser();
     const { show } = useToast();
-    const { resolvedTheme } = useTheme();
-    const isDark = resolvedTheme === "dark";
 
     const [postImages, setpostImages] = useState<string[]>([]);
 
@@ -185,51 +182,42 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
 
 
     return (
-      <BottomSheet 
-        ref={ref} 
-        index={-1} 
-        snapPoints={snapPoints} 
-        enablePanDownToClose
-        backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}
-        handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
-      >
+      <BottomSheet ref={ref} index={-1} snapPoints={snapPoints} enablePanDownToClose>
         <BottomSheetScrollView className="p-4">
-        <Text className={`text-lg font-geist font-bold mb-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Post</Text>
+          <Text className="text-lg font-bold mb-3">Create Post</Text>
 
           {/* Caption */}
           <Input name="caption" className="" control={control} numberOfLines={10} placeholder="What's on your mind?"></Input>
 
           {/* Images */}
-          <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Images</Text>
-          {Array.isArray(Imagevalue) && Imagevalue.length > 0 && (
-            <Text className={`text-xs font-inter mb-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Long press on each image to remove it</Text>
-          )}
+          <Text className="mb-1">Images</Text>
+          {Array.isArray(Imagevalue) && Imagevalue.length > 0 && <Text>Long press on each image to remove it</Text>}
           {/* <<< IMPORTANT: pass value & onChange so we can receive images >>> */}
           <InstagramGrid value={Imagevalue} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} />
   
 
           {/* Categories */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Categories</Text>
+        <Text className="mb-1">Categories</Text>
         <View className="flex-row flex-wrap gap-3 p-3 pr-4">
           {selectedCategories.map(cat => (
-            <View key={cat.id.toString()} className={`flex-row items-center border rounded px-3 py-1 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-              <Text className={`text-sm font-medium mr-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{cat.name}</Text>
+            <View key={cat.id.toString()} className="flex-row items-center bg-[#f4f0f0] rounded-full px-3 py-1">
+              <Text className="text-[#181111] text-sm font-medium mr-2">{cat.name}</Text>
               <TouchableOpacity onPress={() => removeCategory(cat.id)}>
-                <X size={16} color={isDark ? "#f0f1f2" : "#000000"} />
+                <X size={16} color="#181111" />
               </TouchableOpacity>
             </View>
           ))}
           <TouchableOpacity
             onPress={() => setModalVisible(true)}
-            className={`border rounded px-4 py-2 justify-center items-center ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+            className="bg-[#e9242a] rounded-full px-4 py-2 justify-center items-center"
           >
-            <Text className={`text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>+ Add Categories</Text>
+            <Text className="text-white text-sm font-bold">+ Add Categories</Text>
           </TouchableOpacity>
         </View>
-        {errors.category_ids && <Text className="text-error text-xs font-geist mt-1">{errors.category_ids.message}</Text>}
+        {errors.category_ids && <Text className="text-red-500 mb-2">{errors.category_ids.message}</Text>}
 
           {/* Products */}
-          <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Tag Products</Text>
+          <Text className="mb-1">Tag Products</Text>
 
           {/* Selected Products Section */}
           {currentProducts.length > 0 && (
@@ -239,11 +227,11 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
                 .map(product => (
                   <View
                     key={product.id}
-                    className={`flex-row items-center border rounded px-3 py-1 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+                    className="flex-row items-center bg-[#f4f0f0] rounded-full px-3 py-1"
                   >
-                    <Text className={`text-sm font-medium mr-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{product.name}</Text>
+                    <Text className="text-[#181111] text-sm font-medium mr-2">{product.name}</Text>
                     <TouchableOpacity onPress={() => setCurrentProducts(prev => prev.filter(pId => pId !== product.id))}>
-                      <X size={16} color={isDark ? "#f0f1f2" : "#000000"} />
+                      <X size={16} color="#181111" />
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -251,17 +239,17 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
           )}
           <TouchableOpacity
             onPress={() => setProductVisible(true)}
-            className={`border rounded px-4 py-2 justify-center items-center mb-3 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+            className="bg-[#e9242a] rounded-full px-4 py-2 justify-center items-center mb-3"
           >
-            <Text className={`text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>+ Tag Products</Text>
+            <Text className="text-white text-sm font-bold">+ Tag Products</Text>
           </TouchableOpacity>
 
 
           {/* Submit Button */}
-          <TouchableOpacity className="bg-primary p-3 rounded" onPress={
+          <TouchableOpacity className="bg-[#E94C2A] p-3 rounded" onPress={
               handleSubmit(handleLocalSubmit)
           } disabled={sending}>
-            <Text className="text-white text-center font-geist font-bold">{sending ? "Sending..." : "Create Post"}</Text>
+            <Text className="text-white text-center">{sending ? "Sending..." : "Create Post"}</Text>
           </TouchableOpacity>
 
           <CategoryAddition
@@ -295,3 +283,4 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
 );
 
 export default PostFormBottomSheet;
+

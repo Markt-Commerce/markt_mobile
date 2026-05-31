@@ -1,40 +1,40 @@
 import { Product } from './products';
-
-export interface Order {
-  id: string;
-  order_number: string;
-  status: string;
-  subtotal: number;
-  total?: number;
-  shipping_fee?: number;
-  tax?: number;
-  discount?: number;
-  payment_method?: string;
-  customer_note?: string;
-  buyer_id?: number;
-  seller_id?: number;
-  cart_id: number;
-  created_at: string;
-  shipping_address?: Record<string, any>;
-  items?: OrderItem[];
-  buyer?: {
-    id: number;
-    buyername: string;
-    profile_picture_url?: string;
-  };
-}
-
-export interface CreateOrderRequest {
-  items: OrderItem[];
-  shipping_address: Record<string, string>;
-}
-
-export interface PayOrderRequest {
-  payment_method: string;
-  transaction_id: string;
-}
-
-// ---------- Types ----------
+  
+  export interface Order {
+    id: string;
+    order_number: string;
+    status: string;
+    subtotal: number;
+    total?: number;
+    shipping_fee?: number;
+    tax?: number;
+    discount?: number;
+    payment_method?: string;
+    customer_note?: string;
+    buyer_id?: number;
+    seller_id?: number;
+    cart_id: number;
+    created_at: string;
+    shipping_address?: Record<string, any>;
+    items?: OrderItem[];
+    buyer?: {
+      id: number;
+      buyername: string;
+      profile_picture_url?: string;
+    };
+  }
+  
+  export interface CreateOrderRequest {
+    items: OrderItem[];
+    shipping_address: Record<string, string>;
+  }
+  
+  export interface PayOrderRequest {
+    payment_method: string;
+    transaction_id: string;
+  }
+  
+  // ---------- Types ----------
 export interface Pagination {
   total_pages: number;
   per_page: number;
@@ -75,8 +75,6 @@ export interface SellerOrderItem {
     created_at: string;
     order_number: string | null;
     buyer: {
-      [x: string]: string;
-      [x: string]: string;
       id: number;
       buyername: string;
       profile_picture_url: string;

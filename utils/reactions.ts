@@ -1,27 +1,28 @@
 /**
  * Chat message reactions
- * Uses reaction_type keys only; icons are rendered at the UI layer.
+ * Maps reaction_type to emoji; used for display and API calls.
  */
 
-export const REACTION_TYPES = [
-  "THUMBS_UP",
-  "THUMBS_DOWN",
-  "HEART",
-  "FIRE",
-  "STAR",
-  "MONEY",
-  "SHOPPING",
-  "CHECK",
-  "EYES",
-  "CLAP",
-  "ROCKET",
-  "SMILE",
-] as const;
+export const REACTION_EMOJIS: Record<string, string> = {
+  THUMBS_UP: "👍",
+  THUMBS_DOWN: "👎",
+  HEART: "❤️",
+  FIRE: "🔥",
+  STAR: "⭐",
+  MONEY: "💰",
+  SHOPPING: "🛒",
+  CHECK: "✅",
+  EYES: "👀",
+  CLAP: "👏",
+  ROCKET: "🚀",
+  SMILE: "😊",
+} as const;
 
-export type ReactionType = (typeof REACTION_TYPES)[number];
+export type ReactionType = keyof typeof REACTION_EMOJIS;
 
 export interface ReactionSummary {
   reaction_type: string;
+  emoji: string;
   count: number;
   has_reacted: boolean;
 }
@@ -35,3 +36,7 @@ export const COMMON_REACTIONS: ReactionType[] = [
   "CLAP",
   "ROCKET",
 ];
+
+export function getEmoji(type: string): string {
+  return REACTION_EMOJIS[type] ?? type;
+}

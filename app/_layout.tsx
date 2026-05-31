@@ -1,15 +1,11 @@
 // app/_layout.tsx
-import 'react-native-reanimated';
-import 'react-native-gesture-handler';
 import { Stack } from "expo-router";
 import { View, Text, ActivityIndicator } from "react-native";
-import { StatusBar } from "expo-status-bar";
 import "../global.css";
 import { UserProvider, useUser } from "../hooks/userContextProvider";
 import { RegisterProvider } from "../models/signupSteps";
 import { ToastProvider } from "../components/ToastProvider";
-import { ThemeProvider } from "../components/themeProvider";
-import { useTheme } from "../components/themeProvider";
+import { ThemeProvider} from "../components/themeProvider";
 import { useState } from "react";
 import { RegisterRequest } from "../models/auth";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -31,7 +27,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider>
         <ToastProvider>
-          <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+          <GestureHandlerRootView style={{ flex: 1 }}>
             <UserProvider>
               <RegisterProvider value={{ regData, setRegData }}>
                 <AppStack />
@@ -46,16 +42,13 @@ export default function RootLayout() {
 
 export function AppStack() {
   const { user, isRestoringSession } = useUser();
-  const { resolvedTheme } = useTheme();
   const isLoggedIn = !!user;
-  const isDark = resolvedTheme === "dark";
 
   if (isRestoringSession) {
     return (
-      <View className={`flex-1 items-center justify-center ${isDark ? "bg-inverse-surface" : "bg-white"}`}>
-        <StatusBar style={isDark ? "light" : "dark"} />
-        <ActivityIndicator size="large" color={isDark ? "#FFFFFF" : "#000000"} />
-        <Text className={`mt-3 text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading…</Text>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" }}>
+        <ActivityIndicator size="large" color="#e26136" />
+        <Text style={{ marginTop: 12, color: "#876d64", fontSize: 14 }}>Loading…</Text>
       </View>
     );
   }
@@ -63,20 +56,15 @@ export function AppStack() {
   // Single stack + Stack.Protected: when logged in, guest routes are removed from
   // navigation history (fixes iOS swipe-back landing on introduction after login).
   return (
-    <>
-      <StatusBar style={isDark ? "light" : "dark"} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: isDark ? "#1a1c1d" : "#ffffff" } }}>
-        <Stack.Protected guard={isLoggedIn}>
-          <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
-        </Stack.Protected>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={isLoggedIn}>
+        <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+      </Stack.Protected>
 
-        <Stack.Protected guard={!isLoggedIn}>
-          <Stack.Screen name="introduction" />
-          <Stack.Screen name="(entrances)" />
-        </Stack.Protected>
-
-        <Stack.Screen name="support" />
-      </Stack>
-    </>
+      <Stack.Protected guard={!isLoggedIn}>
+        <Stack.Screen name="introduction" />
+        <Stack.Screen name="(entrances)" />
+      </Stack.Protected>
+    </Stack>
   );
 }

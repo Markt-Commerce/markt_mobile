@@ -1,7 +1,7 @@
+// ...existing code...
 import React from "react";
 import { View, Text, Image, TouchableOpacity } from "react-native";
 import { Order, OrderItem, SellerOrderItem } from "../models/orders";
-import { useTheme } from "./themeProvider";
 
 interface OrderCardProps {
   order: Order | OrderItem | SellerOrderItem | any;
@@ -21,9 +21,6 @@ function isOrderItem(o: any): o is OrderItem {
 }
 
 export default function OrderCard({ order, isSeller }: OrderCardProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-
   // Safe extraction with fallbacks
   let title = "Order";
   let subtitle = "";
@@ -69,39 +66,39 @@ export default function OrderCard({ order, isSeller }: OrderCardProps) {
 
   return (
     <View
-      className={`flex-row justify-between gap-4 px-4 py-3 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+      className="flex-row justify-between gap-4 bg-white px-4 py-3 border-b border-[#eee]"
     >
       <View className="flex-row gap-4 flex-1">
         {imageUri ? (
-          <Image source={{ uri: imageUri }} className="w-[70px] aspect-[3/4] rounded" />
+          <Image source={{ uri: imageUri }} className="w-[70px] aspect-[3/4] rounded-lg" />
         ) : (
-          <View className={`w-[70px] aspect-[3/4] rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-            <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No image</Text>
+          <View className="w-[70px] aspect-[3/4] rounded-lg bg-[#f4f1f0] items-center justify-center">
+            <Text className="text-xs text-[#876d64]">No image</Text>
           </View>
         )}
 
         <View className="flex-1 justify-center">
-          <Text className={`text-base font-medium ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className="text-base font-medium text-[#171311]">
             {isSeller && isSellerOrderItem(order) ? `From: ${order.order?.buyer?.buyername ?? "Buyer"}` : title}
           </Text>
-          <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className="text-sm text-[#876d64]">
             {isSeller && isSellerOrderItem(order)
               ? `Product: ${order.product?.name ?? title}`
               : subtitle}
           </Text>
-          <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{priceText}</Text>
+          <Text className="text-sm text-[#876d64]">{priceText}</Text>
         </View>
       </View>
 
       {typeof progress === "number" && (
         <View className="items-center gap-2">
-          <View className={`w-[88px] h-1 rounded overflow-hidden ${isDark ? "bg-[#46464e]" : "bg-border"}`}>
+          <View className="w-[88px] h-1 bg-[#e5dedc] rounded-sm overflow-hidden">
             <View
-              className="h-1 bg-primary"
+              className="h-1 bg-[#171311]"
               style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
             />
           </View>
-          <Text className={`text-sm font-medium ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{Math.round(progress)}%</Text>
+          <Text className="text-sm font-medium text-[#171311]">{Math.round(progress)}%</Text>
         </View>
       )}
     </View>

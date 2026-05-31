@@ -8,7 +8,6 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { ArrowLeft } from "lucide-react-native";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,7 +19,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRegData } from "../../models/signupSteps";
 import { useToast } from "../../components/ToastProvider";
 import { navigateToAppHome } from "../../utils/authNavigation"; 
-import { useTheme } from "../../components/themeProvider";
 
 const schema = z.object({
   email: z.string().min(1, "Email is required"),
@@ -32,9 +30,6 @@ export default function LoginScreen() {
   const { role, setRole, setUser } = useUser();
   const { setRegData } = useRegData();
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -120,136 +115,123 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-white">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: 20,
+          }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View className="flex-1 px-6 pt-4 pb-8">
+          {/* Panel */}
+          <View className="w-full max-w-[480px] rounded-2xl bg-white border border-[#f0e9e7] px-5 py-6">
             {/* Header */}
-            <View className="flex-row items-center mb-8">
-              <TouchableOpacity
-                onPress={() => router.back()}
-                className={`h-10 w-10 items-center justify-center rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <ArrowLeft size={20} color={iconColor} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Title */}
-            <View className="mb-8">
-              <Text className={`text-[32px] font-geist font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                Welcome{"\n"}back
-              </Text>
-              <Text className={`font-inter text-base mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                Sign in to continue your journey.
+            <View className="mb-4 items-center">
+              <Text className="text-[#171212] text-[14px] opacity-60">Welcome back</Text>
+              <Text className="text-[#171212] text-[24px] font-extrabold leading-tight">
+                Sign in to your account
               </Text>
             </View>
 
-            {/* Panel */}
-            <View className={`rounded border px-5 py-8 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-              {/* Error banner */}
-              {error ? (
-                <View className="mb-6 rounded bg-error-bg px-4 py-3 border border-error/10">
-                  <Text className="font-inter text-error text-sm">{error}</Text>
-                </View>
-              ) : null}
-
-              {/* Email */}
-              <View className="mb-6">
-                <Text className={`mb-2 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Email Address</Text>
-                <Input
-                  placeholder="Enter your email"
-                  control={control}
-                  name="email"
-                  errors={errors}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoComplete="email"
-                  textContentType="emailAddress"
-                />
+            {/* Error banner */}
+            {error ? (
+              <View className="mb-4 rounded-xl bg-error-bg px-4 py-3">
+                <Text className="text-error text-sm">{error}</Text>
               </View>
+            ) : null}
 
-              {/* Password — eye toggle */}
-              <View className="mb-2">
-                <Text className={`mb-2 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Password</Text>
-                <PasswordInput
-                  placeholder="Enter your password"
-                  control={control}
-                  name="password"
-                  errors={errors}
-                />
+            {/* Email */}
+            <View className="mb-4">
+              <Text className="mb-1 text-[13px] text-text-secondary">Email</Text>
+              <Input
+                placeholder="Enter your email"
+                control={control}
+                name="email"
+                errors={errors}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                textContentType="emailAddress"
+              />
+            </View>
+
+            {/* Password — eye toggle */}
+            <View className="mb-2">
+              <Text className="mb-1 text-[13px] text-text-secondary">Password</Text>
+              <PasswordInput
+                placeholder="Enter your password"
+                control={control}
+                name="password"
+                errors={errors}
+              />
+            </View>
+
+            {/* Forgot password */}
+            <View className="items-end">
+              <Link href="/forgotPassword">
+                <Text className="text-[#826869] text-sm underline">Forgot Password?</Text>
+              </Link>
+            </View>
+
+            {/* Role toggle */}
+            <View className="mt-6">
+              <Text className="mb-2 text-[13px] text-text-secondary">Continue as</Text>
+              <View className="flex-row items-center rounded-full bg-bg-muted p-1">
+                <TouchableOpacity
+                  onPress={() => setRole("buyer")}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: role === "buyer" }}
+                  className={`flex-1 rounded-button py-2.5 items-center ${role === "buyer" ? "bg-primary" : ""}`}
+                >
+                  <Text className={`font-medium ${role === "buyer" ? "text-white" : "text-text-primary"}`}>
+                    Buyer
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => setRole("seller")}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: role === "seller" }}
+                  className={`flex-1 rounded-button py-2.5 items-center ${role === "seller" ? "bg-primary" : ""}`}
+                >
+                  <Text className={`font-medium ${role === "seller" ? "text-white" : "text-text-primary"}`}>
+                    Seller
+                  </Text>
+                </TouchableOpacity>
               </View>
+            </View>
 
-              {/* Forgot password */}
-              <View className="items-end mb-8">
-                <Link href="/forgotPassword">
-                  <Text className={`font-inter text-sm underline ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Forgot Password?</Text>
-                </Link>
-              </View>
-
-              {/* Role toggle */}
-              <View className="mb-10">
-                <Text className={`mb-3 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Continue as</Text>
-                <View className={`flex-row items-center rounded p-1 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-                  <TouchableOpacity
-                    onPress={() => setRole("buyer")}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: role === "buyer" }}
-                    className={`flex-1 rounded py-2.5 items-center ${role === "buyer" ? "bg-primary shadow-sm" : ""}`}
-                  >
-                    <Text className={`font-geist font-bold text-sm ${role === "buyer" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                      Buyer
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => setRole("seller")}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: role === "seller" }}
-                    className={`flex-1 rounded py-2.5 items-center ${role === "seller" ? "bg-primary shadow-sm" : ""}`}
-                  >
-                    <Text className={`font-geist font-bold text-sm ${role === "seller" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                      Seller
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Submit */}
+            {/* Submit */}
+            <View className="mt-6">
               <Button
                 onPress={handleSubmit(onsubmit)}
                 disabled={!isValid || isLoading}
                 loading={isLoading}
                 text="Sign in"
-                variant="conversion"
               />
+            </View>
 
-              {/* Sign up */}
-              <View className="mt-8 items-center">
-                <Text
-                  className={`font-inter text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
-                >
-                  Don’t have an account?{" "}
-                  <Text 
-                    className={`font-geist font-bold underline ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}
-                    onPress={() => router.navigate("/signup")}
-                  >
-                    Sign up
-                  </Text>
-                </Text>
-              </View>
+            {/* Sign up */}
+            <View className="mt-5 items-center">
+              <Text
+                className="text-[#171212] text-sm"
+                onPress={() => router.navigate("/signup")}
+              >
+                Don’t have an account?{" "}
+                <Text className="text-primary underline">Sign up</Text>
+              </Text>
             </View>
           </View>
 
-          <View className="h-10" />
+          <View className="h-6" />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

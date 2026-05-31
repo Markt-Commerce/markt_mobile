@@ -26,25 +26,25 @@ function ShopRow({ shop, onPress }: { shop: ShopLite; onPress: () => void }) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      className="flex-row items-center px-6 py-4 border-b border-border bg-white"
+      className="flex-row items-center px-4 py-3 border-b border-border-light bg-white"
       activeOpacity={0.7}
       accessibilityRole="button"
       accessibilityLabel={`View ${label}`}
     >
-      <Avatar uri={shop.user?.profile_picture} name={label} size={56} className="rounded" />
+      <Avatar uri={shop.user?.profile_picture} name={label} size={56} />
       <View className="flex-1 ml-4">
-        <Text className="text-black font-geist font-bold text-base" numberOfLines={1}>
+        <Text className="text-text-primary font-semibold text-base" numberOfLines={1}>
           {label}
         </Text>
         {shop.stats && (
-          <Text className="text-tertiary font-inter text-xs mt-1">
+          <Text className="text-text-secondary text-xs mt-0.5">
             {shop.stats.product_count} products · {shop.stats.follower_count} followers
           </Text>
         )}
       </View>
       {shop.verification_status === "verified" && (
-        <View className="px-2 py-0.5 rounded bg-surface">
-          <Text className="text-tertiary font-geist font-medium text-[10px] uppercase tracking-wider">Verified</Text>
+        <View className="px-2 py-0.5 rounded bg-primary-muted">
+          <Text className="text-primary text-xs font-semibold">Verified</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -66,7 +66,7 @@ export default function DiscoverShopsScreen() {
   const fetchShops = useCallback(
     async (p: number, append: boolean) => {
       if (append) setLoadingMore(true);
-      else if (p === 1) setLoading(true);
+      else setLoading(true);
       try {
         const res = await getShops({
           page: p,
@@ -118,84 +118,127 @@ export default function DiscoverShopsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-      <View className="flex-row items-center px-6 py-4 border-b border-border">
+      <View className="flex-row items-center px-4 py-3 border-b border-border">
         <TouchableOpacity
           onPress={() => router.back()}
-          className="p-1 -ml-1"
+          className="p-2 -ml-2"
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={24} color="#000000" />
+          <ArrowLeft size={24} color="#171311" />
         </TouchableOpacity>
-        <Text className="flex-1 text-xl font-geist font-bold text-black text-center pr-8">
+        <Text className="flex-1 text-xl font-bold text-text-primary text-center pr-10">
           Discover Shops
         </Text>
       </View>
 
-      <View className="px-4 py-3 flex-row items-center bg-surface rounded mx-6 mt-4">
-        <Search size={20} color="#71717A" />
+      <View className="px-4 py-3 flex-row items-center bg-bg-muted rounded-xl mx-4 mt-3">
+        <Search size={20} color="#876d64" />
         <TextInput
-          className="ml-3 flex-1 text-black font-inter text-base"
+          className="ml-3 flex-1 text-text-primary text-base"
           placeholder="Search shops..."
-          placeholderTextColor="#A1A1AA"
+          placeholderTextColor="#876d64"
           value={search}
           onChangeText={setSearch}
         />
       </View>
 
-      {/* Categories Chips */}
       {categories.length > 0 && (
-        <View className="mt-2">
+        <View className="border-b border-border pb-1 mb-2">
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 12, gap: 12 }}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 24 }}
           >
             <TouchableOpacity
               onPress={() => setSelectedCategory(null)}
-              className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === null ? "bg-primary" : "bg-surface"}`}
+              className="py-2 min-h-[44px] justify-center relative"
+              accessibilityRole="tab"
+              accessibilityState={{ selected: selectedCategory === null }}
             >
               <Text
-                className={`font-geist font-semibold text-sm ${selectedCategory === null ? "text-white" : "text-tertiary"}`}
+                className={`font-semibold text-sm ${selectedCategory === null ? "text-text-primary" : "text-text-secondary"}`}
               >
                 All
               </Text>
+              {selectedCategory === null && (
+                <View
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 2,
+                    backgroundColor: "#e26136",
+                    borderRadius: 1,
+                  }}
+                />
+              )}
             </TouchableOpacity>
             {categories.map((c) => (
               <TouchableOpacity
                 key={c.id}
                 onPress={() => setSelectedCategory(c.slug)}
-                className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === c.slug ? "bg-primary" : "bg-surface"}`}
+                className="py-2 min-h-[44px] justify-center relative"
+                accessibilityRole="tab"
+                accessibilityState={{ selected: selectedCategory === c.slug }}
               >
                 <Text
-                  className={`font-geist font-semibold text-sm ${selectedCategory === c.slug ? "text-white" : "text-tertiary"}`}
+                  className={`font-semibold text-sm ${selectedCategory === c.slug ? "text-text-primary" : "text-text-secondary"}`}
                 >
                   {c.name}
                 </Text>
+                {selectedCategory === c.slug && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: 2,
+                      backgroundColor: "#e26136",
+                      borderRadius: 1,
+                    }}
+                  />
+                )}
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
       )}
 
-      {/* Sort Chips */}
-      <View className="mb-2">
+      <View className="border-b border-border pb-1 mb-2">
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 8, gap: 12 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 24 }}
         >
           {(["rating", "followers", "recent", "name"] as const).map((s) => (
             <TouchableOpacity
               key={s}
               onPress={() => setSortBy(s)}
-              className={`py-1.5 px-3 min-h-[32px] justify-center rounded border ${sortBy === s ? "bg-primary border-primary" : "bg-transparent border-border"}`}
+              className="py-2 min-h-[44px] justify-center relative"
+              accessibilityRole="tab"
+              accessibilityState={{ selected: sortBy === s }}
             >
               <Text
-                className={`font-geist font-medium text-xs ${sortBy === s ? "text-white" : "text-tertiary"}`}
+                className={`font-semibold text-sm ${sortBy === s ? "text-text-primary" : "text-text-secondary"}`}
               >
                 {s === "rating" ? "Top rated" : s === "followers" ? "Popular" : s === "recent" ? "Recent" : "A–Z"}
               </Text>
+              {sortBy === s && (
+                <View
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 2,
+                    backgroundColor: "#e26136",
+                    borderRadius: 1,
+                  }}
+                />
+              )}
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -203,13 +246,13 @@ export default function DiscoverShopsScreen() {
 
       {loading ? (
         <View className="flex-1 justify-center items-center py-16">
-          <ActivityIndicator size="large" color="#000000" />
-          <Text className="text-tertiary text-sm mt-2">Loading shops…</Text>
+          <ActivityIndicator size="large" color="#e26136" />
+          <Text className="text-text-secondary text-sm mt-2">Loading shops…</Text>
         </View>
       ) : shops.length === 0 ? (
         <View className="flex-1 justify-center items-center px-6 py-16">
-          <Text className="text-black font-semibold text-lg text-center">No shops found</Text>
-          <Text className="text-tertiary text-sm mt-2 text-center">
+          <Text className="text-text-primary font-semibold text-lg text-center">No shops found</Text>
+          <Text className="text-text-secondary text-sm mt-2 text-center">
             Try a different search or filter.
           </Text>
         </View>
@@ -228,11 +271,10 @@ export default function DiscoverShopsScreen() {
           ListFooterComponent={
             loadingMore ? (
               <View className="py-6 items-center">
-                <ActivityIndicator size="small" color="#000000" />
+                <ActivityIndicator size="small" color="#e26136" />
               </View>
             ) : null
           }
-          contentContainerStyle={{ paddingBottom: 24 }}
         />
       )}
     </SafeAreaView>

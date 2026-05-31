@@ -2,7 +2,6 @@ import * as React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Dimensions, FlatList, Modal, Pressable, StatusBar, Text, View, StyleSheet } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { Plus, X } from "lucide-react-native";
 import { Image } from "expo-image";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -131,7 +130,7 @@ export default function InstagramGrid({
       const sizeStyle = { aspectRatio: 1 } as const;
 
       if (item.kind === "placeholder") {
-        return <View className="bg-surface-dim border border-dashed border-border rounded flex-1" style={[sizeStyle, marginStyle]} />;
+        return <View className="bg-neutral-200 border border-dashed border-neutral-300 rounded-md flex-1" style={[sizeStyle, marginStyle]} />;
       }
 
       const { img } = item as { kind: "image"; id: string; img: PickedImage };
@@ -147,11 +146,11 @@ export default function InstagramGrid({
         ]);
       };
 
-        return (
-          <Pressable onPress={onPress} onLongPress={onLongPress} android_ripple={{ color: "#00000022" }} className="relative bg-surface rounded overflow-hidden flex-1" style={[sizeStyle, marginStyle]}>
-            <Image source={{ uri: img.uri }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
-          </Pressable>
-        );
+      return (
+        <Pressable onPress={onPress} onLongPress={onLongPress} android_ripple={{ color: "#00000022" }} className="relative bg-neutral-100 rounded-md overflow-hidden flex-1" style={[sizeStyle, marginStyle]}>
+          <Image source={{ uri: img.uri }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
+        </Pressable>
+      );
     },
     [enableRemoveOnLongPress, gap, images, onPressItem, openViewer, setImages]
   );
@@ -166,7 +165,7 @@ export default function InstagramGrid({
 
   return (
     <View className="w-full">
-      {images.length === 0 && !!emptyLabel && <Text className="text-center text-tertiary mb-2">{emptyLabel}</Text>}
+      {images.length === 0 && !!emptyLabel && <Text className="text-center text-neutral-500 mb-2">{emptyLabel}</Text>}
 
       <View className="w-full" style={{ padding: gap / 2 }}>
         <FlatList
@@ -183,13 +182,13 @@ export default function InstagramGrid({
       </View>
 
       {showFloatingAdd && (
-        <Pressable onPress={handlePick} android_ripple={{ color: "#ffffff55" }} className="absolute right-4 bottom-4 w-14 h-14 rounded items-center justify-center bg-primary">
-          <Plus size={24} color="#ffffff" />
+        <Pressable onPress={handlePick} android_ripple={{ color: "#ffffff55" }} className="absolute right-4 bottom-4 w-14 h-14 rounded-full items-center justify-center bg-black">
+          <Text className="text-white text-2xl">＋</Text>
         </Pressable>
       )}
 
       <Modal visible={viewerVisible} transparent={false} onRequestClose={() => setViewerVisible(false)}>
-        <View className="flex-1 bg-primary">
+        <View className="flex-1 bg-black">
           <StatusBar barStyle="light-content" backgroundColor="#000" />
           <FlatList
             ref={viewerRef}
@@ -213,7 +212,7 @@ export default function InstagramGrid({
 
           <View className="absolute top-0 left-0 right-0 h-14 px-2 flex-row items-center justify-between">
             <Pressable onPress={() => setViewerVisible(false)} android_ripple={{ color: "#ffffff22" }} className="p-3">
-              <X size={20} color="#ffffff" />
+              <Text className="text-white text-xl">✕</Text>
             </Pressable>
             <Text className="text-white text-sm mr-3">{images.length ? `${viewerIndex + 1}/${images.length}` : ""}</Text>
           </View>

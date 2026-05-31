@@ -15,7 +15,6 @@ import { likePost } from "../services/sections/post";
 import { useToast } from "./ToastProvider";
 import Avatar from "./Avatar";
 import SkeletonImage from "./SkeletonImage";
-import { useTheme } from "./themeProvider";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_PADDING = 16;
@@ -31,8 +30,6 @@ export default function FeedPostCard({ post, onLike }: Props) {
   const [likedByMe, setLikedByMe] = useState(post.liked_by_me ?? false);
   const [isLiking, setIsLiking] = useState(false);
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
 
   const mediaUrl = post.media?.[0]?.url;
 
@@ -76,100 +73,91 @@ export default function FeedPostCard({ post, onLike }: Props) {
 
   return (
     <Link href={`/postDetails/${post.id}`} asChild>
-      <TouchableOpacity activeOpacity={0.9} className="mb-8 px-6">
-        <View className={`rounded border overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+      <TouchableOpacity activeOpacity={0.85} className="px-4 pt-4">
+        <View className="rounded-card border border-border bg-white p-4">
           {/* Header: avatar, username, niche */}
-          <View className="flex-row items-center p-5">
+          <View className="flex-row items-center mb-3">
             <Avatar
               uri={post.user?.profile_picture}
               name={post.user?.username}
-              size={48}
-              className="mr-4"
+              size={40}
+              className="mr-3"
             />
             <View className="flex-1">
               <Text
-                className={`font-geist font-bold text-sm tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+                className="font-semibold text-text-primary text-sm"
                 numberOfLines={1}
               >
                 {post.user?.username ?? "Unknown"}
               </Text>
               {post.niche && (
                 <Text
-                  className={`font-geist font-bold text-[10px] uppercase tracking-widest mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                  className="text-xs text-text-secondary mt-0.5"
                   numberOfLines={1}
                 >
                   {post.niche.name}
                 </Text>
               )}
             </View>
-            <TouchableOpacity className="h-8 w-8 items-center justify-center">
-               <View className={`h-1 w-1 rounded mb-1 ${isDark ? "bg-[#46464e]" : "bg-surface-dim"}`} />
-               <View className={`h-1 w-1 rounded mb-1 ${isDark ? "bg-[#46464e]" : "bg-surface-dim"}`} />
-               <View className={`h-1 w-1 rounded ${isDark ? "bg-[#46464e]" : "bg-surface-dim"}`} />
-            </TouchableOpacity>
           </View>
 
           {/* Body: caption */}
           {post.caption ? (
-            <View className="px-5 pb-5">
-              <Text
-                className={`font-inter text-[15px] leading-6 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
-                numberOfLines={4}
-              >
-                {post.caption}
-              </Text>
-            </View>
+            <Text
+              className="mb-3 text-text-primary text-sm leading-5"
+              numberOfLines={3}
+            >
+              {post.caption}
+            </Text>
           ) : null}
 
           {/* Media */}
           {mediaUrl && (
             <View
-              className={`w-full ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+              className="mb-3 overflow-hidden rounded-xl w-full"
               style={{ aspectRatio: 1, maxHeight: MEDIA_MAX_HEIGHT }}
             >
               <SkeletonImage
                 source={{ uri: mediaUrl }}
-                containerClassName="w-full h-full"
+                containerClassName="w-full h-full rounded-xl"
                 resizeMode="cover"
                 accessibilityLabel="Post media"
               />
             </View>
           )}
 
-          {/* Footer: engagement */}
-          <View className="flex-row items-center justify-between px-5 h-16">
-            <View className="flex-row items-center gap-6">
-              <TouchableOpacity
-                onPress={handleLike}
-                disabled={isLiking}
-                className="flex-row items-center gap-2"
-                accessibilityRole="button"
-                accessibilityLabel={`${likeCount} likes`}
-              >
-                <Heart size={20} strokeWidth={1} color={likedByMe ? "#E94C2A" : (isDark ? "#c6c5cf" : "#71717A")} fill={likedByMe ? "#E94C2A" : "transparent"} />
-                <Text className={`font-geist font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{likeCount}</Text>
-              </TouchableOpacity>
+          {/* Footer: engagement — even spacing like modern social apps */}
+          <View className="flex-row mt-3 pt-2 border-t border-border-light gap-6">
+            <Pressable
+              onPress={handleLike}
+              disabled={isLiking}
+              className="flex-row items-center gap-2 py-1 min-h-[44px]"
+              accessibilityRole="button"
+              accessibilityLabel={`${likeCount} likes. Double tap to like`}
+            >
+              <Heart size={18} color={likedByMe ? "#e26136" : "#876d64"} fill={likedByMe ? "#e26136" : "transparent"} />
+              <Text className="text-text-primary text-sm">{likeCount}</Text>
+            </Pressable>
 
-              <TouchableOpacity
-                className="flex-row items-center gap-2"
-                accessibilityRole="button"
-                accessibilityLabel={`${post.comments_count} comments`}
-              >
-                <MessageCircle size={20} strokeWidth={1} color={isDark ? "#f0f1f2" : "#000000"} />
-                <Text className={`font-geist font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                  {post.comments_count}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <Pressable
+              className="flex-row items-center gap-2 py-1 min-h-[44px]"
+              accessibilityRole="button"
+              accessibilityLabel={`${post.comments_count} comments. Open post`}
+            >
+              <MessageCircle size={18} color="#876d64" />
+              <Text className="text-text-primary text-sm">
+                {post.comments_count}
+              </Text>
+            </Pressable>
 
-            <TouchableOpacity
+            <Pressable
               onPress={handleShare}
-              className="h-10 w-10 items-center justify-center"
+              className="flex-row items-center gap-2 py-1 min-h-[44px]"
               accessibilityRole="button"
               accessibilityLabel="Share post"
             >
-              <Send size={20} strokeWidth={1} color={isDark ? "#f0f1f2" : "#000000"} />
-            </TouchableOpacity>
+              <Send size={18} color="#876d64" />
+            </Pressable>
           </View>
         </View>
       </TouchableOpacity>

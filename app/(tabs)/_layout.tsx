@@ -16,31 +16,22 @@ import { getUserProfile } from "../../services/sections/profile";
 import AppBar from "../../components/AppBar";
 import NavDrawer from "../../components/NavDrawer";
 import type { UserProfile } from "../../models/profile";
-import { useTheme } from "../../components/themeProvider";
 
-const TAB_BAR_CONTENT_HEIGHT = 52;
+const TAB_BAR_CONTENT_HEIGHT = 56;
 const TAB_BAR_PADDING_TOP = 6;
-const TAB_BAR_PADDING_BOTTOM = 2;
-const SURFACE_WHITE = "#FFFFFF";
-const SURFACE_BORDER = "#E4E4E7";
-const TEXT_BLACK = "#000000";
-const TEXT_MUTED = "#71717A";
-const BRAND_PRIMARY = "#E94C2A";
+const TAB_BAR_PADDING_BOTTOM = 8;
 
 function TabsWithDrawer() {
   const { isOpen, closeDrawer } = useDrawer();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const insets = useSafeAreaInsets();
-  const tabBarBottomInset = Math.max(insets.bottom, Platform.OS === "ios" ? 2 : 0);
-  const tabBarHeight =
-    TAB_BAR_CONTENT_HEIGHT + TAB_BAR_PADDING_TOP + TAB_BAR_PADDING_BOTTOM + tabBarBottomInset;
+  /** Android edge-to-edge: system nav bar overlaps unless we pad the tab bar (do not hide system nav). */
+  const tabBarBottomInset = Platform.OS === "android" ? insets.bottom : 0;
 
   useEffect(() => {
     getUserProfile()
       .then(setProfile)
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   const displayName =
@@ -49,7 +40,7 @@ function TabsWithDrawer() {
       : profile?.seller_account?.shop_name ?? profile?.username ?? "User";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : SURFACE_WHITE }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
       <View style={{ flex: 1 }}>
         <AppBar
           title="Markt"
@@ -59,37 +50,17 @@ function TabsWithDrawer() {
         <Tabs
           screenOptions={{
             headerShown: false,
-            tabBarHideOnKeyboard: true,
             tabBarShowLabel: true,
-            tabBarLabelStyle: {
-              fontFamily: "Geist",
-              fontSize: 9,
-              fontWeight: "500",
-              textTransform: "uppercase",
-              letterSpacing: 0.4,
-            },
-            tabBarActiveTintColor: BRAND_PRIMARY,
-            tabBarInactiveTintColor: isDark ? "#c6c5cf" : TEXT_MUTED,
-            tabBarItemStyle: {
-              flex: 1,
-              paddingVertical: 0,
-            },
+            tabBarLabelStyle: { fontSize: 11, fontWeight: "500" },
+            tabBarActiveTintColor: "#e26136",
+            tabBarInactiveTintColor: "#876d64",
             tabBarStyle: {
-              backgroundColor: isDark ? "#1a1c1d" : SURFACE_WHITE,
+              backgroundColor: "white",
               borderTopWidth: 1,
-              borderTopColor: isDark ? "#46464e" : SURFACE_BORDER,
+              borderTopColor: "#efe9e7",
               paddingTop: TAB_BAR_PADDING_TOP,
               paddingBottom: TAB_BAR_PADDING_BOTTOM + tabBarBottomInset,
-              height: tabBarHeight,
-              paddingHorizontal: 8,
-              elevation: 0,
-              shadowColor: TEXT_BLACK,
-              shadowOffset: {
-                width: 0,
-                height: -4,
-              },
-              shadowOpacity: 0.04,
-              shadowRadius: 16,
+              height: TAB_BAR_CONTENT_HEIGHT + TAB_BAR_PADDING_TOP + TAB_BAR_PADDING_BOTTOM + tabBarBottomInset,
             },
           }}
         >
@@ -97,48 +68,35 @@ function TabsWithDrawer() {
             name="index"
             options={{
               title: "Home",
-              tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
-                <Home color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />
-              ),
+              tabBarIcon: ({ color }: { color: string }) => <Home color={color} size={22} />,
             }}
           />
           <Tabs.Screen
             name="search"
             options={{
               title: "Search",
-              tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
-                <Search color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />
-              ),
-            }}
-          />
-
-          <Tabs.Screen
-            name="orders"
-            options={{
-              title: "Orders",
-              tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
-                <ShoppingBag color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="messages"
-            options={{
-              title: "Messages",
-              tabBarLabel: "Chat",
-              tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
-                <MessageCircle color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />
-              ),
+              tabBarIcon: ({ color }: { color: string }) => <Search color={color} size={22} />,
             }}
           />
           <Tabs.Screen
             name="requests"
             options={{
               title: "Requests",
-              tabBarLabel: "Requests",
-              tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
-                <FileText color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />
-              ),
+              tabBarIcon: ({ color }: { color: string }) => <FileText color={color} size={22} />,
+            }}
+          />
+          <Tabs.Screen
+            name="orders"
+            options={{
+              title: "Orders",
+              tabBarIcon: ({ color }: { color: string }) => <ShoppingBag color={color} size={22} />,
+            }}
+          />
+          <Tabs.Screen
+            name="messages"
+            options={{
+              title: "Messages",
+              tabBarIcon: ({ color }: { color: string }) => <MessageCircle color={color} size={22} />,
             }}
           />
           <Tabs.Screen

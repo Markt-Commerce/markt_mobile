@@ -4,7 +4,6 @@ import { getNiches, joinNiche, leaveNiche } from "../services/sections/niches";
 import { Niches } from "../models/niches";
 import { useRouter } from "expo-router";
 import { useToast } from "./ToastProvider";
-import { useTheme } from "./themeProvider";
 
 export default function DiscoverNiches() {
   const [niches, setNiches] = useState<Niches[]>([]);
@@ -12,8 +11,6 @@ export default function DiscoverNiches() {
   const [joinedNiches, setJoinedNiches] = useState<Set<string>>(new Set());
   const router = useRouter();
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
 
   useEffect(() => {
     loadNiches();
@@ -57,12 +54,12 @@ export default function DiscoverNiches() {
   };
 
   if (loading) {
-    return <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} style={{ marginVertical: 20 }} />;
+    return <ActivityIndicator size="large" color="#e26136" style={{ marginVertical: 20 }} />;
   }
 
   return (
-    <View className={`my-4 border-y py-6 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}>
-      <Text className={`px-4 pb-4 text-[20px] font-geist font-bold tracking-[-0.015em] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+    <View className="my-4 border-y border-[#f4f2f1] bg-[#faf9f9] py-6">
+      <Text className="px-4 pb-4 text-[20px] font-bold tracking-[-0.015em] text-[#171312]">
         Discover Niches
       </Text>
 
@@ -73,7 +70,7 @@ export default function DiscoverNiches() {
       >
         {niches.length === 0 ? (
           <View className="items-center justify-center py-8">
-            <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No niches available</Text>
+            <Text className="text-[#876d64] text-sm">No niches available</Text>
           </View>
         ) : (
           niches.map((niche) => {
@@ -83,7 +80,7 @@ export default function DiscoverNiches() {
                 key={niche.id}
                 className="min-w-[100px] items-center gap-3"
               >
-                <Pressable onPress={() => router.push(`/niches/${niche.id}`)} className={`h-20 w-20 overflow-hidden rounded border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
+                <Pressable onPress={() => router.push(`/niches/${niche.id}`)} className="h-20 w-20 overflow-hidden rounded-full border border-[#f4f2f1] bg-white shadow-sm">
                   <ImageBackground
                     source={{ uri: "https://via.placeholder.com/80x80" }}
                     resizeMode="cover"
@@ -95,23 +92,23 @@ export default function DiscoverNiches() {
                   </ImageBackground>
                 </Pressable>
 
-                <Text className={`text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+                <Text className="text-sm font-bold text-[#171312]" numberOfLines={1}>
                   {niche.name}
                 </Text>
 
                 <Pressable
                   onPress={() => (isJoined ? handleLeave(niche) : handleJoin(niche))}
-                  className={`w-full rounded px-4 py-1.5 border ${
+                  className={`w-full rounded-full px-4 py-1.5 ${
                     isJoined
-                      ? "bg-primary border-primary"
-                      : isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"
+                      ? "bg-[#171312]"
+                      : "bg-[#f4f2f1]"
                   }`}
                 >
                   <Text
                     className={`text-center text-[12px] font-bold ${
                       isJoined
                         ? "text-white"
-                        : isDark ? "text-[#f0f1f2]" : "text-black"
+                        : "text-[#171312]"
                     }`}
                   >
                     {isJoined ? "Following" : "Follow"}

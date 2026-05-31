@@ -1,18 +1,15 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from "react-native";
+import {View,Text,Image,TouchableOpacity,ScrollView,ActivityIndicator,RefreshControl} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getCart, updateCartItem, deleteCartItem, getCartSummary, checkoutCart } from "../../services/sections/cart";
+import {getCart,updateCartItem,deleteCartItem,getCartSummary,checkoutCart} from "../../services/sections/cart";
 import { Cart, CartItem, CartSummary, CheckoutRequest } from "../../models/cart";
-import { ArrowLeft, Trash2, ShoppingCart } from "lucide-react-native";
+import { ArrowLeft, Trash2 } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useToast } from "../../components/ToastProvider";
 import { createOrder } from "../../services/sections/orders";
-import { useTheme } from "../../components/themeProvider";
 
 export default function CartScreen() {
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
 
   const [cart, setCart] = useState<Cart | null>(null);
   const [summary, setSummary] = useState<CartSummary | null>(null);
@@ -115,40 +112,41 @@ export default function CartScreen() {
   // ---------- States ----------
   if (loading && !refreshing) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
-        <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
-        <Text className={`mt-3 font-geist font-medium ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Loading your cart…</Text>
+      <SafeAreaView className="flex-1 items-center justify-center bg-white">
+        <ActivityIndicator size="large" color="#e26136" />
+        <Text className="mt-3 text-[#171311] font-medium">Loading your cart…</Text>
       </SafeAreaView>
     );
   }
 
   if (!cart || cart.items?.length === 0) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
+      <SafeAreaView className="flex-1 bg-white">
         {/* Header */}
-        <View className={`flex-row items-center justify-between px-6 py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-          <TouchableOpacity onPress={() => router.back()} className={`h-10 w-10 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-            <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+        <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
+          <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 rounded-full items-center justify-center bg-[#f4f1f0]">
+            <ArrowLeft size={18} color="#171311" />
           </TouchableOpacity>
-          <Text className={`flex-1 text-center text-xl font-geist font-bold pr-10 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Cart</Text>
+          <Text className="flex-1 text-center text-lg font-extrabold text-[#171311] -ml-10">Cart</Text>
+          <View className="w-10" />
         </View>
 
-        <View className="flex-1 items-center justify-center px-8">
-          <View className={`w-24 h-24 rounded items-center justify-center mb-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-            <ShoppingCart size={40} color={isDark ? "#c6c5cf" : "#A1A1AA"} strokeWidth={1} />
+        <View className="flex-1 items-center justify-center px-6">
+          <View className="w-24 h-24 rounded-2xl bg-bg-muted items-center justify-center mb-4">
+            <Text className="text-4xl">🛒</Text>
           </View>
-          <Text className={`text-2xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Your cart is empty</Text>
-          <Text className={`mt-2 font-inter text-base text-center leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className="text-text-primary text-xl font-bold">Your cart is empty</Text>
+          <Text className="mt-2 text-text-secondary text-sm text-center">
             Explore the marketplace and add items you love.
           </Text>
           <TouchableOpacity
             onPress={() => router.replace("/")}
-            className="mt-8 h-12 px-8 rounded bg-primary items-center justify-center"
+            className="mt-6 h-12 px-6 rounded-full bg-primary items-center justify-center"
             activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel="Start shopping"
           >
-            <Text className="text-white font-geist font-bold">Start shopping</Text>
+            <Text className="text-white font-semibold">Start shopping</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -157,23 +155,24 @@ export default function CartScreen() {
 
   // ---------- Main ----------
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-[#faf9f8]">
       {/* Header */}
-      <View className={`flex-row items-center justify-between px-6 py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-        <TouchableOpacity onPress={() => router.back()} className={`h-10 w-10 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-          <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+      <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
+        <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 rounded-full items-center justify-center bg-white border border-[#efe9e7]">
+          <ArrowLeft size={18} color="#171311" />
         </TouchableOpacity>
-        <Text className={`flex-1 text-center text-xl font-geist font-bold pr-10 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Cart</Text>
+        <Text className="flex-1 text-center text-lg font-extrabold text-[#171311] -ml-10">Cart</Text>
+        <View className="w-10" />
       </View>
 
       <ScrollView
-        className="flex-1 py-4"
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "#f0f1f2" : "#000000"} />}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        className="flex-1"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#e26136" />}
+        contentContainerStyle={{ paddingBottom: 20 }}
       >
         {/* Items container */}
-        <View className="px-6 mt-6">
-          <View className={`rounded border overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+        <View className="px-4">
+          <View className="rounded-2xl bg-white border border-[#efe9e7] overflow-hidden">
             {cart.items?.map((item, idx) => {
               const image = item.product?.images?.[0]?.media?.original_url ?? "";
               const name = item.product?.name ?? "Product";
@@ -184,55 +183,55 @@ export default function CartScreen() {
               const lineTotal = Number(price) * (item.quantity ?? 1);
 
               return (
-                <View key={item.id} className={`px-4 py-5 ${idx !== cart.items?.length - 1 ? (isDark ? "border-b border-[#46464e]" : "border-b border-border") : ""}`}>
-                  <View className="flex-row gap-4">
-                    <Image source={{ uri: image }} className={`w-20 h-20 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`} />
+                <View key={item.id} className={`px-4 py-3 ${idx !== cart.items?.length - 1 ? "border-b border-[#f3efed]" : ""}`}>
+                  <View className="flex-row gap-3">
+                    <Image source={{ uri: image }} className="w-16 h-16 rounded-xl bg-[#f4f1f0]" />
                     <View className="flex-1">
-                      <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+                      <Text className="text-[#171311] font-semibold" numberOfLines={1}>
                         {name}
                       </Text>
-                      <Text className={`font-inter text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                      <Text className="text-[#876d64] text-xs mt-0.5">
                         Variant #{item.variant_id}
                       </Text>
 
-                      <View className="mt-3 flex-row items-center justify-between">
-                        <Text className={`font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(price)}</Text>
+                      <View className="mt-2 flex-row items-center justify-between">
+                        <Text className="text-[#171311] font-semibold">{formatMoney(price)}</Text>
 
                         {/* Stepper + remove */}
-                        <View className="flex-row items-center gap-2">
+                        <View className="flex-row items-center gap-1.5">
                           <TouchableOpacity
                             onPress={() => handleQuantityChange(item, item.quantity - 1)}
-                            className={`w-8 h-8 rounded border items-center justify-center ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+                            className="w-8 h-8 rounded-full bg-[#f4f1f0] items-center justify-center"
                             activeOpacity={0.8}
                           >
-                            <Text className={`text-lg font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>−</Text>
+                            <Text className="text-base font-bold text-[#171311]">−</Text>
                           </TouchableOpacity>
 
-                          <View className="min-w-[32px] items-center justify-center">
-                            <Text className={`font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.quantity}</Text>
+                          <View className="min-w-[36px] h-8 rounded-full bg-[#faf7f6] border border-[#efe9e7] items-center justify-center px-2">
+                            <Text className="text-[#171311] font-semibold">{item.quantity}</Text>
                           </View>
 
                           <TouchableOpacity
                             onPress={() => handleQuantityChange(item, item.quantity + 1)}
-                            className="w-8 h-8 rounded bg-primary items-center justify-center"
+                            className="w-8 h-8 rounded-full bg-[#171311] items-center justify-center"
                             activeOpacity={0.8}
                           >
-                            <Text className="text-lg font-bold text-white">+</Text>
+                            <Text className="text-base font-bold text-white">+</Text>
                           </TouchableOpacity>
 
                           <TouchableOpacity
                             onPress={() => handleRemove(item)}
-                            className={`ml-2 w-8 h-8 rounded border items-center justify-center ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+                            className="ml-1 w-8 h-8 rounded-full bg-[#f4f1f0] items-center justify-center"
                             activeOpacity={0.8}
                           >
-                            <Trash2 size={14} color={isDark ? "#f0f1f2" : "#000000"} />
+                            <Trash2 size={16} color="#171311" />
                           </TouchableOpacity>
                         </View>
                       </View>
 
-                      <View className="mt-3 flex-row justify-between">
-                        <Text className={`text-xs font-inter ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Line total</Text>
-                        <Text className={`text-xs font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                      <View className="mt-2 flex-row justify-between">
+                        <Text className="text-xs text-[#8e7a74]">Line total</Text>
+                        <Text className="text-xs font-semibold text-[#171311]">
                           {formatMoney(lineTotal)}
                         </Text>
                       </View>
@@ -245,38 +244,40 @@ export default function CartScreen() {
         </View>
 
         {/* Summary card */}
-        <View className="px-6 mt-6">
-          <View className={`rounded border p-6 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-lg font-geist font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Order Summary</Text>
+        <View className="px-4 mt-4">
+          <View className="rounded-2xl bg-white border border-[#efe9e7] p-4">
+            <Text className="text-[#171311] text-base font-extrabold mb-2">Order Summary</Text>
 
-            <View className="flex-row justify-between py-2">
-              <Text className={`text-sm font-inter ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Subtotal</Text>
-              <Text className={`text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(summary?.subtotal)}</Text>
+            <View className="flex-row justify-between py-1.5">
+              <Text className="text-sm text-[#876d64]">Subtotal</Text>
+              <Text className="text-sm text-[#171311]">{formatMoney(summary?.subtotal)}</Text>
             </View>
-            <View className="flex-row justify-between py-2">
-              <Text className={`text-sm font-inter ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Discount</Text>
-              <Text className={`text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>−{formatMoney(summary?.discount)}</Text>
+            <View className="flex-row justify-between py-1.5">
+              <Text className="text-sm text-[#876d64]">Discount</Text>
+              <Text className="text-sm text-[#171311]">−{formatMoney(summary?.discount)}</Text>
             </View>
-            <View className={`h-[1px] my-4 ${isDark ? "bg-[#46464e]" : "bg-border"}`} />
-            <View className="flex-row justify-between py-2">
-              <Text className={`text-base font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Total</Text>
-              <Text className={`text-lg font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(summary?.total)}</Text>
+            <View className="h-[1px] bg-[#f3efed] my-2" />
+            <View className="flex-row justify-between py-1.5">
+              <Text className="text-sm font-semibold text-[#171311]">Total</Text>
+              <Text className="text-sm font-extrabold text-[#171311]">{formatMoney(summary?.total)}</Text>
             </View>
 
             <TouchableOpacity
               onPress={handleCheckout}
               disabled={processing}
-              className={`mt-6 h-12 rounded items-center justify-center ${processing ? (isDark ? "bg-[#2f3132]" : "bg-surface") : "bg-primary"}`}
+              className={`mt-4 h-12 rounded-button items-center justify-center ${processing ? "bg-bg-muted" : "bg-primary"}`}
               activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel={processing ? "Processing" : "Proceed to checkout"}
             >
-              <Text className={`text-base font-geist font-bold ${processing ? (isDark ? "text-[#c6c5cf]" : "text-tertiary") : "text-white"}`}>
+              <Text className={`text-base font-semibold tracking-[0.015em] ${processing ? "text-text-secondary" : "text-white"}`}>
                 {processing ? "Processing…" : "Proceed to Checkout"}
               </Text>
             </TouchableOpacity>
           </View>
         </View>
+
+        <View className="h-6" />
       </ScrollView>
     </SafeAreaView>
   );

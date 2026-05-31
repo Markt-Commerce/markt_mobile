@@ -172,7 +172,7 @@ export default function StartCards({
     <View className="px-4 pt-2 pb-3">
       {/* Header */}
       <View className="mb-2 flex-row justify-between">
-        <Text className="text-[20px] font-geist font-bold text-black">{title}</Text>
+        <Text className="text-[20px] font-extrabold text-[#171311]">{title}</Text>
         <Pressable onPress={() => { onRemoved?.(); setRemoved(true); }}>
           <X size={20}/>
         </Pressable>
@@ -181,15 +181,15 @@ export default function StartCards({
       {/* Progress row — show "X of Y" only when total > 0 (avoid "0 of —") */}
       <View className="mb-3">
         <View className="flex-row items-center justify-between">
-          <Text className="text-sm text-tertiary">
+          <Text className="text-sm text-[#5f4f4f]">
             {total > 0 ? `${done} of ${total} steps completed` : "Complete these steps to start selling."}
           </Text>
-          {total > 0 && <Text className="text-sm font-semibold text-black">{pct}%</Text>}
+          {total > 0 && <Text className="text-sm font-semibold text-[#171311]">{pct}%</Text>}
         </View>
         {total > 0 && (
-          <View className="mt-2 h-2 w-full rounded bg-border overflow-hidden">
+          <View className="mt-2 h-2 w-full rounded-full bg-[#f1ecea] overflow-hidden">
             <View
-              className="h-2 bg-primary rounded"
+              className="h-2 bg-[#171311] rounded-full"
               style={{ width: `${pct}%` }}
             />
           </View>
@@ -206,12 +206,12 @@ export default function StartCards({
           {[0, 1, 2].map((i) => (
             <View
               key={i}
-              className="mr-3 w-64 rounded bg-white border border-border p-4"
+              className="mr-3 w-64 rounded-2xl bg-white border border-[#efe9e7] p-4"
             >
-              <View className="w-8 h-8 rounded bg-surface" />
-              <View className="mt-3 h-4 w-40 rounded bg-surface" />
-              <View className="mt-2 h-3 w-48 rounded bg-surface" />
-              <View className="mt-4 h-10 w-28 rounded bg-surface" />
+              <View className="w-8 h-8 rounded-full bg-[#f4f1f0]" />
+              <View className="mt-3 h-4 w-40 rounded bg-[#f4f1f0]" />
+              <View className="mt-2 h-3 w-48 rounded bg-[#f4f1f0]" />
+              <View className="mt-4 h-10 w-28 rounded-full bg-[#f4f1f0]" />
             </View>
           ))}
         </ScrollView>
@@ -224,18 +224,18 @@ export default function StartCards({
           {(cards.length ? cards : []).map((card) => {
             const Icon = pickIcon(card.icon);
             const body = (
-              <View className="mr-3 w-64 rounded bg-white border border-border p-4">
+              <View className="mr-3 w-64 rounded-2xl bg-white border border-[#efe9e7] p-4">
                 <View className="flex-row items-center">
-                  <View className="h-10 w-10 rounded bg-surface items-center justify-center">
-                    <Icon size={18} color="#000000" />
+                  <View className="h-10 w-10 rounded-full bg-[#f4f1f0] items-center justify-center">
+                    <Icon size={18} color="#171311" />
                   </View>
-                  <Text className="ml-3 text-base font-semibold text-black" numberOfLines={1}>
+                  <Text className="ml-3 text-base font-semibold text-[#171311]" numberOfLines={1}>
                     {card.title}
                   </Text>
                 </View>
 
                 {card.subtitle && (
-                  <Text className="mt-2 text-sm text-tertiary" numberOfLines={2}>
+                  <Text className="mt-2 text-sm text-[#7b6660]" numberOfLines={2}>
                     {card.subtitle}
                   </Text>
                 )}
@@ -244,7 +244,7 @@ export default function StartCards({
                   <View className="flex-1" />
                   <TouchableOpacity
                     activeOpacity={0.9}
-                    className="px-4 h-10 rounded bg-primary items-center justify-center flex-row"
+                    className="px-4 h-10 rounded-full bg-[#171311] items-center justify-center flex-row"
                   >
                     <Text className="text-white font-semibold text-sm">
                       {card.ctaText || "Open"}

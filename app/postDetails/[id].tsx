@@ -11,12 +11,11 @@ import { useUser } from "../../hooks/userContextProvider";
 import { getUserProfile } from "../../services/sections/profile";
 import Avatar from "../../components/Avatar";
 import type { UserProfile } from "../../models/profile";
-import { useTheme } from "../../components/themeProvider";
 
 
 
 // Helper component for comment rendering
-const SingleCommentComponent = React.memo(({ comment, isDark }: { comment: CommentItem, isDark: boolean }) => {
+const SingleCommentComponent = React.memo(({ comment }: { comment: CommentItem }) => {
   return (
     <View className="flex w-full flex-row items-start justify-start gap-3 p-4">
       <Avatar
@@ -26,14 +25,14 @@ const SingleCommentComponent = React.memo(({ comment, isDark }: { comment: Comme
       />
       <View className="flex h-full flex-1 flex-col items-start justify-start">
         <View className="flex w-full flex-row items-start justify-start gap-x-3">
-          <Text className={`text-sm font-bold leading-normal tracking-[0.015em] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className="text-[#171311] text-sm font-bold leading-normal tracking-[0.015em]">
             {comment.user.username}
           </Text>
-          <Text className={`text-sm font-normal leading-normal ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className="text-[#876d64] text-sm font-normal leading-normal">
             {parseDate(comment.created_at)}
           </Text>
         </View>
-        <Text className={`text-sm font-normal leading-normal ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+        <Text className="text-[#171311] text-sm font-normal leading-normal">
           {comment.content}
         </Text>
       </View>
@@ -58,8 +57,7 @@ export default function PostDetailsScreen() {
   const { show } = useToast();
   const { user } = useUser();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+
 
   const FetchPost = async (id: string) => {
     try {
@@ -175,9 +173,9 @@ export default function PostDetailsScreen() {
 
   if (!post) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top", "bottom"]}>
+      <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+          <ActivityIndicator size="large" color="#e26136" />
         </View>
       </SafeAreaView>
     );
@@ -187,44 +185,44 @@ export default function PostDetailsScreen() {
   const renderListHeader = () => (
     <View>
       {/* Header Bar */}
-      <View className={`flex items-center p-4 pb-2 flex-row ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+      <View className="flex items-center bg-white p-4 pb-2 flex-row">
         <TouchableOpacity
-          className="flex size-12 shrink-0 items-center justify-center"
+          className="text-[#171311] flex size-12 shrink-0 items-center justify-center"
           onPress={() => router.back()}
         >
-          <ArrowLeft size={24} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={24} color="#171311" />
         </TouchableOpacity>
-        <Text className={`text-lg font-geist font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+        <Text className="text-[#171311] text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12">
           Post
         </Text>
       </View>
 
-      <View className={`flex flex-row gap-4 min-h-[72px] py-2 px-4 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+      <View className="flex flex-row gap-4 bg-white px-4 min-h-[72px] py-2">
         <Avatar uri={post.user?.profile_picture_url} name={post.user?.username} size={56} />
         <View className="flex flex-col justify-center">
-          <Text className={`text-base font-medium leading-normal line-clamp-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className="text-[#171311] text-base font-medium leading-normal line-clamp-1">
             {post.user.username}
           </Text>
-          <Text className={`text-sm font-normal leading-normal line-clamp-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className="text-[#876d64] text-sm font-normal leading-normal line-clamp-2">
             {parseDate(post.created_at)}
           </Text>
         </View>
       </View>
 
       {/* Caption */}
-      <Text className={`text-base font-normal leading-normal pb-3 pt-1 px-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+      <Text className="text-[#171311] text-base font-normal leading-normal pb-3 pt-1 px-4">
         {post.caption}
       </Text>
 
       {/* Main Image */}
       {post.social_media.length > 0 && (
-        <View className={`flex w-full grow p-4 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+        <View className="flex w-full grow bg-white p-4">
           {post.social_media.length === 1 ? (
             // Single image
-            <View className={`w-full gap-1 overflow-hidden aspect-[2/3] rounded flex md:gap-2 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
+            <View className="w-full gap-1 overflow-hidden bg-white aspect-[2/3] rounded-lg flex md:gap-2">
               <Image
                 source={{ uri: post.social_media[0].media.original_url }}
-                className="w-full bg-center bg-no-repeat bg-cover aspect-auto rounded flex-1"
+                className="w-full bg-center bg-no-repeat bg-cover aspect-auto rounded-none flex-1"
               />
             </View>
           ) : (
@@ -241,10 +239,10 @@ export default function PostDetailsScreen() {
                   setCurrentImageIndex(idx);
                 }}
                 renderItem={({ item }) => (
-                  <View style={{ width: Dimensions.get("window").width - 32 }} className={`gap-1 overflow-hidden aspect-[2/3] rounded flex ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
+                  <View style={{ width: Dimensions.get("window").width - 32 }} className="gap-1 overflow-hidden bg-white aspect-[2/3] rounded-lg flex">
                     <Image
                       source={{ uri: item.media.original_url }}
-                      className="w-full bg-center bg-no-repeat bg-cover aspect-auto rounded flex-1"
+                      className="w-full bg-center bg-no-repeat bg-cover aspect-auto rounded-none flex-1"
                     />
                     {/* Left arrow indicator */}
                     {currentImageIndex > 0 && (
@@ -267,8 +265,8 @@ export default function PostDetailsScreen() {
                 {post.social_media.map((_, idx) => (
                   <View
                     key={idx}
-                    className={`h-2 rounded transition-all ${
-                      idx === currentImageIndex ? "bg-primary w-6" : (isDark ? "bg-[#46464e] w-2" : "bg-border w-2")
+                    className={`h-2 rounded-full transition-all ${
+                      idx === currentImageIndex ? "bg-[#e26136] w-6" : "bg-[#e5dedc] w-2"
                     }`}
                   />
                 ))}
@@ -282,38 +280,38 @@ export default function PostDetailsScreen() {
       {/* Sponsored Product: I will work on a way to get the product details later */}
       {post.products?.length > 0 && (
         <View className="p-4">
-        <View className="flex items-stretch justify-between gap-4 rounded flex-row">
+        <View className="flex items-stretch justify-between gap-4 rounded-lg flex-row">
           <View className="flex flex-[2_2_0px] flex-col gap-4">
             <View className="flex flex-col gap-1">
-              <Text className={`text-sm font-normal leading-normal ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className="text-[#876d64] text-sm font-normal leading-normal">
                 Sponsored
               </Text>
-              <Text className={`text-base font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className="text-[#171311] text-base font-bold leading-tight">
                 Le name of ze product
               </Text>
-              <Text className={`text-sm font-normal leading-normal ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className="text-[#876d64] text-sm font-normal leading-normal">
                 Le price of ze product
               </Text>
             </View>
             <TouchableOpacity
-              className={`flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded h-8 px-4 flex-row-reverse w-fit ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+              className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-8 px-4 flex-row-reverse bg-[#f4f1f0] w-fit"
               onPress={() => console.log("Add to cart")}
             >
-              <Text className={`text-sm font-medium leading-normal truncate ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className="text-[#171311] text-sm font-medium leading-normal truncate">
                 Add to Cart
               </Text>
             </TouchableOpacity>
           </View>
           <Image
             source={{ uri: "https://i.pravatar.cc/150?img=7" }}
-            className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded flex-1"
+            className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-lg flex-1"
           />
         </View>
       </View>
       )}
 
       {/* Social Actions — aligned with FeedPostCard: gap-6, min-h-[44px], orange heart when liked */}
-      <View className={`flex-row mt-3 pt-2 border-t px-4 gap-6 ${isDark ? "border-[#46464e]" : "border-border"}`}>
+      <View className="flex-row mt-3 pt-2 border-t border-border-light px-4 gap-6">
         <TouchableOpacity
           onPress={handleLike}
           disabled={isLiking}
@@ -323,18 +321,18 @@ export default function PostDetailsScreen() {
         >
           <Heart
             size={18}
-            color={likedByMe ? "#E94C2A" : (isDark ? "#c6c5cf" : "#71717A")}
-            fill={likedByMe ? "#E94C2A" : "transparent"}
+            color={likedByMe ? "#e26136" : "#876d64"}
+            fill={likedByMe ? "#e26136" : "transparent"}
           />
-          <Text className={`text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{likeCount}</Text>
+          <Text className="text-text-primary text-sm">{likeCount}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           className="flex-row items-center gap-2 py-1 min-h-[44px]"
           accessibilityRole="button"
           accessibilityLabel={`${post.comment_count} comments`}
         >
-          <MessageCircle size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
-          <Text className={`text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{post.comment_count}</Text>
+          <MessageCircle size={18} color="#876d64" />
+          <Text className="text-text-primary text-sm">{post.comment_count}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={handleShare}
@@ -342,27 +340,27 @@ export default function PostDetailsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Share post"
         >
-          <Send size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
-          <Text className={`text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Share</Text>
+          <Send size={18} color="#876d64" />
+          <Text className="text-text-primary text-sm">Share</Text>
         </TouchableOpacity>
       </View>
 
       {/* Comments Header */}
-      <Text className={`text-lg font-geist font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+      <Text className="text-[#171311] text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">
         Comments
       </Text>
     </View>
   );
 
   const renderCommentItem = ({ item }: { item: CommentItem }) => (
-    <SingleCommentComponent comment={item} isDark={isDark} />
+    <SingleCommentComponent comment={item} />
   );
 
   const renderListFooter = () => {
     if (loading) {
       return (
         <View className="py-4">
-          <ActivityIndicator size="small" color="#71717A" />
+          <ActivityIndicator size="small" color="#876d64" />
         </View>
       );
     }
@@ -370,9 +368,9 @@ export default function PostDetailsScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top"]}>
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}>
-        <View className="relative flex-1 flex-col justify-between" style={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}>
+    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
+      <KeyboardAvoidingView behavior="padding" className="flex-1 bg-white">
+        <View className="relative flex-1 flex-col bg-white justify-between">
           <FlatList
           data={comments}
           keyExtractor={(item) => item.id.toString()}
@@ -386,17 +384,17 @@ export default function PostDetailsScreen() {
         />
 
           <SafeAreaView edges={["bottom"]}>
-            <View className={`px-4 py-3 border-t ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+            <View className="bg-white px-4 py-3 border-t border-border">
               <View className="flex-row items-center gap-3">
                 <Avatar uri={myAvatarUri} name={myDisplayName} size={40} />
 
               {/* Input + Icons */}
-              <View className={`flex-1 flex-row items-center rounded px-3 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+              <View className="flex-1 flex-row items-center bg-[#f4f1f0] rounded-lg px-3">
                 {/* Text Input */}
                 <TextInput
                   placeholder="Add a comment..."
-                  placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
-                  className={`flex-1 text-base font-normal py-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+                  placeholderTextColor="#876d64"
+                  className="flex-1 text-[#171311] text-base font-normal py-2"
                   value={newComment}
                   onChangeText={setNewComment}
                   multiline
@@ -404,12 +402,20 @@ export default function PostDetailsScreen() {
 
                 {/* Right-side Icons */}
                 <View className="flex-row items-center">
+                  {/* Attach image */}
+                  {/* <TouchableOpacity
+                    className="p-1.5"
+                    onPress={() => console.log("Attach image")}
+                  >
+                    <ImageIcon size={20} color="#876d64" />
+                  </TouchableOpacity> */}
+
                   {/* Send button */}
                   <TouchableOpacity
                     className="p-1.5"
                     onPress={() => createComment(newComment)}
                   >
-                    <SendHorizonal size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+                    <SendHorizonal size={20} color="#171311" />
                   </TouchableOpacity>
                 </View>
               </View>

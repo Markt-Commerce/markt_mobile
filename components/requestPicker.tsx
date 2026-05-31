@@ -36,12 +36,12 @@ export default function RequestPicker({
       snapPoints={snapPoints}
       onClose={onClose}
       enablePanDownToClose
-      backgroundStyle={{ backgroundColor: "#FFFFFF" }}
+      backgroundStyle={{ backgroundColor: "#fff" }}
       handleIndicatorStyle={{
-        backgroundColor: "#E4E4E7",
+        backgroundColor: "#ccc",
         width: 40,
         height: 4,
-        borderRadius: 8,
+        borderRadius: 2,
       }}
     >
       <BottomSheetView className="flex-1 px-4">
@@ -49,13 +49,13 @@ export default function RequestPicker({
 
         {loading ? (
           <View className="flex-1 items-center justify-center py-12">
-            <ActivityIndicator size="large" color="#000000" />
-            <Text className="text-tertiary text-sm mt-3">Loading requests…</Text>
+            <ActivityIndicator size="large" color="#e26136" />
+            <Text className="text-text-secondary text-sm mt-3">Loading requests…</Text>
           </View>
         ) : requests.length === 0 ? (
           <View className="flex-1 items-center justify-center py-12">
-            <Text className="text-center text-tertiary">No requests to share.</Text>
-            <Text className="text-center text-tertiary text-sm mt-1">
+            <Text className="text-center text-text-secondary">No requests to share.</Text>
+            <Text className="text-center text-text-secondary text-sm mt-1">
               Create a request from the Requests tab first.
             </Text>
           </View>
@@ -64,23 +64,23 @@ export default function RequestPicker({
             data={requests}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => handleSelect(item)}
-                  disabled={disabled}
-                  className={`p-3 mb-2 rounded bg-surface border border-border ${disabled ? "opacity-50" : ""}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Share request ${item.title}`}
-                >
-                <Text className="text-base font-medium text-black" numberOfLines={2}>
+              <TouchableOpacity
+                onPress={() => handleSelect(item)}
+                disabled={disabled}
+                className={`p-3 mb-2 rounded-lg bg-gray-100 ${disabled ? "opacity-50" : ""}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Share request ${item.title}`}
+              >
+                <Text className="text-base font-medium text-text-primary" numberOfLines={2}>
                   {item.title || "Untitled request"}
                 </Text>
                 {item.description ? (
-                  <Text className="text-sm text-tertiary mt-1" numberOfLines={2}>
+                  <Text className="text-sm text-text-secondary mt-1" numberOfLines={2}>
                     {item.description}
                   </Text>
                 ) : null}
                 {item.budget != null && (
-                  <Text className="text-sm text-black font-semibold mt-1">
+                  <Text className="text-sm text-primary font-semibold mt-1">
                     Budget: ₦{Number(item.budget).toLocaleString()}
                   </Text>
                 )}

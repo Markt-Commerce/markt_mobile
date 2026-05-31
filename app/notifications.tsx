@@ -10,8 +10,8 @@ import { useRouter } from 'expo-router';
 
 // ---- Small presentational helpers ----
 const IconBubble = ({ Cmp }: { Cmp?: React.ComponentType<any> }) => (
-  <View className="w-12 h-12 rounded bg-surface items-center justify-center">
-    {Cmp ? <Cmp size={20} color="#000000" strokeWidth={1.5} /> : <Bell size={20} color="#000000" strokeWidth={1.5} />}
+  <View className="size-12 rounded-lg bg-[#f4f2f1] items-center justify-center">
+    {Cmp ? <Cmp size={20} color="#171311" /> : <Bell size={20} color="#171311" />}
   </View>
 );
 
@@ -23,23 +23,28 @@ export default function NotificationsScreen() {
 
   useEffect(() => {
     const getpresentNotifs = async () => {
-      try {
-        const notifs = await getNotifications(20);
-        setItems(notifs.items);
-      } catch {
-        setItems([]);
-      }
+      const notifs = await getNotifications(10);
+      setItems(notifs.items)
     };
     getpresentNotifs()
   }, []);
 
-  // ... filtered logic
+
+
+
+  // optional local filters (UI only for now)
   const filtered = useMemo(() => {
     if (tab === "all") return items;
     if (tab === "orders")
-      return items?.filter((n) => n.type === "icon");
+      return items?.filter(
+        (n) => (n.type === "icon")
+      );
     if (tab === "messages")
-      return items?.filter((n) => n.type === "avatar" || n.type === "icon");
+      return items?.filter(
+        (n) =>
+          (n.type === "avatar") ||
+          (n.type === "icon")
+      );
     return items?.filter((n) => n.type === "icon"); // promos
   }, [items, tab]);
 
@@ -48,17 +53,14 @@ export default function NotificationsScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    try {
-      const notifs = await getNotifications(20);
-      setItems(notifs.items);
-    } catch {
-    } finally {
-      setRefreshing(false);
-    }
+    // const fresh = await getNotifications();
+    // setItems(fresh);
+    setTimeout(() => setRefreshing(false), 800);
   };
 
   const markAllRead = () => {
-    setItems((prev) => prev?.map((n) => ({ ...n, is_read: true })));
+    // await markAllRead();
+    setItems((prev) => prev?.map((n) => ({ ...n, read: true })));
   };
 
   const TabPill = ({
@@ -73,96 +75,99 @@ export default function NotificationsScreen() {
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.85}
-      className={`px-4 py-2 rounded ${
-        active ? "bg-primary" : "bg-surface"
+      className={`px-3 py-1.5 rounded-full ${
+        active ? "bg-[#171311]" : "bg-[#f5f2f1]"
       }`}
     >
-      <Text className={`text-xs font-geist font-bold ${active ? "text-white" : "text-tertiary"}`}>
+      <Text className={active ? "text-white font-semibold" : "text-[#171311] font-medium"}>
         {label}
       </Text>
     </TouchableOpacity>
   );
 
   const Row = ({ n }: { n: NotificationItem }) => (
-    <View className="flex-row items-center gap-4 px-5 py-5">
+    <View className="flex-row items-center gap-4 px-4 py-3">
      <IconBubble />
 
       <View className="flex-1">
-        <Text className="text-black font-geist font-bold text-sm">{n.title}</Text>
+        <Text>{n.title}</Text>
         <Text
-          className={`text-sm font-inter mt-1 leading-5 ${n.is_read ? "text-tertiary" : "text-black font-medium"}`}
+          className={`text-base ${n.is_read ? "text-[#7b6660]" : "text-[#171311] font-medium"}`}
           numberOfLines={2}
         >
           {n.message}
         </Text>
-        <Text className="text-tertiary font-inter text-[10px] mt-1.5">{n.created_at}</Text>
+        <Text className="text-[#826f68] text-xs mt-0.5">{n.created_at}</Text>
       </View>
     </View>
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-[#faf9f8]">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-6 py-8">
+      <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
         <TouchableOpacity
           onPress={() => router.back()}
-          className="h-10 w-10 rounded bg-surface border border-border items-center justify-center"
+          className="h-10 w-10 rounded-full items-center justify-center bg-white border border-[#efe9e7]"
           activeOpacity={0.8}
         >
-          <ArrowLeft size={20} color="#000000" strokeWidth={1.5} />
+          <ArrowLeft size={18} color="#171311" />
         </TouchableOpacity>
-        <Text className="flex-1 text-center text-lg font-geist font-bold text-black tracking-widest uppercase pr-10">
-          Alerts
+        <Text className="flex-1 text-center text-lg font-extrabold text-[#171311] -ml-10">
+          Notifications
         </Text>
+        <View className="w-10" />
       </View>
 
       {/* Tabs + mark-all */}
-      <View className="px-6 mb-8">
-        <View className="flex-row items-center justify-between gap-4">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-1">
-            <View className="flex-row gap-3">
-              <TabPill label="ALL" active={tab === "all"} onPress={() => setTab("all")} />
-              <TabPill label="ORDERS" active={tab === "orders"} onPress={() => setTab("orders")} />
-              <TabPill label="MESSAGES" active={tab === "messages"} onPress={() => setTab("messages")} />
-            </View>
-          </ScrollView>
+      <View className="px-4">
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row gap-2">
+            <TabPill label="All" active={tab === "all"} onPress={() => setTab("all")} />
+            <TabPill label="Orders" active={tab === "orders"} onPress={() => setTab("orders")} />
+            <TabPill label="Messages" active={tab === "messages"} onPress={() => setTab("messages")} />
+            <TabPill label="Promos" active={tab === "promos"} onPress={() => setTab("promos")} />
+          </View>
           <TouchableOpacity
             onPress={markAllRead}
-            className="h-10 px-4 rounded bg-primary items-center justify-center"
+            className="h-9 px-3 rounded-full bg-white border border-[#efe9e7] items-center justify-center"
             activeOpacity={0.85}
           >
-             <Text className="text-[10px] font-geist font-bold text-white tracking-widest uppercase">Clear all</Text>
+            <View className="flex-row items-center">
+              <Check size={16} color="#171311" />
+              <Text className="ml-1 text-xs font-semibold text-[#171311]">Mark all read</Text>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Lists */}
       <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 40 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#000000" />}
+        className="flex-1 mt-3"
+        contentContainerStyle={{ paddingBottom: 24 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#e26136" />}
       >
-        <View className="px-6">
-          <View className="rounded bg-white border border-border overflow-hidden">
-            <Text className="px-6 pt-6 pb-2 text-[10px] font-geist font-bold uppercase tracking-[0.2em] text-tertiary">Recents</Text>
+        <View className="px-4">
+          <View className="rounded-2xl bg-white border border-[#efe9e7] overflow-hidden">
+            <Text className="px-4 pt-3 pb-1 text-sm font-semibold text-[#8e7a74]">Today</Text>
             {today?.length ? (
               today.map((n, i) => (
-                <View key={n.id} className={`${i !== today.length - 1 ? "border-b border-border" : ""}`}>
+                <View key={n.id} className={`${i !== today.length - 1 ? "border-b border-[#f3efed]" : ""}`}>
                   <Row n={n} />
                 </View>
               ))
             ) : (
-              <View className="px-6 pb-10 pt-4">
-                <Text className="text-surface-dim font-geist font-bold text-xs tracking-widest uppercase italic">No Activity</Text>
+              <View className="px-4 pb-3">
+                <Text className="text-[#8e7a74] text-sm">No new notifications today.</Text>
               </View>
             )}
           </View>
 
           {yesterday?.length ? (
-            <View className="rounded bg-white border border-border overflow-hidden mt-8">
-              <Text className="px-6 pt-6 pb-2 text-[10px] font-geist font-bold uppercase tracking-[0.2em] text-tertiary">Previous</Text>
+            <View className="rounded-2xl bg-white border border-[#efe9e7] overflow-hidden mt-3">
+              <Text className="px-4 pt-3 pb-1 text-sm font-semibold text-[#8e7a74]">Yesterday</Text>
               {yesterday.map((n, i) => (
-                <View key={n.id} className={`${i !== yesterday.length - 1 ? "border-b border-border" : ""}`}>
+                <View key={n.id} className={`${i !== yesterday.length - 1 ? "border-b border-[#f3efed]" : ""}`}>
                   <Row n={n} />
                 </View>
               ))}

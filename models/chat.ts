@@ -14,6 +14,7 @@ export interface ChatRoomLite {
 
 export interface MessageReactionSummary {
   reaction_type: string;
+  emoji: string;
   count: number;
   has_reacted: boolean;
 }

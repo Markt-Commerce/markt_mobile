@@ -34,8 +34,7 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow Markt Commerce to use your location."
         }
-      ],
-      "expo-asset"
+      ]
     ]
   }
 }

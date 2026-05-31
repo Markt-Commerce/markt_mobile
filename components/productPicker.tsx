@@ -61,12 +61,12 @@ export default function ProductPicker({
       snapPoints={snapPoints}
       onClose={onClose}
       enablePanDownToClose
-      backgroundStyle={{ backgroundColor: "#FFFFFF" }}
+      backgroundStyle={{ backgroundColor: "#fff" }}
       handleIndicatorStyle={{
-        backgroundColor: "#E4E4E7",
+        backgroundColor: "#ccc",
         width: 40,
         height: 4,
-        borderRadius: 8,
+        borderRadius: 2,
       }}
     >
       <BottomSheetView className="flex-1 px-4">
@@ -74,15 +74,15 @@ export default function ProductPicker({
 
         {loading ? (
           <View className="flex-1 items-center justify-center py-12">
-            <ActivityIndicator size="large" color="#000000" />
-            <Text className="text-tertiary text-sm mt-3">Loading products…</Text>
+            <ActivityIndicator size="large" color="#e26136" />
+            <Text className="text-text-secondary text-sm mt-3">Loading products…</Text>
           </View>
         ) : products.length === 0 ? (
           <View className="flex-1 items-center justify-center py-12">
-            <Text className="text-center text-tertiary">
+            <Text className="text-center text-text-secondary">
               No products available.
             </Text>
-            <Text className="text-center text-tertiary text-sm mt-1">
+            <Text className="text-center text-text-secondary text-sm mt-1">
               Create products in your dashboard first.
             </Text>
           </View>
@@ -98,9 +98,7 @@ export default function ProductPicker({
                 <TouchableOpacity
                   onPress={() => handleSelect(item)}
                   disabled={disabled}
-                  className={`flex-row items-center p-3 mb-2 rounded border ${
-                    selected ? "bg-white border-border" : "bg-surface border-transparent"
-                  } ${disabled ? "opacity-50" : ""}`}
+                  className={`flex-row items-center p-3 mb-2 rounded-lg ${selected ? "bg-blue-100" : "bg-gray-100"} ${disabled ? "opacity-50" : ""}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Select ${item.name}, priced at ${formatNaira(item.price)}`}
                 >
@@ -108,21 +106,21 @@ export default function ProductPicker({
                     source={
                       imageUri ? { uri: imageUri } : require("../assets/icon.png")
                     }
-                    className="w-12 h-12 rounded bg-surface-dim border border-border mr-3"
+                    className="w-12 h-12 rounded-md bg-gray-300 mr-3"
                   />
 
                   <View className="flex-1">
                     <Text className="text-base font-medium">{item.name}</Text>
-                    <Text className="text-sm text-tertiary">{formatNaira(item.price)}</Text>
+                    <Text className="text-sm text-gray-500">{formatNaira(item.price)}</Text>
                   </View>
 
                   {onRemove && (
                     <TouchableOpacity
                       onPress={() => handleRemove(item)}
-                      className="p-2 rounded bg-white border border-border"
+                      className="p-2 rounded-full hover:bg-red-100"
                       accessibilityLabel={`Remove ${item.name}`}
                     >
-                      <Trash2 color="#ba1a1a" size={20} />
+                      <Trash2 color="#ef4444" size={20} />
                     </TouchableOpacity>
                   )}
                 </TouchableOpacity>

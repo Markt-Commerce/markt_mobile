@@ -17,7 +17,6 @@ import { ChevronRight } from "lucide-react-native";
 import { getTrendingShops } from "../services/sections/shops";
 import type { ShopLite } from "../services/sections/shops";
 import Avatar from "./Avatar";
-import { useTheme } from "./themeProvider";
 
 const AVATAR_SIZE = 64;
 
@@ -25,8 +24,6 @@ export default function ShopStrip() {
   const [shops, setShops] = useState<ShopLite[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
 
   useEffect(() => {
     let cancelled = false;
@@ -47,7 +44,7 @@ export default function ShopStrip() {
 
   if (loading) {
     return (
-      <View className={`py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+      <View className="py-4 border-b border-border">
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -56,10 +53,10 @@ export default function ShopStrip() {
           {[1, 2, 3, 4].map((i) => (
             <View key={i} className="items-center" style={{ width: AVATAR_SIZE + 24 }}>
               <View
-                className={`rounded ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
+                className="rounded-full bg-bg-muted"
                 style={{ width: AVATAR_SIZE, height: AVATAR_SIZE }}
               />
-              <View className={`mt-2 h-3 w-16 rounded ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`} />
+              <View className="mt-2 h-3 w-16 bg-bg-muted rounded" />
             </View>
           ))}
         </ScrollView>
@@ -71,18 +68,18 @@ export default function ShopStrip() {
     return (
       <TouchableOpacity
         onPress={() => router.push("/discoverShops")}
-        className={`mx-4 my-4 py-3 rounded flex-row items-center justify-center gap-2 ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
+        className="mx-4 my-4 py-3 rounded-xl bg-bg-muted flex-row items-center justify-center gap-2"
         accessibilityRole="button"
         accessibilityLabel="Discover shops"
       >
-        <Text className={`font-semibold text-sm ${isDark ? "text-[#f0f1f2]" : "text-text-primary"}`}>Discover shops</Text>
-        <ChevronRight size={18} color={isDark ? "#f0f1f2" : "#000000"} />
+        <Text className="text-text-primary font-semibold text-sm">Discover shops</Text>
+        <ChevronRight size={18} color="#171311" />
       </TouchableOpacity>
     );
   }
 
   return (
-    <View className={`py-4 border-b flex-row items-center ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+    <View className="py-4 border-b border-border bg-white flex-row items-center">
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -103,12 +100,12 @@ export default function ShopStrip() {
               accessibilityLabel={`View ${label}`}
             >
               <View
-                className="items-center justify-center rounded overflow-hidden"
+                className="items-center justify-center rounded-full overflow-hidden"
                 style={{
                   width: AVATAR_SIZE,
                   height: AVATAR_SIZE,
                   borderWidth: isVerified ? 2.5 : 0,
-                  borderColor: isDark ? "#f0f1f2" : "#000000",
+                  borderColor: "#e26136",
                 }}
               >
                 <Avatar
@@ -118,7 +115,7 @@ export default function ShopStrip() {
                 />
               </View>
               <Text
-                className={`mt-2 text-xs font-medium text-center ${isDark ? "text-[#f0f1f2]" : "text-text-primary"}`}
+                className="mt-2 text-text-primary text-xs font-medium text-center"
                 numberOfLines={1}
                 style={{ maxWidth: AVATAR_SIZE + 16 }}
               >
@@ -131,12 +128,12 @@ export default function ShopStrip() {
 
       <TouchableOpacity
         onPress={() => router.push("/discoverShops")}
-        className={`flex-row items-center gap-1.5 px-3 py-2 mr-4 rounded ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
+        className="flex-row items-center gap-1.5 px-3 py-2 mr-4 rounded-full bg-bg-muted"
         accessibilityRole="button"
         accessibilityLabel="Discover more shops"
       >
-        <Text className={`text-xs font-semibold ${isDark ? "text-[#c6c5cf]" : "text-text-secondary"}`}>See all</Text>
-        <ChevronRight size={16} color={isDark ? "#c6c5cf" : "#71717A"} />
+        <Text className="text-text-secondary text-xs font-semibold">See all</Text>
+        <ChevronRight size={16} color="#876d64" />
       </TouchableOpacity>
     </View>
   );

@@ -16,25 +16,7 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import {
-  ArrowLeft,
-  Check,
-  DollarSign,
-  Eye,
-  Flame,
-  Hand,
-  Heart,
-  Plus,
-  Rocket,
-  Send,
-  ShoppingCart,
-  Smile,
-  SmilePlus,
-  Star,
-  ThumbsDown,
-  ThumbsUp,
-  X,
-} from "lucide-react-native";
+import { ArrowLeft, Plus, Send, SmilePlus } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import chatSocket from "../services/chatSock";
@@ -63,7 +45,7 @@ import ChatProductDisplayComponent from "./chatProductDisplayComponent";
 import Avatar from "./Avatar";
 import type { ProductResponse } from "../models/products";
 import { getSellerProducts, getMyProducts } from "../services/sections/product";
-import { COMMON_REACTIONS, type ReactionType } from "../utils/reactions";
+import { COMMON_REACTIONS, getEmoji, type ReactionType } from "../utils/reactions";
 import {
   attachReactionsToMessages,
   applyReactionAdded,
@@ -90,25 +72,6 @@ export type ChatProps = {
   };
   navigation: any;
 };
-
-const reactionIcons: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
-  THUMBS_UP: ThumbsUp,
-  THUMBS_DOWN: ThumbsDown,
-  HEART: Heart,
-  FIRE: Flame,
-  STAR: Star,
-  MONEY: DollarSign,
-  SHOPPING: ShoppingCart,
-  CHECK: Check,
-  EYES: Eye,
-  CLAP: Hand,
-  ROCKET: Rocket,
-  SMILE: Smile,
-};
-
-function getReactionIcon(type: string) {
-  return reactionIcons[type] ?? Smile;
-}
 
 function formatTime(iso: string) {
   const d = new Date(iso);
@@ -647,12 +610,12 @@ export default function ChatScreen({ route }: ChatProps) {
   }
 
   /** Get reaction summaries for display; fallback to legacy reactions_count/hasReactedClient for THUMBS_UP */
-  function getReactionSummaries(m: ChatMessage): { reaction_type: string; count: number; has_reacted: boolean }[] {
+  function getReactionSummaries(m: ChatMessage): { reaction_type: string; emoji: string; count: number; has_reacted: boolean }[] {
     const rx = m.message_data?.reactions;
     if (Array.isArray(rx) && rx.length > 0) return rx.filter((r) => r.count > 0);
     const legacy = (m as any).hasReactedClient ?? false;
     const count = m.message_data?.reactions_count ?? 0;
-    if (count > 0 || legacy) return [{ reaction_type: "THUMBS_UP", count: count || (legacy ? 1 : 0), has_reacted: legacy }];
+    if (count > 0 || legacy) return [{ reaction_type: "THUMBS_UP", emoji: "👍", count: count || (legacy ? 1 : 0), has_reacted: legacy }];
     return [];
   }
 
@@ -741,20 +704,20 @@ export default function ChatScreen({ route }: ChatProps) {
             const requestId = item.message_data?.request_id as string | undefined;
             if (requestId && (item.content?.includes("Sharing request") || sharedRequest)) {
               return (
-                <View className={`px-4 py-3 rounded min-w-[200px] ${isMe ? "rounded-br bg-primary" : "rounded-bl bg-white border border-border"}`}>
-                  <Text className={`text-xs font-medium uppercase tracking-wide ${isMe ? "text-white/80" : "text-tertiary"}`}>
+                <View className={`px-4 py-3 rounded-2xl min-w-[200px] ${isMe ? "rounded-br-md bg-primary" : "rounded-bl-md bg-white border border-border"}`}>
+                  <Text className={`text-xs font-medium uppercase tracking-wide ${isMe ? "text-white/80" : "text-text-secondary"}`}>
                     Buyer request
                   </Text>
-                  <Text className={`text-base font-semibold mt-1 ${isMe ? "text-white" : "text-black"}`} numberOfLines={2}>
+                  <Text className={`text-base font-semibold mt-1 ${isMe ? "text-white" : "text-text-primary"}`} numberOfLines={2}>
                     {sharedRequest?.title || item.content.replace(/^Sharing request:\s*/i, "")}
                   </Text>
                   {sharedRequest?.description ? (
-                    <Text className={`text-sm mt-1 ${isMe ? "text-white/90" : "text-tertiary"}`} numberOfLines={3}>
+                    <Text className={`text-sm mt-1 ${isMe ? "text-white/90" : "text-text-secondary"}`} numberOfLines={3}>
                       {sharedRequest.description}
                     </Text>
                   ) : null}
                   {sharedRequest?.budget != null && (
-                    <Text className={`text-sm font-semibold mt-2 ${isMe ? "text-white" : "text-black"}`}>
+                    <Text className={`text-sm font-semibold mt-2 ${isMe ? "text-white" : "text-primary"}`}>
                       Budget: ₦{Number(sharedRequest.budget).toLocaleString()}
                     </Text>
                   )}
@@ -774,9 +737,9 @@ export default function ChatScreen({ route }: ChatProps) {
             }
             return (
               <View
-                className={`px-4 py-3 rounded ${isMe ? "rounded-br bg-primary" : "rounded-bl bg-white border border-border"}`}
+                className={`px-4 py-3 rounded-2xl ${isMe ? "rounded-br-md bg-primary" : "rounded-bl-md bg-white border border-border"}`}
               >
-                <Text className={`text-base ${isMe ? "text-white" : "text-black"}`}>{item.content}</Text>
+                <Text className={`text-base ${isMe ? "text-white" : "text-text-primary"}`}>{item.content}</Text>
               </View>
             );
           })()}
@@ -789,8 +752,8 @@ export default function ChatScreen({ route }: ChatProps) {
             );
             if (!imageUri) {
               return (
-                <View className="w-56 h-40 rounded bg-surface items-center justify-center px-3">
-                  <Text className="text-tertiary text-sm text-center">Image unavailable</Text>
+                <View className="w-56 h-40 rounded-2xl bg-bg-muted items-center justify-center px-3">
+                  <Text className="text-text-secondary text-sm text-center">Image unavailable</Text>
                 </View>
               );
             }
@@ -798,18 +761,18 @@ export default function ChatScreen({ route }: ChatProps) {
             <TouchableOpacity activeOpacity={0.9}>
               <Image
                 source={{ uri: imageUri }}
-                className="w-56 h-40 rounded bg-surface"
+                className="w-56 h-40 rounded-2xl bg-bg-muted"
                 resizeMode="cover"
               />
               {item.pending && (
-                <Text className="text-tertiary text-xs mt-1">Sending…</Text>
+                <Text className="text-text-secondary text-xs mt-1">Sending…</Text>
               )}
             </TouchableOpacity>
             );
           })()}
 
           {item.message_type === "video" && (
-            <View className="w-56 h-40 rounded bg-primary items-center justify-center">
+            <View className="w-56 h-40 rounded-2xl bg-black items-center justify-center">
               <Text className="text-white">Video</Text>
             </View>
           )}
@@ -819,8 +782,8 @@ export default function ChatScreen({ route }: ChatProps) {
             const embeddedProduct = item.message_data?.product;
             if (!productId && !embeddedProduct?.id) {
               return (
-                <View className="rounded border border-border bg-surface px-4 py-3">
-                  <Text className="text-tertiary text-sm">Product no longer available</Text>
+                <View className="rounded-2xl border border-border bg-bg-muted px-4 py-3">
+                  <Text className="text-text-secondary text-sm">Product no longer available</Text>
                 </View>
               );
             }
@@ -835,42 +798,42 @@ export default function ChatScreen({ route }: ChatProps) {
           })()}
 
           {item.message_type === "offer" && (
-            <View className="rounded overflow-hidden border border-border bg-white min-w-[200px]">
-              <View className="px-4 py-3 bg-surface">
-                <Text className="text-tertiary text-xs font-medium uppercase tracking-wide">Price offer</Text>
-                <Text className="text-black text-lg font-bold mt-0.5">
+            <View className="rounded-2xl overflow-hidden border border-border bg-white min-w-[200px]">
+              <View className="px-4 py-3 bg-[#f8f8f8]">
+                <Text className="text-text-secondary text-xs font-medium uppercase tracking-wide">Price offer</Text>
+                <Text className="text-text-primary text-lg font-bold mt-0.5">
                   ₦{Number((item as any).offer?.price ?? (item as any).offer?.offer_amount ?? item.content ?? 0).toLocaleString()}
                 </Text>
                 {(item as any).offer?.message && (
-                  <Text className="text-tertiary text-sm mt-1" numberOfLines={2}>{(item as any).offer.message}</Text>
+                  <Text className="text-text-secondary text-sm mt-1" numberOfLines={2}>{(item as any).offer.message}</Text>
                 )}
               </View>
               {role === "buyer" && (item as any).offer?.status === "pending" && (item as any).offer?.id && (
                 <View className="flex-row p-2 gap-2">
                   <TouchableOpacity
                     onPress={() => handleRespondToOffer(Number((item as any).offer.id), "accept")}
-                    className="flex-1 py-2.5 rounded bg-primary items-center"
+                    className="flex-1 py-2.5 rounded-xl bg-primary items-center"
                   >
                     <Text className="text-white font-semibold text-sm">Accept</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => handleRespondToOffer(Number((item as any).offer.id), "reject")}
-                    className="flex-1 py-2.5 rounded bg-surface border border-border items-center"
+                    className="flex-1 py-2.5 rounded-xl bg-[#efefef] items-center"
                   >
-                    <Text className="text-black font-semibold text-sm">Decline</Text>
+                    <Text className="text-text-primary font-semibold text-sm">Decline</Text>
                   </TouchableOpacity>
                 </View>
               )}
               {(item as any).offer?.status && (item as any).offer?.status !== "pending" && (
                 <View className="px-4 py-2">
-                  <Text className="text-tertiary text-xs capitalize">{(item as any).offer.status}</Text>
+                  <Text className="text-text-secondary text-xs capitalize">{(item as any).offer.status}</Text>
                 </View>
               )}
             </View>
           )}
 
           <View className="flex-row items-center mt-1.5 gap-2 flex-wrap">
-            <Text className="text-tertiary text-[11px]">{formatTime(item.created_at)}</Text>
+            <Text className="text-text-secondary text-[11px]">{formatTime(item.created_at)}</Text>
             {!isNaN(Number(item.id)) && Number(item.id) > 0 && (
               <>
                 {getReactionSummaries(item).map((r) => (
@@ -878,16 +841,13 @@ export default function ChatScreen({ route }: ChatProps) {
                     key={r.reaction_type}
                     onPress={() => handleReactionTap(item, r)}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    className={`flex-row items-center gap-0.5 px-1.5 py-0.5 rounded border ${
-                      r.has_reacted ? "bg-surface border-border" : "bg-white border-transparent"
+                    className={`flex-row items-center gap-0.5 px-1.5 py-0.5 rounded-full ${
+                      r.has_reacted ? "bg-primary/15 border border-primary/35" : "bg-bg-muted/70"
                     }`}
                   >
-                    {(() => {
-                      const ReactionIcon = getReactionIcon(r.reaction_type);
-                      return <ReactionIcon size={12} color={r.has_reacted ? "#000000" : "#71717A"} />;
-                    })()}
+                    <Text className="text-sm">{r.emoji}</Text>
                     {(r.count > 1 || r.has_reacted) && (
-                      <Text className={`text-[11px] ${r.has_reacted ? "text-black font-semibold" : "text-tertiary"}`}>
+                      <Text className={`text-[11px] ${r.has_reacted ? "text-primary font-semibold" : "text-text-secondary"}`}>
                         {r.count}
                       </Text>
                     )}
@@ -899,7 +859,7 @@ export default function ChatScreen({ route }: ChatProps) {
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   className="p-1"
                 >
-                  <SmilePlus size={14} color="#71717A" />
+                  <SmilePlus size={14} color="#876d64" />
                 </TouchableOpacity>
                 {reactionPickerFor === String(item.id) && (
                   <View className="flex-row gap-1 mt-0.5">
@@ -911,20 +871,17 @@ export default function ChatScreen({ route }: ChatProps) {
                       <TouchableOpacity
                         key={type}
                         onPress={() => handlePickerReaction(item, type)}
-                        className={`px-2 py-1 rounded border ${active ? "bg-surface border-border" : "bg-white border-border"}`}
+                        className={`px-2 py-1 rounded-full ${active ? "bg-primary/15 border border-primary/35" : "bg-bg-muted"}`}
                       >
-                        {(() => {
-                          const PickerIcon = getReactionIcon(type);
-                          return <PickerIcon size={16} color={active ? "#000000" : "#71717A"} />;
-                        })()}
+                        <Text className="text-base">{getEmoji(type)}</Text>
                       </TouchableOpacity>
                       );
                     })}
                     <TouchableOpacity
                       onPress={() => setReactionPickerFor(null)}
-                      className="px-2 py-1 rounded bg-surface"
+                      className="px-2 py-1 rounded-full bg-bg-muted"
                     >
-                      <X size={14} color="#71717A" />
+                      <Text className="text-xs text-text-secondary">✕</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -932,7 +889,7 @@ export default function ChatScreen({ route }: ChatProps) {
             )}
           </View>
           {item.pending && (
-            <Text className="text-tertiary text-[10px] mt-0.5">Pending…</Text>
+            <Text className="text-text-secondary text-[10px] mt-0.5">Pending…</Text>
           )}
         </View>
         {isMe && (
@@ -952,7 +909,7 @@ export default function ChatScreen({ route }: ChatProps) {
   if (loading) {
     return (
       <View className="flex-1 items-center justify-center bg-bg-elevated">
-        <ActivityIndicator size="large" color="#000000" />
+        <ActivityIndicator size="large" color="#e26136" />
       </View>
     );
   }
@@ -966,10 +923,10 @@ export default function ChatScreen({ route }: ChatProps) {
       {/* Header */}
       <View className="flex-row items-center px-4 py-3 bg-white border-b border-border">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <ArrowLeft size={24} color="#000000" />
+          <ArrowLeft size={24} color="#171311" />
         </TouchableOpacity>
         <Avatar uri={pickProfilePicture(otherUser)} name={otherUser?.username} size={40} />
-        <Text className="ml-3 text-black font-semibold text-base flex-1" numberOfLines={1}>
+        <Text className="ml-3 text-text-primary font-semibold text-base flex-1" numberOfLines={1}>
           {otherUser?.username ?? "Chat"}
         </Text>
       </View>
@@ -991,7 +948,7 @@ export default function ChatScreen({ route }: ChatProps) {
         ListHeaderComponent={
           hasMore && (loadingOlder ? (
             <View className="py-3 items-center">
-              <ActivityIndicator size="small" color="#000000" />
+              <ActivityIndicator size="small" color="#e26136" />
             </View>
           ) : null)
         }
@@ -999,18 +956,18 @@ export default function ChatScreen({ route }: ChatProps) {
 
       {typingUser && (
         <View className="px-4 py-2 flex-row items-center">
-          <View className="flex-row gap-1 px-3 py-2 rounded bg-surface border border-border self-start">
-            <View className="w-2 h-2 rounded bg-text-secondary opacity-60" />
-            <View className="w-2 h-2 rounded bg-text-secondary opacity-80" />
-            <View className="w-2 h-2 rounded bg-text-secondary" />
+          <View className="flex-row gap-1 px-3 py-2 rounded-full bg-[#efefef] self-start">
+            <View className="w-2 h-2 rounded-full bg-text-secondary opacity-60" />
+            <View className="w-2 h-2 rounded-full bg-text-secondary opacity-80" />
+            <View className="w-2 h-2 rounded-full bg-text-secondary" />
           </View>
-          <Text className="text-tertiary text-sm ml-2">{typingUser} is typing</Text>
+          <Text className="text-text-secondary text-sm ml-2">{typingUser} is typing</Text>
         </View>
       )}
 
       {/* Input bar — send button aligned with input; keyboard dismissed when opening attachment sheet */}
       <View className="flex-row items-center px-4 py-2 pb-2 bg-white border-t border-border gap-2 min-h-[52px]">
-        <View className="flex-1 flex-row items-center bg-surface rounded pl-4 pr-1 py-1.5 h-11">
+        <View className="flex-1 flex-row items-center bg-bg-muted rounded-full pl-4 pr-1 py-1.5 h-11">
           <TextInput
             value={input}
             onChangeText={(t) => {
@@ -1018,20 +975,20 @@ export default function ChatScreen({ route }: ChatProps) {
               chatSocket.typingStart(roomId, myId);
             }}
             placeholder="Type a message…"
-            placeholderTextColor="#71717A"
-            className="flex-1 text-black text-base min-h-[24px] max-h-[80px]"
+            placeholderTextColor="#876d64"
+            className="flex-1 text-text-primary text-base min-h-[24px] max-h-[80px]"
             multiline
             maxLength={1000}
             textAlignVertical="center"
           />
           <TouchableOpacity onPress={openAttachmentSheet} disabled={sending} className={`p-2 ${sending ? "opacity-50" : ""}`}>
-            <Plus size={22} color="#71717A" />
+            <Plus size={22} color="#876d64" />
           </TouchableOpacity>
         </View>
         <TouchableOpacity
           onPress={handleSendText}
           disabled={sending}
-          className="w-11 h-11 rounded bg-primary items-center justify-center"
+          className="w-11 h-11 rounded-full bg-primary items-center justify-center"
         >
           <Send size={20} color="white" />
         </TouchableOpacity>
@@ -1051,35 +1008,35 @@ export default function ChatScreen({ route }: ChatProps) {
       {discountVisible && (
         <View className="absolute inset-0 z-[1000] bg-black/40 justify-end">
           <TouchableOpacity style={{ flex: 1 }} onPress={() => setDiscountVisible(false)} activeOpacity={1} />
-          <View className="bg-white rounded-t max-h-[50%] px-4 pt-4 pb-10">
+          <View className="bg-white rounded-t-3xl max-h-[50%] px-4 pt-4 pb-10">
             <View className="flex-row justify-between mb-4">
-              <Text className="text-black font-semibold text-base">Active discounts</Text>
+              <Text className="text-text-primary font-semibold text-base">Active discounts</Text>
               <TouchableOpacity onPress={() => setDiscountVisible(false)}>
-                <Text className="text-black font-semibold">Done</Text>
+                <Text className="text-primary font-semibold">Done</Text>
               </TouchableOpacity>
             </View>
             {discountLoading ? (
-              <ActivityIndicator size="small" color="#000000" />
+              <ActivityIndicator size="small" color="#e26136" />
             ) : (Array.isArray(discounts) ? discounts : []).length === 0 ? (
-              <Text className="text-tertiary text-sm">No active discounts for this chat.</Text>
+              <Text className="text-text-secondary text-sm">No active discounts for this chat.</Text>
             ) : (
               (Array.isArray(discounts) ? discounts : []).map((d) => (
-                <View key={d.id} className="bg-surface rounded p-3 mb-2">
-                  <Text className="text-black font-medium text-sm">{d.discount_message ?? d.discount_type ?? "Discount"}</Text>
-                  <Text className="text-black font-semibold text-sm mt-1">₦{Number(d.discount_value ?? 0).toLocaleString()}</Text>
+                <View key={d.id} className="bg-bg-muted rounded-xl p-3 mb-2">
+                  <Text className="text-text-primary font-medium text-sm">{d.discount_message ?? d.discount_type ?? "Discount"}</Text>
+                  <Text className="text-primary font-semibold text-sm mt-1">₦{Number(d.discount_value ?? 0).toLocaleString()}</Text>
                   {role === "buyer" && (d.status === "pending" || !d.status) && (
                     <View className="flex-row gap-2 mt-2">
                       <TouchableOpacity
                         onPress={() => handleRespondToDiscount(d.id, "accepted")}
-                        className="flex-1 py-2 rounded bg-primary items-center"
+                        className="flex-1 py-2 rounded-lg bg-primary items-center"
                       >
                         <Text className="text-white font-semibold text-sm">Accept</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={() => handleRespondToDiscount(d.id, "rejected")}
-                        className="flex-1 py-2 rounded bg-surface border border-border items-center"
+                        className="flex-1 py-2 rounded-lg bg-[#efefef] items-center"
                       >
-                        <Text className="text-black font-semibold text-sm">Decline</Text>
+                        <Text className="text-text-primary font-semibold text-sm">Decline</Text>
                       </TouchableOpacity>
                     </View>
                   )}

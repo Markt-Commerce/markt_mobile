@@ -1,15 +1,14 @@
 // screens/AccountInfoScreen.tsx
 import React, { useState, useEffect } from 'react';
-import { Camera } from 'lucide-react-native';
-import { View, Text, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
+import { ArrowLeft, Camera } from 'lucide-react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
 import { useUser } from '../../hooks/userContextProvider';
 import { request } from "../../services/api";
 import { z } from 'zod';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useToast } from '../../components/ToastProvider';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import ScreenHeader from '../../components/ScreenHeader';
 import { Input } from '../../components/inputs';
 import * as ImagePicker from 'expo-image-picker';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,7 +16,6 @@ import { getUserProfile } from '../../services/sections/profile';
 import { UserProfile } from '../../models/profile';
 import { attemptMultipleUpload } from '../../services/sections/media';
 import { isArray } from 'lodash';
-import { useTheme } from '../../components/themeProvider';
 
 const BuyerSchema = z.object({
   buyername: z.string().min(2).max(60).optional(),
@@ -37,50 +35,31 @@ const GeneralSchema = z.object({
 
 export default function AccountInfoScreen() {
   const { user, setUser, role } = useUser();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
   const { show } = useToast();
+  const [phone, setPhone] = useState('');
+  const [buyername, setBuyername] = useState('');
+  const [shipping_address, setShippingAddress] = useState('');
+  const [shopName, setShopName] = useState('');
+  const [description, setDescription] = useState('');
   const [currentProfilePic, setCurrentProfilePic] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const nav = useRouter();
 
-  const {
-    control: generalControl,
-    handleSubmit: generalHandleSubmit,
-    formState: { errors: generalErrors, isValid: isGeneralValid },
-    reset: resetGeneral,
-  } = useForm({
+  const { control: generalControl, handleSubmit: generalHandleSubmit, formState: { errors: generalErrors, isValid: isGeneralValid } } = useForm({
     mode: 'onChange',
-    resolver: zodResolver(GeneralSchema),
-    defaultValues: { phone_number: '' },
+    resolver: zodResolver(GeneralSchema)
   });
 
-  const {
-    control: buyerControl,
-    handleSubmit: buyerHandleSubmit,
-    formState: { errors: buyerErrors, isValid: isBuyerValid },
-    reset: resetBuyer,
-  } = useForm({
+  const {control: buyerControl, handleSubmit: buyerHandleSubmit, formState: { errors: buyerErrors, isValid: isBuyerValid }} = useForm({
     mode: 'onChange',
-    resolver: zodResolver(BuyerSchema),
-    defaultValues: { buyername: '' },
+    resolver: zodResolver(BuyerSchema)
   });
 
-  const {
-    control: sellerControl,
-    handleSubmit: sellerHandleSubmit,
-    formState: { errors: sellerErrors, isValid: isSellerValid },
-    reset: resetSeller,
-  } = useForm({
+  const {control: sellerControl, handleSubmit: sellerHandleSubmit, formState: { errors: sellerErrors, isValid: isSellerValid }} = useForm({
     mode: 'onChange',
-    resolver: zodResolver(SellerSchema),
-    defaultValues: { shop_name: '', description: '' },
+    resolver: zodResolver(SellerSchema)
   });
-
-  const generalValues = useWatch({ control: generalControl });
-  const buyerValues = useWatch({ control: buyerControl });
-  const sellerValues = useWatch({ control: sellerControl });
 
   useEffect(() => {
     if (user) {
@@ -88,17 +67,14 @@ export default function AccountInfoScreen() {
         try {
           const profile = await getUserProfile();
           setProfileData(profile);
-          setCurrentProfilePic(profile.profile_picture_url || profile.profile_picture || null);
+          setPhone(profile.phone_number || '');
           if (role === 'buyer') {
-            resetBuyer({ buyername: profile.buyer_account?.buyername || '' });
+            setBuyername(profile.buyer_account.buyername || '');
             //setShippingAddress(profile.buyer_account.shipping_address || '');
           } else if (role === 'seller') {
-            resetSeller({
-              shop_name: profile.seller_account?.shop_name || '',
-              description: profile.seller_account?.description || '',
-            });
+            setShopName(profile.seller_account.shop_name || '');
+            setDescription(profile.seller_account.description || '');
           }
-          resetGeneral({ phone_number: profile.phone_number || '' });
           return profile;
         } catch (err) {
           console.error("Error fetching profile:", err);
@@ -106,7 +82,7 @@ export default function AccountInfoScreen() {
       };
       fetchProfile();
     }
-  }, [user, role, resetGeneral, resetBuyer, resetSeller]);
+  }, [user]);
 
   const uploadAndSaveProfileImage = async (uri: string) => {
     try {
@@ -182,161 +158,107 @@ export default function AccountInfoScreen() {
 
 
   const onGeneralSubmit = generalHandleSubmit((data) => {
-    handleSave('/users/profile', { phone_number: data.phone_number?.trim() });
+    handleSave('/users/profile', { phone_number: data.phone_number });
   });
 
   const onBuyerSubmit = buyerHandleSubmit((data) => {
-    handleSave('/users/profile/buyer', { buyername: data.buyername?.trim() });
+    handleSave('/users/profile/buyer', { buyername: data.buyername });
   });
 
   const onSellerSubmit = sellerHandleSubmit((data) => {
-    handleSave('/users/profile/seller', {
-      shop_name: data.shop_name?.trim(),
-      description: data.description?.trim(),
-    });
+    handleSave('/users/profile/seller', { shop_name: data.shop_name, description: data.description });
   });
 
-  const currentPhone = (generalValues?.phone_number ?? '').trim();
-  const originalPhone = (profileData?.phone_number ?? '').trim();
-  const generalHasChanges = currentPhone !== originalPhone;
-
-  const currentBuyerName = (buyerValues?.buyername ?? '').trim();
-  const originalBuyerName = (profileData?.buyer_account?.buyername ?? '').trim();
-  const buyerHasChanges = currentBuyerName !== originalBuyerName;
-
-  const currentShopName = (sellerValues?.shop_name ?? '').trim();
-  const currentDescription = (sellerValues?.description ?? '').trim();
-  const originalShopName = (profileData?.seller_account?.shop_name ?? '').trim();
-  const originalDescription = (profileData?.seller_account?.description ?? '').trim();
-  const sellerHasChanges = currentShopName !== originalShopName || currentDescription !== originalDescription;
-
-  const isGeneralDisabled = !isGeneralValid || loading || !generalHasChanges;
-  const isBuyerDisabled = !isBuyerValid || loading || !buyerHasChanges;
-  const isSellerDisabled = !isSellerValid || loading || !sellerHasChanges;
-
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`} edges={["top", "left", "right", "bottom"]}>
-      <ScrollView
-        className={isDark ? "flex-1 bg-[#1a1c1d]" : "flex-1 bg-white"}
-        contentContainerStyle={{ paddingBottom: 32 }}
-        showsVerticalScrollIndicator={false}
+    <SafeAreaView className="flex-1 bg-white">
+    <ScrollView className="flex-1 bg-white p-4">
+      <TouchableOpacity onPress={() => nav.back()} className="mb-4">
+        <ArrowLeft />
+      </TouchableOpacity>
+      <Text className="text-2xl font-bold mb-2 ">General</Text>
+        <TouchableOpacity className="flex-row items-center mb-4" onPress={changeImage}>
+          {currentProfilePic ? (
+            <Image source={{ uri: currentProfilePic }} className="w-12 h-12 rounded-full" />
+          ) : (
+            <Camera />
+          )} 
+          <Text className="ml-2">Change Profile Picture</Text>
+        </TouchableOpacity>
+      <Input
+        placeholder="Phone Number"
+        className="border border-gray-200 rounded p-3 mb-4"
+        control={generalControl}
+        errors={generalErrors}
+        name='phone_number'
+      />
+      {generalErrors.phone_number && (<Text className="text-red-500 mb-2">{generalErrors.phone_number.message}</Text>
+      )}
+      <TouchableOpacity
+        className="bg-[#e26136] rounded h-12 items-center justify-center mb-6"
+        onPress={onGeneralSubmit}
+        disabled={!isGeneralValid || loading || profileData?.phone_number === phone}
       >
-        <ScreenHeader title="Account Info" onBack={() => nav.back()} />
+        <Text className="text-white font-bold">{loading ? 'Saving...' : 'Save General Info'}</Text>
+      </TouchableOpacity>
 
-        <View className="px-6 pt-6">
-          <TouchableOpacity
-            className={`flex-row items-center gap-3 rounded p-4 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
-            onPress={changeImage}
-            activeOpacity={0.85}
-          >
-            {currentProfilePic ? (
-              <Image source={{ uri: currentProfilePic }} className={`w-12 h-12 rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`} />
-            ) : (
-              <View className={`w-12 h-12 rounded items-center justify-center border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-                <Camera size={18} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.7} />
-              </View>
-            )}
-            <View className="flex-1">
-              <Text className={`font-geist font-bold text-[15px] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Profile photo</Text>
-              <Text className={`font-inter text-[13px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                Tap to update your profile image.
-              </Text>
-            </View>
-          </TouchableOpacity>
+      {role === 'buyer' && (
+        <>
+      <Text className="text-lg font-bold mb-2">Buyer Information</Text>
+      {/* <Input
+        placeholder="Shipping Address"
+        className="border border-gray-200 rounded p-3 mb-4"
+        control={buyerControl}
+      />
+      {buyerErrors.shipping_address && (<Text className="text-red-500 mb-2">{buyerErrors.shipping_address.message}</Text>
+      )} */}
+      <Input
+        placeholder="Buyer Name"
+        className="border border-gray-200 rounded p-3 mb-4"
+        control={buyerControl}
+        errors={buyerErrors}
+        name='buyername'
+      />
+      {buyerErrors.buyername && (<Text className="text-red-500 mb-2">{buyerErrors.buyername.message}</Text>
+      )}
+      <TouchableOpacity
+        className="bg-[#e26136] rounded h-12 items-center justify-center mb-6"
+        onPress={onBuyerSubmit}
+        disabled={!isBuyerValid || loading || profileData?.buyer_account.buyername === buyername}>
+        <Text className="text-white font-bold">{loading ? 'Saving...' : 'Save Buyer Info'}</Text>
+      </TouchableOpacity>
+      </>
+      )}
 
-          <View className="mt-8">
-            <Text className={`font-geist font-bold text-[11px] tracking-[2px] uppercase mb-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-              General
-            </Text>
-            <View className={`rounded p-4 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
-              <Input
-                placeholder="Phone Number"
-                control={generalControl}
-                errors={generalErrors}
-                name="phone_number"
-                keyboardType="phone-pad"
-              />
-              <TouchableOpacity
-                className={`mt-4 h-12 rounded bg-primary items-center justify-center ${
-                  isGeneralDisabled ? "opacity-50" : ""
-                }`}
-                onPress={onGeneralSubmit}
-                disabled={isGeneralDisabled}
-                activeOpacity={0.85}
-              >
-                <Text className="text-white font-geist font-bold text-xs tracking-[2px] uppercase">
-                  {loading ? 'Saving...' : 'Save General Info'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {role === 'buyer' && (
-            <View className="mt-8">
-              <Text className={`font-geist font-bold text-[11px] tracking-[2px] uppercase mb-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                Buyer information
-              </Text>
-              <View className={`rounded p-4 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
-                <Input
-                  placeholder="Buyer Name"
-                  control={buyerControl}
-                  errors={buyerErrors}
-                  name="buyername"
-                />
-                <TouchableOpacity
-                  className={`mt-4 h-12 rounded bg-primary items-center justify-center ${
-                    isBuyerDisabled ? "opacity-50" : ""
-                  }`}
-                  onPress={onBuyerSubmit}
-                  disabled={isBuyerDisabled}
-                  activeOpacity={0.85}
-                >
-                  <Text className="text-white font-geist font-bold text-xs tracking-[2px] uppercase">
-                    {loading ? 'Saving...' : 'Save Buyer Info'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {role === 'seller' && (
-            <View className="mt-8">
-              <Text className={`font-geist font-bold text-[11px] tracking-[2px] uppercase mb-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                Seller information
-              </Text>
-              <View className={`rounded p-4 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
-                <Input
-                  placeholder="Shop Name"
-                  control={sellerControl}
-                  errors={sellerErrors}
-                  name="shop_name"
-                />
-                <View className="mt-4">
-                  <Input
-                    placeholder="Description"
-                    control={sellerControl}
-                    errors={sellerErrors}
-                    name="description"
-                    multiline
-                  />
-                </View>
-                <TouchableOpacity
-                  className={`mt-4 h-12 rounded bg-primary items-center justify-center ${
-                    isSellerDisabled ? "opacity-50" : ""
-                  }`}
-                  onPress={onSellerSubmit}
-                  disabled={isSellerDisabled}
-                  activeOpacity={0.85}
-                >
-                  <Text className="text-white font-geist font-bold text-xs tracking-[2px] uppercase">
-                    {loading ? 'Saving...' : 'Save Seller Info'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-        </View>
-      </ScrollView>
+      {role === 'seller' && (
+        <>
+          <Text className="text-lg font-bold mb-2">Seller Information</Text>
+          <Input
+        placeholder="Shop Name"
+        className="border border-gray-200 rounded p-3 mb-4"
+        control={sellerControl}
+        errors={sellerErrors}
+        name='shop_name'
+      />
+      {sellerErrors.shop_name && (<Text className="text-red-500 mb-2">{sellerErrors.shop_name.message}</Text>
+      )}
+      <Input
+        placeholder="Description"
+        className="border border-gray-200 rounded p-3 mb-4"
+        control={sellerControl}
+        name='description'
+      />
+      {sellerErrors.description && (<Text className="text-red-500 mb-2">{sellerErrors.description.message}</Text>
+      )}
+      <TouchableOpacity
+        className="bg-[#e26136] rounded h-12 items-center justify-center mb-6"
+        onPress={onSellerSubmit}
+        disabled={!isSellerValid || loading || profileData?.seller_account.shop_name === shopName && profileData?.seller_account.description === description}
+      >
+        <Text className="text-white font-bold">{loading ? 'Saving...' : 'Save Seller Info'}</Text>
+      </TouchableOpacity>
+        </>
+      )}
+    </ScrollView>
     </SafeAreaView>
   );
 }

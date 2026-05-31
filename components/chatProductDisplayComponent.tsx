@@ -92,33 +92,33 @@ export default function ChatProductDisplayComponent({
 
   if (loading) {
     return (
-      <View className="rounded overflow-hidden border border-border bg-white min-w-[240px] max-w-[280px] p-3">
+      <View className="rounded-2xl overflow-hidden border border-border bg-white min-w-[240px] max-w-[280px] p-3">
         <View className="flex-row gap-3 items-stretch">
-          <View className="w-[100px] h-[72px] rounded bg-surface shrink-0" />
+          <View className="w-[100px] h-[72px] rounded-xl bg-bg-muted shrink-0" />
           <View className="flex-1 justify-center">
-            <View className="h-4 bg-surface rounded w-3/4 mb-2" />
-            <View className="h-3 bg-surface rounded w-1/3" />
+            <View className="h-4 bg-bg-muted rounded w-3/4 mb-2" />
+            <View className="h-3 bg-bg-muted rounded w-1/3" />
           </View>
         </View>
-        <ActivityIndicator size="small" color="#000000" className="mt-2" />
+        <ActivityIndicator size="small" color="#e26136" className="mt-2" />
       </View>
     );
   }
 
   if (error && !embeddedProduct?.name) {
     return (
-      <View className="rounded border border-border bg-surface px-4 py-3">
-        <Text className="text-tertiary text-sm">Product no longer available</Text>
+      <View className="rounded-2xl border border-border bg-bg-muted px-4 py-3">
+        <Text className="text-text-secondary text-sm">Product no longer available</Text>
       </View>
     );
   }
 
   return (
-    <View className="rounded overflow-hidden border border-border bg-white min-w-[240px] max-w-[280px]">
+    <View className="rounded-2xl overflow-hidden border border-border bg-white min-w-[240px] max-w-[280px]">
       <Link href={`/productDetails/${id}`} asChild>
         <TouchableOpacity activeOpacity={0.85}>
           <View className="flex-row p-3 gap-3 items-stretch">
-            <View className="w-[100px] h-[72px] rounded bg-surface overflow-hidden items-center justify-center shrink-0">
+            <View className="w-[100px] h-[72px] rounded-xl bg-bg-muted overflow-hidden items-center justify-center shrink-0">
               {displayImage && !imageError ? (
                 <Image
                   source={{ uri: displayImage }}
@@ -128,16 +128,16 @@ export default function ChatProductDisplayComponent({
                 />
               ) : (
                 <View className="items-center justify-center p-2">
-                  <Package size={20} color="#71717A" />
-                  <Text className="text-tertiary text-[9px] mt-0.5">Product</Text>
+                  <Package size={20} color="#876d64" />
+                  <Text className="text-text-secondary text-[9px] mt-0.5">Product</Text>
                 </View>
               )}
             </View>
             <View className="flex-1 justify-center min-w-0 py-0.5">
-              <Text className="text-black font-semibold text-sm" numberOfLines={2}>
+              <Text className="text-text-primary font-semibold text-sm" numberOfLines={2}>
                 {displayName}
               </Text>
-              <Text className="text-black font-semibold text-base mt-0.5">
+              <Text className="text-primary font-semibold text-base mt-0.5">
                 ₦{typeof displayPrice === "number" ? displayPrice.toLocaleString() : String(displayPrice)}
               </Text>
             </View>
@@ -147,7 +147,7 @@ export default function ChatProductDisplayComponent({
       {showAddToCart && onAddToCart && (
         <TouchableOpacity
           onPress={() => onAddToCart(id)}
-          className="mx-3 mb-3 py-2.5 rounded bg-primary flex-row items-center justify-center gap-2"
+          className="mx-3 mb-3 py-2.5 rounded-xl bg-primary flex-row items-center justify-center gap-2"
         >
           <ShoppingCart size={18} color="white" />
           <Text className="text-white font-semibold text-sm">Add to Cart</Text>

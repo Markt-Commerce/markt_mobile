@@ -33,7 +33,6 @@ import { setUserSession } from "../services/authStorage";
 import { useToast } from "./ToastProvider";
 import { getUserProfile } from "../services/sections/profile";
 import type { UserProfile } from "../models/profile";
-import { useTheme } from "./themeProvider";
 
 const DRAWER_WIDTH = Math.min(Dimensions.get("window").width * 0.8, 320);
 
@@ -48,22 +47,20 @@ const Row = ({
   icon: Icon,
   label,
   onPress,
-  isDark,
 }: {
   icon: React.ElementType;
   label: string;
   onPress: () => void;
-  isDark: boolean;
 }) => (
   <TouchableOpacity
     onPress={onPress}
-    className="flex-row items-center gap-4 px-6 py-4"
+    className="flex-row items-center gap-4 px-4 py-3"
     activeOpacity={0.7}
   >
-    <View className={`w-10 h-10 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-      <Icon size={20} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.5} />
+    <View className="w-9 h-9 rounded-full bg-bg-muted items-center justify-center">
+      <Icon size={20} color="#171311" />
     </View>
-    <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{label}</Text>
+    <Text className="text-text-primary font-medium text-base">{label}</Text>
   </TouchableOpacity>
 );
 
@@ -76,8 +73,6 @@ export default function NavDrawer({
   const router = useRouter();
   const { role, setRole, user } = useUser();
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const slideAnim = React.useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const overlayOpacity = React.useRef(new Animated.Value(0)).current;
 
@@ -116,7 +111,7 @@ export default function NavDrawer({
     if (visible && user && !profile) {
       getUserProfile()
         .then((p) => onProfileLoaded?.(p))
-        .catch(() => { });
+        .catch(() => {});
     }
   }, [visible, user, profile]);
 
@@ -204,55 +199,54 @@ export default function NavDrawer({
           top: 0,
           bottom: 0,
           width: DRAWER_WIDTH,
-          backgroundColor: isDark ? "#1a1c1d" : "white",
+          backgroundColor: "white",
           zIndex: 999,
           transform: [{ translateX: slideAnim }],
           shadowColor: "#000",
-          shadowOffset: { width: 4, height: 0 },
-          shadowOpacity: 0.1,
-          shadowRadius: 10,
-          elevation: 10,
+          shadowOffset: { width: 2, height: 0 },
+          shadowOpacity: 0.15,
+          shadowRadius: 8,
+          elevation: 8,
         }}
       >
-        <View className="flex-1 py-6">
+        <View className="flex-1 pt-14 pb-8">
           {/* Header: avatar, name, handle */}
-          <View className={`px-6 pb-6 border-b ${isDark ? "border-[#46464e]" : "border-border"}`}>
-            <View className="flex-row items-center justify-between mb-6">
+          <View className="px-4 pb-4 border-b border-border">
+            <View className="flex-row items-center justify-between mb-4">
               <Avatar
                 uri={profile?.profile_picture_url}
                 name={displayName}
-                size={64}
-                className="rounded"
+                size={56}
               />
               <TouchableOpacity
                 onPress={onClose}
                 className="p-2 -mr-2"
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <X size={24} color={isDark ? "#c6c5cf" : "#71717A"} strokeWidth={1.5} />
+                <X size={22} color="#876d64" />
               </TouchableOpacity>
             </View>
-            <Text className={`font-geist font-bold text-xl ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+            <Text className="text-text-primary font-bold text-lg" numberOfLines={1}>
               {displayName}
             </Text>
-            <Text className={`font-inter text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={1}>
+            <Text className="text-text-secondary text-sm" numberOfLines={1}>
               @{profile?.username ?? "user"}
             </Text>
-            <View className="flex-row mt-4 gap-2">
+            <View className="flex-row mt-2 gap-2">
               <View
-                className={`px-3 py-1 rounded ${role === "buyer" ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                className={`px-3 py-1.5 rounded-full ${role === "buyer" ? "bg-primary" : "bg-[#e5dedc]"}`}
               >
                 <Text
-                  className={`text-[10px] font-geist font-bold uppercase tracking-wider ${role === "buyer" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                  className={`text-xs font-semibold ${role === "buyer" ? "text-white" : "text-text-secondary"}`}
                 >
                   Buyer
                 </Text>
               </View>
               <View
-                className={`px-3 py-1 rounded ${role === "seller" ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                className={`px-3 py-1.5 rounded-full ${role === "seller" ? "bg-primary" : "bg-[#e5dedc]"}`}
               >
                 <Text
-                  className={`text-[10px] font-geist font-bold uppercase tracking-wider ${role === "seller" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                  className={`text-xs font-semibold ${role === "seller" ? "text-white" : "text-text-secondary"}`}
                 >
                   Seller
                 </Text>
@@ -264,25 +258,25 @@ export default function NavDrawer({
           {isDualRole && (
             <TouchableOpacity
               onPress={handleSwitchMode}
-              className="flex-row items-center gap-3 mx-6 mt-6 h-12 px-6 rounded bg-primary"
+              className="flex-row items-center gap-3 mx-4 mt-4 py-3 px-4 rounded-xl bg-primary"
               activeOpacity={0.85}
             >
-              <RefreshCw size={18} color="white" strokeWidth={2} />
-              <Text className="text-white font-geist font-bold text-sm">
+              <RefreshCw size={20} color="white" />
+              <Text className="text-white font-semibold">
                 Switch to {role === "buyer" ? "Seller" : "Buyer"}
               </Text>
             </TouchableOpacity>
           )}
 
           {/* Menu items */}
-          <View className="mt-6">
-            <Row icon={User} label="Profile" onPress={() => nav("/(tabs)/profile")} isDark={isDark} />
+          <View className="mt-4">
+            <Row icon={User} label="Profile" onPress={() => nav("/(tabs)/profile")} />
             {role === "seller" && (
-              <Row icon={LayoutDashboard} label="Dashboard" onPress={() => nav("/(tabs)/sellerDashboard")} isDark={isDark} />
+              <Row icon={LayoutDashboard} label="Dashboard" onPress={() => nav("/(tabs)/sellerDashboard")} />
             )}
-            <Row icon={Users} label="Niches" onPress={() => nav("/myniches")} isDark={isDark} />
-            <Row icon={Settings} label="Settings" onPress={() => nav("/(settings)/settingsProfileScreen")} isDark={isDark} />
-            <Row icon={HelpCircle} label="Help Center" onPress={() => nav("/support/help")} isDark={isDark} />
+            <Row icon={Users} label="Niches" onPress={() => nav("/myniches")} />
+            <Row icon={Settings} label="Settings" onPress={() => nav("/(settings)/settingsProfileScreen")} />
+            <Row icon={HelpCircle} label="Help Center" onPress={() => nav("/support/help")} />
           </View>
         </View>
       </Animated.View>
