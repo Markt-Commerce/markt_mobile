@@ -28,7 +28,7 @@ export default function OrderDetail() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center">
+      <SafeAreaView className="flex-1 items-center justify-center bg-white">
         <Text>Loading order…</Text>
       </SafeAreaView>
     );
@@ -36,45 +36,45 @@ export default function OrderDetail() {
 
   if (!order) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center">
+      <SafeAreaView className="flex-1 items-center justify-center bg-white">
         <Text>Order not found</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#faf9f8]">
-      <ScrollView className="px-4">
+    <SafeAreaView className="flex-1 bg-white">
+      <ScrollView className="px-6">
         {/* Header */}
-        <View className="flex-row items-center py-4">
+        <View className="flex-row items-center py-6">
           <TouchableOpacity
             onPress={() => router.back()}
-            className="mr-3 h-10 w-10 rounded-full bg-white border border-[#efe9e7] items-center justify-center"
+            className="mr-4 h-10 w-10 rounded bg-surface border border-border items-center justify-center"
           >
-            <ArrowLeft size={18} color="#171311" />
+            <ArrowLeft size={20} color="#000000" />
           </TouchableOpacity>
-          <Text className="text-xl font-extrabold text-[#171311]">
+          <Text className="text-xl font-geist font-bold text-black">
             Order #{order.id}
           </Text>
         </View>
 
         {/* Status */}
-        <View className="rounded-2xl bg-white border border-[#efe9e7] p-4 mb-4">
-          <Text className="text-xs text-[#8e7a74]">Status</Text>
-          <Text className="text-lg font-bold text-[#171311] capitalize">
+        <View className="rounded bg-white border border-border p-6 mb-6">
+          <Text className="text-xs font-geist font-bold uppercase tracking-wider text-tertiary">Status</Text>
+          <Text className="text-xl font-geist font-bold text-black mt-2 capitalize">
             {order.status}
           </Text>
         </View>
 
         {/* Items */}
-        <View className="rounded-2xl bg-white border border-[#efe9e7] p-4 mb-4">
-          <Text className="font-bold text-[#171311] mb-3">Items</Text>
+        <View className="rounded bg-white border border-border p-6 mb-6">
+          <Text className="font-geist font-bold text-lg text-black mb-4">Items</Text>
           {order.items?.map((item, index) => (
-            <View key={index} className="mb-2">
-              <Text className="text-sm font-semibold text-[#171311]">
+            <View key={index} className="mb-3">
+              <Text className="text-base font-geist font-bold text-black">
                 {item.product?.name}
               </Text>
-              <Text className="text-xs text-[#8e7a74]">
+              <Text className="text-xs font-inter text-tertiary mt-1">
                 Qty: {item.quantity}
               </Text>
             </View>
@@ -82,15 +82,15 @@ export default function OrderDetail() {
         </View>
 
         {/* Pricing */}
-        <View className="rounded-2xl bg-white border border-[#efe9e7] p-4 mb-6">
-          <Text className="font-bold text-[#171311] mb-2">Summary</Text>
+        <View className="rounded bg-white border border-border p-6 mb-10">
+          <Text className="font-geist font-bold text-lg text-black mb-4">Summary</Text>
 
           <Row label="Subtotal" value={order.subtotal} />
           <Row label="Shipping" value={order.shipping_fee} />
           <Row label="Tax" value={order.tax} />
           <Row label="Discount" value={order.discount} />
 
-          <View className="h-px bg-[#efe9e7] my-2" />
+          <View className="h-px bg-border my-4" />
 
           <Row
             label="Total"
@@ -99,10 +99,10 @@ export default function OrderDetail() {
           />
         </View>
 
-        <View className="flex">
-          <TouchableOpacity className="bg-[#E94C2A] p-2 rounded-md" onPress={()=> router.push(`/orders/${id}/track`)}>
-            <Text className="text-white">Track Order</Text>
-            <ArrowRight size={16} color="#fff" className="absolute right-3 top-3" />
+        <View className="flex pb-10">
+          <TouchableOpacity className="bg-primary h-12 rounded justify-center items-center relative" onPress={() => router.push(`/orders/${id}/track`)}>
+            <Text className="text-white font-geist font-bold text-base">Track Order</Text>
+            <ArrowRight size={20} color="#fff" className="absolute right-6" />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -120,12 +120,12 @@ function Row({
   bold?: boolean;
 }) {
   return (
-    <View className="flex-row justify-between py-1">
-      <Text className={`text-sm ${bold ? "font-bold" : ""}`}>
+    <View className="flex-row justify-between py-2">
+      <Text className={`text-sm font-inter ${bold ? "font-geist font-bold text-black" : "text-tertiary"}`}>
         {label}
       </Text>
-      <Text className={`text-sm ${bold ? "font-bold" : ""}`}>
-        ₦{(value ?? 0).toFixed(2)}
+      <Text className={`text-sm ${bold ? "font-geist font-bold text-black" : "font-inter text-black"}`}>
+        ₦{(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
       </Text>
     </View>
   );

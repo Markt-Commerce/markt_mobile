@@ -19,12 +19,12 @@ function getInitials(name: string | null | undefined, fallback = "?"): string {
 
 /** Pick a consistent background hue from a string (deterministic) */
 function getAvatarColor(name: string | null | undefined): string {
-  if (!name) return "#876d64";
+  if (!name) return "#71717A";
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const hues = ["#e26136", "#60758a", "#178b1f", "#876d64"];
+  const hues = ["#000000", "#71717A"];
   return hues[Math.abs(hash) % hues.length];
 }
 
@@ -48,8 +48,12 @@ export default function Avatar({ uri, name, size = 40, className = "" }: AvatarP
 
   return (
     <View
-      className={`rounded-full overflow-hidden items-center justify-center ${className}`}
-      style={{ width: size, height: size, backgroundColor: hasValidUri ? "#f4f1f0" : bgColor }}
+      className={`rounded overflow-hidden flex items-center justify-center ${className}`}
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: hasValidUri ? "#F4F4F5" : bgColor,
+      }}
     >
       {hasValidUri ? (
         <Image
@@ -59,18 +63,18 @@ export default function Avatar({ uri, name, size = 40, className = "" }: AvatarP
           onError={() => setImageError(true)}
         />
       ) : (
-        <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center" }}>
-          <Text
-            className="text-white font-semibold"
-            style={{
-              fontSize: size * 0.4,
-              textAlign: "center",
-              ...(Platform.OS === "android" && { includeFontPadding: false }),
-            }}
-          >
-            {initials}
-          </Text>
-        </View>
+        <Text
+          className="text-white font-geist font-bold"
+          style={{
+            fontSize: size * 0.42,
+            textAlign: "center",
+            textAlignVertical: "center",
+            lineHeight: size, // Force line height to match size for vertical centering
+            ...(Platform.OS === "android" && { includeFontPadding: false }),
+          }}
+        >
+          {initials}
+        </Text>
       )}
     </View>
   );

@@ -8,13 +8,16 @@ import { useUser } from "../hooks/userContextProvider";
 import { getMyNiches } from "../services/sections/niches";
 import { Niches } from "../models/niches";
 import CreateNicheBottomSheet from "../components/nicheCreateBottomSheet";
-import type { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
+import BottomSheet from "@gorhom/bottom-sheet";
+import { useTheme } from "../components/themeProvider";
 
 export default function MyNichesScreen() {
   const router = useRouter();
   const { show } = useToast();
   const { role } = useUser();
-  const nicheFormRef = useRef<BottomSheetMethods | null>(null);
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const nicheFormRef = useRef<BottomSheet | null>(null);
   const [niches, setNiches] = useState<Niches[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -76,39 +79,40 @@ export default function MyNichesScreen() {
             params: { id: item.id },
           })
         }
-        android_ripple={{ color: "#00000011" }}
+        android_ripple={{ color: isDark ? "#ffffff11" : "#00000011" }}
+        className="px-6 mb-4"
       >
-        <View className="mx-4 mb-3 bg-white rounded-2xl overflow-hidden border border-border">
+        <View className={`rounded overflow-hidden border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
           <View className="flex-row">
             {/* Niche Icon/Image */}
-            <View className="w-24 h-24 bg-bg-muted justify-center items-center">
-              <Text className="text-3xl">
+            <View className={`w-24 h-24 justify-center items-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+              <Text className={`text-3xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                 {(item.name ?? "").charAt(0).toUpperCase() || "?"}
               </Text>
             </View>
 
             {/* Content */}
-            <View className="flex-1 p-3 justify-space-between">
+            <View className="flex-1 p-4 justify-between">
               <View>
-                <Text className="font-semibold text-text-primary text-base" numberOfLines={1}>
+                <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
                   {item.name ?? "Unnamed"}
                 </Text>
-                <Text className="text-xs text-text-secondary mt-1" numberOfLines={2}>
+                <Text className={`text-xs font-inter mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={2}>
                   {item.description ?? ""}
                 </Text>
               </View>
 
               {/* Stats */}
-              <View className="flex-row gap-3 mt-2">
+              <View className="flex-row gap-4 mt-2">
                 <View>
-                  <Text className="text-xs text-text-secondary">Members</Text>
-                  <Text className="font-semibold text-text-primary">
+                  <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Members</Text>
+                  <Text className={`font-geist font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                     {item.member_count}
                   </Text>
                 </View>
                 <View>
-                  <Text className="text-xs text-text-secondary">Posts</Text>
-                  <Text className="font-semibold text-text-primary">
+                  <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Posts</Text>
+                  <Text className={`font-geist font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                     {item.post_count}
                   </Text>
                 </View>
@@ -116,53 +120,56 @@ export default function MyNichesScreen() {
             </View>
 
             {/* Arrow */}
-            <View className="w-12 justify-center items-center">
-              <ChevronRight size={20} color="#876d64" accessibilityElementsHidden />
+            <View className="w-10 justify-center items-center pr-2">
+              <ChevronRight size={18} color={isDark ? "#c6c5cf" : "#71717A"} strokeWidth={1.5} />
             </View>
           </View>
         </View>
       </Pressable>
     ),
-    [router]
+    [router, isDark]
   );
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-white justify-center items-center" edges={["top"]}>
-        <ActivityIndicator size="large" color="#e26136" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top"]}>
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+        </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-      <View className="px-4 py-4 border-b border-border flex-row items-center justify-between">
-        <View className="flex-1">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            className="flex-row items-center gap-1 mb-2"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <ArrowLeft size={20} color="#e26136" />
-            <Text className="text-primary font-semibold text-sm">Back</Text>
-          </TouchableOpacity>
-          <Text className="text-2xl font-bold text-text-primary">My Niches</Text>
-          <Text className="text-sm text-text-secondary mt-1">
-            {niches.length} niche{niches.length !== 1 ? "s" : ""}
-          </Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top"]}>
+      <View className={`px-6 py-6 border-b ${isDark ? "border-[#46464e]" : "border-border"}`}>
+        <View className="flex-row items-center justify-between">
+          <View className="flex-1">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className={`h-10 w-10 rounded border items-center justify-center mb-4 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+            </TouchableOpacity>
+            <Text className={`text-2xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>My Niches</Text>
+            <Text className={`text-sm font-inter mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              {niches.length} niche{niches.length !== 1 ? "s" : ""} joined
+            </Text>
+          </View>
+          {role === "seller" && (
+            <TouchableOpacity
+              onPress={() => nicheFormRef.current?.expand?.()}
+              className="flex-row items-center gap-2 px-6 py-3 rounded bg-primary"
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Create community"
+            >
+              <Plus size={18} color="#fff" strokeWidth={2} />
+              <Text className="text-white font-geist font-bold text-sm">Create</Text>
+            </TouchableOpacity>
+          )}
         </View>
-        {role === "seller" && (
-          <TouchableOpacity
-            onPress={() => nicheFormRef.current?.expand?.()}
-            className="flex-row items-center gap-2 px-4 py-2 rounded-full bg-primary"
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="Create community"
-          >
-            <Plus size={18} color="#fff" />
-            <Text className="text-white font-semibold text-sm">Create</Text>
-          </TouchableOpacity>
-        )}
       </View>
 
       <FlatList
@@ -172,35 +179,37 @@ export default function MyNichesScreen() {
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={isDark ? "#f0f1f2" : "#000000"} />
         }
         ListFooterComponent={
           loading ? (
-            <View className="py-4">
-              <ActivityIndicator size="small" color="#e26136" />
+            <View className="py-6">
+              <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
             </View>
           ) : null
         }
         ListEmptyComponent={
           !loading ? (
-            <View className="items-center justify-center py-16">
-              <Text className="text-[#171311] font-semibold text-base">
+            <View className="items-center justify-center py-20 px-8">
+              <View className={`w-24 h-24 rounded items-center justify-center mb-6 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+                <Compass size={40} color={isDark ? "#c6c5cf" : "#71717A"} strokeWidth={1.5} />
+              </View>
+              <Text className={`font-geist font-bold text-xl text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                 No niches yet
               </Text>
-              <Text className="text-text-secondary text-sm mt-1 text-center px-6">
-                Join or create a community to get started.
+              <Text className={`font-inter text-base mt-2 text-center leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                Join or create a community to connect with others.
               </Text>
               <TouchableOpacity
                 onPress={() => router.push("/discoverNiches")}
-                className="mt-4 flex-row items-center gap-2 px-5 py-2.5 rounded-full bg-primary"
+                className="mt-8 h-12 px-8 rounded bg-primary items-center justify-center"
               >
-                <Compass size={18} color="#fff" />
-                <Text className="text-white font-semibold text-sm">Explore communities</Text>
+                <Text className="text-white font-geist font-bold text-base">Explore communities</Text>
               </TouchableOpacity>
             </View>
           ) : null
         }
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 100, paddingTop: 24 }}
       />
       {role === "seller" && (
         <CreateNicheBottomSheet

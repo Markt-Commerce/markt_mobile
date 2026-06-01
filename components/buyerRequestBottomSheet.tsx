@@ -138,7 +138,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheetMethods | null, 
     return (
       <BottomSheet ref={sheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose>
         <BottomSheetScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}>
-        <Text className="text-lg font-bold mb-4">Create Buyer Request</Text>
+        <Text className="text-lg font-geist font-bold text-black mb-4">Create Buyer Request</Text>
 
           {/* Title */}
           <Input name="title" control={control} placeholder="Title" errors={errors} />
@@ -150,28 +150,28 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheetMethods | null, 
           <Input name="budget" control={control} placeholder="Budget" errors={errors} keyboardType="numeric" />
 
           {/* Category IDs */}
-          <Text className="mb-2 text-text-primary font-medium">Categories</Text>
+          <Text className="mb-2 text-xs font-geist font-bold text-tertiary uppercase tracking-[2px]">Categories</Text>
           <View className="flex-row flex-wrap gap-3 mb-4">
             {selectedCategories.map(cat => (
-              <View key={cat.id.toString()} className="flex-row items-center bg-[#f4f0f0] rounded-full px-3 py-1">
-                <Text className="text-[#181111] text-sm font-medium mr-2">{cat.name}</Text>
+              <View key={cat.id.toString()} className="flex-row items-center bg-surface border border-border rounded px-3 py-1">
+                <Text className="text-black text-sm font-medium mr-2">{cat.name}</Text>
                 <TouchableOpacity onPress={() => removeCategory(cat.id)}>
-                  <X size={16} color="#181111" />
+                  <X size={16} color="#000000" />
                 </TouchableOpacity>
               </View>
             ))}
             <TouchableOpacity
               onPress={() => setModalVisible(true)}
-              className="bg-[#e9242a] rounded-full px-4 py-2 justify-center items-center"
+              className="bg-white border border-border rounded px-4 py-2 justify-center items-center"
             >
-              <Text className="text-white text-sm font-bold">+ Add Categories</Text>
+              <Text className="text-black text-sm font-bold">+ Add Categories</Text>
             </TouchableOpacity>
           </View>
 
           {/* Images Select */}
-          <Text className="mb-2 text-text-primary font-medium">Images</Text>
+          <Text className="mb-2 text-xs font-geist font-bold text-tertiary uppercase tracking-[2px]">Images</Text>
           {Array.isArray(Imagevalue) && Imagevalue.length > 0 && (
-            <Text className="text-text-secondary text-xs mb-2">Long press on each image to remove it</Text>
+            <Text className="text-tertiary text-xs mb-2">Long press on each image to remove it</Text>
           )}
           <View className="mb-6">
             <InstagramGrid
@@ -184,10 +184,10 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheetMethods | null, 
 
           <TouchableOpacity
             disabled={sending}
-            className="bg-primary py-4 rounded-button items-center justify-center"
+            className="bg-primary py-4 rounded items-center justify-center"
             onPress={handleSubmit(handleLocalSubmit)}
           >
-            <Text className="text-white font-semibold">{sending ? "Sending…" : "Create Request"}</Text>
+            <Text className="text-white font-geist font-semibold">{sending ? "Sending…" : "Create Request"}</Text>
           </TouchableOpacity>
 
 
@@ -205,4 +205,3 @@ const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheetMethods | null, 
 );
 
 export default BuyerRequestFormBottomSheet;
-

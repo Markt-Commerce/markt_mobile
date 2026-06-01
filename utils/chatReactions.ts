@@ -1,6 +1,5 @@
 import type { ChatMessage, MessageReactionSummary } from "../models/chat";
 import { getReactions } from "../services/sections/chat";
-import { getEmoji } from "./reactions";
 
 export type MessageReactionSocketEvent = {
   message_id: number | string;
@@ -23,7 +22,6 @@ export function normalizeReactionSummaries(raw: unknown): MessageReactionSummary
   return list
     .map((r) => ({
       reaction_type: String(r.reaction_type ?? ""),
-      emoji: r.emoji ?? getEmoji(String(r.reaction_type ?? "")),
       count: Number(r.count) || 0,
       has_reacted: Boolean(r.has_reacted),
     }))
@@ -84,7 +82,6 @@ export function applyReactionAdded(
     ...reactions,
     {
       reaction_type: reactionType,
-      emoji: getEmoji(reactionType),
       count: 1,
       has_reacted: isMine,
     },
@@ -118,7 +115,6 @@ export function applyReactionStats(
       const prev = existing?.find((r) => r.reaction_type === reaction_type);
       return {
         reaction_type,
-        emoji: getEmoji(reaction_type),
         count: Number(count) || 0,
         has_reacted: prev?.has_reacted ?? false,
       };

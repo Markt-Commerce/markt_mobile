@@ -36,16 +36,16 @@ const OptionCard = ({
     onPress={onPress}
     disabled={disabled}
     activeOpacity={0.7}
-    className={`flex-1 min-w-[100px] max-w-[110px] rounded-2xl bg-white border border-[#efefef] p-4 items-center shadow-sm ${disabled ? "opacity-50" : ""}`}
+    className={`flex-1 min-w-[100px] max-w-[110px] rounded bg-white border border-border p-4 items-center ${disabled ? "opacity-50" : ""}`}
   >
-    <View className="w-14 h-14 rounded-full bg-primary/10 items-center justify-center mb-3">
-      <Icon size={28} color="#e26136" />
+    <View className="w-14 h-14 rounded bg-surface items-center justify-center mb-3">
+      <Icon size={28} color="#000000" />
     </View>
-    <Text className="text-[#1a1a1a] font-semibold text-sm" numberOfLines={1}>
+    <Text className="text-black font-geist font-semibold text-sm" numberOfLines={1}>
       {label}
     </Text>
     {subtitle && (
-      <Text className="text-[#8e8e8e] text-[11px] mt-0.5" numberOfLines={1}>
+      <Text className="text-tertiary text-[11px] mt-0.5" numberOfLines={1}>
         {subtitle}
       </Text>
     )}
@@ -91,12 +91,12 @@ export default function ChatAttachmentSheet({
         onPress={onClose}
         activeOpacity={1}
       />
-      <View className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-lg overflow-hidden">
-        <View className="w-10 h-1 rounded-full bg-[#ddd] self-center mt-3 mb-2" />
-        <Text className="text-[#1a1a1a] font-bold text-lg px-5 mb-4">Attach</Text>
+      <View className="absolute bottom-0 left-0 right-0 bg-white rounded-t shadow-level-2 overflow-hidden">
+        <View className="w-10 h-1 rounded bg-border self-center mt-3 mb-2" />
+        <Text className="text-black font-geist font-bold text-lg px-5 mb-4">Attach</Text>
 
         <View className="px-5 pb-6">
-          <Text className="text-[#8e8e8e] text-xs font-medium uppercase tracking-wider mb-3">Media</Text>
+          <Text className="text-tertiary text-xs font-geist font-bold uppercase tracking-wider mb-3">Media</Text>
           <View className="flex-row flex-wrap gap-3">
             <OptionCard
               icon={Camera}
@@ -116,7 +116,7 @@ export default function ChatAttachmentSheet({
 
           {(role === "seller" && onProducts) || (role === "buyer" && onRequests) ? (
             <>
-              <Text className="text-[#8e8e8e] text-xs font-medium uppercase tracking-wider mt-5 mb-3">
+              <Text className="text-tertiary text-xs font-geist font-bold uppercase tracking-wider mt-5 mb-3">
                 {role === "seller" ? "Share" : "More"}
               </Text>
               <View className="flex-row flex-wrap gap-3">
@@ -152,7 +152,7 @@ export default function ChatAttachmentSheet({
           ) : (
             onDiscounts && (
               <>
-                <Text className="text-[#8e8e8e] text-xs font-medium uppercase tracking-wider mt-5 mb-3">
+                <Text className="text-tertiary text-xs font-geist font-bold uppercase tracking-wider mt-5 mb-3">
                   Offers
                 </Text>
                 <View className="flex-row flex-wrap gap-3">
@@ -168,7 +168,7 @@ export default function ChatAttachmentSheet({
             )
           )}
         </View>
-        <View className="h-6 bg-[#fafafa]" />
+        <View className="h-6 bg-surface" />
       </View>
     </View>
   );

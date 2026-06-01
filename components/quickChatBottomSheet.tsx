@@ -176,15 +176,15 @@ export default function QuickChatBottomSheet({
       <BottomSheetView className="flex-1 p-2">
         {roomLoading && (
           <View className="flex-1 items-center justify-center py-12">
-            <ActivityIndicator size="large" color="#e26136" />
-            <Text className="text-text-secondary text-sm mt-3">Opening chat…</Text>
+            <ActivityIndicator size="large" color="#000000" />
+            <Text className="text-tertiary text-sm mt-3">Opening chat…</Text>
           </View>
         )}
         {!roomLoading && roomError && (
           <View className="flex-1 items-center justify-center py-12 px-6">
-            <Text className="text-text-primary font-semibold text-center">{roomError}</Text>
+            <Text className="text-black font-semibold text-center">{roomError}</Text>
             <TouchableOpacity
-              className="mt-4 px-4 py-2 rounded-full bg-primary"
+              className="mt-4 px-4 py-2 rounded bg-primary"
               onPress={() => fetchRoomData()}
             >
               <Text className="text-white font-semibold">Try again</Text>
@@ -194,7 +194,7 @@ export default function QuickChatBottomSheet({
         {!roomLoading && !roomError && roomId > 0 && (
           <>
             {hasExistingThread && (
-              <Text className="text-text-secondary text-xs text-center pb-2">
+              <Text className="text-tertiary text-xs text-center pb-2">
                 Continuing your conversation
               </Text>
             )}

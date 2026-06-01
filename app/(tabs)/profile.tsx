@@ -1,430 +1,293 @@
-import React, { useState, useEffect, useRef } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Image, Switch } from "react-native";
-import { ArrowLeft, Bell, Sun, Globe, User, Lock, CreditCard, Truck, Link as LinkIcon, HelpCircle as Question, FileText, ShieldCheck, Info, ArrowRight } from "lucide-react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useUser } from "../../hooks/userContextProvider";
-import {getUserProfile, updateBuyerProfile, updateSellerProfile, updateUserProfile} from "../../services/sections/profile"
-import { UserProfile } from "../../models/profile";
-import { useTheme } from "../../components/themeProvider";    // <- simple context (no NativeWind)
-import { TView, TText } from "../../components/themed";       // <- Themed components (pick classes via context)
-import { useToast } from "../../components/ToastProvider";    // <- optional toast
-import { createBuyer, logoutUser, switchUserRole } from "../../services/sections/auth";
-import { navigateToGuestHome } from "../../utils/authNavigation";
+import {
+  ArrowRight,
+  Briefcase,
+  CircleUserRound,
+  LayoutGrid,
+  Settings,
+  ShieldCheck,
+} from "lucide-react-native";
+import BottomSheet from "@gorhom/bottom-sheet";
+import Avatar from "../../components/Avatar";
 import CreateRoleBottomSheet from "../../components/createRoleBottomSheet";
-import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
+import { useUser } from "../../hooks/userContextProvider";
+import { useToast } from "../../components/ToastProvider";
+import { getUserProfile } from "../../services/sections/profile";
+import { switchUserRole } from "../../services/sections/auth";
+import type { UserProfile } from "../../models/profile";
+import { useTheme } from "../../components/themeProvider";
 
-export default function SettingsProfileScreen() {
-  const nav = useRouter();
-  const { user, role, setRole, setUser } = useUser();
-  const { resolvedTheme, setTheme } = useTheme();
+function Section({
+  title,
+  children,
+  isDark,
+}: {
+  title: string;
+  children: React.ReactNode;
+  isDark: boolean;
+}) {
+  return (
+    <View className="px-6 mt-8">
+      <Text className={`font-geist font-bold text-[11px] tracking-[2px] uppercase mb-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+        {title}
+      </Text>
+      <View className={`border rounded overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+        {children}
+      </View>
+    </View>
+  );
+}
+
+function Row({
+  icon: Icon,
+  title,
+  subtitle,
+  onPress,
+  last = false,
+  isDark,
+}: {
+  icon: React.ElementType;
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+  last?: boolean;
+  isDark: boolean;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.8}
+      className={`flex-row items-center justify-between px-4 py-4 ${last ? "" : isDark ? "border-b border-[#46464e]" : "border-b border-border"}`}
+    >
+      <View className="flex-row items-center gap-3 flex-1 pr-3">
+        <View className={`w-10 h-10 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+          <Icon size={18} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.7} />
+        </View>
+        <View className="flex-1">
+          <Text className={`font-geist font-bold text-[15px] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{title}</Text>
+          <Text className={`font-inter text-[13px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{subtitle}</Text>
+        </View>
+      </View>
+      <ArrowRight size={18} color={isDark ? "#c6c5cf" : "#71717A"} strokeWidth={1.7} />
+    </TouchableOpacity>
+  );
+}
+
+function StatPill({ label, active, isDark }: { label: string; active: boolean; isDark: boolean }) {
+  return (
+    <View className={`px-3 py-2 rounded border ${active ? (isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border") : (isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border")}`}>
+      <Text className={`font-geist font-bold text-[10px] tracking-[2px] uppercase ${active ? (isDark ? "text-[#f0f1f2]" : "text-black") : (isDark ? "text-[#c6c5cf]" : "text-tertiary")}`}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+export default function ProfileScreen() {
+  const router = useRouter();
+  const { role, setRole } = useUser();
   const { show } = useToast();
-
-  const [notificationsOn, setNotificationsOn] = useState(true);
-  const [appearance, setAppearance] = useState<"light" | "dark">(resolvedTheme);
-  const [language, setLanguage] = useState<"EN" | "FR">("EN");
-  const [profileData, setProfileData] = useState<UserProfile>();
-
-  const createRoleRef = useRef<BottomSheetMethods | null>(null);
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [createMode, setCreateMode] = useState<"buyer" | "seller" | null>(null);
+  const createRoleRef = useRef<BottomSheet | null>(null);
 
-  // open sheet when createMode set
+  useEffect(() => {
+    getUserProfile().then(setProfile).catch(() => setProfile(null));
+  }, []);
+
   useEffect(() => {
     if (createMode) {
-      // small delay ensures mode prop is set before expanding
-      requestAnimationFrame(() => {
-        createRoleRef.current?.expand?.();
-      });
+      requestAnimationFrame(() => createRoleRef.current?.expand?.());
     }
   }, [createMode]);
 
-  //get and set api functions.
-  const getUserData = async () => {
-    try {
-      const result = await getUserProfile();
-      console.log("Profile data retrieved:", result);
-      setProfileData(result);
-    } catch (error) {
-      show({
-        variant: "error",
-        title: "Error getting profile data",
-        message: "There was an issue retrieving your profile information.",
-      })
-    }
-  }
+  const displayName =
+    role === "buyer"
+      ? profile?.buyer_account?.buyername ?? profile?.username ?? "User"
+      : profile?.seller_account?.shop_name ?? profile?.username ?? "Shop";
 
-  const SwitchRole = async () => {
+  const hasBuyerAccount = profile?.is_buyer ?? false;
+  const hasSellerAccount = profile?.is_seller ?? false;
+  const dualRole = hasBuyerAccount && hasSellerAccount;
+
+  const handleSwitchRole = async () => {
     try {
-      const switchResult = await switchUserRole();
-      setRole(switchResult.user.current_role);
-    } catch {
-      // Switch fails when user doesn't have both accounts
-      const missingRole = role === "buyer" ? "seller" : "buyer";
+      const result = await switchUserRole();
+      const nextRole = (result.user?.current_role ?? result.current_role) as "buyer" | "seller";
+      setRole(nextRole);
+      setProfile((current) =>
+        current
+          ? {
+            ...current,
+            current_role: nextRole,
+          }
+          : current
+      );
       show({
-        message: `You need a ${missingRole} account. Use "Create A ${missingRole === "seller" ? "Seller" : "Buyer"} Account" below.`,
-        title: "Could not switch",
-        variant: "error",
+        variant: "success",
+        title: "Mode switched",
+        message: `Now in ${nextRole} mode.`,
       });
+    } catch {
+      setCreateMode(role === "buyer" ? "seller" : "buyer");
     }
   };
 
-  useEffect(()=>{
-    getUserData()
-  },[user])
+  const handleRoleRowPress = async (targetRole: "buyer" | "seller") => {
+    const hasTargetAccount = targetRole === "buyer" ? hasBuyerAccount : hasSellerAccount;
 
-  useEffect(() => setAppearance(resolvedTheme), [resolvedTheme]);
+    if (!hasTargetAccount) {
+      setCreateMode(targetRole);
+      return;
+    }
 
+    if (role === targetRole) {
+      router.push("/(settings)/accountInfoScreen");
+      return;
+    }
 
-
-  // ---------- UI Helpers ----------
-  const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-    <View className="w-full max-w-[640px] self-center px-4">
-      <TText
-        light="text-[#8e7a74]"
-        dark="text-neutral-400"
-        className="px-1 pt-6 pb-2 text-xs font-semibold uppercase tracking-wider"
-      >
-        {title}
-      </TText>
-
-      <TView
-        light="bg-white border-[#efe9e7]"
-        dark="bg-neutral-900 border-neutral-800"
-        className="rounded-2xl border overflow-hidden"
-      >
-        {children}
-      </TView>
-    </View>
-  );
-
-  // update DetermineSwitchType to open sheet when account missing
-  const DetermineSwitchType: React.FC<{ hasBuyerAccount: boolean; hasSellerAccount: boolean }> = ({
-    hasBuyerAccount,
-    hasSellerAccount,
-  }) => {
-    const oppAccount: "Buyer" | "Seller" = role === "buyer" ? "Seller" : "Buyer";
-    return role === "buyer" && hasSellerAccount ? (
-      <TouchableOpacity onPress={() => SwitchRole()} className="rounded-button h-11 justify-center items-center bg-primary" activeOpacity={0.85}>
-        <Text className="text-white font-semibold">Switch To Seller Account</Text>
-      </TouchableOpacity>
-    ) : role === "seller" && hasBuyerAccount ? (
-      <TouchableOpacity onPress={() => SwitchRole()} className="rounded-button h-11 justify-center items-center bg-primary" activeOpacity={0.85}>
-        <Text className="text-white font-semibold">Switch To Buyer Account</Text>
-      </TouchableOpacity>
-    ) : (
-      <TouchableOpacity
-        onPress={() => setCreateMode(role === "buyer" ? "seller" : "buyer")}
-        className="rounded-button h-11 justify-center items-center bg-primary"
-        activeOpacity={0.85}
-      >
-        <Text className="text-white font-semibold">Create A {oppAccount} Account</Text>
-      </TouchableOpacity>
-    );
+    await handleSwitchRole();
   };
 
   const handleCreated = (newRole: "buyer" | "seller") => {
     setRole(newRole);
     setCreateMode(null);
-    // Refresh profile data after creating a new role
-    getUserData();
-  };
-
-  const Row: React.FC<{
-    children: React.ReactNode;
-    onPress?: () => void;
-    showChevron?: boolean;
-    last?: boolean;
-    trailing?: React.ReactNode;
-  }> = ({ children, onPress, showChevron, last, trailing }) => {
-    const Comp: any = onPress ? TouchableOpacity : View;
-    return (
-      <Comp
-        onPress={onPress}
-        activeOpacity={0.7}
-        className={`flex-row items-center justify-between px-4 py-4 ${
-          last ? "" : "border-b"
-        }`}
-      >
-        <TView
-          light=""
-          dark=""
-          className={`flex-row items-center gap-3 ${last ? "" : ""}`}
-        >
-          {children}
-        </TView>
-
-        <View className="flex-row items-center gap-2">
-          {trailing}
-          {showChevron ? (
-            <ArrowRight size={18} color={resolvedTheme === "dark" ? "#9ca3af" : "#7a6963"} />
-          ) : null}
-        </View>
-      </Comp>
-    );
-  };
-
-  const Divider: React.FC = () => (
-    <TView light="bg-[#f3efed]" dark="bg-neutral-800" className="h-[1px]" />
-  );
-
-  const Pill: React.FC<{ active?: boolean; label: string; onPress?: () => void; className?: string }> = ({
-    active,
-    label,
-    onPress,
-    className,
-  }) => (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.85}
-      className={`px-3 py-1.5 rounded-full ${
-        active ? "bg-[#e26136]" : "bg-[#f5f2f1] dark:bg-neutral-800"
-      } ${className ?? ""}`}
-    >
-      <TText light={active ? "text-white" : "text-[#171311]"} dark={active ? "text-white" : "text-neutral-100"}>
-        {label}
-      </TText>
-    </TouchableOpacity>
-  );
-
-  // ---------- Handlers ----------
-  const chooseAppearance = (v: "light" | "dark") => {
-    setAppearance(v);
-    setTheme(v);
-    show({
-      variant: "success",
-      title: "Theme updated",
-      message: `Switched to ${v} mode.`,
-    });
+    getUserProfile().then(setProfile).catch(() => setProfile(null));
   };
 
   return (
-    <SafeAreaView className="flex-1">
-      <TView light="bg-white" dark="bg-[#0b0b0c]" className="flex-1">
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ paddingBottom: 24 }}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header */}
-          <View className="flex-row items-center p-4 pb-2 justify-between">
-            <TouchableOpacity onPress={() => nav.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <ArrowLeft size={24} color={resolvedTheme === "dark" ? "#e5e7eb" : "#171311"} />
-            </TouchableOpacity>
-            <TText
-              light="text-[#171311]"
-              dark="text-neutral-100"
-              className="flex-1 text-center pr-12 text-lg font-bold"
-            >
-              Profile & Settings
-            </TText>
-          </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
+      <ScrollView
+        className={isDark ? "bg-[#1a1c1d]" : "bg-white"}
+        contentContainerStyle={{ paddingBottom: 32 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="px-6 pt-8">
+          <Text className={`font-geist font-bold text-[28px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+            Profile
+          </Text>
+          <Text className={`font-inter text-base mt-2 leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            Manage your identity, understand your active role, and jump into account tasks.
+          </Text>
+        </View>
 
-          {/* Profile Card */}
-          <View className="w-full max-w-[640px] self-center px-4">
-            <TView
-              light="bg-white border-[#efe9e7]"
-              dark="bg-neutral-900 border-neutral-800"
-              className="items-center rounded-2xl border px-5 py-6"
-            >
-              <Image source={{  uri: profileData?.profile_picture_url || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" }} className="w-28 h-28 rounded-full" />
-              <TText
-                light="text-[#171311]"
-                dark="text-neutral-100"
-                className="text-[20px] font-bold mt-3"
-              >
-                {role === "buyer" ? profileData?.buyer_account.buyername : role === "seller" ? profileData?.seller_account.shop_name : "Guest"}
-              </TText>
-              <TText
-                light="text-[#876d64]"
-                dark="text-neutral-400"
-                className="text-sm"
-              >
-                @{profileData?.username ?? "unavailable"} | {role}
-              </TText>
-              <TText
-                light="text-[#876d64]"
-                dark="text-neutral-400"
-                className="text-sm"
-              >
-                Joined {profileData?.created_at ? String(new Date(profileData.created_at).getFullYear()) : "now maybe"}
-              </TText>
-            </TView>
-          </View>
-
-          {/* Edit Profile */}
-          <View className="w-full max-w-[640px] self-center px-4 mb-4">
-            <TouchableOpacity
-              className="bg-primary rounded-button h-12 items-center justify-center"
-              onPress={() => nav.push("/accountInfoScreen")}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel="Edit profile"
-            >
-              <Text className="text-white font-semibold">Edit Profile</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View className="w-full max-w-[640px] self-center px-4 mb-2">
-            <DetermineSwitchType hasBuyerAccount={profileData?.is_buyer ?? false} hasSellerAccount={profileData?.is_seller ?? false} />
-          </View>
-
-
-          {/* App Preferences */}
-          <Section title="App Preferences">
-            {/* Notifications */}
-            <Row
-              trailing={
-                <Switch
-                  value={notificationsOn}
-                  onValueChange={setNotificationsOn}
-                  thumbColor={resolvedTheme === "dark" ? "#f8fafc" : "#ffffff"}
-                  trackColor={{ false: resolvedTheme === "dark" ? "#334155" : "#d8d1ce", true: "#e26136" }}
-                />
-              }
-            >
-              <TView light="bg-[#f4f1f0]" dark="bg-neutral-800" className="p-2 rounded-lg">
-                <Bell size={20} color={resolvedTheme === "dark" ? "#e5e7eb" : "#171311"} />
-              </TView>
-              <View>
-                <TText light="text-[#171311]" dark="text-neutral-100" className="text-base font-medium">
-                  Notifications
-                </TText>
-                <TText light="text-[#876d64]" dark="text-neutral-400" className="text-sm">
-                  Enable or disable notifications
-                </TText>
+        <View className="px-6 pt-8">
+          <View className={`border rounded px-5 py-5 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
+            <View className="flex-row items-center gap-4">
+              <Avatar
+                uri={profile?.profile_picture_url}
+                name={displayName}
+                size={64}
+                className="rounded"
+              />
+              <View className="flex-1">
+                <Text className={`font-geist font-bold text-[24px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+                  {displayName}
+                </Text>
+                <Text className={`font-inter text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={1}>
+                  @{profile?.username ?? "user"}
+                </Text>
+                <Text className={`font-geist font-bold text-[10px] tracking-[2px] uppercase mt-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                  {role} account active
+                </Text>
               </View>
-            </Row>
-            <Divider />
+            </View>
 
-            {/* Appearance */}
-            <Row
-              trailing={
-                <TView light="bg-[#f5f2f1]" dark="bg-neutral-800" className="flex-row items-center rounded-full p-1">
-                  <Pill label="Light" active={appearance === "light"} onPress={() => chooseAppearance("light")} />
-                  <Pill label="Dark"  active={appearance === "dark"}  onPress={() => chooseAppearance("dark")}  className="ml-1" />
-                </TView>
-              }
-            >
-              <TView light="bg-[#f4f1f0]" dark="bg-neutral-800" className="p-2 rounded-lg">
-                <Sun size={20} color={resolvedTheme === "dark" ? "#e5e7eb" : "#171311"} />
-              </TView>
-              <View>
-                <TText light="text-[#171311]" dark="text-neutral-100" className="text-base font-medium">
-                  Appearance
-                </TText>
-                <TText light="text-[#876d64]" dark="text-neutral-400" className="text-sm">
-                  Customize app theme
-                </TText>
-              </View>
-            </Row>
-            <Divider />
+            <View className="flex-row gap-2 mt-4">
+              <StatPill label="Buyer" active={role === "buyer"} isDark={isDark} />
+              <StatPill label="Seller" active={role === "seller"} isDark={isDark} />
+            </View>
 
-            {/* Language */}
-            <Row
-              last
-              trailing={
-                <TView light="bg-[#f5f2f1]" dark="bg-neutral-800" className="flex-row items-center rounded-full p-1">
-                  <Pill label="EN" active={language === "EN"} onPress={() => setLanguage("EN")} />
-                  <Pill label="FR" active={language === "FR"} onPress={() => setLanguage("FR")} className="ml-1" />
-                </TView>
-              }
-            >
-              <TView light="bg-[#f4f1f0]" dark="bg-neutral-800" className="p-2 rounded-lg">
-                <Globe size={20} color={resolvedTheme === "dark" ? "#e5e7eb" : "#171311"} />
-              </TView>
-              <View>
-                <TText light="text-[#171311]" dark="text-neutral-100" className="text-base font-medium">
-                  Language
-                </TText>
-                <TText light="text-[#876d64]" dark="text-neutral-400" className="text-sm">
-                  Manage language preferences
-                </TText>
-              </View>
-            </Row>
-          </Section>
-
-          {/* Account Management */}
-          <Section title="Account Management">
-            {[
-              { label: "Edit Profile", icon: User, route: "/accountInfoScreen" },
-              { label: "Change Password", icon: Lock, route: "/forgotPassword" },
-              { label: "Shipping Addresses", icon: Truck, route: "/account/addresses" },
-            ].map((item, i, arr) => {
-              const Icon = item.icon;
-              return (
-                <Row
-                  key={i}
-                  onPress={() => nav.push(item.route as any)}
-                  showChevron
-                  last={i === arr.length - 1}
-                >
-                  <TView light="bg-[#f4f1f0]" dark="bg-neutral-800" className="p-2 rounded-lg">
-                    <Icon size={20} color={resolvedTheme === "dark" ? "#e5e7eb" : "#171311"} />
-                  </TView>
-                  <TText light="text-[#171311]" dark="text-neutral-100" className="text-base font-medium">
-                    {item.label}
-                  </TText>
-                </Row>
-              );
-            })}
-          </Section>
-
-          {/* Support & Information */}
-          <Section title="Support & Information">
-            {[
-              { label: "Help Center", icon: Question, route: "/support/help" },
-              { label: "Terms of Service", icon: FileText, route: "/support/terms" },
-              { label: "Privacy Policy", icon: ShieldCheck, route: "/support/privacy" },
-              { label: "About", icon: Info, route: "/support/about" },
-            ].map((item, i, arr) => {
-              const Icon = item.icon;
-              return (
-                <Row
-                  key={i}
-                  onPress={() => nav.push(item.route as any)}
-                  showChevron
-                  last={i === arr.length - 1}
-                >
-                  <TView light="bg-[#f4f1f0]" dark="bg-neutral-800" className="p-2 rounded-lg">
-                    <Icon size={20} color={resolvedTheme === "dark" ? "#e5e7eb" : "#171311"} />
-                  </TView>
-                  <TText light="text-[#171311]" dark="text-neutral-100" className="text-base font-medium">
-                    {item.label}
-                  </TText>
-                </Row>
-              );
-            })}
-          </Section>
-
-          {/* Logout */}
-          <View className="w-full max-w-[640px] self-center px-4 pt-4 pb-6">
-            <TouchableOpacity
-              className="h-11 rounded-full justify-center items-center active:opacity-85"
-              onPress={async () => {
-                try {
-                  await logoutUser();
-                  setUser(null);
-                  show({ variant: "info", title: "Logged out", message: "You've been signed out." });
-                  // Stack.Protected redirects guest routes when user clears; replace covers deep links.
-                  navigateToGuestHome();
-                } catch (error) {
-                  show({
-                    variant: "error",
-                    title: "Error Logging out",
-                    message: "We could not log you out of your account. Please try again"
-                  })
-                }
-              }}
-              style={{ backgroundColor: resolvedTheme === "dark" ? "#111827" : "#f4f1f0" }}
-            >
-              <TText light="text-[#171311]" dark="text-neutral-100" className="font-semibold">
-                Log Out
-              </TText>
-            </TouchableOpacity>
+            <View className="flex-row gap-3 mt-5">
+              <TouchableOpacity
+                onPress={() => router.push("/(settings)/accountInfoScreen")}
+                activeOpacity={0.85}
+                className="flex-1 h-12 rounded bg-primary items-center justify-center"
+              >
+                <Text className="text-white font-geist font-bold text-[11px] tracking-[2px] uppercase">
+                  Edit Profile
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSwitchRole}
+                activeOpacity={0.85}
+                className={`flex-1 h-12 rounded border items-center justify-center ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+              >
+                <Text className={`font-geist font-bold text-[11px] tracking-[2px] uppercase ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                  {dualRole ? `Switch to ${role === "buyer" ? "Seller" : "Buyer"}` : `Create ${role === "buyer" ? "Seller" : "Buyer"}`}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </ScrollView>
-      </TView>
-      <CreateRoleBottomSheet ref={createRoleRef} mode={createMode} onClose={() => setCreateMode(null)} onCreated={handleCreated} />
+        </View>
+
+        <Section title="Role Overview" isDark={isDark}>
+          <Row
+            icon={CircleUserRound}
+            title="Buyer Identity"
+            subtitle={
+              hasBuyerAccount
+                ? `Set up as ${profile?.buyer_account?.buyername ?? profile?.username ?? "buyer"}.`
+                : "No buyer account created yet."
+            }
+            onPress={() => {
+              void handleRoleRowPress("buyer");
+            }}
+            isDark={isDark}
+          />
+          <Row
+            icon={Briefcase}
+            title="Seller Identity"
+            subtitle={
+              hasSellerAccount
+                ? `Trading as ${profile?.seller_account?.shop_name ?? profile?.username ?? "seller"}.`
+                : "No seller account created yet."
+            }
+            onPress={() => {
+              void handleRoleRowPress("seller");
+            }}
+            last
+            isDark={isDark}
+          />
+        </Section>
+
+        <Section title="Account Navigation" isDark={isDark}>
+          <Row
+            icon={Settings}
+            title="Settings"
+            subtitle="Appearance, notifications, security, and support controls."
+            onPress={() => router.push("/(settings)/settingsProfileScreen")}
+            isDark={isDark}
+          />
+          <Row
+            icon={LayoutGrid}
+            title="My Niches"
+            subtitle="Review the communities you run or participate in."
+            onPress={() => router.push("/myniches" as any)}
+            isDark={isDark}
+          />
+          <Row
+            icon={ShieldCheck}
+            title="Help & Policies"
+            subtitle="Read support guidance, privacy information, and platform details."
+            onPress={() => router.push("/support/help" as any)}
+            last
+            isDark={isDark}
+          />
+        </Section>
+      </ScrollView>
+
+      <CreateRoleBottomSheet
+        ref={createRoleRef}
+        mode={createMode}
+        onClose={() => setCreateMode(null)}
+        onCreated={handleCreated}
+      />
     </SafeAreaView>
   );
 }

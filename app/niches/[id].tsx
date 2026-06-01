@@ -8,13 +8,16 @@ import { NichePost, Niches } from "../../models/niches";
 import { useToast } from "../../components/ToastProvider";
 import PostDisplayComponent from "../../components/PostDisplayComponent";
 import PostFormBottomSheet from "../../components/postCreateBottomSheet";
-import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
+import BottomSheet from "@gorhom/bottom-sheet";
 import { likePost } from "../../services/sections/post";
+import { useTheme } from "../../components/themeProvider";
 
 export default function NicheDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { show } = useToast();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   const [posts, setPosts] = useState<NichePost[]>([]);
   const [niche, setNiche] = useState<Niches | null>(null);
@@ -28,7 +31,7 @@ export default function NicheDetailScreen() {
   const [hasError, setHasError] = useState(false);
   const [postsRefreshKey, setPostsRefreshKey] = useState(0);
 
-  const postFormRef = useRef<BottomSheetMethods | null>(null);
+  const postFormRef = useRef<BottomSheet | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -193,22 +196,22 @@ export default function NicheDetailScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top", "bottom"]}>
       <View className="flex-1">
-        <View className="flex-row items-center justify-between px-4 py-3 border-b border-[#efe9e7]">
+        <View className={`flex-row items-center justify-between px-4 py-3 border-b ${isDark ? "border-[#46464e]" : "border-border"}`}>
           <View className="flex-1">
-            <TouchableOpacity onPress={() => router.back()}>
-              <ArrowLeft size={20} color="#e26136" />
-              <Text className="text-[#e26136] font-semibold">Back</Text>
+            <TouchableOpacity onPress={() => router.back()} className="flex-row items-center">
+              <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+              <Text className={`font-semibold ml-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Back</Text>
             </TouchableOpacity>
-            <Text className="text-[#171311] text-lg font-extrabold mt-1">{niche?.name || "Niche"}</Text>
-            <Text className="text-[#876d64] text-xs mt-1">{niche?.member_count || 0} members • {niche?.post_count || 0} posts</Text>
+            <Text className={`text-lg font-geist font-bold mt-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{niche?.name || "Niche"}</Text>
+            <Text className={`text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{niche?.member_count || 0} members • {niche?.post_count || 0} posts</Text>
           </View>
 
           {isJoined && !isBanned && canPost && (
             <TouchableOpacity
               onPress={() => postFormRef.current?.expand?.()}
-              className="p-2 rounded-full bg-[#e26136]"
+              className="p-2 rounded bg-primary"
               accessibilityRole="button"
               accessibilityLabel="Create post"
             >
@@ -219,9 +222,9 @@ export default function NicheDetailScreen() {
 
         {/* Niche Info */}
         {niche && (
-          <View className="px-4 py-4 border-b border-[#efe9e7]">
-            <Text className="text-[#171311] text-sm mb-2">{niche.description}</Text>
-            <Text className="text-[#876d64] text-xs">
+          <View className={`px-4 py-4 border-b ${isDark ? "border-[#46464e]" : "border-border"}`}>
+            <Text className={`text-sm mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{niche.description}</Text>
+            <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
               {niche.allow_buyer_posts && niche.allow_seller_posts
                 ? "Buyers & Sellers can post"
                 : niche.allow_buyer_posts
@@ -233,22 +236,22 @@ export default function NicheDetailScreen() {
 
         {/* Banned Message */}
         {isBanned && (
-          <View className="mx-4 mt-3 p-3 bg-[#fff5f3] border border-[#ffd9d2] rounded-lg">
-            <Text className="text-[#b51f08] text-sm font-semibold">You have been banned from this niche</Text>
-            <Text className="text-[#b51f08] text-xs mt-1">You cannot post in this community.</Text>
+          <View className={`mx-4 mt-3 p-3 border rounded ${isDark ? "bg-[#ba1a1a]/10 border-[#ba1a1a]" : "bg-error-bg border-error"}`}>
+            <Text className="text-error text-sm font-semibold">You have been banned from this niche</Text>
+            <Text className="text-error text-xs mt-1">You cannot post in this community.</Text>
           </View>
         )}
 
         {/* Join/Leave Button */}
         {!isBanned && (
-          <View className="px-4 py-3 border-b border-[#efe9e7]">
+          <View className={`px-4 py-3 border-b ${isDark ? "border-[#46464e]" : "border-border"}`}>
             <TouchableOpacity
               onPress={isJoined ? handleLeave : handleJoin}
-              className={`py-3 rounded-full items-center justify-center ${
-                isJoined ? "bg-[#f4f1f0]" : "bg-[#e26136]"
+              className={`py-3 rounded items-center justify-center ${
+                isJoined ? (isDark ? "bg-[#2f3132]" : "bg-surface") : "bg-primary"
               }`}
             >
-              <Text className={`font-semibold text-sm ${isJoined ? "text-[#171311]" : "text-white"}`}>
+              <Text className={`font-semibold text-sm ${isJoined ? (isDark ? "text-[#f0f1f2]" : "text-black") : "text-white"}`}>
                 {isJoined ? "Leave Niche" : "Join Niche"}
               </Text>
             </TouchableOpacity>
@@ -257,9 +260,9 @@ export default function NicheDetailScreen() {
 
         {/* Error state with retry */}
         {hasError && (
-          <View className="mx-4 mt-4 p-3 bg-[#fff5f3] border border-[#ffd9d2] rounded-lg items-center">
-            <Text className="text-[#b51f08] text-sm font-semibold">Failed to load posts</Text>
-            <TouchableOpacity onPress={handleRetry} className="mt-2 px-4 py-2 bg-[#e26136] rounded-lg">
+          <View className={`mx-4 mt-4 p-3 border rounded items-center ${isDark ? "bg-[#ba1a1a]/10 border-[#ba1a1a]" : "bg-error-bg border-error"}`}>
+            <Text className="text-error text-sm font-semibold">Failed to load posts</Text>
+            <TouchableOpacity onPress={handleRetry} className="mt-2 px-4 py-2 bg-primary rounded">
               <Text className="text-white text-sm font-semibold">Retry</Text>
             </TouchableOpacity>
           </View>
@@ -275,20 +278,20 @@ export default function NicheDetailScreen() {
           ListEmptyComponent={
             loading && posts.length === 0 ? (
               <View className="items-center justify-center py-16">
-                <ActivityIndicator size="large" color="#e26136" />
-                <Text className="text-text-secondary text-sm mt-2">Loading posts…</Text>
+                <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+                <Text className={`text-sm mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading posts…</Text>
               </View>
             ) : !loading && !hasError ? (
               <View className="items-center justify-center py-16">
-                <Text className="text-text-secondary text-sm">No posts yet</Text>
+                <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No posts yet</Text>
                 {isJoined && !isBanned && (
-                  <Text className="text-text-secondary text-xs mt-2">Be the first to post!</Text>
+                  <Text className={`text-xs mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Be the first to post!</Text>
                 )}
               </View>
             ) : null
           }
           ListFooterComponent={
-            loading ? <ActivityIndicator size="large" color="#e26136" style={{ marginVertical: 20 }} /> : null
+            loading ? <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} style={{ marginVertical: 20 }} /> : null
           }
         />
       </View>
@@ -298,4 +301,3 @@ export default function NicheDetailScreen() {
     </SafeAreaView>
   );
 }
-
