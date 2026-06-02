@@ -22,16 +22,22 @@ export default function PaymentInfo() {
   useEffect(() => {
     if (id) {
       getPaymentDetails(id as string)
-        .then(setPaymentdata)
+        .then((paymentData) => {
+          setPaymentdata(paymentData);
+        })
         .catch(console.error);
     }
   }, [id]);
   
-/* We would need to check here if access code is available */
+  const gatewayData = paymentdata?.gateway_response.data;
+  const checkoutUrl =
+    gatewayData?.authorization_url ||
+    (gatewayData?.access_code ? `https://checkout.paystack.com/${gatewayData.access_code}` : "");
+
   return (
     <View className={`flex-1 justify-between ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
         <WebView
-          source={{ uri: `https://checkout.paystack.com/${paymentdata?.gateway_response["access_code"]}` }}
+          source={{ uri: checkoutUrl }}
           style={{ marginTop: 20, backgroundColor: isDark ? "#1a1c1d" : "white" }}
         />
     </View>

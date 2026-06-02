@@ -7,18 +7,26 @@ export interface PaymentPayload {
   metadata: Record<string, any>;
 }
 
+export interface GatewayResponseData {
+  access_code: string;
+  authorization_url: string;
+  reference: string;
+}
+
 export interface Transaction {
   method: string;
   transaction_id: string;
   gateway_response: {
-    [key: string]: string;
+    data: GatewayResponseData;
+    message: string;
+    status: boolean;
   };
   currency: string;
-  created_at: string;   // ISO date string
+  created_at: string;
   status: string;
-  paid_at: string;      // ISO date string
+  paid_at: string | null;
   order_id: string;
-  updated_at: string;   // ISO date string
+  updated_at: string;
   id: string;
   amount: number;
 }
