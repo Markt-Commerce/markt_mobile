@@ -31,7 +31,7 @@ function ShopRow({ shop, onPress }: { shop: ShopLite; onPress: () => void }) {
       accessibilityRole="button"
       accessibilityLabel={`View ${label}`}
     >
-      <Avatar uri={shop.user?.profile_picture} name={label} size={56} className="rounded" />
+      <Avatar uri={shop.user?.profile_picture} name={label} size={56} />
       <View className="flex-1 ml-4">
         <Text className="text-black font-geist font-bold text-base" numberOfLines={1}>
           {label}

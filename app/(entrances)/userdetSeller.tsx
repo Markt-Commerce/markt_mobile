@@ -197,7 +197,7 @@ const ShopInformationScreen = () => {
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={changeProfilePicture}
-                className={`h-24 w-24 rounded border-2 border-dashed items-center justify-center overflow-hidden ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+                className={`h-24 w-24 rounded-full border-2 border-dashed items-center justify-center overflow-hidden ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
               >
                 {profilePictureUri ? (
                   <Image source={{ uri: profilePictureUri }} className="w-full h-full" />

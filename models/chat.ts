@@ -38,6 +38,12 @@ export interface ChatMessage {
   pending?: boolean;
   error?: string | null;
   sender_username?: string;
+  sender?: {
+    id?: string;
+    username?: string | null;
+    profile_picture?: string | null;
+    profile_picture_url?: string | null;
+  };
 }
 
 export interface PaginationMeta {

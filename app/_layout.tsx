@@ -2,8 +2,7 @@
 import 'react-native-reanimated';
 import 'react-native-gesture-handler';
 import { Stack } from "expo-router";
-import { View, Text, ActivityIndicator } from "react-native";
-import { StatusBar } from "expo-status-bar";
+import { View, Text, ActivityIndicator, StatusBar } from "react-native";
 import "../global.css";
 import { UserProvider, useUser } from "../hooks/userContextProvider";
 import { RegisterProvider } from "../models/signupSteps";
@@ -53,7 +52,7 @@ export function AppStack() {
   if (isRestoringSession) {
     return (
       <View className={`flex-1 items-center justify-center ${isDark ? "bg-inverse-surface" : "bg-white"}`}>
-        <StatusBar style={isDark ? "light" : "dark"} />
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
         <ActivityIndicator size="large" color={isDark ? "#FFFFFF" : "#000000"} />
         <Text className={`mt-3 text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading…</Text>
       </View>
@@ -64,7 +63,7 @@ export function AppStack() {
   // navigation history (fixes iOS swipe-back landing on introduction after login).
   return (
     <>
-      <StatusBar style={isDark ? "light" : "dark"} />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: isDark ? "#1a1c1d" : "#ffffff" } }}>
         <Stack.Protected guard={isLoggedIn}>
           <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />

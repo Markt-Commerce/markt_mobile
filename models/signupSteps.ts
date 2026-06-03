@@ -35,11 +35,12 @@ interface SignupStep {
 }
 
 export const register = (regData:RegisterRequest,data: SignupStepOne | SignupStepTwo) => {
-  return Object.assign(
-    regData,
-    Object.fromEntries(
-      Object.entries(data).filter(([key]) => key in regData)
-    )
-  );
-};
+  const nextData = Object.entries(data).reduce<Partial<RegisterRequest>>((acc, [key, value]) => {
+    if (key in regData) {
+      (acc as Record<string, unknown>)[key] = value;
+    }
+    return acc;
+  }, {});
 
+  return Object.assign(regData, nextData);
+};

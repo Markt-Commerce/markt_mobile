@@ -32,7 +32,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
                                     req.buyer?.profile_picture_url ||
                                     "https://placehold.co/40x40?text=User",
                             }}
-                            className="w-10 h-10 rounded mr-3 bg-surface"
+                            className="w-10 h-10 rounded-full mr-3 bg-surface"
                         />
                         <View>
                             <Text className="font-geist font-bold text-black text-base">
