@@ -15,7 +15,7 @@ module.exports = {
         border: "#E4E4E7", // Level 1 (Card/Surface) border
         background: "#FFFFFF",
         tertiary: "#71717A",
-        
+
         // Semantic/Fallback (adapted for the new theme)
         "primary-muted": "#FDF2EF",
         "text-primary": "#000000",
@@ -24,6 +24,13 @@ module.exports = {
         "bg-muted": "#F4F4F5",
         "bg-elevated": "#FFFFFF",
         "border-light": "#F4F4F5",
+        "dark-page": "#0b0b0c",
+        "dark-surface": "#1a1c1d",
+        "dark-elevated": "#2f3132",
+        "dark-border": "#27272a",
+        "dark-border-strong": "#46464e",
+        "dark-text": "#f5f5f5",
+        "dark-muted": "#c6c5cf",
         error: "#ba1a1a",
         success: "#178b1f",
         "error-bg": "#ffdad6",
@@ -38,23 +45,23 @@ module.exports = {
         gutter: "24px",
         "margin-mobile": "16px",
         "margin-desktop": "64px",
-        
+
         // Old spacing compatibility
         "screen-x": "16px",
-        "card": "16px",
-        "section": "24px",
+        card: "16px",
+        section: "24px",
       },
       borderRadius: {
-        "sm": "8px",
+        sm: "8px",
         DEFAULT: "8px", // Standard border radius
-        "md": "8px",
-        "lg": "8px",
-        "xl": "8px",
-        "full": "8px",
+        md: "8px",
+        lg: "8px",
+        xl: "8px",
+        full: "8px",
 
         // Old compatibility
-        "card": "8px",
-        "button": "8px",
+        card: "8px",
+        button: "8px",
       },
       fontFamily: {
         geist: ["Geist", "sans-serif"],
@@ -62,9 +69,9 @@ module.exports = {
       },
       boxShadow: {
         // Level 2 (Interactive/Floating)
-        'level-2': '0px 10px 30px rgba(0, 0, 0, 0.04)',
-      }
+        "level-2": "0px 10px 30px rgba(0, 0, 0, 0.04)",
+      },
     },
   },
   plugins: [],
-}
+};

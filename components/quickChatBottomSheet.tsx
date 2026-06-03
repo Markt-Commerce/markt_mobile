@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { View, Text, ActivityIndicator, TouchableOpacity } from "react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import ChatScreen from "./chat";
@@ -9,6 +15,7 @@ import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { useToast } from "./ToastProvider";
 import { useUser } from "../hooks/userContextProvider";
 import { isOwnProductListing } from "../utils/chatGuards";
+import { useTheme } from "./themeProvider";
 
 type QuickChatBottomSheetProps = {
   /** Seller's user id (UUID) — used when current user is buyer (CHATS_API §1.2) */
@@ -41,6 +48,8 @@ export default function QuickChatBottomSheet({
   const snapPoints = useMemo(() => ["80%"], []);
   const { show } = useToast();
   const { user } = useUser();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const currentUserId = user?.user_id?.toString() ?? "";
   const [sheetOpen, setSheetOpen] = useState(false);
   const [roomData, setRoomData] = useState<ChatRoomLite | null>(null);
@@ -76,11 +85,15 @@ export default function QuickChatBottomSheet({
         let resolvedSellerId = sellerId;
         let resolvedOtherUser = otherUser;
 
-        if ((!resolvedSellerId || !looksLikeUserUuid(resolvedSellerId)) && product_id) {
+        if (
+          (!resolvedSellerId || !looksLikeUserUuid(resolvedSellerId)) &&
+          product_id
+        ) {
           try {
             const product = await getProductById(product_id);
             if (stale()) return;
-            const su = (product as any).seller_user ?? (product as any).seller?.user;
+            const su =
+              (product as any).seller_user ?? (product as any).seller?.user;
             resolvedSellerId = su?.id ? String(su.id) : resolvedSellerId;
             if (su && !resolvedOtherUser) {
               resolvedOtherUser = {
@@ -92,7 +105,11 @@ export default function QuickChatBottomSheet({
           } catch {
             if (!stale()) {
               setRoomError("Could not load product. Please try again.");
-              show({ variant: "error", title: "Error", message: "Could not load product. Please try again." });
+              show({
+                variant: "error",
+                title: "Error",
+                message: "Could not load product. Please try again.",
+              });
             }
             return;
           }
@@ -101,7 +118,11 @@ export default function QuickChatBottomSheet({
         if (!resolvedSellerId) {
           if (!stale()) {
             setRoomError("Could not find seller.");
-            show({ variant: "error", title: "Invalid data", message: "Could not find seller. Try opening the product first." });
+            show({
+              variant: "error",
+              title: "Invalid data",
+              message: "Could not find seller. Try opening the product first.",
+            });
           }
           return;
         }
@@ -118,14 +139,21 @@ export default function QuickChatBottomSheet({
           return;
         }
 
-        const result = await createOrGetRoom({ seller_id: resolvedSellerId, product_id });
+        const result = await createOrGetRoom({
+          seller_id: resolvedSellerId,
+          product_id,
+        });
         if (stale()) return;
         setRoomData(result);
       } else {
         if (!buyerId) {
           if (!stale()) {
             setRoomError("Buyer ID is required.");
-            show({ variant: "error", title: "Invalid IDs", message: "Buyer ID must be provided." });
+            show({
+              variant: "error",
+              title: "Invalid IDs",
+              message: "Buyer ID must be provided.",
+            });
           }
           return;
         }
@@ -148,7 +176,8 @@ export default function QuickChatBottomSheet({
       }
     } catch (err) {
       if (stale()) return;
-      const msg = err instanceof Error ? err.message : "Could not create chat room.";
+      const msg =
+        err instanceof Error ? err.message : "Could not create chat room.";
       setRoomError(msg);
       show({ variant: "error", title: "Chat error", message: msg });
     } finally {
@@ -172,17 +201,30 @@ export default function QuickChatBottomSheet({
       snapPoints={snapPoints}
       enablePanDownToClose
       onChange={handleSheetChange}
+      backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }}
+      handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
     >
       <BottomSheetView className="flex-1 p-2">
         {roomLoading && (
           <View className="flex-1 items-center justify-center py-12">
-            <ActivityIndicator size="large" color="#000000" />
-            <Text className="text-tertiary text-sm mt-3">Opening chat…</Text>
+            <ActivityIndicator
+              size="large"
+              color={isDark ? "#f5f5f5" : "#000000"}
+            />
+            <Text
+              className={`text-sm mt-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+            >
+              Opening chat...
+            </Text>
           </View>
         )}
         {!roomLoading && roomError && (
           <View className="flex-1 items-center justify-center py-12 px-6">
-            <Text className="text-black font-semibold text-center">{roomError}</Text>
+            <Text
+              className={`font-semibold text-center ${isDark ? "text-dark-text" : "text-black"}`}
+            >
+              {roomError}
+            </Text>
             <TouchableOpacity
               className="mt-4 px-4 py-2 rounded bg-primary"
               onPress={() => fetchRoomData()}
@@ -194,7 +236,9 @@ export default function QuickChatBottomSheet({
         {!roomLoading && !roomError && roomId > 0 && (
           <>
             {hasExistingThread && (
-              <Text className="text-tertiary text-xs text-center pb-2">
+              <Text
+                className={`text-xs text-center pb-2 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+              >
                 Continuing your conversation
               </Text>
             )}

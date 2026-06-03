@@ -1,11 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import { View, Text, ImageBackground, ScrollView, Image, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  ImageBackground,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Share, Heart, MessageCircle } from "lucide-react-native";
 import { useLocalSearchParams } from "expo-router";
 import { getSellerProducts } from "../../services/sections/product";
-import { getUserPublicProfile, getUserShopInfo, followSeller, unfollowSeller } from "../../services/sections/users";
+import {
+  getUserPublicProfile,
+  getUserShopInfo,
+  followSeller,
+  unfollowSeller,
+} from "../../services/sections/users";
 import { ProductResponse } from "../../models/products";
 import { ShopData } from "../../models/user";
 import { useToast } from "../../components/ToastProvider";
@@ -13,6 +25,7 @@ import ProductDisplayComponent from "../../components/productDisplayComponent";
 import { Product } from "../../models/feed";
 import PostDisplayComponent from "../../components/PostDisplayComponent";
 import { defaultProfilePicture } from "../../models/defaults";
+import { useTheme } from "../../components/themeProvider";
 
 export default function Shop() {
   const router = useRouter();
@@ -22,6 +35,8 @@ export default function Shop() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const { show } = useToast();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   useEffect(() => {
     const fetchShopData = async () => {
@@ -34,9 +49,11 @@ export default function Shop() {
       } catch (error) {
         show({
           title: "Error getting shop data",
-          message: "There was an error fetching the shop information. Please try again later." + error,
-          variant: "error"
-        })
+          message:
+            "There was an error fetching the shop information. Please try again later." +
+            error,
+          variant: "error",
+        });
       }
     };
     fetchShopData();
@@ -48,7 +65,7 @@ export default function Shop() {
       groupedProducts.push(products.slice(i, i + 2));
     }
     return groupedProducts;
-  }
+  };
 
   const handleFollowToggle = async () => {
     const followeeId = shop?.user?.id;
@@ -77,7 +94,9 @@ export default function Shop() {
       show({
         variant: "error",
         title: "Error",
-        message: isFollowing ? "Could not unfollow shop." : "Could not follow shop.",
+        message: isFollowing
+          ? "Could not unfollow shop."
+          : "Could not follow shop.",
       });
     } finally {
       setFollowLoading(false);
@@ -85,26 +104,33 @@ export default function Shop() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-
         {/* Header with back button */}
-        <View className="flex-row items-center justify-between px-6 py-4 border-b border-border">
+        <View
+          className={`flex-row items-center justify-between px-6 py-4 border-b ${isDark ? "border-dark-border" : "border-border"}`}
+        >
           <TouchableOpacity onPress={() => router.back()} className="p-1 -ml-1">
-            <ArrowLeft size={24} color="#000000" />
+            <ArrowLeft size={24} color={isDark ? "#f5f5f5" : "#000000"} />
           </TouchableOpacity>
-          <Text className="text-black text-xl font-geist font-bold flex-1 text-center pr-4">Shop</Text>
+          <Text
+            className={`text-xl font-geist font-bold flex-1 text-center pr-4 ${isDark ? "text-dark-text" : "text-black"}`}
+          >
+            Shop
+          </Text>
           <TouchableOpacity className="p-1">
-            <Share size={24} color="#000000" />
+            <Share size={24} color={isDark ? "#f5f5f5" : "#000000"} />
           </TouchableOpacity>
         </View>
 
         {/* Cover Image */}
         <ImageBackground
           source={{
-            uri: shop?.user.profile_picture || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+            uri:
+              shop?.user.profile_picture ||
+              "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
           }}
-          className="w-full h-56 overflow-hidden bg-surface"
+          className={`w-full h-56 overflow-hidden ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
           resizeMode="cover"
         />
 
@@ -116,16 +142,28 @@ export default function Shop() {
               source={{
                 uri: shop?.user.profile_picture || defaultProfilePicture,
               }}
-              className="w-24 h-24 rounded-full border-4 border-white bg-surface"
+              className={`w-24 h-24 rounded-full border-4 ${isDark ? "border-dark-page bg-dark-elevated" : "border-white bg-surface"}`}
             />
             <View className="flex-1 pb-1">
               <View className="flex-row items-center gap-2">
-                <Text className="text-black text-2xl font-geist font-bold">{shop?.shop_name}</Text>
+                <Text
+                  className={`text-2xl font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+                >
+                  {shop?.shop_name}
+                </Text>
               </View>
               <View className="flex-row items-center gap-2 mt-2">
-                <Text className="text-black text-sm font-geist font-bold">{shop?.average_rating || 0}</Text>
-                <View className="px-2 py-0.5 rounded bg-surface">
-                  <Text className="text-tertiary text-[10px] font-geist font-bold uppercase tracking-wider">
+                <Text
+                  className={`text-sm font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+                >
+                  {shop?.average_rating || 0}
+                </Text>
+                <View
+                  className={`px-2 py-0.5 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                >
+                  <Text
+                    className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-[10px] font-geist font-bold uppercase tracking-wider`}
+                  >
                     {shop?.verification_status || "Unverified"}
                   </Text>
                 </View>
@@ -137,70 +175,139 @@ export default function Shop() {
           <View className="flex-row gap-3 mb-6">
             {shop?.user && (shop as any).can_follow !== false && (
               <TouchableOpacity
-                className={`flex-1 rounded h-12 items-center justify-center ${isFollowing ? "bg-surface" : "bg-primary"
-                  }`}
+                className={`flex-1 rounded h-12 items-center justify-center ${
+                  isFollowing
+                    ? isDark
+                      ? "bg-dark-elevated"
+                      : "bg-surface"
+                    : "bg-primary"
+                }`}
                 onPress={handleFollowToggle}
                 disabled={followLoading}
               >
-                <Text className={`font-geist font-bold text-sm ${isFollowing ? "text-black" : "text-white"}`}>
-                  {followLoading ? "Loading…" : isFollowing ? "Following" : "Follow"}
+                <Text
+                  className={`font-geist font-bold text-sm ${isFollowing ? (isDark ? "text-dark-text" : "text-black") : "text-white"}`}
+                >
+                  {followLoading
+                    ? "Loading..."
+                    : isFollowing
+                      ? "Following"
+                      : "Follow"}
                 </Text>
               </TouchableOpacity>
             )}
           </View>
 
           {/* Stats Row */}
-          <View className="flex-row justify-between gap-4 py-6 border-t border-b border-border">
+          <View
+            className={`flex-row justify-between gap-4 py-6 border-t border-b ${isDark ? "border-dark-border" : "border-border"}`}
+          >
             <View className="flex-1 items-center">
-              <Text className="text-black text-xl font-geist font-bold">{shop?.stats.product_count || 0}</Text>
-              <Text className="text-tertiary font-inter text-xs mt-1">Products</Text>
+              <Text
+                className={`text-xl font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+              >
+                {shop?.stats.product_count || 0}
+              </Text>
+              <Text
+                className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-inter text-xs mt-1`}
+              >
+                Products
+              </Text>
             </View>
             <View className="flex-1 items-center">
-              <Text className="text-black text-xl font-geist font-bold">{shop?.stats.post_count || 0}</Text>
-              <Text className="text-tertiary font-inter text-xs mt-1">Posts</Text>
+              <Text
+                className={`text-xl font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+              >
+                {shop?.stats.post_count || 0}
+              </Text>
+              <Text
+                className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-inter text-xs mt-1`}
+              >
+                Posts
+              </Text>
             </View>
             <View className="flex-1 items-center">
-              <Text className="text-black text-xl font-geist font-bold">{shop?.stats.follower_count || 0}</Text>
-              <Text className="text-tertiary font-inter text-xs mt-1">Followers</Text>
+              <Text
+                className={`text-xl font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+              >
+                {shop?.stats.follower_count || 0}
+              </Text>
+              <Text
+                className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-inter text-xs mt-1`}
+              >
+                Followers
+              </Text>
             </View>
           </View>
         </View>
 
         {/* Description */}
         {shop?.description && (
-          <View className="px-6 py-6 border-b border-border">
-            <Text className="text-black font-inter text-base leading-7">{shop?.description}</Text>
+          <View
+            className={`px-6 py-6 border-b ${isDark ? "border-dark-border" : "border-border"}`}
+          >
+            <Text
+              className={`${isDark ? "text-dark-text" : "text-black"} font-inter text-base leading-7`}
+            >
+              {shop?.description}
+            </Text>
           </View>
         )}
 
         {/* Tabs */}
-        <View className="flex-row border-b border-border px-6 gap-8">
+        <View
+          className={`flex-row border-b px-6 gap-8 ${isDark ? "border-dark-border" : "border-border"}`}
+        >
           <View className="flex-1 items-center border-b-[2px] border-primary pb-4 pt-6">
-            <Text className="text-black text-sm font-geist font-bold">Products</Text>
+            <Text
+              className={`${isDark ? "text-dark-text" : "text-black"} text-sm font-geist font-bold`}
+            >
+              Products
+            </Text>
           </View>
           <View className="flex-1 items-center border-b-[2px] border-transparent pb-4 pt-6">
-            <Text className="text-tertiary text-sm font-geist font-bold">Posts</Text>
+            <Text className="text-tertiary text-sm font-geist font-bold">
+              Posts
+            </Text>
           </View>
         </View>
 
         {/* Featured */}
-        <Text className="text-black text-xl font-geist font-bold px-6 pb-4 pt-8">Featured</Text>
+        <Text
+          className={`${isDark ? "text-dark-text" : "text-black"} text-xl font-geist font-bold px-6 pb-4 pt-8`}
+        >
+          Featured
+        </Text>
 
         {groupProducts(shop?.recent_products!).map((item, idx) => (
           <ProductDisplayComponent
             key={idx}
-            products={item.map(p => ({ ...p, description: p.description ?? "" })) as Product[]}
+            products={
+              item.map((p) => ({
+                ...p,
+                description: p.description ?? "",
+              })) as Product[]
+            }
           />
         ))}
 
         {/* All Products */}
-        <Text className="text-black text-xl font-geist font-bold px-6 pb-4 pt-8">All Products</Text>
+        <Text
+          className={`${isDark ? "text-dark-text" : "text-black"} text-xl font-geist font-bold px-6 pb-4 pt-8`}
+        >
+          All Products
+        </Text>
 
         <View className="px-2">
           {shopProducts.map((item, i) => (
             <ProductDisplayComponent
               key={i}
-              products={item.map(p => ({ ...p, description: p.description ?? "" })) as Product[]}
+              products={
+                item.map((p) => ({
+                  ...p,
+                  description: p.description ?? "",
+                })) as Product[]
+              }
             />
           ))}
         </View>

@@ -80,6 +80,7 @@ import {
 } from "../utils/chatAvatar";
 import { normalizeUri, resolveProductImageUri } from "../utils/imageUri";
 import { getUserProfile } from "../services/sections/profile";
+import { useTheme } from "./themeProvider";
 
 export type ChatProps = {
   route: {
@@ -91,7 +92,10 @@ export type ChatProps = {
   navigation: any;
 };
 
-const reactionIcons: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
+const reactionIcons: Record<
+  string,
+  React.ComponentType<{ size?: number; color?: string }>
+> = {
   THUMBS_UP: ThumbsUp,
   THUMBS_DOWN: ThumbsDown,
   HEART: Heart,
@@ -114,8 +118,14 @@ function formatTime(iso: string) {
   const d = new Date(iso);
   const now = new Date();
   const isToday = d.toDateString() === now.toDateString();
-  if (isToday) return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  return d.toLocaleDateString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  if (isToday)
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export default function ChatScreen({ route }: ChatProps) {
@@ -132,6 +142,10 @@ export default function ChatScreen({ route }: ChatProps) {
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const router = useRouter();
   const { show } = useToast();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const textColor = isDark ? "#f5f5f5" : "#000000";
+  const mutedColor = isDark ? "#c6c5cf" : "#71717A";
 
   const [attachmentVisible, setAttachmentVisible] = useState(false);
   const [productLoading, setProductLoading] = useState(false);
@@ -140,7 +154,9 @@ export default function ChatScreen({ route }: ChatProps) {
   const [requestVisible, setRequestVisible] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
   const [requestList, setRequestList] = useState<BuyerRequest[]>([]);
-  const [reactionPickerFor, setReactionPickerFor] = useState<string | null>(null);
+  const [reactionPickerFor, setReactionPickerFor] = useState<string | null>(
+    null,
+  );
   const [myProfile, setMyProfile] = useState<ChatOtherUser | undefined>();
   const didInitialScrollRef = useRef(false);
   const pendingScrollToBottomRef = useRef(false);
@@ -167,14 +183,17 @@ export default function ChatScreen({ route }: ChatProps) {
 
   const avatarCtx = React.useMemo(
     () => ({ myId, otherUser, myProfile }),
-    [myId, otherUser, myProfile]
+    [myId, otherUser, myProfile],
   );
 
   /** Display order: oldest first (chronological). API may return desc; we sort by created_at asc. */
   const sortedMessages = React.useMemo(() => {
     return [...messages]
       .map((m) => enrichChatMessage(m, avatarCtx))
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      .sort(
+        (a, b) =>
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      );
   }, [messages, avatarCtx]);
 
   const loadInitial = async () => {
@@ -195,7 +214,11 @@ export default function ChatScreen({ route }: ChatProps) {
       setHasMore(list.length < total);
       await markRoomRead(roomId);
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not load messages." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not load messages.",
+      });
     } finally {
       setLoading(false);
     }
@@ -220,7 +243,11 @@ export default function ChatScreen({ route }: ChatProps) {
       const total = res.pagination?.total ?? 0;
       setHasMore(list.length === PER_PAGE && page * PER_PAGE < total);
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not load older messages." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not load older messages.",
+      });
     } finally {
       setLoadingOlder(false);
     }
@@ -245,7 +272,8 @@ export default function ChatScreen({ route }: ChatProps) {
   }, [roomId]);
 
   useEffect(() => {
-    if (loading || sortedMessages.length === 0 || didInitialScrollRef.current) return;
+    if (loading || sortedMessages.length === 0 || didInitialScrollRef.current)
+      return;
     didInitialScrollRef.current = true;
     pendingScrollToBottomRef.current = true;
     scrollToBottom(false);
@@ -263,7 +291,9 @@ export default function ChatScreen({ route }: ChatProps) {
   const updateMessageReactions = useCallback(
     (
       messageId: number | string,
-      updater: (reactions: import("../models/chat").MessageReactionSummary[]) => import("../models/chat").MessageReactionSummary[]
+      updater: (
+        reactions: import("../models/chat").MessageReactionSummary[],
+      ) => import("../models/chat").MessageReactionSummary[],
     ) => {
       setMessages((prev) =>
         prev.map((m) => {
@@ -273,26 +303,31 @@ export default function ChatScreen({ route }: ChatProps) {
             ...m,
             message_data: { ...(m.message_data ?? {}), reactions: updater(rx) },
           };
-        })
+        }),
       );
     },
-    []
+    [],
   );
 
-  const refreshMessageReactions = useCallback(async (messageId: number, targetId: number | string) => {
-    try {
-      const reactions = normalizeReactionSummaries(await getReactions(messageId));
-      setMessages((prev) =>
-        prev.map((m) =>
-          String(m.id) === String(targetId)
-            ? { ...m, message_data: { ...(m.message_data ?? {}), reactions } }
-            : m
-        )
-      );
-    } catch {
-      /* keep optimistic state */
-    }
-  }, []);
+  const refreshMessageReactions = useCallback(
+    async (messageId: number, targetId: number | string) => {
+      try {
+        const reactions = normalizeReactionSummaries(
+          await getReactions(messageId),
+        );
+        setMessages((prev) =>
+          prev.map((m) =>
+            String(m.id) === String(targetId)
+              ? { ...m, message_data: { ...(m.message_data ?? {}), reactions } }
+              : m,
+          ),
+        );
+      } catch {
+        /* keep optimistic state */
+      }
+    },
+    [],
+  );
 
   const syncMessageReactions = useCallback(
     async (msg: ChatMessage) => {
@@ -301,7 +336,7 @@ export default function ChatScreen({ route }: ChatProps) {
       chatSocket.joinMessage(msgId, myId);
       await refreshMessageReactions(msgId, msg.id);
     },
-    [myId, refreshMessageReactions]
+    [myId, refreshMessageReactions],
   );
 
   useEffect(() => {
@@ -315,13 +350,13 @@ export default function ChatScreen({ route }: ChatProps) {
     const offReactionAdded = chatSocket.onReactionAdded((data) => {
       const isMine = data.user_id === myId || String(data.user_id) === myId;
       updateMessageReactions(data.message_id, (rx) =>
-        applyReactionAdded(rx, data.reaction_type, isMine)
+        applyReactionAdded(rx, data.reaction_type, isMine),
       );
     });
     const offReactionRemoved = chatSocket.onReactionRemoved((data) => {
       const isMine = data.user_id === myId || String(data.user_id) === myId;
       updateMessageReactions(data.message_id, (rx) =>
-        applyReactionRemoved(rx, data.reaction_type, isMine)
+        applyReactionRemoved(rx, data.reaction_type, isMine),
       );
     });
     const offReactionStats = chatSocket.onReactionStats((data) => {
@@ -332,10 +367,13 @@ export default function ChatScreen({ route }: ChatProps) {
             ...m,
             message_data: {
               ...(m.message_data ?? {}),
-              reactions: applyReactionStats(m.message_data?.reactions, data.reactions),
+              reactions: applyReactionStats(
+                m.message_data?.reactions,
+                data.reactions,
+              ),
             },
           };
-        })
+        }),
       );
     });
 
@@ -354,11 +392,19 @@ export default function ChatScreen({ route }: ChatProps) {
   function onSocketMessage(msg: ChatMessage) {
     if (msg.room_id !== roomId) return;
     setMessages((prev) => {
-      if (prev.some((m) => m.id === msg.id || (m.client_id && m.client_id === (msg as any).client_id))) {
+      if (
+        prev.some(
+          (m) =>
+            m.id === msg.id ||
+            (m.client_id && m.client_id === (msg as any).client_id),
+        )
+      ) {
         return prev.map((m) =>
-          m.client_id && (msg as any).client_id && m.client_id === (msg as any).client_id
+          m.client_id &&
+          (msg as any).client_id &&
+          m.client_id === (msg as any).client_id
             ? { ...msg, pending: false, client_id: undefined }
-            : m
+            : m,
         );
       }
       return [...prev, msg];
@@ -368,12 +414,27 @@ export default function ChatScreen({ route }: ChatProps) {
     setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
   }
 
-  const handleRespondToOffer = async (offerId: number, response: "accept" | "reject") => {
+  const handleRespondToOffer = async (
+    offerId: number,
+    response: "accept" | "reject",
+  ) => {
     try {
-      await chatSocket.respondToOffer({ offer_id: offerId, response, user_id: myId });
-      show({ variant: "success", title: "Offer", message: response === "accept" ? "Offer accepted." : "Offer declined." });
+      await chatSocket.respondToOffer({
+        offer_id: offerId,
+        response,
+        user_id: myId,
+      });
+      show({
+        variant: "success",
+        title: "Offer",
+        message: response === "accept" ? "Offer accepted." : "Offer declined.",
+      });
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not respond to offer." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not respond to offer.",
+      });
     }
   };
 
@@ -405,7 +466,11 @@ export default function ChatScreen({ route }: ChatProps) {
       setMessages((prev) => [...prev, temp]);
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not send message." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not send message.",
+      });
     } finally {
       setSending(false);
     }
@@ -416,11 +481,17 @@ export default function ChatScreen({ route }: ChatProps) {
     try {
       const perms = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perms.granted) {
-        Alert.alert("Permission required", "We need permission to access your photos.");
+        Alert.alert(
+          "Permission required",
+          "We need permission to access your photos.",
+        );
         return;
       }
       const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: kind === "image" ? ImagePicker.MediaTypeOptions.Images : ImagePicker.MediaTypeOptions.Videos,
+        mediaTypes:
+          kind === "image"
+            ? ImagePicker.MediaTypeOptions.Images
+            : ImagePicker.MediaTypeOptions.Videos,
         quality: 0.8,
       });
       if (res.canceled) return;
@@ -428,7 +499,7 @@ export default function ChatScreen({ route }: ChatProps) {
       setSending(true);
       const uri = res.assets?.[0]?.uri;
       const uploadResult = await attemptMultipleUpload(
-        res.assets!.map((a) => ({ id: a?.assetId || "", uri: a?.uri || "" }))
+        res.assets!.map((a) => ({ id: a?.assetId || "", uri: a?.uri || "" })),
       );
       for (const result of uploadResult) {
         const isImage = kind === "image";
@@ -436,7 +507,7 @@ export default function ChatScreen({ route }: ChatProps) {
           roomId,
           myId,
           result.media?.original_url || result.urls?.["original"] || uri!,
-          { localUri: uri }
+          { localUri: uri },
         );
         const temp: ChatMessage = {
           id: `c_${Date.now()}`,
@@ -451,10 +522,18 @@ export default function ChatScreen({ route }: ChatProps) {
         };
         setMessages((prev) => [...prev, temp]);
       }
-      show({ variant: "success", title: "Sent", message: kind === "image" ? "Photo sent." : "Video sent." });
+      show({
+        variant: "success",
+        title: "Sent",
+        message: kind === "image" ? "Photo sent." : "Video sent.",
+      });
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not send media." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not send media.",
+      });
     } finally {
       setSending(false);
     }
@@ -480,7 +559,11 @@ export default function ChatScreen({ route }: ChatProps) {
           const fallback = await getSellerProducts(Number(user?.user_id) || 0);
           setProductList(fallback);
         } catch {
-          show({ variant: "error", title: "Error", message: "Could not load products." });
+          show({
+            variant: "error",
+            title: "Error",
+            message: "Could not load products.",
+          });
         }
       } finally {
         setProductLoading(false);
@@ -499,17 +582,30 @@ export default function ChatScreen({ route }: ChatProps) {
     try {
       const perms = await ImagePicker.requestCameraPermissionsAsync();
       if (!perms.granted) {
-        Alert.alert("Permission required", "We need camera access to take photos.");
+        Alert.alert(
+          "Permission required",
+          "We need camera access to take photos.",
+        );
         return;
       }
-      const res = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+      const res = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+      });
       if (res.canceled) return;
 
       setSending(true);
       const uri = res.assets?.[0]?.uri;
-      const uploadResult = await attemptMultipleUpload(res.assets!.map((a) => ({ id: a?.assetId || "", uri: a?.uri || "" })));
+      const uploadResult = await attemptMultipleUpload(
+        res.assets!.map((a) => ({ id: a?.assetId || "", uri: a?.uri || "" })),
+      );
       for (const result of uploadResult) {
-        await chatSocket.sendImage(roomId, myId, result.media?.original_url || result.urls?.["original"] || uri!, { localUri: uri });
+        await chatSocket.sendImage(
+          roomId,
+          myId,
+          result.media?.original_url || result.urls?.["original"] || uri!,
+          { localUri: uri },
+        );
         const temp: ChatMessage = {
           id: `c_${Date.now()}`,
           room_id: roomId,
@@ -526,7 +622,11 @@ export default function ChatScreen({ route }: ChatProps) {
       show({ variant: "success", title: "Sent", message: "Photo sent." });
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not send photo." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not send photo.",
+      });
     } finally {
       setSending(false);
     }
@@ -544,7 +644,11 @@ export default function ChatScreen({ route }: ChatProps) {
         const mine = all.filter((r) => String(r.buyer?.id) === myId);
         setRequestList(mine);
       } catch {
-        show({ variant: "error", title: "Error", message: "Could not load your requests." });
+        show({
+          variant: "error",
+          title: "Error",
+          message: "Could not load your requests.",
+        });
       } finally {
         setRequestLoading(false);
       }
@@ -572,10 +676,18 @@ export default function ChatScreen({ route }: ChatProps) {
       });
       setMessages((prev) => [...prev, msg]);
       setRequestVisible(false);
-      show({ variant: "success", title: "Sent", message: "Request shared in chat." });
+      show({
+        variant: "success",
+        title: "Sent",
+        message: "Request shared in chat.",
+      });
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not share request." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not share request.",
+      });
     } finally {
       setSending(false);
     }
@@ -594,19 +706,37 @@ export default function ChatScreen({ route }: ChatProps) {
       setDiscounts(Array.isArray(list) ? list : []);
     } catch {
       setDiscounts([]);
-      show({ variant: "error", title: "Error", message: "Could not load discounts." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not load discounts.",
+      });
     } finally {
       setDiscountLoading(false);
     }
   }
 
-  async function handleRespondToDiscount(discountId: number, response: "accepted" | "rejected") {
+  async function handleRespondToDiscount(
+    discountId: number,
+    response: "accepted" | "rejected",
+  ) {
     try {
       await respondToDiscount(discountId, { response });
-      setDiscounts((prev) => (Array.isArray(prev) ? prev : []).filter((d) => d.id !== discountId));
-      show({ variant: "success", title: "Discount", message: response === "accepted" ? "Discount accepted." : "Discount declined." });
+      setDiscounts((prev) =>
+        (Array.isArray(prev) ? prev : []).filter((d) => d.id !== discountId),
+      );
+      show({
+        variant: "success",
+        title: "Discount",
+        message:
+          response === "accepted" ? "Discount accepted." : "Discount declined.",
+      });
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not respond to discount." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not respond to discount.",
+      });
     }
   }
 
@@ -637,26 +767,47 @@ export default function ChatScreen({ route }: ChatProps) {
       ]);
       await chatSocket.sendProduct(roomId, myId, productId, "Sharing product");
       setProductVisible(false);
-      show({ variant: "success", title: "Sent", message: "Product shared in chat." });
+      show({
+        variant: "success",
+        title: "Sent",
+        message: "Product shared in chat.",
+      });
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not share product." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not share product.",
+      });
     } finally {
       setSending(false);
     }
   }
 
   /** Get reaction summaries for display; fallback to legacy reactions_count/hasReactedClient for THUMBS_UP */
-  function getReactionSummaries(m: ChatMessage): { reaction_type: string; count: number; has_reacted: boolean }[] {
+  function getReactionSummaries(
+    m: ChatMessage,
+  ): { reaction_type: string; count: number; has_reacted: boolean }[] {
     const rx = m.message_data?.reactions;
-    if (Array.isArray(rx) && rx.length > 0) return rx.filter((r) => r.count > 0);
+    if (Array.isArray(rx) && rx.length > 0)
+      return rx.filter((r) => r.count > 0);
     const legacy = (m as any).hasReactedClient ?? false;
     const count = m.message_data?.reactions_count ?? 0;
-    if (count > 0 || legacy) return [{ reaction_type: "THUMBS_UP", count: count || (legacy ? 1 : 0), has_reacted: legacy }];
+    if (count > 0 || legacy)
+      return [
+        {
+          reaction_type: "THUMBS_UP",
+          count: count || (legacy ? 1 : 0),
+          has_reacted: legacy,
+        },
+      ];
     return [];
   }
 
-  async function handleAddReaction(message: ChatMessage, reactionType: ReactionType) {
+  async function handleAddReaction(
+    message: ChatMessage,
+    reactionType: ReactionType,
+  ) {
     const msgId = Number(message.id);
     if (isNaN(msgId) || msgId <= 0) return;
     const rx = message.message_data?.reactions ?? [];
@@ -664,48 +815,65 @@ export default function ChatScreen({ route }: ChatProps) {
     if (existing?.has_reacted) return;
     setReactionPickerFor(null);
     updateMessageReactions(message.id, (current) =>
-      applyReactionAdded(current, reactionType, true)
+      applyReactionAdded(current, reactionType, true),
     );
     try {
       await addReaction(msgId, reactionType);
       await refreshMessageReactions(msgId, message.id);
     } catch (err) {
       updateMessageReactions(message.id, (current) =>
-        applyReactionRemoved(current, reactionType, true)
+        applyReactionRemoved(current, reactionType, true),
       );
       const status = (err as Error & { status?: number }).status;
       show({
         variant: "error",
         title: "Reaction",
-        message: status === 400 ? "Invalid reaction." : "Could not add reaction.",
+        message:
+          status === 400 ? "Invalid reaction." : "Could not add reaction.",
       });
     }
   }
 
-  async function handleRemoveReaction(message: ChatMessage, reactionType: ReactionType) {
+  async function handleRemoveReaction(
+    message: ChatMessage,
+    reactionType: ReactionType,
+  ) {
     const msgId = Number(message.id);
     if (isNaN(msgId) || msgId <= 0) return;
     setReactionPickerFor(null);
     updateMessageReactions(message.id, (current) =>
-      applyReactionRemoved(current, reactionType, true)
+      applyReactionRemoved(current, reactionType, true),
     );
     try {
       await removeReaction(msgId, reactionType);
       await refreshMessageReactions(msgId, message.id);
     } catch {
       await refreshMessageReactions(msgId, message.id);
-      show({ variant: "error", title: "Error", message: "Could not remove reaction." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not remove reaction.",
+      });
     }
   }
 
-  function handlePickerReaction(message: ChatMessage, reactionType: ReactionType) {
-    const existing = getReactionSummaries(message).find((r) => r.reaction_type === reactionType);
+  function handlePickerReaction(
+    message: ChatMessage,
+    reactionType: ReactionType,
+  ) {
+    const existing = getReactionSummaries(message).find(
+      (r) => r.reaction_type === reactionType,
+    );
     if (existing?.has_reacted) handleRemoveReaction(message, reactionType);
     else handleAddReaction(message, reactionType);
   }
 
-  function handleReactionTap(message: ChatMessage, r: { reaction_type: string; count: number; has_reacted: boolean }) {
-    if (r.has_reacted) handleRemoveReaction(message, r.reaction_type as ReactionType);
+  function handleReactionTap(
+    message: ChatMessage,
+    r: { reaction_type: string; count: number; has_reacted: boolean },
+  ) {
+    if (r.has_reacted)
+      handleRemoveReaction(message, r.reaction_type as ReactionType);
     else handleAddReaction(message, r.reaction_type as ReactionType);
   }
 
@@ -713,9 +881,17 @@ export default function ChatScreen({ route }: ChatProps) {
     if (!productId) return;
     try {
       await addToCart({ product_id: productId, variant_id: 0, quantity: 1 });
-      show({ variant: "success", title: "Success", message: "Product added to cart." });
+      show({
+        variant: "success",
+        title: "Success",
+        message: "Product added to cart.",
+      });
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not add to cart." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not add to cart.",
+      });
     }
   }
 
@@ -724,7 +900,9 @@ export default function ChatScreen({ route }: ChatProps) {
     const avatar = getMessageAvatarProps(item, isMe, avatarCtx);
 
     return (
-      <View className={`flex-row px-4 py-1.5 ${isMe ? "justify-end" : "justify-start"}`}>
+      <View
+        className={`flex-row px-4 py-1.5 ${isMe ? "justify-end" : "justify-start"}`}
+      >
         {!isMe && (
           <View className="mr-2 mt-1">
             <Avatar
@@ -736,77 +914,115 @@ export default function ChatScreen({ route }: ChatProps) {
           </View>
         )}
         <View className={`max-w-[80%] ${isMe ? "items-end" : "items-start"}`}>
-          {item.message_type === "text" && (() => {
-            const sharedRequest = item.message_data?.request as { title?: string; description?: string; budget?: number } | undefined;
-            const requestId = item.message_data?.request_id as string | undefined;
-            if (requestId && (item.content?.includes("Sharing request") || sharedRequest)) {
+          {item.message_type === "text" &&
+            (() => {
+              const sharedRequest = item.message_data?.request as
+                | { title?: string; description?: string; budget?: number }
+                | undefined;
+              const requestId = item.message_data?.request_id as
+                | string
+                | undefined;
+              if (
+                requestId &&
+                (item.content?.includes("Sharing request") || sharedRequest)
+              ) {
+                return (
+                  <View
+                    className={`px-4 py-3 rounded min-w-[200px] ${isMe ? "rounded-br bg-primary" : isDark ? "rounded-bl bg-dark-surface border border-dark-border" : "rounded-bl bg-white border border-border"}`}
+                  >
+                    <Text
+                      className={`text-xs font-medium uppercase tracking-wide ${isMe ? "text-white/80" : isDark ? "text-dark-muted" : "text-tertiary"}`}
+                    >
+                      Buyer request
+                    </Text>
+                    <Text
+                      className={`text-base font-semibold mt-1 ${isMe ? "text-white" : isDark ? "text-dark-text" : "text-black"}`}
+                      numberOfLines={2}
+                    >
+                      {sharedRequest?.title ||
+                        item.content.replace(/^Sharing request:\s*/i, "")}
+                    </Text>
+                    {sharedRequest?.description ? (
+                      <Text
+                        className={`text-sm mt-1 ${isMe ? "text-white/90" : isDark ? "text-dark-muted" : "text-tertiary"}`}
+                        numberOfLines={3}
+                      >
+                        {sharedRequest.description}
+                      </Text>
+                    ) : null}
+                    {sharedRequest?.budget != null && (
+                      <Text
+                        className={`text-sm font-semibold mt-2 ${isMe ? "text-white" : isDark ? "text-dark-text" : "text-black"}`}
+                      >
+                        Budget: ₦{Number(sharedRequest.budget).toLocaleString()}
+                      </Text>
+                    )}
+                  </View>
+                );
+              }
+              const productIdInContent = (item.content || "").match(
+                /PRD_[\w]+/,
+              )?.[0];
+              if (
+                productIdInContent &&
+                (item.content?.includes("Sharing product") ||
+                  /^PRD_[\w]+$/.test(item.content.trim()))
+              ) {
+                return (
+                  <ChatProductDisplayComponent
+                    productId={productIdInContent}
+                    embeddedProduct={null}
+                    showAddToCart={role === "buyer"}
+                    onAddToCart={handleAddProductToCart}
+                  />
+                );
+              }
               return (
-                <View className={`px-4 py-3 rounded min-w-[200px] ${isMe ? "rounded-br bg-primary" : "rounded-bl bg-white border border-border"}`}>
-                  <Text className={`text-xs font-medium uppercase tracking-wide ${isMe ? "text-white/80" : "text-tertiary"}`}>
-                    Buyer request
+                <View
+                  className={`px-4 py-3 rounded ${isMe ? "rounded-br bg-primary" : isDark ? "rounded-bl bg-dark-surface border border-dark-border" : "rounded-bl bg-white border border-border"}`}
+                >
+                  <Text
+                    className={`text-base ${isMe ? "text-white" : isDark ? "text-dark-text" : "text-black"}`}
+                  >
+                    {item.content}
                   </Text>
-                  <Text className={`text-base font-semibold mt-1 ${isMe ? "text-white" : "text-black"}`} numberOfLines={2}>
-                    {sharedRequest?.title || item.content.replace(/^Sharing request:\s*/i, "")}
-                  </Text>
-                  {sharedRequest?.description ? (
-                    <Text className={`text-sm mt-1 ${isMe ? "text-white/90" : "text-tertiary"}`} numberOfLines={3}>
-                      {sharedRequest.description}
-                    </Text>
-                  ) : null}
-                  {sharedRequest?.budget != null && (
-                    <Text className={`text-sm font-semibold mt-2 ${isMe ? "text-white" : "text-black"}`}>
-                      Budget: ₦{Number(sharedRequest.budget).toLocaleString()}
-                    </Text>
-                  )}
                 </View>
               );
-            }
-            const productIdInContent = (item.content || "").match(/PRD_[\w]+/)?.[0];
-            if (productIdInContent && (item.content?.includes("Sharing product") || /^PRD_[\w]+$/.test(item.content.trim()))) {
-              return (
-                <ChatProductDisplayComponent
-                  productId={productIdInContent}
-                  embeddedProduct={null}
-                  showAddToCart={role === "buyer"}
-                  onAddToCart={handleAddProductToCart}
-                />
-              );
-            }
-            return (
-              <View
-                className={`px-4 py-3 rounded ${isMe ? "rounded-br bg-primary" : "rounded-bl bg-white border border-border"}`}
-              >
-                <Text className={`text-base ${isMe ? "text-white" : "text-black"}`}>{item.content}</Text>
-              </View>
-            );
-          })()}
+            })()}
 
-          {item.message_type === "image" && (() => {
-            const imageUri = normalizeUri(
-              item.message_data?.url ??
-                item.message_data?.image_url ??
-                item.content
-            );
-            if (!imageUri) {
-              return (
-                <View className="w-56 h-40 rounded bg-surface items-center justify-center px-3">
-                  <Text className="text-tertiary text-sm text-center">Image unavailable</Text>
-                </View>
+          {item.message_type === "image" &&
+            (() => {
+              const imageUri = normalizeUri(
+                item.message_data?.url ??
+                  item.message_data?.image_url ??
+                  item.content,
               );
-            }
-            return (
-            <TouchableOpacity activeOpacity={0.9}>
-              <Image
-                source={{ uri: imageUri }}
-                className="w-56 h-40 rounded bg-surface"
-                resizeMode="cover"
-              />
-              {item.pending && (
-                <Text className="text-tertiary text-xs mt-1">Sending…</Text>
-              )}
-            </TouchableOpacity>
-            );
-          })()}
+              if (!imageUri) {
+                return (
+                  <View
+                    className={`w-56 h-40 rounded items-center justify-center px-3 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                  >
+                    <Text
+                      className={`text-sm text-center ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                    >
+                      Image unavailable
+                    </Text>
+                  </View>
+                );
+              }
+              return (
+                <TouchableOpacity activeOpacity={0.9}>
+                  <Image
+                    source={{ uri: imageUri }}
+                    className={`w-56 h-40 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                    resizeMode="cover"
+                  />
+                  {item.pending && (
+                    <Text className="text-tertiary text-xs mt-1">Sending…</Text>
+                  )}
+                </TouchableOpacity>
+              );
+            })()}
 
           {item.message_type === "video" && (
             <View className="w-56 h-40 rounded bg-primary items-center justify-center">
@@ -814,63 +1030,118 @@ export default function ChatScreen({ route }: ChatProps) {
             </View>
           )}
 
-          {item.message_type === "product" && (() => {
-            const productId = item.message_data?.product_id ? String(item.message_data.product_id) : (item.content || "").match(/PRD_[\w]+/)?.[0];
-            const embeddedProduct = item.message_data?.product;
-            if (!productId && !embeddedProduct?.id) {
+          {item.message_type === "product" &&
+            (() => {
+              const productId = item.message_data?.product_id
+                ? String(item.message_data.product_id)
+                : (item.content || "").match(/PRD_[\w]+/)?.[0];
+              const embeddedProduct = item.message_data?.product;
+              if (!productId && !embeddedProduct?.id) {
+                return (
+                  <View
+                    className={`rounded border px-4 py-3 ${isDark ? "bg-dark-surface border-dark-border" : "bg-surface border-border"}`}
+                  >
+                    <Text
+                      className={`text-sm ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                    >
+                      Product no longer available
+                    </Text>
+                  </View>
+                );
+              }
               return (
-                <View className="rounded border border-border bg-surface px-4 py-3">
-                  <Text className="text-tertiary text-sm">Product no longer available</Text>
-                </View>
+                <ChatProductDisplayComponent
+                  productId={productId}
+                  embeddedProduct={embeddedProduct}
+                  showAddToCart={role === "buyer"}
+                  onAddToCart={handleAddProductToCart}
+                />
               );
-            }
-            return (
-              <ChatProductDisplayComponent
-                productId={productId}
-                embeddedProduct={embeddedProduct}
-                showAddToCart={role === "buyer"}
-                onAddToCart={handleAddProductToCart}
-              />
-            );
-          })()}
+            })()}
 
           {item.message_type === "offer" && (
-            <View className="rounded overflow-hidden border border-border bg-white min-w-[200px]">
-              <View className="px-4 py-3 bg-surface">
-                <Text className="text-tertiary text-xs font-medium uppercase tracking-wide">Price offer</Text>
-                <Text className="text-black text-lg font-bold mt-0.5">
-                  ₦{Number((item as any).offer?.price ?? (item as any).offer?.offer_amount ?? item.content ?? 0).toLocaleString()}
+            <View
+              className={`rounded overflow-hidden border min-w-[200px] ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+            >
+              <View
+                className={`px-4 py-3 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+              >
+                <Text
+                  className={`text-xs font-medium uppercase tracking-wide ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                >
+                  Price offer
+                </Text>
+                <Text
+                  className={`text-lg font-bold mt-0.5 ${isDark ? "text-dark-text" : "text-black"}`}
+                >
+                  ₦
+                  {Number(
+                    (item as any).offer?.price ??
+                      (item as any).offer?.offer_amount ??
+                      item.content ??
+                      0,
+                  ).toLocaleString()}
                 </Text>
                 {(item as any).offer?.message && (
-                  <Text className="text-tertiary text-sm mt-1" numberOfLines={2}>{(item as any).offer.message}</Text>
+                  <Text
+                    className={`text-sm mt-1 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                    numberOfLines={2}
+                  >
+                    {(item as any).offer.message}
+                  </Text>
                 )}
               </View>
-              {role === "buyer" && (item as any).offer?.status === "pending" && (item as any).offer?.id && (
-                <View className="flex-row p-2 gap-2">
-                  <TouchableOpacity
-                    onPress={() => handleRespondToOffer(Number((item as any).offer.id), "accept")}
-                    className="flex-1 py-2.5 rounded bg-primary items-center"
-                  >
-                    <Text className="text-white font-semibold text-sm">Accept</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => handleRespondToOffer(Number((item as any).offer.id), "reject")}
-                    className="flex-1 py-2.5 rounded bg-surface border border-border items-center"
-                  >
-                    <Text className="text-black font-semibold text-sm">Decline</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-              {(item as any).offer?.status && (item as any).offer?.status !== "pending" && (
-                <View className="px-4 py-2">
-                  <Text className="text-tertiary text-xs capitalize">{(item as any).offer.status}</Text>
-                </View>
-              )}
+              {role === "buyer" &&
+                (item as any).offer?.status === "pending" &&
+                (item as any).offer?.id && (
+                  <View className="flex-row p-2 gap-2">
+                    <TouchableOpacity
+                      onPress={() =>
+                        handleRespondToOffer(
+                          Number((item as any).offer.id),
+                          "accept",
+                        )
+                      }
+                      className="flex-1 py-2.5 rounded bg-primary items-center"
+                    >
+                      <Text className="text-white font-semibold text-sm">
+                        Accept
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() =>
+                        handleRespondToOffer(
+                          Number((item as any).offer.id),
+                          "reject",
+                        )
+                      }
+                      className={`flex-1 py-2.5 rounded border items-center ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border"}`}
+                    >
+                      <Text
+                        className={`font-semibold text-sm ${isDark ? "text-dark-text" : "text-black"}`}
+                      >
+                        Decline
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              {(item as any).offer?.status &&
+                (item as any).offer?.status !== "pending" && (
+                  <View className="px-4 py-2">
+                    <Text
+                      className={`text-xs capitalize ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                    >
+                      {(item as any).offer.status}
+                    </Text>
+                  </View>
+                )}
             </View>
           )}
 
           <View className="flex-row items-center mt-1.5 gap-2 flex-wrap">
-            <Text className="text-tertiary text-[11px]">{formatTime(item.created_at)}</Text>
+            <Text className="text-tertiary text-[11px]">
+              {formatTime(item.created_at)}
+            </Text>
             {!isNaN(Number(item.id)) && Number(item.id) > 0 && (
               <>
                 {getReactionSummaries(item).map((r) => (
@@ -879,52 +1150,76 @@ export default function ChatScreen({ route }: ChatProps) {
                     onPress={() => handleReactionTap(item, r)}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     className={`flex-row items-center gap-0.5 px-1.5 py-0.5 rounded border ${
-                      r.has_reacted ? "bg-surface border-border" : "bg-white border-transparent"
+                      r.has_reacted
+                        ? isDark
+                          ? "bg-dark-elevated border-dark-border-strong"
+                          : "bg-surface border-border"
+                        : isDark
+                          ? "bg-dark-surface border-transparent"
+                          : "bg-white border-transparent"
                     }`}
                   >
                     {(() => {
                       const ReactionIcon = getReactionIcon(r.reaction_type);
-                      return <ReactionIcon size={12} color={r.has_reacted ? "#000000" : "#71717A"} />;
+                      return (
+                        <ReactionIcon
+                          size={12}
+                          color={r.has_reacted ? textColor : mutedColor}
+                        />
+                      );
                     })()}
                     {(r.count > 1 || r.has_reacted) && (
-                      <Text className={`text-[11px] ${r.has_reacted ? "text-black font-semibold" : "text-tertiary"}`}>
+                      <Text
+                        className={`text-[11px] ${r.has_reacted ? `${isDark ? "text-dark-text" : "text-black"} font-semibold` : isDark ? "text-dark-muted" : "text-tertiary"}`}
+                      >
                         {r.count}
                       </Text>
                     )}
                   </TouchableOpacity>
                 ))}
                 <TouchableOpacity
-                  onPress={() => setReactionPickerFor(reactionPickerFor === String(item.id) ? null : String(item.id))}
+                  onPress={() =>
+                    setReactionPickerFor(
+                      reactionPickerFor === String(item.id)
+                        ? null
+                        : String(item.id),
+                    )
+                  }
                   onLongPress={() => setReactionPickerFor(String(item.id))}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   className="p-1"
                 >
-                  <SmilePlus size={14} color="#71717A" />
+                  <SmilePlus size={14} color={mutedColor} />
                 </TouchableOpacity>
                 {reactionPickerFor === String(item.id) && (
                   <View className="flex-row gap-1 mt-0.5">
                     {COMMON_REACTIONS.map((type) => {
                       const active = getReactionSummaries(item).some(
-                        (r) => r.reaction_type === type && r.has_reacted
+                        (r) => r.reaction_type === type && r.has_reacted,
                       );
                       return (
-                      <TouchableOpacity
-                        key={type}
-                        onPress={() => handlePickerReaction(item, type)}
-                        className={`px-2 py-1 rounded border ${active ? "bg-surface border-border" : "bg-white border-border"}`}
-                      >
-                        {(() => {
-                          const PickerIcon = getReactionIcon(type);
-                          return <PickerIcon size={16} color={active ? "#000000" : "#71717A"} />;
-                        })()}
-                      </TouchableOpacity>
+                        <TouchableOpacity
+                          key={type}
+                          onPress={() => handlePickerReaction(item, type)}
+                          className={`px-2 py-1 rounded border ${active ? (isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border") : isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+                        >
+                          {(() => {
+                            const PickerIcon = getReactionIcon(type);
+                            return (
+                              <PickerIcon
+                                size={16}
+                                color={active ? textColor : mutedColor}
+                              />
+                            );
+                          })()}
+                        </TouchableOpacity>
                       );
                     })}
                     <TouchableOpacity
                       onPress={() => setReactionPickerFor(null)}
-                      className="px-2 py-1 rounded bg-surface"
+                      className={`px-2 py-1 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
                     >
-                      <X size={14} color="#71717A" />
+                      <X size={14} color={mutedColor} />
                     </TouchableOpacity>
                   </View>
                 )}
@@ -951,25 +1246,40 @@ export default function ChatScreen({ route }: ChatProps) {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-bg-elevated">
-        <ActivityIndicator size="large" color="#000000" />
+      <View
+        className={`flex-1 items-center justify-center ${isDark ? "bg-dark-page" : "bg-bg-elevated"}`}
+      >
+        <ActivityIndicator size="large" color={textColor} />
       </View>
     );
   }
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-bg-elevated"
+      className={`flex-1 ${isDark ? "bg-dark-page" : "bg-bg-elevated"}`}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={0}
     >
       {/* Header */}
-      <View className="flex-row items-center px-4 py-3 bg-white border-b border-border">
-        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <ArrowLeft size={24} color="#000000" />
+      <View
+        className={`flex-row items-center px-4 py-3 border-b ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+      >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="mr-3 p-1"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <ArrowLeft size={24} color={textColor} />
         </TouchableOpacity>
-        <Avatar uri={pickProfilePicture(otherUser)} name={otherUser?.username} size={40} />
-        <Text className="ml-3 text-black font-semibold text-base flex-1" numberOfLines={1}>
+        <Avatar
+          uri={pickProfilePicture(otherUser)}
+          name={otherUser?.username}
+          size={40}
+        />
+        <Text
+          className={`ml-3 font-semibold text-base flex-1 ${isDark ? "text-dark-text" : "text-black"}`}
+          numberOfLines={1}
+        >
           {otherUser?.username ?? "Chat"}
         </Text>
       </View>
@@ -985,13 +1295,14 @@ export default function ChatScreen({ route }: ChatProps) {
         onScroll={({ nativeEvent }) => {
           const { contentOffset, contentSize, layoutMeasurement } = nativeEvent;
           const padding = 80;
-          if (contentOffset.y < padding && hasMore && !loadingOlder) loadOlder();
+          if (contentOffset.y < padding && hasMore && !loadingOlder)
+            loadOlder();
         }}
         scrollEventThrottle={400}
         ListHeaderComponent={
           hasMore && loadingOlder ? (
             <View className="py-3 items-center">
-              <ActivityIndicator size="small" color="#000000" />
+              <ActivityIndicator size="small" color={textColor} />
             </View>
           ) : null
         }
@@ -999,18 +1310,28 @@ export default function ChatScreen({ route }: ChatProps) {
 
       {typingUser && (
         <View className="px-4 py-2 flex-row items-center">
-          <View className="flex-row gap-1 px-3 py-2 rounded bg-surface border border-border self-start">
+          <View
+            className={`flex-row gap-1 px-3 py-2 rounded border self-start ${isDark ? "bg-dark-surface border-dark-border" : "bg-surface border-border"}`}
+          >
             <View className="w-2 h-2 rounded bg-text-secondary opacity-60" />
             <View className="w-2 h-2 rounded bg-text-secondary opacity-80" />
             <View className="w-2 h-2 rounded bg-text-secondary" />
           </View>
-          <Text className="text-tertiary text-sm ml-2">{typingUser} is typing</Text>
+          <Text
+            className={`text-sm ml-2 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+          >
+            {typingUser} is typing
+          </Text>
         </View>
       )}
 
       {/* Input bar — send button aligned with input; keyboard dismissed when opening attachment sheet */}
-      <View className="flex-row items-center px-4 py-2 pb-2 bg-white border-t border-border gap-2 min-h-[52px]">
-        <View className="flex-1 flex-row items-center bg-surface rounded pl-4 pr-1 py-1.5 h-11">
+      <View
+        className={`flex-row items-center px-4 py-2 pb-2 border-t gap-2 min-h-[52px] ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+      >
+        <View
+          className={`flex-1 flex-row items-center rounded pl-4 pr-1 py-1.5 h-11 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+        >
           <TextInput
             value={input}
             onChangeText={(t) => {
@@ -1018,14 +1339,18 @@ export default function ChatScreen({ route }: ChatProps) {
               chatSocket.typingStart(roomId, myId);
             }}
             placeholder="Type a message…"
-            placeholderTextColor="#71717A"
-            className="flex-1 text-black text-base min-h-[24px] max-h-[80px]"
+            placeholderTextColor={mutedColor}
+            className={`flex-1 text-base min-h-[24px] max-h-[80px] ${isDark ? "text-dark-text" : "text-black"}`}
             multiline
             maxLength={1000}
             textAlignVertical="center"
           />
-          <TouchableOpacity onPress={openAttachmentSheet} disabled={sending} className={`p-2 ${sending ? "opacity-50" : ""}`}>
-            <Plus size={22} color="#71717A" />
+          <TouchableOpacity
+            onPress={openAttachmentSheet}
+            disabled={sending}
+            className={`p-2 ${sending ? "opacity-50" : ""}`}
+          >
+            <Plus size={22} color={mutedColor} />
           </TouchableOpacity>
         </View>
         <TouchableOpacity
@@ -1050,39 +1375,79 @@ export default function ChatScreen({ route }: ChatProps) {
       />
       {discountVisible && (
         <View className="absolute inset-0 z-[1000] bg-black/40 justify-end">
-          <TouchableOpacity style={{ flex: 1 }} onPress={() => setDiscountVisible(false)} activeOpacity={1} />
-          <View className="bg-white rounded-t max-h-[50%] px-4 pt-4 pb-10">
+          <TouchableOpacity
+            style={{ flex: 1 }}
+            onPress={() => setDiscountVisible(false)}
+            activeOpacity={1}
+          />
+          <View
+            className={`rounded-t max-h-[50%] px-4 pt-4 pb-10 ${isDark ? "bg-dark-surface" : "bg-white"}`}
+          >
             <View className="flex-row justify-between mb-4">
-              <Text className="text-black font-semibold text-base">Active discounts</Text>
+              <Text
+                className={`font-semibold text-base ${isDark ? "text-dark-text" : "text-black"}`}
+              >
+                Active discounts
+              </Text>
               <TouchableOpacity onPress={() => setDiscountVisible(false)}>
-                <Text className="text-black font-semibold">Done</Text>
+                <Text
+                  className={`font-semibold ${isDark ? "text-dark-text" : "text-black"}`}
+                >
+                  Done
+                </Text>
               </TouchableOpacity>
             </View>
             {discountLoading ? (
-              <ActivityIndicator size="small" color="#000000" />
+              <ActivityIndicator size="small" color={textColor} />
             ) : (Array.isArray(discounts) ? discounts : []).length === 0 ? (
-              <Text className="text-tertiary text-sm">No active discounts for this chat.</Text>
+              <Text
+                className={`text-sm ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+              >
+                No active discounts for this chat.
+              </Text>
             ) : (
               (Array.isArray(discounts) ? discounts : []).map((d) => (
-                <View key={d.id} className="bg-surface rounded p-3 mb-2">
-                  <Text className="text-black font-medium text-sm">{d.discount_message ?? d.discount_type ?? "Discount"}</Text>
-                  <Text className="text-black font-semibold text-sm mt-1">₦{Number(d.discount_value ?? 0).toLocaleString()}</Text>
-                  {role === "buyer" && (d.status === "pending" || !d.status) && (
-                    <View className="flex-row gap-2 mt-2">
-                      <TouchableOpacity
-                        onPress={() => handleRespondToDiscount(d.id, "accepted")}
-                        className="flex-1 py-2 rounded bg-primary items-center"
-                      >
-                        <Text className="text-white font-semibold text-sm">Accept</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => handleRespondToDiscount(d.id, "rejected")}
-                        className="flex-1 py-2 rounded bg-surface border border-border items-center"
-                      >
-                        <Text className="text-black font-semibold text-sm">Decline</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
+                <View
+                  key={d.id}
+                  className={`rounded p-3 mb-2 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                >
+                  <Text
+                    className={`font-medium text-sm ${isDark ? "text-dark-text" : "text-black"}`}
+                  >
+                    {d.discount_message ?? d.discount_type ?? "Discount"}
+                  </Text>
+                  <Text
+                    className={`font-semibold text-sm mt-1 ${isDark ? "text-dark-text" : "text-black"}`}
+                  >
+                    ₦{Number(d.discount_value ?? 0).toLocaleString()}
+                  </Text>
+                  {role === "buyer" &&
+                    (d.status === "pending" || !d.status) && (
+                      <View className="flex-row gap-2 mt-2">
+                        <TouchableOpacity
+                          onPress={() =>
+                            handleRespondToDiscount(d.id, "accepted")
+                          }
+                          className="flex-1 py-2 rounded bg-primary items-center"
+                        >
+                          <Text className="text-white font-semibold text-sm">
+                            Accept
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() =>
+                            handleRespondToDiscount(d.id, "rejected")
+                          }
+                          className={`flex-1 py-2 rounded border items-center ${isDark ? "bg-dark-surface border-dark-border-strong" : "bg-surface border-border"}`}
+                        >
+                          <Text
+                            className={`font-semibold text-sm ${isDark ? "text-dark-text" : "text-black"}`}
+                          >
+                            Decline
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
                 </View>
               ))
             )}
