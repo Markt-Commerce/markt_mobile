@@ -989,11 +989,11 @@ export default function ChatScreen({ route }: ChatProps) {
         }}
         scrollEventThrottle={400}
         ListHeaderComponent={
-          hasMore && (loadingOlder ? (
+          hasMore && loadingOlder ? (
             <View className="py-3 items-center">
               <ActivityIndicator size="small" color="#000000" />
             </View>
-          ) : null)
+          ) : null
         }
       />
 

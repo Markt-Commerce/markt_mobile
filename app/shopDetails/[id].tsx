@@ -116,7 +116,7 @@ export default function Shop() {
               source={{
                 uri: shop?.user.profile_picture || defaultProfilePicture,
               }}
-              className="w-24 h-24 rounded border-4 border-white bg-surface"
+              className="w-24 h-24 rounded-full border-4 border-white bg-surface"
             />
             <View className="flex-1 pb-1">
               <View className="flex-row items-center gap-2">

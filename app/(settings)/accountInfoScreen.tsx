@@ -230,9 +230,9 @@ export default function AccountInfoScreen() {
             activeOpacity={0.85}
           >
             {currentProfilePic ? (
-              <Image source={{ uri: currentProfilePic }} className={`w-12 h-12 rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`} />
+              <Image source={{ uri: currentProfilePic }} className={`w-12 h-12 rounded-full border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`} />
             ) : (
-              <View className={`w-12 h-12 rounded items-center justify-center border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+              <View className={`w-12 h-12 rounded-full items-center justify-center border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
                 <Camera size={18} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.7} />
               </View>
             )}

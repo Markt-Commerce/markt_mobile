@@ -278,8 +278,8 @@ export default function SellerDashboard() {
           <Text className={`font-inter text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Order #: {item.order.order_number ?? item.order_id}</Text>
           <View className="flex-row items-center mt-3">
             <Image
-              source={{ uri: item.order?.buyer?.profile_picture ?? item.order?.buyer?.profile_picture_url }}
-              className={`w-6 h-6 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+              source={{ uri: item.order?.buyer?.profile_picture ?? item.order?.buyer?.profile_picture_url ?? undefined }}
+              className={`w-6 h-6 rounded-full ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
             />
             <Text className={`font-inter text-xs ml-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.order?.buyer?.buyername ?? item.order?.buyer?.username ?? "Buyer"}</Text>
           </View>

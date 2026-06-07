@@ -5,13 +5,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { ChevronRight } from "lucide-react-native";
 import { getTrendingShops } from "../services/sections/shops";
@@ -56,7 +50,7 @@ export default function ShopStrip() {
           {[1, 2, 3, 4].map((i) => (
             <View key={i} className="items-center" style={{ width: AVATAR_SIZE + 24 }}>
               <View
-                className={`rounded ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
+                className={`rounded-full ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
                 style={{ width: AVATAR_SIZE, height: AVATAR_SIZE }}
               />
               <View className={`mt-2 h-3 w-16 rounded ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`} />
@@ -71,7 +65,7 @@ export default function ShopStrip() {
     return (
       <TouchableOpacity
         onPress={() => router.push("/discoverShops")}
-        className={`mx-4 my-4 py-3 rounded flex-row items-center justify-center gap-2 ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
+        className={`mx-4 my-4 py-3 rounded-xl flex-row items-center justify-center gap-2 ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
         accessibilityRole="button"
         accessibilityLabel="Discover shops"
       >
@@ -103,12 +97,12 @@ export default function ShopStrip() {
               accessibilityLabel={`View ${label}`}
             >
               <View
-                className="items-center justify-center rounded overflow-hidden"
+                className="items-center justify-center rounded-full overflow-hidden"
                 style={{
                   width: AVATAR_SIZE,
                   height: AVATAR_SIZE,
                   borderWidth: isVerified ? 2.5 : 0,
-                  borderColor: isDark ? "#f0f1f2" : "#000000",
+                  borderColor: "#e26136",
                 }}
               >
                 <Avatar
@@ -131,7 +125,7 @@ export default function ShopStrip() {
 
       <TouchableOpacity
         onPress={() => router.push("/discoverShops")}
-        className={`flex-row items-center gap-1.5 px-3 py-2 mr-4 rounded ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
+        className={`flex-row items-center gap-1.5 px-3 py-2 mr-4 rounded-full ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
         accessibilityRole="button"
         accessibilityLabel="Discover more shops"
       >

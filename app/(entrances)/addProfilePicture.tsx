@@ -74,7 +74,7 @@ export default function AddProfilePictureScreen() {
         <TouchableOpacity
           onPress={pickImage}
           activeOpacity={0.85}
-          className={`w-48 h-48 rounded border-2 border-dashed items-center justify-center mb-12 overflow-hidden shadow-sm ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
+          className={`w-48 h-48 rounded-full border-2 border-dashed items-center justify-center mb-12 overflow-hidden shadow-sm ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
         >
           {imageUri ? (
             <Image source={{ uri: imageUri }} className="w-full h-full" resizeMode="cover" />

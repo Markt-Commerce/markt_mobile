@@ -85,7 +85,7 @@ export default function SearchPage() {
                       <View className={`flex-row items-center gap-4 p-5 rounded border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
                         <Image
                           source={{ uri: item.profile_picture_url || defaultProfilePicture }}
-                          className={`w-16 h-16 rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
+                          className={`w-16 h-16 rounded-full border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
                         />
                         <View className="flex-1">
                           <Text className={`font-geist font-bold text-sm tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>

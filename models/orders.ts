@@ -75,11 +75,11 @@ export interface SellerOrderItem {
     created_at: string;
     order_number: string | null;
     buyer: {
-      [x: string]: string;
-      [x: string]: string;
       id: number;
-      buyername: string;
-      profile_picture_url: string;
+      buyername?: string;
+      username?: string;
+      profile_picture?: string | null;
+      profile_picture_url?: string | null;
     };
   };
 }

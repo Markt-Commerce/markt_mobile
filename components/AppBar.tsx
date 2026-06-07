@@ -40,11 +40,11 @@ export default function AppBar({
         {showAvatar ? (
           <TouchableOpacity
             onPress={openDrawer}
-            className="w-10 h-10 rounded overflow-hidden flex items-center justify-center"
+            className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center"
             accessibilityRole="button"
             accessibilityLabel="Open menu"
           >
-            <Avatar uri={avatarUri ?? undefined} name={avatarName ?? "User"} size={40} className="rounded" />
+            <Avatar uri={avatarUri ?? undefined} name={avatarName ?? "User"} size={40} />
           </TouchableOpacity>
         ) : (
           <View className="w-10" />
