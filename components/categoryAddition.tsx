@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Check, Search, X } from "lucide-react-native";
 import { Category } from "../models/categories";
+import { useTheme } from "./themeProvider";
 
 interface CategoryAdditionProps {
   visible: boolean;
@@ -26,10 +27,14 @@ export const CategoryAddition = ({
   onClose,
   onConfirm,
 }: CategoryAdditionProps) => {
-  const [selectedCategories, setSelectedCategories] = React.useState<Category[]>(
-    parentSelectedCategories
-  );
+  const [selectedCategories, setSelectedCategories] = React.useState<
+    Category[]
+  >(parentSelectedCategories);
   const [query, setQuery] = React.useState("");
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const textColor = isDark ? "#f5f5f5" : "#000000";
+  const mutedColor = isDark ? "#c6c5cf" : "#71717A";
 
   React.useEffect(() => {
     setSelectedCategories(parentSelectedCategories);
@@ -39,7 +44,7 @@ export const CategoryAddition = ({
     setSelectedCategories((prev) =>
       prev.find((c) => c.id === cat.id)
         ? prev.filter((c) => c.id !== cat.id)
-        : [...prev, cat]
+        : [...prev, cat],
     );
   };
 
@@ -64,56 +69,86 @@ export const CategoryAddition = ({
       transparent
       onRequestClose={onClose}
     >
-        <View className="flex-1 bg-black/50">
-          {/* Card */}
-          <View className="mt-auto bg-white rounded-t overflow-hidden">
-            {/* Header */}
-            <View className="px-5 pt-4 pb-3 border-b border-border">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-lg font-geist font-bold text-black">
-                  Select Categories
-                </Text>
-                <TouchableOpacity
-                  onPress={onClose}
-                  className="w-9 h-9 rounded items-center justify-center bg-surface border border-border active:opacity-80"
-                >
-                  <X size={18} color="#000000" />
-                </TouchableOpacity>
-              </View>
+      <View className="flex-1 bg-black/50">
+        {/* Card */}
+        <View
+          className={`mt-auto rounded-t overflow-hidden ${isDark ? "bg-dark-surface" : "bg-white"}`}
+        >
+          {/* Header */}
+          <View
+            className={`px-5 pt-4 pb-3 border-b ${isDark ? "border-dark-border" : "border-border"}`}
+          >
+            <View className="flex-row items-center justify-between">
+              <Text
+                className={`text-lg font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+              >
+                Select Categories
+              </Text>
+              <TouchableOpacity
+                onPress={onClose}
+                className={`w-9 h-9 rounded items-center justify-center border active:opacity-80 ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border"}`}
+              >
+                <X size={18} color={textColor} />
+              </TouchableOpacity>
+            </View>
 
-              {/* Search bar */}
-              <View className="mt-3 flex-row items-center bg-surface border border-border rounded px-3 h-11">
-                <Search size={18} color="#71717A" />
-                <TextInput
-                  className="flex-1 ml-2 text-black"
-                  placeholder="Search categories"
-                  placeholderTextColor="#A1A1AA"
-                  value={query}
-                  onChangeText={setQuery}
-                  autoCorrect={false}
-                />
-                {query.length > 0 && (
-                  <TouchableOpacity onPress={() => setQuery("")} className="pl-2">
-                    <Text className="text-black text-sm font-semibold">Clear</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
+            {/* Search bar */}
+            <View
+              className={`mt-3 flex-row items-center border rounded px-3 h-11 ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border"}`}
+            >
+              <Search size={18} color={mutedColor} />
+              <TextInput
+                className={`flex-1 ml-2 ${isDark ? "text-dark-text" : "text-black"}`}
+                placeholder="Search categories"
+                placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
+                value={query}
+                onChangeText={setQuery}
+                autoCorrect={false}
+              />
+              {query.length > 0 && (
+                <TouchableOpacity onPress={() => setQuery("")} className="pl-2">
+                  <Text
+                    className={`text-sm font-semibold ${isDark ? "text-dark-text" : "text-black"}`}
+                  >
+                    Clear
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
 
             {/* Toolbar: count + actions */}
             <View className="mt-3 flex-row items-center justify-between">
               <View className="flex-row items-center">
-                <View className="px-2 py-1 rounded bg-surface border border-border">
-                  <Text className="text-xs text-black">
+                <View
+                  className={`px-2 py-1 rounded border ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border"}`}
+                >
+                  <Text
+                    className={`text-xs ${isDark ? "text-dark-text" : "text-black"}`}
+                  >
                     Selected: {selectedCategories.length}
                   </Text>
                 </View>
               </View>
               <View className="flex-row gap-3">
-                <TouchableOpacity onPress={handleClear} className="active:opacity-80">
-                  <Text className="text-sm text-tertiary font-semibold">Clear</Text>
+                <TouchableOpacity
+                  onPress={handleClear}
+                  className="active:opacity-80"
+                >
+                  <Text
+                    className={`text-sm font-semibold ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                  >
+                    Clear
+                  </Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={handleSelectAll} className="active:opacity-80">
-                  <Text className="text-sm text-black font-semibold">Select all</Text>
+                <TouchableOpacity
+                  onPress={handleSelectAll}
+                  className="active:opacity-80"
+                >
+                  <Text
+                    className={`text-sm font-semibold ${isDark ? "text-dark-text" : "text-black"}`}
+                  >
+                    Select all
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -127,18 +162,22 @@ export const CategoryAddition = ({
           >
             {filtered.length === 0 ? (
               <View className="py-10 items-center">
-                <Text className="text-tertiary">No categories match “{query}”.</Text>
+                <Text className={isDark ? "text-dark-muted" : "text-tertiary"}>
+                  No categories match "{query}".
+                </Text>
               </View>
             ) : (
               <View className="flex-row flex-wrap">
                 {filtered.map((cat) => {
-                  const isSelected = !!selectedCategories.find((c) => c.id === cat.id);
+                  const isSelected = !!selectedCategories.find(
+                    (c) => c.id === cat.id,
+                  );
                   return (
                     <Pressable
                       key={cat.id.toString()}
                       onPress={() => toggleCategory(cat)}
                       className={`flex-row items-center mr-2 mb-2 px-3 py-2 rounded border
-                        ${isSelected ? "bg-primary border-primary" : "bg-surface border-border"}
+                        ${isSelected ? "bg-primary border-primary" : isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border"}
                       `}
                     >
                       {isSelected ? (
@@ -147,7 +186,7 @@ export const CategoryAddition = ({
                         <View className="w-4 h-4 rounded mr-0" />
                       )}
                       <Text
-                        className={`ml-2 text-sm ${isSelected ? "text-white font-semibold" : "text-black"}`}
+                        className={`ml-2 text-sm ${isSelected ? "text-white font-semibold" : isDark ? "text-dark-text" : "text-black"}`}
                       >
                         {cat.name}
                       </Text>
@@ -159,13 +198,19 @@ export const CategoryAddition = ({
           </ScrollView>
 
           {/* Footer actions */}
-          <View className="px-5 pb-6 pt-2 border-t border-border">
+          <View
+            className={`px-5 pb-6 pt-2 border-t ${isDark ? "border-dark-border" : "border-border"}`}
+          >
             <View className="flex-row gap-3">
               <TouchableOpacity
                 onPress={onClose}
-                className="flex-1 h-12 rounded items-center justify-center bg-surface border border-border active:opacity-90"
+                className={`flex-1 h-12 rounded items-center justify-center border active:opacity-90 ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border"}`}
               >
-                <Text className="text-black font-semibold">Cancel</Text>
+                <Text
+                  className={`font-semibold ${isDark ? "text-dark-text" : "text-black"}`}
+                >
+                  Cancel
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleDone}
@@ -177,7 +222,9 @@ export const CategoryAddition = ({
 
             {/* Subtext hint */}
             <View className="items-center mt-3">
-              <Text className="text-tertiary text-xs">
+              <Text
+                className={`text-xs ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+              >
                 Tip: pick the best-fitting categories for better discovery.
               </Text>
             </View>

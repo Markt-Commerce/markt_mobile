@@ -5,7 +5,14 @@
 
 import React, { useEffect } from "react";
 import { View, Text, TouchableOpacity, Keyboard } from "react-native";
-import { Camera, Image as ImageIcon, ShoppingBag, FileText, Percent } from "lucide-react-native";
+import {
+  Camera,
+  Image as ImageIcon,
+  ShoppingBag,
+  FileText,
+  Percent,
+} from "lucide-react-native";
+import { useTheme } from "./themeProvider";
 
 type Props = {
   visible: boolean;
@@ -31,26 +38,39 @@ const OptionCard = ({
   onPress: () => void;
   subtitle?: string;
   disabled?: boolean;
-}) => (
-  <TouchableOpacity
-    onPress={onPress}
-    disabled={disabled}
-    activeOpacity={0.7}
-    className={`flex-1 min-w-[100px] max-w-[110px] rounded bg-white border border-border p-4 items-center ${disabled ? "opacity-50" : ""}`}
-  >
-    <View className="w-14 h-14 rounded bg-surface items-center justify-center mb-3">
-      <Icon size={28} color="#000000" />
-    </View>
-    <Text className="text-black font-geist font-semibold text-sm" numberOfLines={1}>
-      {label}
-    </Text>
-    {subtitle && (
-      <Text className="text-tertiary text-[11px] mt-0.5" numberOfLines={1}>
-        {subtitle}
+}) => {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.7}
+      className={`flex-1 min-w-[100px] max-w-[110px] rounded border p-4 items-center ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-white border-border"} ${disabled ? "opacity-50" : ""}`}
+    >
+      <View
+        className={`w-14 h-14 rounded items-center justify-center mb-3 ${isDark ? "bg-dark-surface" : "bg-surface"}`}
+      >
+        <Icon size={28} color={isDark ? "#f5f5f5" : "#000000"} />
+      </View>
+      <Text
+        className={`font-geist font-semibold text-sm ${isDark ? "text-dark-text" : "text-black"}`}
+        numberOfLines={1}
+      >
+        {label}
       </Text>
-    )}
-  </TouchableOpacity>
-);
+      {subtitle && (
+        <Text
+          className={`text-[11px] mt-0.5 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+          numberOfLines={1}
+        >
+          {subtitle}
+        </Text>
+      )}
+    </TouchableOpacity>
+  );
+};
 
 export default function ChatAttachmentSheet({
   visible,
@@ -66,6 +86,8 @@ export default function ChatAttachmentSheet({
   useEffect(() => {
     if (visible) Keyboard.dismiss();
   }, [visible]);
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   if (!visible) return null;
 
@@ -91,12 +113,24 @@ export default function ChatAttachmentSheet({
         onPress={onClose}
         activeOpacity={1}
       />
-      <View className="absolute bottom-0 left-0 right-0 bg-white rounded-t shadow-level-2 overflow-hidden">
-        <View className="w-10 h-1 rounded bg-border self-center mt-3 mb-2" />
-        <Text className="text-black font-geist font-bold text-lg px-5 mb-4">Attach</Text>
+      <View
+        className={`absolute bottom-0 left-0 right-0 rounded-t shadow-level-2 overflow-hidden ${isDark ? "bg-dark-surface" : "bg-white"}`}
+      >
+        <View
+          className={`w-10 h-1 rounded self-center mt-3 mb-2 ${isDark ? "bg-dark-border-strong" : "bg-border"}`}
+        />
+        <Text
+          className={`font-geist font-bold text-lg px-5 mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
+        >
+          Attach
+        </Text>
 
         <View className="px-5 pb-6">
-          <Text className="text-tertiary text-xs font-geist font-bold uppercase tracking-wider mb-3">Media</Text>
+          <Text
+            className={`text-xs font-geist font-bold uppercase tracking-wider mb-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+          >
+            Media
+          </Text>
           <View className="flex-row flex-wrap gap-3">
             <OptionCard
               icon={Camera}
@@ -114,9 +148,12 @@ export default function ChatAttachmentSheet({
             />
           </View>
 
-          {(role === "seller" && onProducts) || (role === "buyer" && onRequests) ? (
+          {(role === "seller" && onProducts) ||
+          (role === "buyer" && onRequests) ? (
             <>
-              <Text className="text-tertiary text-xs font-geist font-bold uppercase tracking-wider mt-5 mb-3">
+              <Text
+                className={`text-xs font-geist font-bold uppercase tracking-wider mt-5 mb-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+              >
                 {role === "seller" ? "Share" : "More"}
               </Text>
               <View className="flex-row flex-wrap gap-3">
@@ -152,7 +189,9 @@ export default function ChatAttachmentSheet({
           ) : (
             onDiscounts && (
               <>
-                <Text className="text-tertiary text-xs font-geist font-bold uppercase tracking-wider mt-5 mb-3">
+                <Text
+                  className={`text-xs font-geist font-bold uppercase tracking-wider mt-5 mb-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                >
                   Offers
                 </Text>
                 <View className="flex-row flex-wrap gap-3">
@@ -168,7 +207,7 @@ export default function ChatAttachmentSheet({
             )
           )}
         </View>
-        <View className="h-6 bg-surface" />
+        <View className={`h-6 ${isDark ? "bg-dark-page" : "bg-surface"}`} />
       </View>
     </View>
   );

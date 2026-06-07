@@ -1,6 +1,6 @@
 // app/_layout.tsx
-import 'react-native-reanimated';
-import 'react-native-gesture-handler';
+import "react-native-reanimated";
+import "react-native-gesture-handler";
 import { Stack } from "expo-router";
 import { View, Text, ActivityIndicator, StatusBar } from "react-native";
 import "../global.css";
@@ -11,7 +11,7 @@ import { ThemeProvider } from "../components/themeProvider";
 import { useTheme } from "../components/themeProvider";
 import { useState } from "react";
 import { RegisterRequest } from "../models/auth";
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import React from "react";
 
@@ -30,7 +30,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider>
         <ToastProvider>
-          <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+          <GestureHandlerRootView style={{ flex: 1 }}>
             <UserProvider>
               <RegisterProvider value={{ regData, setRegData }}>
                 <AppStack />
@@ -51,10 +51,19 @@ export function AppStack() {
 
   if (isRestoringSession) {
     return (
-      <View className={`flex-1 items-center justify-center ${isDark ? "bg-inverse-surface" : "bg-white"}`}>
+      <View
+        className={`flex-1 items-center justify-center ${isDark ? "bg-dark-page" : "bg-white"}`}
+      >
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-        <ActivityIndicator size="large" color={isDark ? "#FFFFFF" : "#000000"} />
-        <Text className={`mt-3 text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading…</Text>
+        <ActivityIndicator
+          size="large"
+          color={isDark ? "#f5f5f5" : "#000000"}
+        />
+        <Text
+          className={`mt-3 text-sm ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+        >
+          Loading...
+        </Text>
       </View>
     );
   }
@@ -64,7 +73,12 @@ export function AppStack() {
   return (
     <>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: isDark ? "#1a1c1d" : "#ffffff" } }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: isDark ? "#0b0b0c" : "#ffffff" },
+        }}
+      >
         <Stack.Protected guard={isLoggedIn}>
           <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
         </Stack.Protected>

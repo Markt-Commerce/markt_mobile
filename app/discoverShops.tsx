@@ -19,32 +19,53 @@ import { debounce } from "lodash";
 import { getShops, getShopCategories } from "../services/sections/shops";
 import type { ShopLite, ShopCategory } from "../services/sections/shops";
 import Avatar from "../components/Avatar";
+import { useTheme } from "../components/themeProvider";
 
-function ShopRow({ shop, onPress }: { shop: ShopLite; onPress: () => void }) {
+function ShopRow({
+  shop,
+  onPress,
+  isDark,
+}: {
+  shop: ShopLite;
+  onPress: () => void;
+  isDark: boolean;
+}) {
   const label = shop.shop_name || shop.user?.username || "Shop";
 
   return (
     <TouchableOpacity
       onPress={onPress}
-      className="flex-row items-center px-6 py-4 border-b border-border bg-white"
+      className={`flex-row items-center px-6 py-4 border-b ${isDark ? "bg-dark-page border-dark-border" : "bg-white border-border"}`}
       activeOpacity={0.7}
       accessibilityRole="button"
       accessibilityLabel={`View ${label}`}
     >
       <Avatar uri={shop.user?.profile_picture} name={label} size={56} />
       <View className="flex-1 ml-4">
-        <Text className="text-black font-geist font-bold text-base" numberOfLines={1}>
+        <Text
+          className={`font-geist font-bold text-base ${isDark ? "text-dark-text" : "text-black"}`}
+          numberOfLines={1}
+        >
           {label}
         </Text>
         {shop.stats && (
-          <Text className="text-tertiary font-inter text-xs mt-1">
-            {shop.stats.product_count} products · {shop.stats.follower_count} followers
+          <Text
+            className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-inter text-xs mt-1`}
+          >
+            {shop.stats.product_count} products · {shop.stats.follower_count}{" "}
+            followers
           </Text>
         )}
       </View>
       {shop.verification_status === "verified" && (
-        <View className="px-2 py-0.5 rounded bg-surface">
-          <Text className="text-tertiary font-geist font-medium text-[10px] uppercase tracking-wider">Verified</Text>
+        <View
+          className={`px-2 py-0.5 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+        >
+          <Text
+            className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-geist font-medium text-[10px] uppercase tracking-wider`}
+          >
+            Verified
+          </Text>
         </View>
       )}
     </TouchableOpacity>
@@ -61,7 +82,11 @@ export default function DiscoverShopsScreen() {
   const [hasNext, setHasNext] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"rating" | "name" | "recent" | "followers">("rating");
+  const [sortBy, setSortBy] = useState<
+    "rating" | "name" | "recent" | "followers"
+  >("rating");
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   const fetchShops = useCallback(
     async (p: number, append: boolean) => {
@@ -90,12 +115,12 @@ export default function DiscoverShopsScreen() {
         setLoadingMore(false);
       }
     },
-    [search, selectedCategory, sortBy]
+    [search, selectedCategory, sortBy],
   );
 
   const debouncedFetch = useCallback(
     debounce((p: number) => fetchShops(p, false), 350),
-    [fetchShops]
+    [fetchShops],
   );
 
   useEffect(() => {
@@ -117,27 +142,36 @@ export default function DiscoverShopsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-      <View className="flex-row items-center px-6 py-4 border-b border-border">
+    <SafeAreaView
+      className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}
+      edges={["top"]}
+    >
+      <View
+        className={`flex-row items-center px-6 py-4 border-b ${isDark ? "border-dark-border" : "border-border"}`}
+      >
         <TouchableOpacity
           onPress={() => router.back()}
           className="p-1 -ml-1"
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={24} color="#000000" />
+          <ArrowLeft size={24} color={isDark ? "#f5f5f5" : "#000000"} />
         </TouchableOpacity>
-        <Text className="flex-1 text-xl font-geist font-bold text-black text-center pr-8">
+        <Text
+          className={`flex-1 text-xl font-geist font-bold text-center pr-8 ${isDark ? "text-dark-text" : "text-black"}`}
+        >
           Discover Shops
         </Text>
       </View>
 
-      <View className="px-4 py-3 flex-row items-center bg-surface rounded mx-6 mt-4">
-        <Search size={20} color="#71717A" />
+      <View
+        className={`px-4 py-3 flex-row items-center rounded mx-6 mt-4 ${isDark ? "bg-dark-surface" : "bg-surface"}`}
+      >
+        <Search size={20} color={isDark ? "#c6c5cf" : "#71717A"} />
         <TextInput
-          className="ml-3 flex-1 text-black font-inter text-base"
+          className={`ml-3 flex-1 font-inter text-base ${isDark ? "text-dark-text" : "text-black"}`}
           placeholder="Search shops..."
-          placeholderTextColor="#A1A1AA"
+          placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
           value={search}
           onChangeText={setSearch}
         />
@@ -149,14 +183,18 @@ export default function DiscoverShopsScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 12, gap: 12 }}
+            contentContainerStyle={{
+              paddingHorizontal: 24,
+              paddingVertical: 12,
+              gap: 12,
+            }}
           >
             <TouchableOpacity
               onPress={() => setSelectedCategory(null)}
-              className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === null ? "bg-primary" : "bg-surface"}`}
+              className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === null ? "bg-primary" : isDark ? "bg-dark-elevated" : "bg-surface"}`}
             >
               <Text
-                className={`font-geist font-semibold text-sm ${selectedCategory === null ? "text-white" : "text-tertiary"}`}
+                className={`font-geist font-semibold text-sm ${selectedCategory === null ? "text-white" : isDark ? "text-dark-muted" : "text-tertiary"}`}
               >
                 All
               </Text>
@@ -165,10 +203,10 @@ export default function DiscoverShopsScreen() {
               <TouchableOpacity
                 key={c.id}
                 onPress={() => setSelectedCategory(c.slug)}
-                className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === c.slug ? "bg-primary" : "bg-surface"}`}
+                className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === c.slug ? "bg-primary" : isDark ? "bg-dark-elevated" : "bg-surface"}`}
               >
                 <Text
-                  className={`font-geist font-semibold text-sm ${selectedCategory === c.slug ? "text-white" : "text-tertiary"}`}
+                  className={`font-geist font-semibold text-sm ${selectedCategory === c.slug ? "text-white" : isDark ? "text-dark-muted" : "text-tertiary"}`}
                 >
                   {c.name}
                 </Text>
@@ -183,18 +221,28 @@ export default function DiscoverShopsScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 8, gap: 12 }}
+          contentContainerStyle={{
+            paddingHorizontal: 24,
+            paddingVertical: 8,
+            gap: 12,
+          }}
         >
           {(["rating", "followers", "recent", "name"] as const).map((s) => (
             <TouchableOpacity
               key={s}
               onPress={() => setSortBy(s)}
-              className={`py-1.5 px-3 min-h-[32px] justify-center rounded border ${sortBy === s ? "bg-primary border-primary" : "bg-transparent border-border"}`}
+              className={`py-1.5 px-3 min-h-[32px] justify-center rounded border ${sortBy === s ? "bg-primary border-primary" : isDark ? "bg-transparent border-dark-border-strong" : "bg-transparent border-border"}`}
             >
               <Text
-                className={`font-geist font-medium text-xs ${sortBy === s ? "text-white" : "text-tertiary"}`}
+                className={`font-geist font-medium text-xs ${sortBy === s ? "text-white" : isDark ? "text-dark-muted" : "text-tertiary"}`}
               >
-                {s === "rating" ? "Top rated" : s === "followers" ? "Popular" : s === "recent" ? "Recent" : "A–Z"}
+                {s === "rating"
+                  ? "Top rated"
+                  : s === "followers"
+                    ? "Popular"
+                    : s === "recent"
+                      ? "Recent"
+                      : "A–Z"}
               </Text>
             </TouchableOpacity>
           ))}
@@ -203,13 +251,26 @@ export default function DiscoverShopsScreen() {
 
       {loading ? (
         <View className="flex-1 justify-center items-center py-16">
-          <ActivityIndicator size="large" color="#000000" />
-          <Text className="text-tertiary text-sm mt-2">Loading shops…</Text>
+          <ActivityIndicator
+            size="large"
+            color={isDark ? "#f5f5f5" : "#000000"}
+          />
+          <Text
+            className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm mt-2`}
+          >
+            Loading shops...
+          </Text>
         </View>
       ) : shops.length === 0 ? (
         <View className="flex-1 justify-center items-center px-6 py-16">
-          <Text className="text-black font-semibold text-lg text-center">No shops found</Text>
-          <Text className="text-tertiary text-sm mt-2 text-center">
+          <Text
+            className={`font-semibold text-lg text-center ${isDark ? "text-dark-text" : "text-black"}`}
+          >
+            No shops found
+          </Text>
+          <Text
+            className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm mt-2 text-center`}
+          >
             Try a different search or filter.
           </Text>
         </View>
@@ -221,6 +282,7 @@ export default function DiscoverShopsScreen() {
             <ShopRow
               shop={item}
               onPress={() => router.push(`/shopDetails/${item.id}`)}
+              isDark={isDark}
             />
           )}
           onEndReached={loadMore}
@@ -228,7 +290,10 @@ export default function DiscoverShopsScreen() {
           ListFooterComponent={
             loadingMore ? (
               <View className="py-6 items-center">
-                <ActivityIndicator size="small" color="#000000" />
+                <ActivityIndicator
+                  size="small"
+                  color={isDark ? "#f5f5f5" : "#000000"}
+                />
               </View>
             ) : null
           }
