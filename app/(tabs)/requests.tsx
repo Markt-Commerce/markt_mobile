@@ -15,7 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { FileText, Plus, Search, Sparkles } from "lucide-react-native";
 import { useUser } from "../../hooks/userContextProvider";
-import { getBuyerRequests } from "../../services/sections/feed";
+import { getBuyerRequests, getMyBuyerRequests } from "../../services/sections/feed";
 import { BuyerRequest } from "../../models/feed";
 import RequestDisplayComponent from "../../components/requestDisplayComponent";
 import { useTheme } from "../../components/themeProvider";
@@ -100,7 +100,7 @@ export default function RequestsScreen() {
 
   const fetchRequests = useCallback(async () => {
     try {
-      const data = await getBuyerRequests(1, 20);
+      const data = await getMyBuyerRequests(1, 20);
       setItems(data);
     } catch {
       setItems([]);

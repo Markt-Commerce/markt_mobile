@@ -41,3 +41,11 @@ export async function getBuyerRequests(page = 1, perPage = 5): Promise<BuyerRequ
     );
     return res.items;
   }
+
+  export async function getMyBuyerRequests(page = 1, perPage = 5): Promise<BuyerRequest[]> {
+    const res = await request<{ items: BuyerRequest[] }>(
+      `${BASE_URL}/requests/my-requests?page=${page}&per_page=${perPage}`,
+      { method: "GET" }
+    );
+    return res.items;
+  }

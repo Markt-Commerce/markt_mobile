@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter,useLocalSearchParams } from "expo-router";
 import { X, CreditCard, LucideBanknote as Bank } from "lucide-react-native";
 import { initializePayment, initiatePayment } from "../../../services/sections/payments";
@@ -13,17 +14,21 @@ export default function PaymentMethod() {
   const isDark = resolvedTheme === "dark";
   const [selectedMethod, setSelectedMethod] = React.useState<"card" | "bank_transfer">("card");
   const [orderTotal, setOrderTotal] = React.useState<number>(0);
+  const [isProceeding, setIsProceeding] = React.useState(false);
   const { show } = useToast();
   const { id } = useLocalSearchParams();
 
   const determinePaymentDirection = async () => {
+    setIsProceeding(true);
     try {
       const paymentInitialization = await initializePayment({
         method: selectedMethod,
         currency: "NGN",
         order_id: id as string,
         amount: orderTotal,
-        metadata: {},
+        metadata: {
+          platform: "mobile"
+        },
       });
       router.push(`/checkout/payscreen/${paymentInitialization.payment_id}`) // id in this case should be the initialization id
     } catch (error) {
@@ -33,9 +38,8 @@ export default function PaymentMethod() {
         title: "Error",
         message: "Unable to initiate payment.",
       });
+      setIsProceeding(false);
     }
-    
-    return null;
   };
 
 
@@ -62,7 +66,7 @@ export default function PaymentMethod() {
   }, [id]);
 
   return (
-    <View className={`flex-1 justify-between ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+    <SafeAreaView className={`flex-1 justify-between ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
       <ScrollView>
         {/* Header */}
         <View className={`flex-row items-center p-4 pb-2 justify-between ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
@@ -134,15 +138,14 @@ export default function PaymentMethod() {
       <View className={`px-4 py-3 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
         <TouchableOpacity
           onPress={() => determinePaymentDirection()}
-          className="flex items-center justify-center bg-primary h-12 rounded"
+          disabled={isProceeding}
+          className={`flex items-center justify-center bg-primary h-12 rounded ${isProceeding ? "opacity-50" : ""}`}
         >
           <Text className="text-white text-sm font-geist font-bold tracking-[0.015em]">
-            Proceed
+            {isProceeding ? "Processing..." : "Proceed"}
           </Text>
         </TouchableOpacity>
       </View>
-
-      <View className={`h-5 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`} />
-    </View>
+    </SafeAreaView>
   );
 }

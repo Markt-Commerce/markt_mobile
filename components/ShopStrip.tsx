@@ -15,21 +15,33 @@ import { useTheme } from "./themeProvider";
 
 const AVATAR_SIZE = 64;
 
+// Module-level cache: persists for the app's lifetime so remounts never re-fetch.
+let _cachedShops: ShopLite[] | null = null;
+let _cacheReady = false;
+
 export default function ShopStrip() {
-  const [shops, setShops] = useState<ShopLite[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [shops, setShops] = useState<ShopLite[]>(_cachedShops ?? []);
+  const [loading, setLoading] = useState(!_cacheReady);
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
 
   useEffect(() => {
+    if (_cacheReady) return; // already fetched — skip network call
     let cancelled = false;
     getTrendingShops()
       .then((res) => {
-        if (!cancelled) setShops(res.shops ?? []);
+        if (!cancelled) {
+          _cachedShops = res.shops ?? [];
+          _cacheReady = true;
+          setShops(_cachedShops);
+        }
       })
       .catch(() => {
-        if (!cancelled) setShops([]);
+        if (!cancelled) {
+          _cacheReady = true;
+          setShops([]);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

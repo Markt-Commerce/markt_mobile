@@ -75,10 +75,19 @@ export default function FeedScreen() {
   const [selectedBuyerId, setSelectedBuyerId] = useState<string>("");
   const [productForChat, setProductForChat] = useState<FeedProduct | null>(null);
 
-  // Shop strip collapse on scroll: hide when scrolling down, show when scrolling up
+  // Shop strip collapse on scroll: hide on scroll down, show only on clear upward intent
   const [stripCollapsed, setStripCollapsed] = useState(false);
+  const stripCollapsedRef = useRef(false); // mirrors state, readable inside handleScroll closure
   const lastScrollY = useRef(0);
+  const lastScrollTime = useRef(Date.now());
+  const upScrollDistance = useRef(0); // cumulative px scrolled up since last downward scroll
   const stripHeight = useRef(new Animated.Value(1)).current; // 1 = expanded, 0 = collapsed
+
+  // Show strip only when user clearly intends to scroll up:
+  // - 120px of cumulative upward scrolling (sustained scroll), OR
+  // - fast swipe upward exceeding 1500 px/s (quick flick toward top)
+  const DISTANCE_TO_SHOW = 480;
+  const VELOCITY_TO_SHOW = 3500;
 
   useEffect(() => {
     Animated.timing(stripHeight, {
@@ -88,13 +97,42 @@ export default function FeedScreen() {
     }).start();
   }, [stripCollapsed]);
 
-  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+  const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const y = e.nativeEvent.contentOffset.y;
+    const now = Date.now();
     const dy = y - lastScrollY.current;
+    const dt = Math.max(now - lastScrollTime.current, 1);
     lastScrollY.current = y;
-    if (dy > 8 && y > 60) setStripCollapsed(true);
-    else if (dy < -8) setStripCollapsed(false);
-  };
+    lastScrollTime.current = now;
+
+    // Near the top: always reveal strip regardless of scroll direction
+    if (y <= 50 && stripCollapsedRef.current) {
+      stripCollapsedRef.current = false;
+      setStripCollapsed(false);
+      upScrollDistance.current = 0;
+      return;
+    }
+
+    if (dy > 4 && y > 80) {
+      // Clear downward scroll — collapse and reset upward accumulator
+      upScrollDistance.current = 0;
+      if (!stripCollapsedRef.current) {
+        stripCollapsedRef.current = true;
+        setStripCollapsed(true);
+      }
+    } else if (dy < -4) {
+      // Upward scroll — accumulate distance and check for intent
+      upScrollDistance.current += Math.abs(dy);
+      const velocity = Math.abs(dy) / (dt / 1000);
+      if (
+        stripCollapsedRef.current &&
+        (upScrollDistance.current >= DISTANCE_TO_SHOW || velocity >= VELOCITY_TO_SHOW)
+      ) {
+        stripCollapsedRef.current = false;
+        setStripCollapsed(false);
+      }
+    }
+  }, []);
 
   const openProductChat = (product: FeedProduct) => {
     const sellerUserId = product.seller?.user?.id;
@@ -195,9 +233,23 @@ export default function FeedScreen() {
     show({ variant: "error", title: "Feed error", message: error });
   }, [error]);
 
-  // Header: shop strip + tabs (search lives in nav Search tab only to avoid duplicate)
-  const Header = () => (
-    <>
+
+  const renderItem = ({ item }: { item: FeedItem }) => {
+    if (isFeedPost(item)) return <FeedPostCard post={item} />;
+    if (isFeedProduct(item))
+      return (
+        <FeedProductCard
+          product={item}
+          onMessageSeller={openProductChat}
+        />
+      );
+    return null;
+  };
+
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right"]}>
+      {/* ShopStrip rendered directly here so it never unmounts/remounts on scroll re-renders */}
       <Animated.View
         style={{
           overflow: "hidden",
@@ -291,25 +343,7 @@ export default function FeedScreen() {
           <StartCards onRemoved={() => setLoadedStartCards(false)} />
         </View>
       )}
-    </>
-  );
 
-  const renderItem = ({ item }: { item: FeedItem }) => {
-    if (isFeedPost(item)) return <FeedPostCard post={item} />;
-    if (isFeedProduct(item))
-      return (
-        <FeedProductCard
-          product={item}
-          onMessageSeller={openProductChat}
-        />
-      );
-    return null;
-  };
-
-
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right"]}>
-      <Header />
       <FlatList
         className={isDark ? "bg-[#1a1c1d]" : "bg-white"}
         data={items}
