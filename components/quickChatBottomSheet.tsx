@@ -5,9 +5,21 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { View, Text, ActivityIndicator, TouchableOpacity } from "react-native";
-import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
+import BottomSheet, {
+  BottomSheetFooter,
+  BottomSheetView,
+} from "@gorhom/bottom-sheet";
+import type { BottomSheetFooterProps } from "@gorhom/bottom-sheet";
+import { ArrowLeft } from "lucide-react-native";
 import ChatScreen from "./chat";
+import Avatar from "./Avatar";
 import { createOrGetRoom } from "../services/sections/chat";
 import { getProductById } from "../services/sections/product";
 import { ChatRoomLite } from "../models/chat";
@@ -16,8 +28,10 @@ import { useToast } from "./ToastProvider";
 import { useUser } from "../hooks/userContextProvider";
 import { isOwnProductListing } from "../utils/chatGuards";
 import { useTheme } from "./themeProvider";
+import { pickProfilePicture, type ChatOtherUser } from "../utils/chatAvatar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type QuickChatBottomSheetProps = {
+export type QuickChatBottomSheetProps = {
   /** Seller's user id (UUID) — used when current user is buyer (CHATS_API §1.2) */
   sellerId?: string;
   /** Buyer's user id — used when current user is seller */
@@ -25,7 +39,7 @@ type QuickChatBottomSheetProps = {
   /** Product id — scopes room to product; also used to fetch seller user id when feed lacks it (§1.3) */
   product_id?: string;
   /** Other user info for chat header */
-  otherUser?: { username?: string; profile_picture?: string };
+  otherUser?: ChatOtherUser;
   /** True when current user is buyer chatting with seller; false when seller chatting with buyer */
   asBuyer?: boolean;
   sheetRef: React.RefObject<BottomSheetMethods | null>;
@@ -45,11 +59,12 @@ export default function QuickChatBottomSheet({
   asBuyer = true,
   sheetRef,
 }: QuickChatBottomSheetProps) {
-  const snapPoints = useMemo(() => ["80%"], []);
+  const snapPoints = useMemo(() => ["90%"], []);
   const { show } = useToast();
   const { user } = useUser();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const textColor = isDark ? "#f5f5f5" : "#000000";
   const currentUserId = user?.user_id?.toString() ?? "";
   const [sheetOpen, setSheetOpen] = useState(false);
   const [roomData, setRoomData] = useState<ChatRoomLite | null>(null);
@@ -57,6 +72,12 @@ export default function QuickChatBottomSheet({
   const [roomError, setRoomError] = useState<string | null>(null);
   const [otherUserResolved, setOtherUserResolved] = useState(otherUser);
   const fetchGenRef = useRef(0);
+  const [sheetFooter, setSheetFooter] = useState<React.ReactNode>(null);
+  const insets = useSafeAreaInsets();
+
+  const handleClose = useCallback(() => {
+    sheetRef.current?.close();
+  }, [sheetRef]);
 
   const handleSheetChange = useCallback((index: number) => {
     setSheetOpen(index >= 0);
@@ -185,14 +206,28 @@ export default function QuickChatBottomSheet({
     }
   }, [asBuyer, sellerId, buyerId, product_id, otherUser, currentUserId, show]);
 
+  const displayOtherUser = otherUserResolved ?? otherUser;
+  const roomId = roomData?.id ?? 0;
+  const hasExistingThread = Boolean(roomData?.last_message_at);
+  const showChat = !roomLoading && !roomError && roomId > 0;
+
   useEffect(() => {
     if (!sheetOpen) return;
     fetchRoomData();
   }, [sheetOpen, fetchRoomData]);
 
-  const displayOtherUser = otherUserResolved ?? otherUser;
-  const roomId = roomData?.id ?? 0;
-  const hasExistingThread = Boolean(roomData?.last_message_at);
+  useEffect(() => {
+    if (!sheetOpen || !showChat) setSheetFooter(null);
+  }, [sheetOpen, showChat]);
+
+  const renderFooter = useCallback(
+    (props: BottomSheetFooterProps) => (
+      <BottomSheetFooter {...props} bottomInset={insets.bottom}>
+        {sheetFooter}
+      </BottomSheetFooter>
+    ),
+    [sheetFooter, insets.bottom],
+  );
 
   return (
     <BottomSheet
@@ -201,54 +236,126 @@ export default function QuickChatBottomSheet({
       snapPoints={snapPoints}
       enablePanDownToClose
       onChange={handleSheetChange}
+      keyboardBehavior="extend"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
+      footerComponent={showChat ? renderFooter : undefined}
       backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }}
       handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
     >
-      <BottomSheetView className="flex-1 p-2">
-        {roomLoading && (
-          <View className="flex-1 items-center justify-center py-12">
-            <ActivityIndicator
-              size="large"
-              color={isDark ? "#f5f5f5" : "#000000"}
-            />
-            <Text
-              className={`text-sm mt-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
-            >
-              Opening chat...
-            </Text>
-          </View>
+      <BottomSheetView style={styles.sheetRoot}>
+        {/* Fixed header */}
+        <View
+          style={[
+            styles.header,
+            {
+              borderBottomColor: isDark ? "#2a2a2e" : "#efe9e7",
+              backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF",
+            },
+          ]}
+        >
+          <TouchableOpacity
+            onPress={handleClose}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={styles.backButton}
+          >
+            <ArrowLeft size={24} color={textColor} />
+          </TouchableOpacity>
+          <Avatar
+            uri={pickProfilePicture(displayOtherUser)}
+            name={displayOtherUser?.username}
+            size={40}
+          />
+          <Text
+            style={[styles.headerTitle, { color: textColor }]}
+            numberOfLines={1}
+          >
+            {displayOtherUser?.username ?? "Chat"}
+          </Text>
+        </View>
+
+        {hasExistingThread && showChat && (
+          <Text
+            className={`text-xs text-center py-2 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+          >
+            Continuing your conversation
+          </Text>
         )}
-        {!roomLoading && roomError && (
-          <View className="flex-1 items-center justify-center py-12 px-6">
-            <Text
-              className={`font-semibold text-center ${isDark ? "text-dark-text" : "text-black"}`}
-            >
-              {roomError}
-            </Text>
-            <TouchableOpacity
-              className="mt-4 px-4 py-2 rounded bg-primary"
-              onPress={() => fetchRoomData()}
-            >
-              <Text className="text-white font-semibold">Try again</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        {!roomLoading && !roomError && roomId > 0 && (
-          <>
-            {hasExistingThread && (
+
+        {/* Message list area — flex: 1 */}
+        <View style={styles.body}>
+          {roomLoading && (
+            <View style={styles.centered}>
+              <ActivityIndicator size="large" color={textColor} />
               <Text
-                className={`text-xs text-center pb-2 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                className={`text-sm mt-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
               >
-                Continuing your conversation
+                Opening chat…
               </Text>
-            )}
+            </View>
+          )}
+
+          {!roomLoading && roomError && (
+            <View style={styles.centered}>
+              <Text
+                className={`font-semibold text-center px-6 ${isDark ? "text-dark-text" : "text-black"}`}
+              >
+                {roomError}
+              </Text>
+              <TouchableOpacity
+                className="mt-4 px-4 py-2 rounded bg-primary"
+                onPress={() => fetchRoomData()}
+              >
+                <Text className="text-white font-semibold">Try again</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {showChat && (
             <ChatScreen
+              variant="sheet"
+              onClose={handleClose}
+              onSheetFooterReady={setSheetFooter}
               route={{ params: { roomId, otherUser: displayOtherUser } }}
               navigation={null}
             />
-          </>
-        )}
+          )}
+        </View>
       </BottomSheetView>
     </BottomSheet>
   );
 }
+
+const styles = StyleSheet.create({
+  sheetRoot: {
+    flex: 1,
+    minHeight: 0,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  backButton: {
+    marginRight: 12,
+    padding: 4,
+  },
+  headerTitle: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  body: {
+    flex: 1,
+    minHeight: 0,
+  },
+  centered: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 48,
+  },
+});

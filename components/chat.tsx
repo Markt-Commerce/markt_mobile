@@ -2,7 +2,7 @@
  * ChatScreen — 1:1 conversation
  */
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState, useLayoutEffect } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,12 @@ import {
   Keyboard,
   Platform,
   Alert,
+  StyleSheet,
 } from "react-native";
+import {
+  BottomSheetFlatList,
+  BottomSheetTextInput,
+} from "@gorhom/bottom-sheet";
 import {
   ArrowLeft,
   Check,
@@ -81,6 +86,9 @@ import {
 import { normalizeUri, resolveProductImageUri } from "../utils/imageUri";
 import { getUserProfile } from "../services/sections/profile";
 import { useTheme } from "./themeProvider";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+export type ChatScreenVariant = "screen" | "sheet";
 
 export type ChatProps = {
   route: {
@@ -90,6 +98,11 @@ export type ChatProps = {
     };
   };
   navigation: any;
+  /** `sheet` = embedded in QuickChatBottomSheet (no header, bottom-sheet keyboard) */
+  variant?: ChatScreenVariant;
+  onClose?: () => void;
+  /** Sheet mode: input bar rendered in parent BottomSheet footer (keyboard-safe) */
+  onSheetFooterReady?: (footer: React.ReactNode) => void;
 };
 
 const reactionIcons: Record<
@@ -128,9 +141,16 @@ function formatTime(iso: string) {
   });
 }
 
-export default function ChatScreen({ route }: ChatProps) {
+export default function ChatScreen({
+  route,
+  variant = "screen",
+  onClose,
+  onSheetFooterReady,
+}: ChatProps) {
+  const embedInSheet = variant === "sheet";
   const { user, role } = useUser();
   const { roomId, otherUser } = route.params;
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -1244,124 +1264,118 @@ export default function ChatScreen({ route }: ChatProps) {
     );
   }
 
-  if (loading) {
-    return (
-      <View
-        className={`flex-1 items-center justify-center ${isDark ? "bg-dark-page" : "bg-bg-elevated"}`}
-      >
-        <ActivityIndicator size="large" color={textColor} />
-      </View>
-    );
-  }
+  const ListComponent = embedInSheet ? BottomSheetFlatList : FlatList;
+  const InputComponent = embedInSheet ? BottomSheetTextInput : TextInput;
+  const inputBottomPad = embedInSheet ? 8 : Math.max(insets.bottom, 8);
 
-  return (
-    <KeyboardAvoidingView
-      className={`flex-1 ${isDark ? "bg-dark-page" : "bg-bg-elevated"}`}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={0}
-    >
-      {/* Header */}
-      <View
-        className={`flex-row items-center px-4 py-3 border-b ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="mr-3 p-1"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <ArrowLeft size={24} color={textColor} />
-        </TouchableOpacity>
-        <Avatar
-          uri={pickProfilePicture(otherUser)}
-          name={otherUser?.username}
-          size={40}
-        />
-        <Text
-          className={`ml-3 font-semibold text-base flex-1 ${isDark ? "text-dark-text" : "text-black"}`}
-          numberOfLines={1}
-        >
-          {otherUser?.username ?? "Chat"}
-        </Text>
-      </View>
-
-      <FlatList
-        ref={listRef}
-        data={sortedMessages}
-        keyExtractor={(it) => String(it.id)}
-        renderItem={renderMessage}
-        onContentSizeChange={handleContentSizeChange}
-        contentContainerStyle={{ paddingVertical: 12, paddingBottom: 8 }}
-        showsVerticalScrollIndicator={false}
-        onScroll={({ nativeEvent }) => {
-          const { contentOffset, contentSize, layoutMeasurement } = nativeEvent;
-          const padding = 80;
-          if (contentOffset.y < padding && hasMore && !loadingOlder)
-            loadOlder();
-        }}
-        scrollEventThrottle={400}
-        ListHeaderComponent={
-          hasMore && loadingOlder ? (
-            <View className="py-3 items-center">
-              <ActivityIndicator size="small" color={textColor} />
-            </View>
-          ) : null
-        }
-      />
-
-      {typingUser && (
-        <View className="px-4 py-2 flex-row items-center">
-          <View
-            className={`flex-row gap-1 px-3 py-2 rounded border self-start ${isDark ? "bg-dark-surface border-dark-border" : "bg-surface border-border"}`}
-          >
-            <View className="w-2 h-2 rounded bg-text-secondary opacity-60" />
-            <View className="w-2 h-2 rounded bg-text-secondary opacity-80" />
-            <View className="w-2 h-2 rounded bg-text-secondary" />
+  const messageList = loading ? (
+    <View style={[styles.sheetListWrap, styles.sheetLoading]}>
+      <ActivityIndicator size="large" color={textColor} />
+    </View>
+  ) : (
+    <ListComponent
+      ref={listRef as never}
+      style={embedInSheet ? styles.sheetList : undefined}
+      data={sortedMessages}
+      keyExtractor={(it) => String(it.id)}
+      renderItem={renderMessage}
+      onContentSizeChange={handleContentSizeChange}
+      contentContainerStyle={
+        sortedMessages.length === 0
+          ? styles.emptyListContent
+          : { paddingVertical: 12, paddingBottom: 8 }
+      }
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
+      onScroll={({ nativeEvent }) => {
+        const { contentOffset, contentSize, layoutMeasurement } = nativeEvent;
+        const padding = 80;
+        if (contentOffset.y < padding && hasMore && !loadingOlder) loadOlder();
+      }}
+      scrollEventThrottle={400}
+      ListHeaderComponent={
+        hasMore && loadingOlder ? (
+          <View className="py-3 items-center">
+            <ActivityIndicator size="small" color={textColor} />
           </View>
+        ) : null
+      }
+      ListEmptyComponent={
+        <View className="items-center justify-center px-6 py-10">
           <Text
-            className={`text-sm ml-2 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+            className={`text-base font-semibold text-center ${isDark ? "text-dark-text" : "text-black"}`}
           >
-            {typingUser} is typing
+            Start a conversation…
+          </Text>
+          <Text
+            className={`text-sm mt-2 text-center ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+          >
+            Say hello or ask a question about this product.
           </Text>
         </View>
-      )}
+      }
+    />
+  );
 
-      {/* Input bar — send button aligned with input; keyboard dismissed when opening attachment sheet */}
+  const typingIndicator = typingUser ? (
+    <View className="px-4 py-2 flex-row items-center">
       <View
-        className={`flex-row items-center px-4 py-2 pb-2 border-t gap-2 min-h-[52px] ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+        className={`flex-row gap-1 px-3 py-2 rounded border self-start ${isDark ? "bg-dark-surface border-dark-border" : "bg-surface border-border"}`}
       >
-        <View
-          className={`flex-1 flex-row items-center rounded pl-4 pr-1 py-1.5 h-11 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
-        >
-          <TextInput
-            value={input}
-            onChangeText={(t) => {
-              setInput(t);
-              chatSocket.typingStart(roomId, myId);
-            }}
-            placeholder="Type a message…"
-            placeholderTextColor={mutedColor}
-            className={`flex-1 text-base min-h-[24px] max-h-[80px] ${isDark ? "text-dark-text" : "text-black"}`}
-            multiline
-            maxLength={1000}
-            textAlignVertical="center"
-          />
-          <TouchableOpacity
-            onPress={openAttachmentSheet}
-            disabled={sending}
-            className={`p-2 ${sending ? "opacity-50" : ""}`}
-          >
-            <Plus size={22} color={mutedColor} />
-          </TouchableOpacity>
-        </View>
+        <View className="w-2 h-2 rounded bg-text-secondary opacity-60" />
+        <View className="w-2 h-2 rounded bg-text-secondary opacity-80" />
+        <View className="w-2 h-2 rounded bg-text-secondary" />
+      </View>
+      <Text
+        className={`text-sm ml-2 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+      >
+        {typingUser} is typing
+      </Text>
+    </View>
+  ) : null;
+
+  const inputBar = (
+    <View
+      className={`flex-row items-center px-4 py-2 border-t gap-2 min-h-[52px] ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+      style={{ paddingBottom: inputBottomPad }}
+    >
+      <View
+        className={`flex-1 flex-row items-center rounded pl-4 pr-1 py-1.5 h-11 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+      >
+        <InputComponent
+          value={input}
+          onChangeText={(t) => {
+            setInput(t);
+            chatSocket.typingStart(roomId, myId);
+          }}
+          placeholder="Type a message…"
+          placeholderTextColor={mutedColor}
+          className={`flex-1 text-base min-h-[24px] max-h-[80px] ${isDark ? "text-dark-text" : "text-black"}`}
+          multiline
+          maxLength={1000}
+          textAlignVertical="center"
+        />
         <TouchableOpacity
-          onPress={handleSendText}
+          onPress={openAttachmentSheet}
           disabled={sending}
-          className="w-11 h-11 rounded bg-primary items-center justify-center"
+          className={`p-2 ${sending ? "opacity-50" : ""}`}
         >
-          <Send size={20} color="white" />
+          <Plus size={22} color={mutedColor} />
         </TouchableOpacity>
       </View>
+      <TouchableOpacity
+        onPress={handleSendText}
+        disabled={sending}
+        className="w-11 h-11 rounded bg-primary items-center justify-center"
+      >
+        <Send size={20} color="white" />
+      </TouchableOpacity>
+    </View>
+  );
 
+  const overlays = (
+    <>
       <ChatAttachmentSheet
         visible={attachmentVisible}
         busy={sending}
@@ -1471,6 +1485,111 @@ export default function ChatScreen({ route }: ChatProps) {
         onClose={() => setRequestVisible(false)}
         onSelect={sendRequest}
       />
+    </>
+  );
+
+  useLayoutEffect(() => {
+    if (!embedInSheet || !onSheetFooterReady) return;
+    if (loading) {
+      onSheetFooterReady(null);
+      return;
+    }
+    onSheetFooterReady(
+      <>
+        {typingIndicator}
+        {inputBar}
+      </>,
+    );
+    return () => onSheetFooterReady(null);
+  }, [
+    embedInSheet,
+    onSheetFooterReady,
+    loading,
+    typingUser,
+    input,
+    sending,
+    attachmentVisible,
+    isDark,
+    mutedColor,
+    textColor,
+  ]);
+
+  if (embedInSheet) {
+    return (
+      <View style={styles.sheetBody}>
+        <View style={styles.sheetListWrap}>{messageList}</View>
+        {overlays}
+      </View>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View
+        className={`flex-1 items-center justify-center ${isDark ? "bg-dark-page" : "bg-bg-elevated"}`}
+      >
+        <ActivityIndicator size="large" color={textColor} />
+      </View>
+    );
+  }
+
+  return (
+    <KeyboardAvoidingView
+      className={`flex-1 ${isDark ? "bg-dark-page" : "bg-bg-elevated"}`}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={0}
+    >
+      {/* Header */}
+      <View
+        className={`flex-row items-center px-4 py-3 border-b ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+      >
+        <TouchableOpacity
+          onPress={() => (onClose ? onClose() : router.back())}
+          className="mr-3 p-1"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <ArrowLeft size={24} color={textColor} />
+        </TouchableOpacity>
+        <Avatar
+          uri={pickProfilePicture(otherUser)}
+          name={otherUser?.username}
+          size={40}
+        />
+        <Text
+          className={`ml-3 font-semibold text-base flex-1 ${isDark ? "text-dark-text" : "text-black"}`}
+          numberOfLines={1}
+        >
+          {otherUser?.username ?? "Chat"}
+        </Text>
+      </View>
+
+      {messageList}
+      {typingIndicator}
+      {inputBar}
+      {overlays}
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  sheetBody: {
+    flex: 1,
+    minHeight: 0,
+  },
+  sheetListWrap: {
+    flex: 1,
+    minHeight: 0,
+  },
+  sheetList: {
+    flex: 1,
+  },
+  sheetLoading: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyListContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingVertical: 12,
+  },
+});
