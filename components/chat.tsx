@@ -183,6 +183,7 @@ export default function ChatScreen({
 
   const myId = user?.user_id?.toString() ?? "";
   const PER_PAGE = 30;
+  const hasValidRoomId = Number.isFinite(roomId) && roomId > 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -217,9 +218,9 @@ export default function ChatScreen({
   }, [messages, avatarCtx]);
 
   const loadInitial = async () => {
+    if (!hasValidRoomId) return;
     setLoading(true);
     try {
-      if (!roomId || roomId === 0) return;
       const res = await getRoomMessages(roomId, 1, PER_PAGE);
       const list = res.messages ?? [];
       const reactionMap = await fetchReactionsForMessages(list);
@@ -274,13 +275,17 @@ export default function ChatScreen({
   };
 
   useEffect(() => {
-    if (!roomId || roomId <= 0) {
-      setLoading(false);
+    if (!hasValidRoomId) {
+      setLoading(true);
       setMessages([]);
       return;
     }
+    setMessages([]);
+    setPage(1);
+    setHasMore(true);
+    setLoading(true);
     loadInitial();
-  }, [roomId]);
+  }, [roomId, hasValidRoomId]);
 
   const scrollToBottom = useCallback((animated = false) => {
     requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated }));
@@ -1302,6 +1307,7 @@ export default function ChatScreen({
         ) : null
       }
       ListEmptyComponent={
+        !loading && sortedMessages.length === 0 ? (
         <View className="items-center justify-center px-6 py-10">
           <Text
             className={`text-base font-semibold text-center ${isDark ? "text-dark-text" : "text-black"}`}
@@ -1314,6 +1320,7 @@ export default function ChatScreen({
             Say hello or ask a question about this product.
           </Text>
         </View>
+        ) : null
       }
     />
   );

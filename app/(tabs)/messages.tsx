@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -46,6 +47,7 @@ function lastMessagePreview(lastMessage: { content?: string; message_type?: stri
 
 export default function MessagesScreen() {
   const [data, setData] = useState<RoomListResponse | null>(null);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const router = useRouter();
@@ -59,6 +61,7 @@ export default function MessagesScreen() {
     } catch {
       setData({ rooms: [], pagination: undefined });
     } finally {
+      setLoading(false);
       setRefreshing(false);
     }
   };
@@ -99,7 +102,11 @@ export default function MessagesScreen() {
         </View>
       </View>
 
-      {rooms.length > 0 ? (
+      {loading ? (
+        <View className={`flex-1 items-center justify-center ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+          <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+        </View>
+      ) : rooms.length > 0 ? (
         <FlatList
           data={rooms}
           keyExtractor={(item) => String(item.id)}
