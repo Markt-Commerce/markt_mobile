@@ -19,13 +19,51 @@ import {
   unfollowSeller,
 } from "../../services/sections/users";
 import { ProductResponse } from "../../models/products";
-import { ShopData } from "../../models/user";
+import { ShopData, Post as ShopPost } from "../../models/user";
 import { useToast } from "../../components/ToastProvider";
 import ProductDisplayComponent from "../../components/productDisplayComponent";
 import { Product } from "../../models/feed";
-import PostDisplayComponent from "../../components/PostDisplayComponent";
 import { defaultProfilePicture } from "../../models/defaults";
 import { useTheme } from "../../components/themeProvider";
+import { parseDate } from "../../utils/parseDate";
+
+function ShopPostCard({ post, isDark }: { post: ShopPost; isDark: boolean }) {
+  const firstImage = post.media?.find((m) => m.type === "image");
+
+  return (
+    <View
+      className={`mx-4 mb-4 rounded border overflow-hidden ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+    >
+      {firstImage && (
+        <Image source={{ uri: firstImage.url }} className="w-full h-56" resizeMode="cover" />
+      )}
+      <View className="p-4">
+        {post.caption && (
+          <Text className={`${isDark ? "text-dark-text" : "text-black"} text-sm leading-5`}>
+            {post.caption}
+          </Text>
+        )}
+        <View className="flex-row items-center gap-4 mt-3">
+          <View className="flex-row items-center gap-1.5">
+            <Heart size={16} color={isDark ? "#c6c5cf" : "#71717A"} />
+            <Text className={`text-xs ${isDark ? "text-dark-muted" : "text-tertiary"}`}>
+              {post.likes_count ?? 0}
+            </Text>
+          </View>
+          <View className="flex-row items-center gap-1.5">
+            <MessageCircle size={16} color={isDark ? "#c6c5cf" : "#71717A"} />
+            <Text className={`text-xs ${isDark ? "text-dark-muted" : "text-tertiary"}`}>
+              {post.comments_count ?? 0}
+            </Text>
+          </View>
+          <Text className={`text-xs ml-auto ${isDark ? "text-dark-muted" : "text-tertiary"}`}>
+            {parseDate(post.created_at)}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
 
 export default function Shop() {
   const router = useRouter();
@@ -34,6 +72,7 @@ export default function Shop() {
   const [shopProducts, setShopProducts] = useState<ProductResponse[][]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"products" | "posts">("products");
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
@@ -45,7 +84,7 @@ export default function Shop() {
         setShop(profileData);
         setIsFollowing((profileData as any).is_followed ?? false);
         const sellerProducts = await getSellerProducts(profileData.id);
-        setShopProducts((prev) => [...prev, ...groupProducts(sellerProducts)]);
+        setShopProducts(groupProducts(sellerProducts));
       } catch (error) {
         show({
           title: "Error getting shop data",
@@ -258,59 +297,89 @@ export default function Shop() {
         <View
           className={`flex-row border-b px-6 gap-8 ${isDark ? "border-dark-border" : "border-border"}`}
         >
-          <View className="flex-1 items-center border-b-[2px] border-primary pb-4 pt-6">
+          <TouchableOpacity
+            className={`flex-1 items-center border-b-[2px] pb-4 pt-6 ${activeTab === "products" ? "border-primary" : "border-transparent"}`}
+            onPress={() => setActiveTab("products")}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === "products" }}
+          >
             <Text
-              className={`${isDark ? "text-dark-text" : "text-black"} text-sm font-geist font-bold`}
+              className={`text-sm font-geist font-bold ${activeTab === "products" ? (isDark ? "text-dark-text" : "text-black") : isDark ? "text-dark-muted" : "text-tertiary"}`}
             >
               Products
             </Text>
-          </View>
-          <View className="flex-1 items-center border-b-[2px] border-transparent pb-4 pt-6">
-            <Text className="text-tertiary text-sm font-geist font-bold">
+          </TouchableOpacity>
+          <TouchableOpacity
+            className={`flex-1 items-center border-b-[2px] pb-4 pt-6 ${activeTab === "posts" ? "border-primary" : "border-transparent"}`}
+            onPress={() => setActiveTab("posts")}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === "posts" }}
+          >
+            <Text
+              className={`text-sm font-geist font-bold ${activeTab === "posts" ? (isDark ? "text-dark-text" : "text-black") : isDark ? "text-dark-muted" : "text-tertiary"}`}
+            >
               Posts
             </Text>
+          </TouchableOpacity>
+        </View>
+
+        {activeTab === "products" ? (
+          <>
+            {/* Featured */}
+            <Text
+              className={`${isDark ? "text-dark-text" : "text-black"} text-xl font-geist font-bold px-6 pb-4 pt-8`}
+            >
+              Featured
+            </Text>
+
+            {groupProducts(shop?.recent_products ?? []).map((item, idx) => (
+              <ProductDisplayComponent
+                key={idx}
+                products={
+                  item.map((p) => ({
+                    ...p,
+                    description: p.description ?? "",
+                  })) as Product[]
+                }
+              />
+            ))}
+
+            {/* All Products */}
+            <Text
+              className={`${isDark ? "text-dark-text" : "text-black"} text-xl font-geist font-bold px-6 pb-4 pt-8`}
+            >
+              All Products
+            </Text>
+
+            <View className="px-2">
+              {shopProducts.map((item, i) => (
+                <ProductDisplayComponent
+                  key={i}
+                  products={
+                    item.map((p) => ({
+                      ...p,
+                      description: p.description ?? "",
+                    })) as Product[]
+                  }
+                />
+              ))}
+            </View>
+          </>
+        ) : (
+          <View className="px-2 pt-2">
+            {(shop?.recent_posts ?? []).length === 0 ? (
+              <View className="items-center justify-center py-16 px-6">
+                <Text className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm text-center`}>
+                  This shop hasn't posted anything yet.
+                </Text>
+              </View>
+            ) : (
+              (shop?.recent_posts ?? []).map((post) => (
+                <ShopPostCard key={post.id} post={post} isDark={isDark} />
+              ))
+            )}
           </View>
-        </View>
-
-        {/* Featured */}
-        <Text
-          className={`${isDark ? "text-dark-text" : "text-black"} text-xl font-geist font-bold px-6 pb-4 pt-8`}
-        >
-          Featured
-        </Text>
-
-        {groupProducts(shop?.recent_products!).map((item, idx) => (
-          <ProductDisplayComponent
-            key={idx}
-            products={
-              item.map((p) => ({
-                ...p,
-                description: p.description ?? "",
-              })) as Product[]
-            }
-          />
-        ))}
-
-        {/* All Products */}
-        <Text
-          className={`${isDark ? "text-dark-text" : "text-black"} text-xl font-geist font-bold px-6 pb-4 pt-8`}
-        >
-          All Products
-        </Text>
-
-        <View className="px-2">
-          {shopProducts.map((item, i) => (
-            <ProductDisplayComponent
-              key={i}
-              products={
-                item.map((p) => ({
-                  ...p,
-                  description: p.description ?? "",
-                })) as Product[]
-              }
-            />
-          ))}
-        </View>
+        )}
 
         <View className="h-10" />
       </ScrollView>

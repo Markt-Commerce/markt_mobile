@@ -75,25 +75,51 @@ export default function FeedScreen() {
   const [selectedBuyerId, setSelectedBuyerId] = useState<string>("");
   const [productForChat, setProductForChat] = useState<FeedProduct | null>(null);
 
-  // Shop strip collapse on scroll: hide when scrolling down, show when scrolling up
+  // Shop strip collapse on scroll: hide after a sustained scroll down, show only
+  // after a sustained scroll back up. Distance is accumulated per-direction so a
+  // single small/jittery scroll event can't flip the state — that's what made it glitchy.
   const [stripCollapsed, setStripCollapsed] = useState(false);
   const lastScrollY = useRef(0);
+  const upAccum = useRef(0);
+  const downAccum = useRef(0);
   const stripHeight = useRef(new Animated.Value(1)).current; // 1 = expanded, 0 = collapsed
+
+  const HIDE_AFTER_SCROLL_DOWN = 100;
+  const SHOW_AFTER_SCROLL_UP = 800;
 
   useEffect(() => {
     Animated.timing(stripHeight, {
       toValue: stripCollapsed ? 0 : 1,
-      duration: 200,
+      duration: 250,
       useNativeDriver: false, // height/maxHeight requires false
     }).start();
   }, [stripCollapsed]);
 
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const y = e.nativeEvent.contentOffset.y;
+    const y = Math.max(0, e.nativeEvent.contentOffset.y);
     const dy = y - lastScrollY.current;
     lastScrollY.current = y;
-    if (dy > 8 && y > 60) setStripCollapsed(true);
-    else if (dy < -8) setStripCollapsed(false);
+
+    if (y === 0) {
+      upAccum.current = 0;
+      downAccum.current = 0;
+      if (stripCollapsed) setStripCollapsed(false);
+      return;
+    }
+
+    if (dy > 0) {
+      downAccum.current += dy;
+      upAccum.current = 0;
+      if (!stripCollapsed && downAccum.current > HIDE_AFTER_SCROLL_DOWN) {
+        setStripCollapsed(true);
+      }
+    } else if (dy < 0) {
+      upAccum.current += -dy;
+      downAccum.current = 0;
+      if (stripCollapsed && upAccum.current > SHOW_AFTER_SCROLL_UP) {
+        setStripCollapsed(false);
+      }
+    }
   };
 
   const openProductChat = (product: FeedProduct) => {
@@ -196,7 +222,7 @@ export default function FeedScreen() {
   }, [error]);
 
   // Header: shop strip + tabs (search lives in nav Search tab only to avoid duplicate)
-  const Header = () => (
+  const header = (
     <>
       <Animated.View
         style={{
@@ -309,7 +335,7 @@ export default function FeedScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right"]}>
-      <Header />
+      {header}
       <FlatList
         className={isDark ? "bg-[#1a1c1d]" : "bg-white"}
         data={items}

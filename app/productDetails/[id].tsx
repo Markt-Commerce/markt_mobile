@@ -26,9 +26,6 @@ export default function ProductDetails() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [openDetails, setOpenDetails] = useState<{ [key: string]: boolean }>({
     details: true,
-    sizeFit: false,
-    composition: false,
-    delivery: false,
   });
   const router = useRouter();
   const {user, role} = useUser();
@@ -36,6 +33,11 @@ export default function ProductDetails() {
   const [product, setProduct] = useState<ProductDetail>();
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
+  const [hasMoreSimilar, setHasMoreSimilar] = useState(true);
+  // Ref guard, not state — onEndReached can fire more than once before a state
+  // update flushes, letting two calls fetch the same page and append duplicate
+  // ids (causing the FlatList "same key" error).
+  const fetchingSimilarRef = useRef(false);
   const ChatBottomSheetRef = useRef<BottomSheet>(null);
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
@@ -47,11 +49,19 @@ export default function ProductDetails() {
 
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
 
-
   const getOtherProducts = async () => {
+    if (fetchingSimilarRef.current || !hasMoreSimilar) return;
+    fetchingSimilarRef.current = true;
+    setLoading(true);
     try {
       const products = await getRecommendedProducts(page);
-      setSimilarProducts((prev)=>[...prev,...products])
+      setSimilarProducts((prev) => {
+        const merged = [...prev, ...products];
+        const seen = new Set<string>();
+        return merged.filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)));
+      });
+      setHasMoreSimilar(products.length > 0);
+      setPage((p) => p + 1);
     }
     catch (err) {
       show({
@@ -59,6 +69,9 @@ export default function ProductDetails() {
         title: "Error loading products",
         message: "There was an issue retrieving similar products.",
       })
+    } finally {
+      setLoading(false);
+      fetchingSimilarRef.current = false;
     }
   }
 
@@ -116,7 +129,7 @@ const addProductToCart = async (product:ProductDetail)=>{
   <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top", "left", "right", "bottom"]}>
     <FlatList
       data={similarProducts}
-      keyExtractor={(item) => item.id.toString()+Math.random().toString()}
+      keyExtractor={(item) => item.id.toString()}
       ListHeaderComponent={
         <>
 
@@ -247,34 +260,26 @@ const addProductToCart = async (product:ProductDetail)=>{
 
         {/* Collapsible Details */}
         <View className="mt-2">
-          {["details", "sizeFit", "composition", "delivery"].map((key) => (
-            <View key={key} className={`border-t px-6 ${isDark ? "border-[#46464e]" : "border-border"}`}>
-              <Pressable
-                onPress={() => toggleDetail(key)}
-                className="flex-row justify-between items-center py-5"
-              >
-                <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                  {key === "details"
-                    ? "The Details"
-                    : key === "sizeFit"
-                    ? "Size & Fit"
-                    : key === "composition"
-                    ? "Composition & Care"
-                    : "Delivery & Return"}
-                </Text>
-                <ArrowBigDown
-                  size={20}
-                  color={isDark ? "#f0f1f2" : "#000000"}
-                  style={{ transform: [{ rotate: openDetails[key] ? "180deg" : "0deg" }] }}
-                />
-              </Pressable>
-              {openDetails[key] && (
-                <Text className={`font-inter text-sm pb-5 leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                  {product.description}
-                </Text>
-              )}
-            </View>
-          ))}
+          <View className={`border-t px-6 ${isDark ? "border-[#46464e]" : "border-border"}`}>
+            <Pressable
+              onPress={() => toggleDetail("details")}
+              className="flex-row justify-between items-center py-5"
+            >
+              <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                The Details
+              </Text>
+              <ArrowBigDown
+                size={20}
+                color={isDark ? "#f0f1f2" : "#000000"}
+                style={{ transform: [{ rotate: openDetails.details ? "180deg" : "0deg" }] }}
+              />
+            </Pressable>
+            {openDetails.details && (
+              <Text className={`font-inter text-sm pb-5 leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                {product.description}
+              </Text>
+            )}
+          </View>
         </View>
 
         {/* Seller Info */}

@@ -6,7 +6,7 @@
  * Join → POST /socials/niches/<id>/join; tap → niche detail.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -27,6 +27,15 @@ import type { Niches } from "../models/niches";
 import type { Category } from "../models/categories";
 import { useToast } from "../components/ToastProvider";
 import { useTheme } from "../components/themeProvider";
+
+function dedupeById<T extends { id: string | number }>(items: T[]): T[] {
+  const seen = new Set<string | number>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
 
 function NicheCard({
   niche,
@@ -106,8 +115,15 @@ export default function DiscoverNichesScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [joiningId, setJoiningId] = useState<string | null>(null);
 
+  // Ref guard, not state — onEndReached can fire more than once before a state
+  // update flushes, letting two calls fetch the same page and append duplicate
+  // ids (causing the FlatList "same key" error).
+  const fetchingRef = useRef(false);
+
   const fetchNiches = useCallback(
     async (p: number, append: boolean) => {
+      if (fetchingRef.current) return;
+      fetchingRef.current = true;
       if (append) setLoadingMore(true);
       else if (p === 1) setLoading(true);
       try {
@@ -120,9 +136,9 @@ export default function DiscoverNichesScreen() {
         });
         const list = res.items ?? [];
         if (append) {
-          setNiches((prev) => [...prev, ...list]);
+          setNiches((prev) => dedupeById([...prev, ...list]));
         } else {
-          setNiches(list);
+          setNiches(dedupeById(list));
         }
         const totalPages = res.pagination?.total_pages ?? 1;
         setHasNext(p < totalPages);
@@ -132,6 +148,7 @@ export default function DiscoverNichesScreen() {
       } finally {
         setLoading(false);
         setLoadingMore(false);
+        fetchingRef.current = false;
       }
     },
     [search, selectedCategory]

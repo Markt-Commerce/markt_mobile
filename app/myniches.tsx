@@ -11,6 +11,15 @@ import CreateNicheBottomSheet from "../components/nicheCreateBottomSheet";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { useTheme } from "../components/themeProvider";
 
+function dedupeById<T extends { id: string | number }>(items: T[]): T[] {
+  const seen = new Set<string | number>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
+
 export default function MyNichesScreen() {
   const router = useRouter();
   const { show } = useToast();
@@ -23,9 +32,15 @@ export default function MyNichesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  // Ref guard, not state — onEndReached can fire more than once before a state
+  // update flushes, letting two calls fetch the same page and append duplicate
+  // ids (causing the FlatList "same key" error).
+  const fetchingRef = useRef(false);
 
   const fetchNiches = useCallback(
     async (pageNum = 1, isRefresh = false) => {
+      if (fetchingRef.current) return;
+      fetchingRef.current = true;
       try {
         if (isRefresh) setRefreshing(true);
         else setLoading(true);
@@ -33,10 +48,10 @@ export default function MyNichesScreen() {
         const response = await getMyNiches(pageNum, 10);
         const nicheList = response.items.map((m) => m.niche);
         if (isRefresh) {
-          setNiches(nicheList);
+          setNiches(dedupeById(nicheList));
           setPage(1);
         } else {
-          setNiches((prev) => (pageNum === 1 ? nicheList : [...prev, ...nicheList]));
+          setNiches((prev) => dedupeById(pageNum === 1 ? nicheList : [...prev, ...nicheList]));
           setPage(pageNum);
         }
 
@@ -51,6 +66,7 @@ export default function MyNichesScreen() {
       } finally {
         setLoading(false);
         setRefreshing(false);
+        fetchingRef.current = false;
       }
     },
     [show]
@@ -61,7 +77,7 @@ export default function MyNichesScreen() {
   }, []);
 
   const handleLoadMore = () => {
-    if (!loading && !refreshing && hasMore) {
+    if (hasMore) {
       fetchNiches(page + 1, false);
     }
   };

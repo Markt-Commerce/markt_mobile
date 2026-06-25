@@ -39,6 +39,9 @@ export default function PaymentInfo() {
         <WebView
           source={{ uri: checkoutUrl }}
           style={{ marginTop: 20, backgroundColor: isDark ? "#1a1c1d" : "white" }}
+          onNavigationStateChange={(navState) => {
+            if (navState.url.includes("")){}
+          }}
         />
     </View>
   );

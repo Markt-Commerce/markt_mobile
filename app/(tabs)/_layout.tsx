@@ -154,12 +154,6 @@ function TabsWithDrawer() {
             }}
           />
           <Tabs.Screen
-            name="buyerOrders"
-            options={{
-              href: null,
-            }}
-          />
-          <Tabs.Screen
             name="sellerOrders"
             options={{
               href: null,
