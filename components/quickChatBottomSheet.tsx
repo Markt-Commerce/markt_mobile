@@ -21,6 +21,7 @@ import { ArrowLeft } from "lucide-react-native";
 import ChatScreen from "./chat";
 import Avatar from "./Avatar";
 import { createOrGetRoom } from "../services/sections/chat";
+import { runMessageSellerFlow } from "../utils/messageSellerFlow";
 import { getProductById } from "../services/sections/product";
 import { ChatRoomLite } from "../models/chat";
 import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
@@ -36,7 +37,7 @@ export type QuickChatBottomSheetProps = {
   sellerId?: string;
   /** Buyer's user id — used when current user is seller */
   buyerId?: string;
-  /** Product id — scopes room to product; also used to fetch seller user id when feed lacks it (§1.3) */
+  /** Product id — optional room metadata; when set, auto-sends a product context message */
   product_id?: string;
   /** Other user info for chat header */
   otherUser?: ChatOtherUser;
@@ -160,10 +161,19 @@ export default function QuickChatBottomSheet({
           return;
         }
 
-        const result = await createOrGetRoom({
-          seller_id: resolvedSellerId,
-          product_id,
-        });
+        const result =
+          product_id
+            ? (
+                await runMessageSellerFlow({
+                  sellerUserId: resolvedSellerId,
+                  productId: product_id,
+                  otherUser: resolvedOtherUser,
+                })
+              ).room
+            : await createOrGetRoom({
+                seller_id: resolvedSellerId,
+                product_id,
+              });
         if (stale()) return;
         setRoomData(result);
       } else {

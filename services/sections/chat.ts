@@ -9,19 +9,28 @@ import {
   MessageReactionSummary,
 } from "../../models/chat";
 
+export const DEFAULT_PRODUCT_INQUIRY = "Hi, is this still available?";
+
+function unwrapChat<T>(res: T | { data: T }): T {
+  if (res && typeof res === "object" && "data" in res && (res as { data?: T }).data != null) {
+    return (res as { data: T }).data;
+  }
+  return res as T;
+}
+
 /**
  * Get user's rooms (paginated)
  */
 export async function getRooms(page = 1, per_page = 20): Promise<RoomListResponse> {
-  const res = await request<RoomListResponse>(`${BASE_URL}/chats/rooms?page=${page}&per_page=${per_page}`, {
+  const res = await request<RoomListResponse | { data: RoomListResponse }>(`${BASE_URL}/chats/rooms?page=${page}&per_page=${per_page}`, {
     method: "GET",
   });
-  return res!;
+  return unwrapChat(res!);
 }
 
 /**
- * Create or get a room with buyer/seller/product/request.
- * Idempotent per CHATS_API §1.2–1.3: returns existing room for same buyer+seller+product (or buyer+seller if no product_id).
+ * Create or get a 1:1 room between buyer and seller.
+ * One room per buyer–seller pair; product_id is optional room metadata only.
  */
 export async function createOrGetRoom(payload: {
   buyer_id?: string;
@@ -29,32 +38,45 @@ export async function createOrGetRoom(payload: {
   product_id?: string;
   request_id?: string;
 }): Promise<ChatRoomLite> {
-  const res = await request<ChatRoomLite>(`${BASE_URL}/chats/rooms`, {
+  const res = await request<ChatRoomLite | { data: ChatRoomLite }>(`${BASE_URL}/chats/rooms`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return res!;
+  return unwrapChat(res!);
 }
 
 /**
  * Get messages for a room (paginated)
  */
 export async function getRoomMessages(room_id: number, page = 1, per_page = 50): Promise<MessagesResponse> {
-  const res = await request<MessagesResponse>(`${BASE_URL}/chats/rooms/${room_id}/messages?page=${page}&per_page=${per_page}`, {
+  const res = await request<MessagesResponse | { data: MessagesResponse }>(`${BASE_URL}/chats/rooms/${room_id}/messages?page=${page}&per_page=${per_page}`, {
     method: "GET",
   });
-  return res!;
+  return unwrapChat(res!);
 }
 
 /**
- * Send message (fallback HTTP option). Server expects content, message_type, message_data optional.
+ * Send message via REST. Server expects content, message_type, optional message_data.
  */
 export async function sendMessageREST(room_id: number, body: { content: string; message_type: string; message_data?: any }): Promise<ChatMessage> {
-  const res = await request<ChatMessage>(`${BASE_URL}/chats/rooms/${room_id}/messages`, {
+  const res = await request<ChatMessage | { data: ChatMessage }>(`${BASE_URL}/chats/rooms/${room_id}/messages`, {
     method: "POST",
     body: JSON.stringify(body),
   });
-  return res!;
+  return unwrapChat(res!);
+}
+
+/** Product context message — use when opening chat from a product page or sharing a listing. */
+export async function sendProductMessage(
+  room_id: number,
+  product_id: string,
+  content: string = DEFAULT_PRODUCT_INQUIRY
+): Promise<ChatMessage> {
+  return sendMessageREST(room_id, {
+    content,
+    message_type: "product",
+    message_data: { product_id },
+  });
 }
 
 /**
@@ -122,23 +144,4 @@ export async function respondToDiscount(discount_id: number, body: { response: "
     method: "POST",
     body: JSON.stringify(body),
   });
-}
-
-/**
- * Mock: attach product to chat via REST (since server doesn't expose it yet).
- * We'll pretend it returns a message with message_type 'product'.
- */
-export async function sendProductMessageMock(room_id: number, user_id: string, product_id: string, note?: string): Promise<ChatMessage> {
-  // This is a mock — you should replace with real endpoint once available
-  const now = new Date().toISOString();
-  return {
-    id: Math.floor(Math.random() * 1000000),
-    room_id,
-    sender_id: user_id,
-    content: product_id,
-    message_type: "product",
-    message_data: { product_id },
-    is_read: false,
-    created_at: now,
-  };
 }
