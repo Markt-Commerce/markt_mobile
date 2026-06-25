@@ -1,5 +1,5 @@
 // ...existing code...
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { FlatList, ActivityIndicator, Text, TouchableOpacity } from "react-native";
 import OrderCard from "./orderCard";
 import { Order, OrderItem, SellerOrderItem } from "../models/orders";
@@ -8,6 +8,16 @@ interface OrdersListProps<T> {
   fetchOrders: (page: number) => Promise<T[]>;
   pressed?: (item: T) => any;
   isSeller?: boolean;
+}
+
+function dedupeById<T>(items: T[]): T[] {
+  const seen = new Set<string | number>();
+  return items.filter((item) => {
+    const id = (item as any).id;
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
 }
 
 export default function OrdersList<T extends Order | OrderItem | SellerOrderItem>({
@@ -20,16 +30,21 @@ export default function OrdersList<T extends Order | OrderItem | SellerOrderItem
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  // Ref guard, not state — FlatList can fire onEndReached more than once before
+  // a state update flushes, which would otherwise let two calls fetch the same
+  // page and append duplicate ids (causing the FlatList "same key" error).
+  const loadingRef = useRef(false);
 
   const loadOrders = useCallback(
     async (reset = false) => {
-      if (loading || (!hasMore && !reset)) return;
+      if (loadingRef.current || (!hasMore && !reset)) return;
+      loadingRef.current = true;
       setLoading(true);
 
       try {
         const nextPage = reset ? 1 : page;
         const newOrders = await fetchOrders(nextPage);
-        setOrders(reset ? newOrders : [...orders, ...newOrders]);
+        setOrders((prev) => dedupeById(reset ? newOrders : [...prev, ...newOrders]));
         setPage(nextPage + 1);
         setHasMore(newOrders.length > 0);
       } catch (err) {
@@ -37,9 +52,10 @@ export default function OrdersList<T extends Order | OrderItem | SellerOrderItem
       } finally {
         setLoading(false);
         setRefreshing(false);
+        loadingRef.current = false;
       }
     },
-    [loading, page, hasMore, orders, fetchOrders]
+    [page, hasMore, fetchOrders]
   );
 
   const onRefresh = () => {
@@ -47,18 +63,27 @@ export default function OrdersList<T extends Order | OrderItem | SellerOrderItem
     loadOrders(true);
   };
 
+  // Fetch the first page as soon as this list mounts — previously nothing
+  // triggered a fetch until the user manually pulled to refresh.
+  useEffect(() => {
+    loadOrders(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <FlatList
       data={orders}
+      keyExtractor={(item: any) => String(item.id)}
       renderItem={({ item }) => (
           <TouchableOpacity onPress={() => pressed && pressed(item)} activeOpacity={0.7}>
             <OrderCard order={item} isSeller={isSeller} />
           </TouchableOpacity>
       )}
+      onEndReached={() => loadOrders()}
       onEndReachedThreshold={0.5}
       refreshing={refreshing}
       onRefresh={onRefresh}
-      ListEmptyComponent={<Text className="text-center text-tertiary mt-5">No orders found</Text>} 
+      ListEmptyComponent={loading ? <ActivityIndicator className="mt-5" /> : <Text className="text-center text-tertiary mt-5">No orders found</Text>}
     />
   );
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {View,Text,ScrollView,FlatList,ActivityIndicator,TouchableOpacity,TextInput,Image, KeyboardAvoidingView, Dimensions, Share} from "react-native";
 import {  ArrowLeft,  Heart,  MessageCircle,  Send,  Image as ImageIcon, X, SendHorizonal} from "lucide-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -52,6 +52,7 @@ export default function PostDetailsScreen() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true); // Control for infinite scroll
+  const loadingCommentsRef = useRef(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -132,7 +133,11 @@ export default function PostDetailsScreen() {
   };
 
   const loadComments = useCallback(async () => {
-    if (loading || !hasMore) return;
+    // Ref guard, not state — onEndReached can fire more than once before a
+    // state update flushes, letting two calls fetch the same page and append
+    // duplicate ids (causing the FlatList "same key" error).
+    if (loadingCommentsRef.current || !hasMore) return;
+    loadingCommentsRef.current = true;
 
     setLoading(true);
     try {
@@ -140,8 +145,11 @@ export default function PostDetailsScreen() {
       const totalPages = commentResponse.pagination.total_pages;
       const newComments = commentResponse.items;
 
-      // Add comments first
-      setComments((prev) => [...prev, ...newComments]);
+      setComments((prev) => {
+        const merged = [...prev, ...newComments];
+        const seen = new Set<number>();
+        return merged.filter((c) => (seen.has(c.id) ? false : (seen.add(c.id), true)));
+      });
 
       // Increment page
       const nextPage = page + 1;
@@ -160,8 +168,10 @@ export default function PostDetailsScreen() {
         message: "There was an issue retrieving the post comments.",
       });
       setLoading(false);
+    } finally {
+      loadingCommentsRef.current = false;
     }
-  }, [id, page, loading, hasMore, show]);
+  }, [id, page, hasMore, show]);
 
   useEffect(() => {
     // Initial load of comments

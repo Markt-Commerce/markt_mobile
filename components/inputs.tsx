@@ -94,7 +94,7 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
         render={({ field: { onChange, onBlur, value: fieldValue } }) => (
           <>
             <View
-              className={`flex-row items-center rounded h-12 px-4 bg-background border ${
+              className={`flex-row items-center rounded h-12 px-4 border ${isDark ? "bg-[#1a1c1d]" : "bg-background"} ${
                 hasError ? "border-error" : isFocused ? (isDark ? "border-[#f0f1f2]" : "border-secondary") : isDark ? "border-[#46464e]" : "border-border"
               }`}
             >

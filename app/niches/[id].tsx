@@ -12,6 +12,15 @@ import BottomSheet from "@gorhom/bottom-sheet";
 import { likePost } from "../../services/sections/post";
 import { useTheme } from "../../components/themeProvider";
 
+function dedupeById<T extends { id: string | number }>(items: T[]): T[] {
+  const seen = new Set<string | number>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
+
 export default function NicheDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -32,6 +41,10 @@ export default function NicheDetailScreen() {
   const [postsRefreshKey, setPostsRefreshKey] = useState(0);
 
   const postFormRef = useRef<BottomSheet | null>(null);
+  // Ref guard, not state — onEndReached can fire more than once before a state
+  // update flushes, letting two calls fetch the same page and append duplicate
+  // ids (causing the FlatList "same key" error).
+  const fetchingPostsRef = useRef(false);
 
   useEffect(() => {
     if (id) {
@@ -117,12 +130,13 @@ export default function NicheDetailScreen() {
   };
 
   const loadNichePosts = async () => {
-    if (!id || loading || !hasMore || hasError) return;
+    if (!id || fetchingPostsRef.current || !hasMore || hasError) return;
+    fetchingPostsRef.current = true;
     setLoading(true);
     try {
       const res = await getNichePosts(id, page, 10);
       const items = res.items ?? [];
-      setPosts((prev) => (page === 1 ? items : [...prev, ...items]));
+      setPosts((prev) => dedupeById(page === 1 ? items : [...prev, ...items]));
 
       const totalPages = res.pagination?.total_pages ?? 1;
       setTotalPages(totalPages);
@@ -140,6 +154,7 @@ export default function NicheDetailScreen() {
       setHasError(true);
     } finally {
       setLoading(false);
+      fetchingPostsRef.current = false;
     }
   };
 

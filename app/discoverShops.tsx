@@ -2,7 +2,7 @@
  * Discover Shops — Full shop discovery with search and filters
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -20,6 +20,15 @@ import { getShops, getShopCategories } from "../services/sections/shops";
 import type { ShopLite, ShopCategory } from "../services/sections/shops";
 import Avatar from "../components/Avatar";
 import { useTheme } from "../components/themeProvider";
+
+function dedupeById<T extends { id: string | number }>(items: T[]): T[] {
+  const seen = new Set<string | number>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
 
 function ShopRow({
   shop,
@@ -88,8 +97,15 @@ export default function DiscoverShopsScreen() {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
 
+  // Ref guard, not state — onEndReached can fire more than once before a state
+  // update flushes, letting two calls fetch the same page and append duplicate
+  // ids (causing the FlatList "same key" error).
+  const fetchingRef = useRef(false);
+
   const fetchShops = useCallback(
     async (p: number, append: boolean) => {
+      if (fetchingRef.current) return;
+      fetchingRef.current = true;
       if (append) setLoadingMore(true);
       else if (p === 1) setLoading(true);
       try {
@@ -102,9 +118,9 @@ export default function DiscoverShopsScreen() {
           active_only: true,
         });
         if (append) {
-          setShops((prev) => [...prev, ...(res.shops ?? [])]);
+          setShops((prev) => dedupeById([...prev, ...(res.shops ?? [])]));
         } else {
-          setShops(res.shops ?? []);
+          setShops(dedupeById(res.shops ?? []));
         }
         setHasNext(res.pagination?.has_next ?? false);
         setPage(p);
@@ -113,6 +129,7 @@ export default function DiscoverShopsScreen() {
       } finally {
         setLoading(false);
         setLoadingMore(false);
+        fetchingRef.current = false;
       }
     },
     [search, selectedCategory, sortBy],

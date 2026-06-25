@@ -1,13 +1,16 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getCart, updateCartItem, deleteCartItem, getCartSummary, checkoutCart } from "../../services/sections/cart";
 import { Cart, CartItem, CartSummary, CheckoutRequest } from "../../models/cart";
 import { ArrowLeft, Trash2, ShoppingCart } from "lucide-react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useToast } from "../../components/ToastProvider";
 import { createOrder } from "../../services/sections/orders";
 import { useTheme } from "../../components/themeProvider";
+import { useShippingAddress } from "../../hooks/useShippingAddress";
+import { isShippingAddressUsable } from "../../utils/shippingAddress";
+import ShippingAddressCard from "../../components/shippingAddressCard";
 
 export default function CartScreen() {
   const router = useRouter();
@@ -20,11 +23,12 @@ export default function CartScreen() {
   const [processing, setProcessing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { show } = useToast();
+  const shipping = useShippingAddress();
 
   //map
-  const fetchCart = useCallback(async () => {
+  const fetchCart = useCallback(async (opts?: { silent?: boolean }) => {
     try {
-      if (!refreshing) setLoading(true);
+      if (!opts?.silent) setLoading(true);
       const [cartData, summaryData] = await Promise.all([getCart(), getCartSummary()]);
       setCart(cartData);
       setSummary(summaryData);
@@ -38,21 +42,24 @@ export default function CartScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [refreshing]);
+  }, []);
 
-  useEffect(() => {
-    fetchCart();
-  }, [fetchCart]);
+  // Re-check the backend every time the Cart tab gains focus, not just on first mount
+  useFocusEffect(
+    useCallback(() => {
+      fetchCart({ silent: true });
+    }, [fetchCart])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchCart();
+    fetchCart({ silent: true });
   };
 
   const formatMoney = (n?: number | string) => {
     const v = typeof n === "string" ? Number(n) : n ?? 0;
     try {
-      return Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(v);
+      return Intl.NumberFormat(undefined, { style: "currency", currency: "NGN", maximumFractionDigits: 2 }).format(v);
     } catch {
       return `₦${(v || 0).toFixed(2)}`;
     }
@@ -81,14 +88,22 @@ export default function CartScreen() {
   };
 
   const handleCheckout = async () => {
+    if (!isShippingAddressUsable(shipping.address)) {
+      show({
+        variant: "error",
+        title: "Shipping address required",
+        message: "Add a shipping address before checking out.",
+      });
+      return;
+    }
     try {
       setProcessing(true);
       const checkoutData: CheckoutRequest = {
         billing_address: {},
-        shipping_address: {},
+        shipping_address: shipping.address!,
         notes: "Checkout from mobile app",
       };
-      //await checkoutCart(checkoutData);
+      console.log("Checkout data:", checkoutData);
       const checkout = await checkoutCart(
         checkoutData
       );
@@ -133,7 +148,10 @@ export default function CartScreen() {
           <Text className={`flex-1 text-center text-xl font-geist font-bold pr-10 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Cart</Text>
         </View>
 
-        <View className="flex-1 items-center justify-center px-8">
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "#f0f1f2" : "#000000"} />}
+        >
           <View className={`w-24 h-24 rounded items-center justify-center mb-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
             <ShoppingCart size={40} color={isDark ? "#c6c5cf" : "#A1A1AA"} strokeWidth={1} />
           </View>
@@ -150,7 +168,7 @@ export default function CartScreen() {
           >
             <Text className="text-white font-geist font-bold">Start shopping</Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -244,8 +262,22 @@ export default function CartScreen() {
           </View>
         </View>
 
-        {/* Summary card */}
+        {/* Shipping address */}
         <View className="px-6 mt-6">
+          <ShippingAddressCard
+            address={shipping.address}
+            source={shipping.source}
+            loading={shipping.loading}
+            locating={shipping.locating}
+            locationDenied={shipping.locationDenied}
+            useCurrentLocation={shipping.useCurrentLocation}
+            updateAddress={shipping.updateAddress}
+            isDark={isDark}
+          />
+        </View>
+
+        {/* Summary card */}
+        <View className="px-6">
           <View className={`rounded border p-6 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
             <Text className={`text-lg font-geist font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Order Summary</Text>
 
@@ -265,13 +297,13 @@ export default function CartScreen() {
 
             <TouchableOpacity
               onPress={handleCheckout}
-              disabled={processing}
-              className={`mt-6 h-12 rounded items-center justify-center ${processing ? (isDark ? "bg-[#2f3132]" : "bg-surface") : "bg-primary"}`}
+              disabled={processing || !isShippingAddressUsable(shipping.address)}
+              className={`mt-6 h-12 rounded items-center justify-center ${processing || !isShippingAddressUsable(shipping.address) ? (isDark ? "bg-[#2f3132]" : "bg-surface") : "bg-primary"}`}
               activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel={processing ? "Processing" : "Proceed to checkout"}
             >
-              <Text className={`text-base font-geist font-bold ${processing ? (isDark ? "text-[#c6c5cf]" : "text-tertiary") : "text-white"}`}>
+              <Text className={`text-base font-geist font-bold ${processing || !isShippingAddressUsable(shipping.address) ? (isDark ? "text-[#c6c5cf]" : "text-tertiary") : "text-white"}`}>
                 {processing ? "Processing…" : "Proceed to Checkout"}
               </Text>
             </TouchableOpacity>

@@ -5,7 +5,7 @@
  *       Seller orders (seller mode)
  */
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import {
   Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { ArrowLeft, Trash2, RefreshCw, Info, ShoppingCart } from "lucide-react-native";
 import { useUser } from "../../hooks/userContextProvider";
 import {
@@ -32,6 +32,9 @@ import type { Order, SellerOrderItem } from "../../models/orders";
 import { useToast } from "../../components/ToastProvider";
 import OrdersList from "../../components/orderList";
 import { useTheme } from "../../components/themeProvider";
+import { useShippingAddress } from "../../hooks/useShippingAddress";
+import { isShippingAddressUsable } from "../../utils/shippingAddress";
+import ShippingAddressCard from "../../components/shippingAddressCard";
 
 type TabId = "cart" | "ongoing" | "completed";
 
@@ -58,10 +61,11 @@ function MyCartTab() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const shipping = useShippingAddress();
 
-  const fetchCart = useCallback(async () => {
+  const fetchCart = useCallback(async (opts?: { silent?: boolean }) => {
     try {
-      if (!refreshing) setLoading(true);
+      if (!opts?.silent) setLoading(true);
       const [cartData, summaryData] = await Promise.all([getCart(), getCartSummary()]);
       setCart(cartData);
       setSummary(summaryData);
@@ -75,11 +79,16 @@ function MyCartTab() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [refreshing]);
+  }, []);
 
-  useEffect(() => {
-    fetchCart();
-  }, [fetchCart]);
+  // Re-check the backend every time this tab gains focus, not just on first
+  // mount — the bottom tab navigator keeps this screen alive, so switching
+  // away and back wouldn't otherwise trigger a refetch.
+  useFocusEffect(
+    useCallback(() => {
+      fetchCart({ silent: true });
+    }, [fetchCart])
+  );
 
   const handleQuantityChange = async (item: CartItem, newQty: number) => {
     try {
@@ -97,11 +106,19 @@ function MyCartTab() {
   };
 
   const handleCheckout = async () => {
+    if (!isShippingAddressUsable(shipping.address)) {
+      show({
+        variant: "error",
+        title: "Shipping address required",
+        message: "Add a shipping address before checking out.",
+      });
+      return;
+    }
     try {
       setProcessing(true);
       const checkoutData: CheckoutRequest = {
         billing_address: {},
-        shipping_address: {},
+        shipping_address: shipping.address!,
         notes: "Checkout from mobile",
       };
       const checkout = await checkoutCart(checkoutData);
@@ -214,6 +231,16 @@ function MyCartTab() {
       </View>
 
       <View className="px-4 mt-4">
+        <ShippingAddressCard
+          address={shipping.address}
+          source={shipping.source}
+          loading={shipping.loading}
+          locating={shipping.locating}
+          locationDenied={shipping.locationDenied}
+          useCurrentLocation={shipping.useCurrentLocation}
+          updateAddress={shipping.updateAddress}
+          isDark={isDark}
+        />
         <View className={`rounded border p-4 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
           <Text className={`text-base font-extrabold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Order Summary</Text>
           <View className="flex-row justify-between py-1.5">
@@ -231,10 +258,10 @@ function MyCartTab() {
           </View>
           <TouchableOpacity
             onPress={handleCheckout}
-            disabled={processing}
-            className={`mt-4 h-12 rounded items-center justify-center ${processing ? (isDark ? "bg-[#2f3132]" : "bg-surface") : "bg-primary"}`}
+            disabled={processing || !isShippingAddressUsable(shipping.address)}
+            className={`mt-4 h-12 rounded items-center justify-center ${processing || !isShippingAddressUsable(shipping.address) ? (isDark ? "bg-[#2f3132]" : "bg-surface") : "bg-primary"}`}
           >
-            <Text className={processing ? (isDark ? "text-[#c6c5cf]" : "text-tertiary") : "text-white font-semibold"}>
+            <Text className={processing || !isShippingAddressUsable(shipping.address) ? (isDark ? "text-[#c6c5cf]" : "text-tertiary") : "text-white font-semibold"}>
               {processing ? "Processing…" : "Proceed to Checkout"}
             </Text>
           </TouchableOpacity>

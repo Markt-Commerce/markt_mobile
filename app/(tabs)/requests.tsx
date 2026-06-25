@@ -19,6 +19,7 @@ import { getBuyerRequests } from "../../services/sections/feed";
 import { BuyerRequest } from "../../models/feed";
 import RequestDisplayComponent from "../../components/requestDisplayComponent";
 import { useTheme } from "../../components/themeProvider";
+import { getMyRequests } from "../../services/sections/request";
 
 function RequestTabPill({
   label,
@@ -100,7 +101,7 @@ export default function RequestsScreen() {
 
   const fetchRequests = useCallback(async () => {
     try {
-      const data = await getBuyerRequests(1, 20);
+      const data = await getMyRequests();
       setItems(data);
     } catch {
       setItems([]);

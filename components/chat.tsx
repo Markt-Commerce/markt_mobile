@@ -169,6 +169,11 @@ export default function ChatScreen({
   const [page, setPage] = useState(1);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  // Ref guard, not state — onScroll fires far more often than onEndReached,
+  // so multiple calls can see loadingOlder still false before the state update
+  // flushes, letting two of them fetch the same page and prepend duplicate
+  // ids (causing the FlatList "same key" error).
+  const loadingOlderRef = useRef(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const router = useRouter();
   const { show } = useToast();
@@ -256,7 +261,8 @@ export default function ChatScreen({
   };
 
   const loadOlder = async () => {
-    if (loadingOlder || !hasMore || !roomId) return;
+    if (loadingOlderRef.current || !hasMore || !roomId) return;
+    loadingOlderRef.current = true;
     setLoadingOlder(true);
     try {
       const res = await getRoomMessages(roomId, page, PER_PAGE);
@@ -268,7 +274,11 @@ export default function ChatScreen({
           const msgId = Number(m.id);
           if (!isNaN(msgId) && msgId > 0) chatSocket.joinMessage(msgId, myId);
         });
-        setMessages((prev) => [...enriched, ...prev]);
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          const uniqueOlder = enriched.filter((m) => !existingIds.has(m.id));
+          return [...uniqueOlder, ...prev];
+        });
         setPage((p) => p + 1);
       }
       const total = res.pagination?.total ?? 0;
@@ -281,6 +291,7 @@ export default function ChatScreen({
       });
     } finally {
       setLoadingOlder(false);
+      loadingOlderRef.current = false;
     }
   };
 
@@ -1352,7 +1363,7 @@ export default function ChatScreen({
       style={{ paddingBottom: inputBottomPad }}
     >
       <View
-        className={`flex-1 flex-row items-center rounded pl-4 pr-1 py-1.5 h-11 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+        className={`flex-1 flex-row items-center rounded pl-4 pr-1 py-1.5 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
       >
         <InputComponent
           value={input}
@@ -1547,7 +1558,7 @@ export default function ChatScreen({
   return (
     <KeyboardAvoidingView
       className={`flex-1 ${isDark ? "bg-dark-page" : "bg-bg-elevated"}`}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={0}
     >
       {/* Header */}

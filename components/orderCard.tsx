@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, Image, TouchableOpacity } from "react-native";
 import { Order, OrderItem, SellerOrderItem } from "../models/orders";
 import { useTheme } from "./themeProvider";
+import { formatNaira } from "../utils/formatCurrency";
 
 interface OrderCardProps {
   order: Order | OrderItem | SellerOrderItem | any;
@@ -35,7 +36,7 @@ export default function OrderCard({ order, isSeller }: OrderCardProps) {
     // SellerOrderItem
     title = order.product?.name ?? `Item ${order.id ?? ""}`;
     subtitle = `Order #: ${order.order?.order_number ?? order.order_id ?? ""}`;
-    priceText = typeof order.price !== "undefined" ? `$${order.price}` : "";
+    priceText = typeof order.price !== "undefined" ? formatNaira(order.price) : "";
     //imageUri = order.product?.image ?? undefined;
   } else if (isOrder(order)) {
     // Order (buyer)
@@ -44,14 +45,14 @@ export default function OrderCard({ order, isSeller }: OrderCardProps) {
     subtitle = `Status: ${order.status ?? "unknown"}`;
     // Prefer total, then subtotal, then compute
     const val = order.total ?? order.subtotal ?? 0;
-    priceText = typeof val === "number" ? `$${val}` : String(val ?? "");
+    priceText = typeof val === "number" ? formatNaira(val) : String(val ?? "");
     //imageUri = firstItem?.product?.image ?? undefined;
   } else if (isOrderItem(order)) {
     // OrderItem (could be used in some contexts)
     title = order.product?.name ?? `Item ${order.product_id ?? ""}`;
     subtitle = `Qty: ${order.quantity ?? 0} • Status: ${order.status ?? ""}`;
-    priceText = typeof order.price !== "undefined" ? `$${order.price}` : "";
-    
+    priceText = typeof order.price !== "undefined" ? formatNaira(order.price) : "";
+
   } else {
     // Unknown shape - defensive defaults
     title = order?.title ?? order?.name ?? `Order ${order?.id ?? ""}`;

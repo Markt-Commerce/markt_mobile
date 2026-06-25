@@ -199,9 +199,21 @@ export interface UpdateCartItemRequest {
 
 export type UpdateCartItemResponse = CartItem;
 
+/** Matches the fields the backend reads off checkout_data.shipping_address (see tempinst.py) */
+export interface ShippingAddressPayload {
+  recipient_name?: string;
+  street_address?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
 export interface CheckoutRequest {
   billing_address: Record<string, string>;
-  shipping_address: Record<string, string>;
+  shipping_address: ShippingAddressPayload;
   notes: string;
 }
 
