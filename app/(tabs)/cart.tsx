@@ -2,11 +2,11 @@ import React, { useState, useCallback } from "react";
 import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getCart, updateCartItem, deleteCartItem, getCartSummary, checkoutCart } from "../../services/sections/cart";
-import { Cart, CartItem, CartSummary, CheckoutRequest } from "../../models/cart";
+import { buildCheckoutRequest } from "../../utils/checkoutPayload";
+import { Cart, CartItem, CartSummary } from "../../models/cart";
 import { ArrowLeft, Trash2, ShoppingCart } from "lucide-react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useToast } from "../../components/ToastProvider";
-import { createOrder } from "../../services/sections/orders";
 import { useTheme } from "../../components/themeProvider";
 import { useShippingAddress } from "../../hooks/useShippingAddress";
 import { isShippingAddressUsable } from "../../utils/shippingAddress";
@@ -98,23 +98,15 @@ export default function CartScreen() {
     }
     try {
       setProcessing(true);
-      const checkoutData: CheckoutRequest = {
-        billing_address: {},
-        shipping_address: shipping.address!,
-        notes: "Checkout from mobile app",
-      };
-      console.log("Checkout data:", checkoutData);
       const checkout = await checkoutCart(
-        checkoutData
+        buildCheckoutRequest(shipping.address!, "Checkout from mobile app")
       );
       show({
         variant: "success",
         title: "Checkout successful",
         message: "Your order has been placed successfully.",
       });
-      //proceed to payment section
-
-      fetchCart(); // reset cart
+      fetchCart();
       router.push(`/checkout/payment-method/${checkout.order_id}`);
     } catch (err) {
       show({

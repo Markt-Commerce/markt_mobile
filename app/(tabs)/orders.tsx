@@ -27,7 +27,8 @@ import {
   checkoutCart,
 } from "../../services/sections/cart";
 import { getBuyerOrders, getSellerOrders } from "../../services/sections/orders";
-import { Cart, CartItem, CartSummary, CheckoutRequest } from "../../models/cart";
+import { buildCheckoutRequest } from "../../utils/checkoutPayload";
+import { Cart, CartItem, CartSummary } from "../../models/cart";
 import type { Order, SellerOrderItem } from "../../models/orders";
 import { useToast } from "../../components/ToastProvider";
 import OrdersList from "../../components/orderList";
@@ -116,12 +117,9 @@ function MyCartTab() {
     }
     try {
       setProcessing(true);
-      const checkoutData: CheckoutRequest = {
-        billing_address: {},
-        shipping_address: shipping.address!,
-        notes: "Checkout from mobile",
-      };
-      const checkout = await checkoutCart(checkoutData);
+      const checkout = await checkoutCart(
+        buildCheckoutRequest(shipping.address!, "Checkout from mobile")
+      );
       show({
         variant: "success",
         title: "Checkout successful",

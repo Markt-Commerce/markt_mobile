@@ -214,10 +214,20 @@ export interface ShippingAddressPayload {
 export interface CheckoutRequest {
   billing_address: Record<string, string>;
   shipping_address: ShippingAddressPayload;
-  notes: string;
+  notes?: string;
+  use_saved_address?: boolean;
+  idempotency_key?: string;
 }
 
 export interface CheckoutResponse {
   message: string;
   order_id: string;
+  order_number?: string;
+  status?: string;
+  subtotal?: number;
+  shipping_fee?: number;
+  tax?: number;
+  discount?: number;
+  total?: number;
+  shipping_address?: ShippingAddressPayload;
 }

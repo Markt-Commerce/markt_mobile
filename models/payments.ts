@@ -1,3 +1,5 @@
+export type PaymentMethod = "card" | "bank_transfer" | "mobile_money" | "wallet";
+
 export interface PaymentPayload {
   bank: {
     [key: string]: string;
@@ -16,7 +18,7 @@ export interface GatewayResponseData {
 export interface Transaction {
   method: string;
   transaction_id: string;
-  gateway_response: {
+  gateway_response?: {
     data: GatewayResponseData;
     message: string;
     status: boolean;
@@ -32,11 +34,12 @@ export interface Transaction {
 }
 
 export interface PaymentInit {
-  method: "card" | "bank_transfer";
-  currency: string;      // e.g. "NGN"
+  method: PaymentMethod;
+  currency: string;
   order_id: string;
-  metadata: Record<string, any>;
-  amount: number;
+  metadata?: Record<string, unknown>;
+  /** Omit to let server charge order.total */
+  amount?: number;
   idempotency_key?: string;
 }
 
@@ -49,10 +52,16 @@ export interface BankOrCardAuthorization {
   metadata: Record<string, any>;
 }
 
-
 export interface InitializeResponse {
-    access_code: string,
-    authorization_url: string,
-    payment_id: string,
-    reference: string
+  access_code: string;
+  authorization_url: string;
+  payment_id: string;
+  reference: string;
+}
+
+export interface VerifyPaymentResponse {
+  verified: boolean;
+  amount?: number;
+  gateway_response?: Record<string, unknown>;
+  already_completed?: boolean;
 }
