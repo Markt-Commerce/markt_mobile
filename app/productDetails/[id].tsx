@@ -9,8 +9,6 @@ import { addToCart } from "../../services/sections/cart";
 import { getRecommendedProducts } from "../../services/sections/feed";
 import { Product } from "../../models/feed";
 import { SafeAreaView } from "react-native-safe-area-context";
-import BottomSheet from "@gorhom/bottom-sheet";
-import QuickChatBottomSheet from "../../components/quickChatBottomSheet";
 import { useUser } from "../../hooks/userContextProvider";
 import { useToast } from "../../components/ToastProvider";
 import { formatNaira } from "../../utils/formatCurrency";
@@ -18,6 +16,7 @@ import { isOwnProductListing } from "../../utils/chatGuards";
 import { normalizeUri, resolveMediaUri } from "../../utils/imageUri";
 import Avatar from "../../components/Avatar";
 import { useTheme } from "../../components/themeProvider";
+import { runMessageSellerFlow } from "../../utils/messageSellerFlow";
 
 export default function ProductDetails() {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -33,12 +32,12 @@ export default function ProductDetails() {
   const [product, setProduct] = useState<ProductDetail>();
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
+  const [messageSellerBusy, setMessageSellerBusy] = useState(false);
   const [hasMoreSimilar, setHasMoreSimilar] = useState(true);
   // Ref guard, not state — onEndReached can fire more than once before a state
   // update flushes, letting two calls fetch the same page and append duplicate
   // ids (causing the FlatList "same key" error).
   const fetchingSimilarRef = useRef(false);
-  const ChatBottomSheetRef = useRef<BottomSheet>(null);
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
@@ -123,7 +122,66 @@ const addProductToCart = async (product:ProductDetail)=>{
 
   const sellerUserId = product.seller_user?.id ?? (product as any).seller?.user?.id;
   const isOwnProduct = isOwnProductListing(user?.user_id, sellerUserId);
-  const canMessageSeller = role === "buyer" && !isOwnProduct;
+  const canMessageSeller = !!user && role === "buyer" && !isOwnProduct;
+
+  const handleMessageSeller = async () => {
+    if (!user || !product || messageSellerBusy) return;
+
+    const resolvedSellerId = sellerUserId ?? product.seller_user?.id;
+    if (!resolvedSellerId) {
+      show({
+        variant: "error",
+        title: "Seller unavailable",
+        message: "Could not find the seller for this product.",
+      });
+      return;
+    }
+
+    setMessageSellerBusy(true);
+    try {
+      const { room } = await runMessageSellerFlow({
+        sellerUserId: String(resolvedSellerId),
+        productId: product.id,
+        otherUser: {
+          username: product.seller_user?.username ?? product.seller?.shop_name,
+          profile_picture:
+            product.seller_user?.profile_picture ??
+            normalizeUri(product.seller?.profile_picture_url) ??
+            undefined,
+        },
+      });
+
+      const profilePicture =
+        product.seller_user?.profile_picture ??
+        normalizeUri(product.seller?.profile_picture_url) ??
+        "";
+
+      router.push({
+        pathname: "/chat/[id]",
+        params: {
+          id: String(room.id),
+          username: product.seller_user?.username ?? product.seller?.shop_name ?? "",
+          profilePicture,
+          productId: product.id,
+        },
+      });
+    } catch (err: unknown) {
+      const status = (err as { status?: number })?.status;
+      const message =
+        err instanceof Error ? err.message : "Could not start chat. Please try again.";
+      if (status === 401) {
+        router.push("/login");
+        return;
+      }
+      show({
+        variant: "error",
+        title: "Message seller",
+        message,
+      });
+    } finally {
+      setMessageSellerBusy(false);
+    }
+  };
 
   return (
   <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top", "left", "right", "bottom"]}>
@@ -218,9 +276,14 @@ const addProductToCart = async (product:ProductDetail)=>{
               {canMessageSeller ? (
                 <TouchableOpacity
                   className="flex-1 bg-primary rounded h-12 justify-center items-center"
-                  onPress={() => ChatBottomSheetRef.current?.expand()}
+                  disabled={messageSellerBusy}
+                  onPress={handleMessageSeller}
                 >
-                  <Text className="text-white font-geist font-bold">Message Seller</Text>
+                  {messageSellerBusy ? (
+                    <ActivityIndicator color="#ffffff" />
+                  ) : (
+                    <Text className="text-white font-geist font-bold">Message Seller</Text>
+                  )}
                 </TouchableOpacity>
               ) : isOwnProduct ? (
                 <View className={`flex-1 rounded h-12 justify-center items-center px-2 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
@@ -397,19 +460,6 @@ const addProductToCart = async (product:ProductDetail)=>{
       }
     />
 
-    {canMessageSeller && product.seller_user && (
-      <QuickChatBottomSheet
-        sheetRef={ChatBottomSheetRef}
-        sellerId={String(sellerUserId ?? product.seller_user.id)}
-        buyerId={user?.user_id?.toString() ?? ""}
-        product_id={product.id}
-        otherUser={{
-          username: product.seller_user.username,
-          profile_picture: product.seller_user.profile_picture,
-        }}
-        asBuyer
-      />
-    )}
   </SafeAreaView>
 );
 

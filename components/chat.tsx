@@ -49,7 +49,7 @@ import {
   getReactions,
   addReaction,
   removeReaction,
-  sendProductMessageMock,
+  sendProductMessage,
   sendMessageREST,
   getRoomDiscounts,
   respondToDiscount,
@@ -139,6 +139,16 @@ function formatTime(iso: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+/** User-facing text above a product card (excludes bare product ids / share labels). */
+function productMessageCaption(content: string | undefined, productId?: string): string | null {
+  const text = (content ?? "").trim();
+  if (!text) return null;
+  if (text === productId) return null;
+  if (/^PRD_[\w]+$/.test(text)) return null;
+  if (text === "Sharing product") return null;
+  return text;
 }
 
 export default function ChatScreen({
@@ -780,28 +790,8 @@ export default function ChatScreen({
     if (sending) return;
     setSending(true);
     try {
-      const selected = productList.find((p) => p.id === productId);
-      const imageUrl = resolveProductImageUri(selected);
-      const mock = await sendProductMessageMock(roomId, myId, productId);
-      setMessages((prev) => [
-        ...prev,
-        {
-          ...mock,
-          pending: false,
-          message_data: {
-            product_id: productId,
-            product: selected
-              ? {
-                  id: selected.id,
-                  name: selected.name,
-                  price: selected.price,
-                  image_url: imageUrl ?? undefined,
-                }
-              : { product_id: productId },
-          },
-        },
-      ]);
-      await chatSocket.sendProduct(roomId, myId, productId, "Sharing product");
+      const msg = await sendProductMessage(roomId, productId, "Sharing product");
+      setMessages((prev) => [...prev, { ...msg, pending: false }]);
       setProductVisible(false);
       show({
         variant: "success",
@@ -1072,6 +1062,7 @@ export default function ChatScreen({
                 ? String(item.message_data.product_id)
                 : (item.content || "").match(/PRD_[\w]+/)?.[0];
               const embeddedProduct = item.message_data?.product;
+              const caption = productMessageCaption(item.content, productId);
               if (!productId && !embeddedProduct?.id) {
                 return (
                   <View
@@ -1086,12 +1077,25 @@ export default function ChatScreen({
                 );
               }
               return (
-                <ChatProductDisplayComponent
-                  productId={productId}
-                  embeddedProduct={embeddedProduct}
-                  showAddToCart={role === "buyer"}
-                  onAddToCart={handleAddProductToCart}
-                />
+                <View className="gap-2">
+                  {caption ? (
+                    <View
+                      className={`px-4 py-3 rounded ${isMe ? "rounded-br bg-primary" : isDark ? "rounded-bl bg-dark-surface border border-dark-border" : "rounded-bl bg-white border border-border"}`}
+                    >
+                      <Text
+                        className={`text-base ${isMe ? "text-white" : isDark ? "text-dark-text" : "text-black"}`}
+                      >
+                        {caption}
+                      </Text>
+                    </View>
+                  ) : null}
+                  <ChatProductDisplayComponent
+                    productId={productId}
+                    embeddedProduct={embeddedProduct}
+                    showAddToCart={role === "buyer"}
+                    onAddToCart={handleAddProductToCart}
+                  />
+                </View>
               );
             })()}
 

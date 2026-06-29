@@ -244,7 +244,17 @@ export default function OrderDetail() {
           <Row label="Total" value={order.total} bold isDark={isDark} />
         </View>
 
-        <View className="flex pb-10">
+        <View className="flex pb-10 gap-3">
+          {order.status === "pending_payment" ? (
+            <TouchableOpacity
+              className="bg-primary h-12 rounded justify-center items-center"
+              onPress={() => router.push(`/checkout/payment-method/${order.id}`)}
+            >
+              <Text className="text-white font-geist font-bold text-base">
+                Pay now
+              </Text>
+            </TouchableOpacity>
+          ) : null}
           <TouchableOpacity
             className="bg-primary h-12 rounded justify-center items-center relative"
             onPress={() => router.push(`/orders/${id}/track`)}

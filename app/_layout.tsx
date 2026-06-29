@@ -14,6 +14,7 @@ import { RegisterRequest } from "../models/auth";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import React from "react";
+import PaymentDeepLinkHandler from "../components/PaymentDeepLinkHandler";
 
 export default function RootLayout() {
   const [regData, setRegData] = useState<RegisterRequest>({
@@ -73,6 +74,7 @@ export function AppStack() {
   return (
     <>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+      {isLoggedIn ? <PaymentDeepLinkHandler /> : null}
       <Stack
         screenOptions={{
           headerShown: false,
