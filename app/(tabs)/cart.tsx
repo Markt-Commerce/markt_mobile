@@ -109,6 +109,7 @@ export default function CartScreen() {
       fetchCart();
       router.push(`/checkout/payment-method/${checkout.order_id}`);
     } catch (err) {
+      //console.error("Checkout failed:", err);
       show({
         variant: "error",
         title: "Checkout failed",
