@@ -14,7 +14,9 @@ import { ApiResponse } from "../../models/auth";
 
 // Get cart
 export async function getCart(): Promise<Cart> {
-  const res = await request<Cart>(`${BASE_URL}/cart`, {
+  // Trailing slash: `/cart` 308-redirects to cleartext `http://.../cart/`, which
+  // release Android APKs block — hitting the canonical URL avoids the redirect.
+  const res = await request<Cart>(`${BASE_URL}/cart/`, {
     method: "GET",
   });
   return res;
