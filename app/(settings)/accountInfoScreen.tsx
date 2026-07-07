@@ -18,6 +18,7 @@ import { UserProfile } from '../../models/profile';
 import { attemptMultipleUpload } from '../../services/sections/media';
 import { isArray } from 'lodash';
 import { useTheme } from '../../components/themeProvider';
+import logger from '../../utils/logger';
 
 const BuyerSchema = z.object({
   buyername: z.string().min(2).max(60).optional(),
@@ -101,7 +102,7 @@ export default function AccountInfoScreen() {
           resetGeneral({ phone_number: profile.phone_number || '' });
           return profile;
         } catch (err) {
-          console.error("Error fetching profile:", err);
+          logger.error("Error fetching profile:", err);
         }
       };
       fetchProfile();

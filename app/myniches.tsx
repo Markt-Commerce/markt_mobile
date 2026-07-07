@@ -10,6 +10,7 @@ import { Niches } from "../models/niches";
 import CreateNicheBottomSheet from "../components/nicheCreateBottomSheet";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { useTheme } from "../components/themeProvider";
+import logger from "../utils/logger";
 
 function dedupeById<T extends { id: string | number }>(items: T[]): T[] {
   const seen = new Set<string | number>();
@@ -62,7 +63,7 @@ export default function MyNichesScreen() {
           title: "Error loading niches",
           message: "Failed to load your niches. Please try again.",
         });
-        console.error("Error loading niches:", err);
+        logger.error("Error loading niches:", err);
       } finally {
         setLoading(false);
         setRefreshing(false);

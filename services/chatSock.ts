@@ -8,10 +8,12 @@ import {
   OfflineQueueItem,
   TypingUpdate,
 } from "../models/chat";
-import { BASE_URL } from "./api";
+import { getAuthToken } from "./authStorage";
+import { CHAT_SOCKET_URL } from "./config";
+import logger from "../utils/logger";
 
 const CHAT_NAMESPACE = "/chat";
-const SOCKET_URL = "https://test.api.marktcommerce.com/chat";
+const SOCKET_URL = CHAT_SOCKET_URL;
 
 // STORAGE & QUEUE
 const OFFLINE_QUEUE_KEY = "markt.chat.offlineQueue";
@@ -59,12 +61,19 @@ class ChatSocket {
   private typingGuards = new Map<number, number>();
 
   // ===== Connection =====
-  connect() {
+  async connect() {
     if (this.socket) return;
+
+    // RN doesn't persist cookies like a browser, so REST auth uses a Bearer token
+    // (see services/api.ts). Attach the same token to the socket handshake so the
+    // server can authenticate the connection. We send it both as an `auth` payload
+    // and an Authorization header to cover either middleware style.
+    const token = await getAuthToken();
 
     this.socket = io(SOCKET_URL, {
       transports: ["websocket", "polling"],
-      //withCredentials: true,          // session cookie auth
+      auth: token ? { token } : undefined,
+      extraHeaders: token ? { Authorization: `Bearer ${token}` } : undefined,
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 5000,
@@ -139,10 +148,10 @@ class ChatSocket {
 
     // errors
     this.socket.on("error", (e: any) => {
-      console.warn("[chat] error:", e?.message ?? e);
+      logger.warn("[chat] error:", e?.message ?? e);
     });
     this.socket.on("connect_error", (e: any) => {
-      console.warn("[chat] connect_error:", e?.message ?? e);
+      logger.warn("[chat] connect_error:", e?.message ?? e);
     });
   }
 

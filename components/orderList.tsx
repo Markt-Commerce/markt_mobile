@@ -3,6 +3,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import { FlatList, ActivityIndicator, Text, TouchableOpacity } from "react-native";
 import OrderCard from "./orderCard";
 import { Order, OrderItem, SellerOrderItem } from "../models/orders";
+import logger from "../utils/logger";
 
 interface OrdersListProps<T> {
   fetchOrders: (page: number) => Promise<T[]>;
@@ -48,7 +49,7 @@ export default function OrdersList<T extends Order | OrderItem | SellerOrderItem
         setPage(nextPage + 1);
         setHasMore(newOrders.length > 0);
       } catch (err) {
-        console.error("Failed to fetch orders:", err);
+        logger.error("Failed to fetch orders:", err);
       } finally {
         setLoading(false);
         setRefreshing(false);

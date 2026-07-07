@@ -12,6 +12,12 @@ import { getUserProfile } from "../../services/sections/profile";
 import Avatar from "../../components/Avatar";
 import type { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";
+import { getProductById } from "../../services/sections/product";
+import { addToCart } from "../../services/sections/cart";
+import type { ProductDetail } from "../../models/products";
+import { formatNaira } from "../../utils/formatCurrency";
+import { resolveProductImageUri } from "../../utils/imageUri";
+import logger from "../../utils/logger";
 
 
 
@@ -59,6 +65,8 @@ export default function PostDetailsScreen() {
   const { show } = useToast();
   const { user } = useUser();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [sponsoredProduct, setSponsoredProduct] = useState<ProductDetail | null>(null);
+  const [addingToCart, setAddingToCart] = useState(false);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
 
@@ -110,6 +118,48 @@ export default function PostDetailsScreen() {
   useEffect(() => {
     if (id) FetchPost(id);
   }, [id]);
+
+  // Resolve the attached ("sponsored") product — the post only carries product_id(s).
+  useEffect(() => {
+    const productId = post?.products?.[0]?.product_id;
+    if (!productId) {
+      setSponsoredProduct(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const detail = await getProductById(productId);
+        if (!cancelled) setSponsoredProduct(detail);
+      } catch (err) {
+        if (!cancelled) logger.error("Failed to load sponsored product:", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [post?.products]);
+
+  const handleAddSponsoredToCart = async () => {
+    if (!sponsoredProduct || addingToCart) return;
+    setAddingToCart(true);
+    try {
+      await addToCart({ product_id: sponsoredProduct.id, variant_id: 0, quantity: 1 });
+      show({
+        variant: "success",
+        title: "Added to cart",
+        message: `${sponsoredProduct.name} has been added to your cart.`,
+      });
+    } catch {
+      show({
+        variant: "error",
+        title: "Could not add to cart",
+        message: "Please sign in as a buyer and try again.",
+      });
+    } finally {
+      setAddingToCart(false);
+    }
+  };
 
   useEffect(() => {
     getUserProfile()
@@ -289,37 +339,55 @@ export default function PostDetailsScreen() {
       )}
       
 
-      {/* Sponsored Product: I will work on a way to get the product details later */}
-      {post.products?.length > 0 && (
-        <View className="p-4">
+      {/* Attached product — resolved from the post's product_id */}
+      {sponsoredProduct && (
+        <TouchableOpacity
+          className="p-4"
+          activeOpacity={0.8}
+          onPress={() => router.push(`/productDetails/${sponsoredProduct.id}`)}
+        >
         <View className="flex items-stretch justify-between gap-4 rounded flex-row">
           <View className="flex flex-[2_2_0px] flex-col gap-4">
             <View className="flex flex-col gap-1">
               <Text className={`text-sm font-normal leading-normal ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                Sponsored
+                Featured product
               </Text>
-              <Text className={`text-base font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                Le name of ze product
+              <Text
+                numberOfLines={2}
+                className={`text-base font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+              >
+                {sponsoredProduct.name}
               </Text>
               <Text className={`text-sm font-normal leading-normal ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                Le price of ze product
+                {formatNaira(sponsoredProduct.price)}
               </Text>
             </View>
             <TouchableOpacity
-              className={`flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded h-8 px-4 flex-row-reverse w-fit ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
-              onPress={() => console.log("Add to cart")}
+              disabled={addingToCart}
+              className={`flex min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded h-8 px-4 flex-row-reverse w-fit ${addingToCart ? "opacity-60" : ""} ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+              onPress={handleAddSponsoredToCart}
+              accessibilityRole="button"
+              accessibilityLabel={`Add ${sponsoredProduct.name} to cart`}
             >
-              <Text className={`text-sm font-medium leading-normal truncate ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                Add to Cart
-              </Text>
+              {addingToCart ? (
+                <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
+              ) : (
+                <Text className={`text-sm font-medium leading-normal truncate ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                  Add to Cart
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
-          <Image
-            source={{ uri: "https://i.pravatar.cc/150?img=7" }}
-            className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded flex-1"
-          />
+          {resolveProductImageUri(sponsoredProduct) ? (
+            <Image
+              source={{ uri: resolveProductImageUri(sponsoredProduct)! }}
+              className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded flex-1"
+            />
+          ) : (
+            <View className={`flex-1 aspect-video rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`} />
+          )}
         </View>
-      </View>
+      </TouchableOpacity>
       )}
 
       {/* Social Actions — aligned with FeedPostCard: gap-6, min-h-[44px], orange heart when liked */}

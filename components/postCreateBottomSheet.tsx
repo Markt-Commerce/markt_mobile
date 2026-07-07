@@ -21,6 +21,7 @@ import { createPost } from "../services/sections/post";
 import { createNichePost } from "../services/sections/niches";
 import { useToast } from "./ToastProvider";
 import { useTheme } from "./themeProvider";
+import logger from "../utils/logger";
 
 const postSchema = z.object({
   caption: z.string().max(1000, "Caption too long").optional(),
@@ -150,7 +151,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
             const cats = await getAllCategories();
             setCategories(cats);
         } catch (error) {
-            console.error("Failed to fetch categories:", error);
+            logger.error("Failed to fetch categories:", error);
             //Todo: handle error appropriately, e.g., show a message to the user in the UI 
         }
       }
@@ -173,7 +174,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
           const products = await getSellerProducts(Number(user?.user_id) || 0); //ensure user_id is a number
           setProductList(products);
         } catch (error) {
-          console.error("Failed to fetch products:", error);
+          logger.error("Failed to fetch products:", error);
         }
       }
       if (productVisible) {

@@ -1,7 +1,9 @@
 // services/api.ts
 import { getAuthToken, setAuthToken, clearUserSession } from "./authStorage";
+import { API_BASE_URL } from "./config";
 
-export const BASE_URL = "https://test.api.marktcommerce.com/api/v1";
+/** Re-exported for the many callers that import BASE_URL from here. Source of truth: config.ts */
+export const BASE_URL = API_BASE_URL;
 
 /** Called on 401 — register from UserProvider to clear context and redirect */
 let onUnauthorized: (() => void) | null = null;

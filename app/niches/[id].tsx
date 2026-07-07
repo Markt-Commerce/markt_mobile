@@ -11,6 +11,7 @@ import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { likePost } from "../../services/sections/post";
 import { useTheme } from "../../components/themeProvider";
+import logger from "../../utils/logger";
 
 function dedupeById<T extends { id: string | number }>(items: T[]): T[] {
   const seen = new Set<string | number>();
@@ -147,7 +148,7 @@ export default function NicheDetailScreen() {
         setNiche((prev) => prev ?? items[0].niche);
       }
     } catch (err) {
-      console.error("Failed to load niche posts:", err);
+      logger.error("Failed to load niche posts:", err);
       if (page === 1) {
         show({ variant: "error", title: "Error", message: "Could not load posts." });
       }

@@ -3,6 +3,7 @@ import { View, Text, Image, TouchableOpacity } from "react-native";
 import { BuyerRequest } from "../models/feed";
 import { router } from "expo-router";
 import { useTheme } from "./themeProvider";
+import { defaultProfilePicture } from "../models/defaults";
 
 type Buyer = {
   profile_picture_url?: string;
@@ -38,9 +39,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
           <View className="flex-row items-center flex-1 pr-3">
             <Image
               source={{
-                uri:
-                  req.buyer?.profile_picture_url ||
-                  "https://placehold.co/40x40?text=User",
+                uri: req.buyer?.profile_picture_url || defaultProfilePicture,
               }}
               className={`w-10 h-10 rounded-full mr-3 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
             />
