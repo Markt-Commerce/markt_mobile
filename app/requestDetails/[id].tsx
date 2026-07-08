@@ -27,6 +27,7 @@ import QuickChatBottomSheet from "../../components/quickChatBottomSheet";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { useUser } from "../../hooks/userContextProvider";
 import { useTheme } from "../../components/themeProvider";
+import { defaultProfilePicture } from "../../models/defaults";
 
 const { width } = Dimensions.get("window");
 
@@ -103,9 +104,7 @@ export default function BuyerRequestDetails() {
               />
             ) : (
               <Image
-                source={{
-                  uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuB4NLBAN7hDkRl-9HwCICabka7xQ_sioumpHL0m5wDUnWALWnELPyTin0EriDdEXOVQzz4xOgMaLFT3R6fIuVhSSFNgB_K-OuzoH5mjfgVRy4Ks0vLH-prv-OPCQqhA7GVy4D0GbzmnhY2TlNpfdiOEhAEH2WCf9WL4LXVkLC0VxzufVYBLoQnhyGS6qsVhLekldLubvv-P0ZmCIL37VqPqdF190ZcWmq5McWcCO0WpCdAHGU6lAhXvmSPH8kRupGVTBH8KilNqxQ",
-                }}
+                source={{ uri: defaultProfilePicture }}
                 className={`h-12 w-12 rounded-full border-2 ${isDark ? "border-dark-border-strong" : "border-border"}`}
               />
             )}

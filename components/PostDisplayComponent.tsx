@@ -6,6 +6,8 @@ import { likePost } from "../services/sections/post";
 import { Heart, MessageCircle, Send } from "lucide-react-native";
 import { highlightMentions } from "../utils/highLightMentions";
 import { useTheme } from "./themeProvider";
+import logger from "../utils/logger";
+import { defaultProfilePicture } from "../models/defaults";
 
 // /c:/Users/Administrator/markt_mobile/components/PostDisplayComponent.tsx
 
@@ -34,7 +36,7 @@ export default function PostDisplayComponent({ post, onLike }: Props) {
     const profilePic =
         post.user?.profile_picture_url && post.user.profile_picture_url.length > 0
             ? post.user.profile_picture_url
-            : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
+            : defaultProfilePicture;
 
     // Get all image URLs from social_media array
     const imageUrls = useMemo(() => {
@@ -56,7 +58,7 @@ export default function PostDisplayComponent({ post, onLike }: Props) {
         } catch (err) {
             setLikedByMe(prevLiked);
             setLikeCount(prevCount);
-            console.error("unable to like this post", err);
+            logger.error("unable to like this post", err);
         } finally {
             setIsLiking(false);
         }

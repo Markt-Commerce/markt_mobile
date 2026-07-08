@@ -388,7 +388,14 @@ export default function ChatScreen({
   useEffect(() => {
     if (!roomId || roomId <= 0) return;
 
-    chatSocket.connect();
+    // connect() is async (it reads the auth token before opening the socket), so join
+    // the room only once the socket exists — otherwise the emit is dropped, not buffered.
+    let cancelled = false;
+    (async () => {
+      await chatSocket.connect();
+      if (!cancelled) chatSocket.joinRoom(roomId, myId);
+    })();
+
     const offMsg = chatSocket.onMessage(onSocketMessage);
     const offTyping = chatSocket.onTyping(onTypingUpdate);
     chatSocket.onStatus(() => {});
@@ -423,9 +430,8 @@ export default function ChatScreen({
       );
     });
 
-    chatSocket.joinRoom(roomId, myId);
-
     return () => {
+      cancelled = true;
       offMsg();
       offTyping();
       offReactionAdded();

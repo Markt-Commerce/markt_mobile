@@ -24,6 +24,7 @@ import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { CreateRequestPayload } from "../models/request";
 import { useToast } from "./ToastProvider";
 import { useTheme } from "./themeProvider";
+import logger from "../utils/logger";
 
 //temporary date parser to create an expiry date. This default expiry date would be seven days from when the request was first placed
 function getDateSevenDaysFromNow() {
@@ -99,7 +100,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
         const cats = await getAllCategories();
         setCategories(cats);
       } catch (error) {
-        console.error("Failed to fetch categories:", error);
+        logger.error("Failed to fetch categories:", error);
         //Todo: handle error appropriately, e.g., show a message to the user in the UI
       }
     }
@@ -133,7 +134,6 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
 
   const handleLocalSubmit = async (data: RequestFormData) => {
     try {
-      console.log("sending request");
       const ImageResponse = await attemptMultipleUpload(Imagevalue);
 
       const imageIds = ImageResponse.map((imgId) => imgId.media.id);
@@ -157,9 +157,8 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
 
       // call parent-provided onSubmit
       await createRequest(payload);
-      console.log("all done, created request successfully");
     } catch (err) {
-      console.error("Create product failed:", err);
+      logger.error("Create buyer request failed:", err);
       // optionally: show UI feedback here
     }
   };

@@ -4,6 +4,7 @@ import { Alert, Dimensions, FlatList, Modal, Pressable, StatusBar, Text, View, S
 import * as ImagePicker from "expo-image-picker";
 import { Plus, X } from "lucide-react-native";
 import { Image } from "expo-image";
+import logger from "../utils/logger";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -104,7 +105,7 @@ export default function InstagramGrid({
       const next = [...images, ...picked].slice(0, max ?? Number.MAX_SAFE_INTEGER);
       setImages(next);
     } catch (e: any) {
-      console.warn("Image picking failed", e);
+      logger.warn("Image picking failed", e);
       Alert.alert("Oops", "Something went wrong while picking images.");
     }
   }, [askPermissionIfNeeded, canAddMore, images, max, setImages]);

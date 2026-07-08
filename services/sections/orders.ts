@@ -3,7 +3,9 @@ import { Order, OrderItem, CreateOrderPayload, PayOrderPayload, UpdateOrderItemP
 
 // Get buyer orders
 export async function getBuyerOrders(page = 1, per_page = 10): Promise<Order[]> {
-    const res = await request<Order[]>(`${BASE_URL}/orders?page=${page}&per_page=${per_page}`, {
+    // Trailing slash before the query: `/orders` 308-redirects to cleartext
+    // `http://.../orders/`, which release Android APKs block.
+    const res = await request<Order[]>(`${BASE_URL}/orders/?page=${page}&per_page=${per_page}`, {
       method: "GET",
     });
     return res;

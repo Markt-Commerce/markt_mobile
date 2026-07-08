@@ -3,6 +3,7 @@ import { ProductImageResponse,SocialPostMediaResponse, RequestImageResponse, Med
 import { InstagramGridProps } from '../../components/imagePicker'
 import { Media } from "../../models/feed";
 import { Buffer } from 'buffer';
+import logger from '../../utils/logger';
 
 /** 
  * Uploads an image
@@ -84,13 +85,11 @@ export async function attemptMultipleUpload(
           name: name,
           type: mimeType
         } as any);
-        // optional debug
-        console.log(formData.getAll('file'));
         try {
           const result = await uploadImage(formData);
           return result;
         } catch (error) {
-          console.error("Upload failed:", error);
+          logger.error("Upload failed:", error);
         }
         //return result
       }) as Promise<MediaUploadResponse>[]

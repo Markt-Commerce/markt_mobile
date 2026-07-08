@@ -114,7 +114,6 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
         policies: {},
       };
       const resultdata = await createSeller(payload as any);
-      console.log("Seller created:", resultdata);
       show({ variant: "success", title: "Seller created", message: "Seller account created." });
       onCreated?.("seller");
       closeSheet();

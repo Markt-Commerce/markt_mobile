@@ -165,9 +165,7 @@ export default function Shop() {
         {/* Cover Image */}
         <ImageBackground
           source={{
-            uri:
-              shop?.user.profile_picture ||
-              "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+            uri: shop?.user.profile_picture || defaultProfilePicture,
           }}
           className={`w-full h-56 overflow-hidden ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
           resizeMode="cover"

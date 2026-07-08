@@ -1,10 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, Pressable, ImageBackground, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, Pressable, ActivityIndicator } from "react-native";
 import { getNiches, joinNiche, leaveNiche } from "../services/sections/niches";
 import { Niches } from "../models/niches";
 import { useRouter } from "expo-router";
 import { useToast } from "./ToastProvider";
 import { useTheme } from "./themeProvider";
+import logger from "../utils/logger";
+
+// Deterministic warm-toned tile color from the niche name (avoids a network placeholder).
+const NICHE_TILE_COLORS = ["#e26136", "#c1502b", "#a8563e", "#8a6d4f", "#6d7a52", "#4f6d6a"];
+function nicheTileColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return NICHE_TILE_COLORS[hash % NICHE_TILE_COLORS.length];
+}
 
 export default function DiscoverNiches() {
   const [niches, setNiches] = useState<Niches[]>([]);
@@ -25,7 +34,7 @@ export default function DiscoverNiches() {
       const res = await getNiches({ page: 1, per_page: 10 });
       setNiches(res.items || []);
     } catch (err) {
-      console.error("Failed to load niches:", err);
+      logger.error("Failed to load niches:", err);
       show({ variant: "error", title: "Error", message: "Could not load niches." });
     } finally {
       setLoading(false);
@@ -83,16 +92,14 @@ export default function DiscoverNiches() {
                 key={niche.id}
                 className="min-w-[100px] items-center gap-3"
               >
-                <Pressable onPress={() => router.push(`/niches/${niche.id}`)} className={`h-20 w-20 overflow-hidden rounded border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
-                  <ImageBackground
-                    source={{ uri: "https://via.placeholder.com/80x80" }}
-                    resizeMode="cover"
-                    className="h-full w-full items-center justify-center"
-                  >
-                    <Text className="text-[10px] text-white font-bold text-center px-1">
-                      {niche.name.slice(0, 10)}
-                    </Text>
-                  </ImageBackground>
+                <Pressable
+                  onPress={() => router.push(`/niches/${niche.id}`)}
+                  style={{ backgroundColor: nicheTileColor(niche.name) }}
+                  className={`h-20 w-20 overflow-hidden rounded border items-center justify-center ${isDark ? "border-[#46464e]" : "border-border"}`}
+                >
+                  <Text className="text-lg text-white font-bold text-center px-1">
+                    {niche.name.slice(0, 2).toUpperCase()}
+                  </Text>
                 </Pressable>
 
                 <Text className={`text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>

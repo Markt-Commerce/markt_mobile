@@ -18,6 +18,7 @@ import { CreateProductRequest } from '../models/products';
 import { createProduct } from '../services/sections/product';
 import { useToast } from './ToastProvider';
 import { useTheme } from './themeProvider';
+import logger from '../utils/logger';
 
 
 // Zod Schema for Validation
@@ -86,7 +87,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
               const cats = await getAllCategories();
               setCategories(cats);
           } catch (error) {
-              console.error("Failed to fetch categories:", error);
+              logger.error("Failed to fetch categories:", error);
           }
       }
       fetchCategories();
@@ -142,9 +143,8 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
 
       // call parent-provided onSubmit
       await submitProduct(payload);
-      console.log("completed... all good")
     } catch (err) {
-      console.error("Create product failed:", err);
+      logger.error("Create product failed:", err);
       // optionally: show UI feedback here
     }
   };

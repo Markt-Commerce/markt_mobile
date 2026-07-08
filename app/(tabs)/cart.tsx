@@ -11,6 +11,7 @@ import { useTheme } from "../../components/themeProvider";
 import { useShippingAddress } from "../../hooks/useShippingAddress";
 import { isShippingAddressUsable } from "../../utils/shippingAddress";
 import ShippingAddressCard from "../../components/shippingAddressCard";
+import logger from "../../utils/logger";
 
 export default function CartScreen() {
   const router = useRouter();
@@ -74,7 +75,7 @@ export default function CartScreen() {
       }
       fetchCart();
     } catch (e) {
-      console.error("Update qty failed:", e);
+      logger.error("Update qty failed:", e);
     }
   };
 
@@ -83,7 +84,7 @@ export default function CartScreen() {
       await deleteCartItem(item.id);
       fetchCart();
     } catch (e) {
-      console.error("Remove item failed:", e);
+      logger.error("Remove item failed:", e);
     }
   };
 
@@ -109,7 +110,7 @@ export default function CartScreen() {
       fetchCart();
       router.push(`/checkout/payment-method/${checkout.order_id}`);
     } catch (err) {
-      //console.error("Checkout failed:", err);
+      logger.error("Checkout failed:", err);
       show({
         variant: "error",
         title: "Checkout failed",
