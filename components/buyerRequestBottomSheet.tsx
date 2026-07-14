@@ -25,6 +25,7 @@ import { CreateRequestPayload } from "../models/request";
 import { useToast } from "./ToastProvider";
 import { useTheme } from "./themeProvider";
 import logger from "../utils/logger";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 //temporary date parser to create an expiry date. This default expiry date would be seven days from when the request was first placed
 function getDateSevenDaysFromNow() {
@@ -61,6 +62,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const insets = useSafeAreaInsets();
 
   const snapPoints = React.useMemo(() => ["50%", "85%"], []);
   const [requestImages, setRequestImages] = useState<string[]>([]);
@@ -173,7 +175,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
       handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
     >
       <BottomSheetScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 40 }}
       >
         <Text
           className={`text-lg font-geist font-bold mb-4 ${isDark ? "text-dark-text" : "text-black"}`}

@@ -2,6 +2,7 @@ import 'react-native-reanimated';
 import React, { useRef, useMemo, forwardRef, useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useForm } from 'react-hook-form';
 import { z } from "zod";
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -56,6 +57,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
     React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === "dark";
+    const insets = useSafeAreaInsets();
 
     productSchema.refine(()=> selectedCategories?.length ?? 0 > 0,{
       path: ["category_ids"]
@@ -158,7 +160,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
       backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}
       handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
     >
-      <BottomSheetScrollView className="p-4">
+      <BottomSheetScrollView className="p-4" contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
         <Text className={`text-lg font-geist font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Product</Text>
 
         {/* Product Name */}

@@ -1,6 +1,7 @@
 import 'react-native-reanimated';
 import React, { forwardRef, useMemo, useState } from "react";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -48,6 +49,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
     const { show } = useToast();
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === "dark";
+    const insets = useSafeAreaInsets();
 
     const [postImages, setpostImages] = useState<string[]>([]);
 
@@ -194,7 +196,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
         backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}
         handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
       >
-        <BottomSheetScrollView className="p-4">
+        <BottomSheetScrollView className="p-4" contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
         <Text className={`text-lg font-geist font-bold mb-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Post</Text>
 
           {/* Caption */}

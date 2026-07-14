@@ -57,7 +57,7 @@ export default function SignupScreen() {
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors, isValid, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     mode: "onChange",
@@ -245,7 +245,8 @@ export default function SignupScreen() {
               <Button
                 text="Next"
                 onPress={handleSubmit(onSubmit)}
-                disabled={!isValid}
+                disabled={!isValid || isSubmitting}
+                loading={isSubmitting}
                 variant="primary"
               />
 

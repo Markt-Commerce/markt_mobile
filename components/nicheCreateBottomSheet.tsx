@@ -19,6 +19,7 @@ import CategoryAddition from "./categoryAddition";
 import { createNiche } from "../services/sections/niches";
 import { useToast } from "./ToastProvider";
 import { useTheme } from "./themeProvider";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -43,6 +44,7 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const insets = useSafeAreaInsets();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
@@ -118,7 +120,7 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
       backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}
       handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
     >
-      <BottomSheetScrollView contentContainerStyle={{ padding: 16 }}>
+      <BottomSheetScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40 }}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 12, color: isDark ? "#f0f1f2" : "#000000" }}>Create Niche</Text>
 

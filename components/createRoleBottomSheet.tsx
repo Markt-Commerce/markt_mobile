@@ -2,6 +2,7 @@ import React, { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from "react-native";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,6 +39,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
 
   const snapPoints = useMemo(() => ["45%", "80%"], []);
   const { show } = useToast();
+  const insets = useSafeAreaInsets();
 
   // categories (for seller)
   const [categories, setCategories] = useState<Category[]>([]);
@@ -61,14 +63,14 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
     control: buyerControl,
     handleSubmit: handleSubmitBuyer,
     reset: resetBuyer,
-    formState: { errors: buyerErrors },
+    formState: { errors: buyerErrors, isSubmitting: isSubmittingBuyer },
   } = useForm<BuyerForm>({ resolver: zodResolver(buyerSchema) as any });
 
   const {
     control: sellerControl,
     handleSubmit: handleSubmitSeller,
     reset: resetSeller,
-    formState: { errors: sellerErrors },
+    formState: { errors: sellerErrors, isSubmitting: isSubmittingSeller },
   } = useForm<SellerForm>({ resolver: zodResolver(sellerSchema) as any });
 
   useEffect(() => {
@@ -124,7 +126,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
 
   return (
     <BottomSheet ref={sheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose onClose={onClose}>
-      <BottomSheetScrollView contentContainerStyle={{ padding: 16 }}>
+      <BottomSheetScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40 }}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 12, color: "#000000" }}>
             {mode === "buyer" ? "Create Buyer Account" : mode === "seller" ? "Create Seller Account" : "Create Account"}
@@ -154,9 +156,10 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
               {buyerErrors.buyername && <Text style={{ color: "#ba1a1a", marginBottom: 6 }}>{buyerErrors.buyername.message}</Text>}
               <TouchableOpacity
                 onPress={handleSubmitBuyer(submitBuyer)}
-                style={{ backgroundColor: "#000000", padding: 12, borderRadius: 8, alignItems: "center" }}
+                disabled={isSubmittingBuyer}
+                style={{ backgroundColor: "#000000", padding: 12, borderRadius: 8, alignItems: "center", opacity: isSubmittingBuyer ? 0.7 : 1 }}
               >
-                <Text style={{ color: "#fff", fontWeight: "700" }}>Create Buyer Account</Text>
+                <Text style={{ color: "#fff", fontWeight: "700" }}>{isSubmittingBuyer ? "Creating..." : "Create Buyer Account"}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -226,9 +229,10 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
 
               <TouchableOpacity
                 onPress={handleSubmitSeller(submitSeller)}
-                style={{ backgroundColor: "#000000", padding: 12, borderRadius: 8, alignItems: "center" }}
+                disabled={isSubmittingSeller}
+                style={{ backgroundColor: "#000000", padding: 12, borderRadius: 8, alignItems: "center", opacity: isSubmittingSeller ? 0.7 : 1 }}
               >
-                <Text style={{ color: "#fff", fontWeight: "700" }}>Create Seller Account</Text>
+                <Text style={{ color: "#fff", fontWeight: "700" }}>{isSubmittingSeller ? "Creating..." : "Create Seller Account"}</Text>
               </TouchableOpacity>
 
               <CategoryAddition

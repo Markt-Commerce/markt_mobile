@@ -52,7 +52,7 @@ const ShopInformationScreen = () => {
   const [usernameStatus, setUsernameStatus] = React.useState<"idle" | "checking" | "available" | "taken">("idle");
   const [usernameMessage, setUsernameMessage] = React.useState("");
 
-  const { control, handleSubmit, formState: { errors, isValid } } = useForm({
+  const { control, handleSubmit, formState: { errors, isValid, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
     mode: "onChange",
   });
@@ -275,7 +275,8 @@ const ShopInformationScreen = () => {
             {/* Save / Next */}
             <Button 
               onPress={handleSubmit(handleSubmitForm)} 
-              disabled={!isValid || usernameStatus === "taken" || usernameStatus === "checking"} 
+              disabled={!isValid || usernameStatus === "taken" || usernameStatus === "checking" || isSubmitting}
+              loading={isSubmitting} 
               text="Next" 
               variant="conversion"
             />

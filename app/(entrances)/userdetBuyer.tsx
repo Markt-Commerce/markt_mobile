@@ -49,7 +49,7 @@ export default function UserInfoScreen() {
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors, isValid, isSubmitting },
   } = useForm({
     resolver: zodResolver(schema),
     mode: "onChange",
@@ -261,7 +261,8 @@ export default function UserInfoScreen() {
               {/* CTA — disable if username taken */}
               <Button
                 onPress={handleSubmit(handleSubmitForm)}
-                disabled={!isValid || usernameStatus === "taken" || usernameStatus === "checking"}
+                disabled={!isValid || usernameStatus === "taken" || usernameStatus === "checking" || isSubmitting}
+                loading={isSubmitting}
                 text="Continue"
                 variant="primary"
               />
