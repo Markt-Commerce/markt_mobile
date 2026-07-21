@@ -11,8 +11,7 @@ export async function createProduct(payload: CreateProductRequest): Promise<Prod
     method: "POST",
     body: JSON.stringify(payload),
   });
-  // res may be ApiResponse<ProductResponse> like { data: {...} } depending on your API wrapper
-  // if your request helper returns the actual object directly, adjust accordingly.
+  console.log("createProduct response:", res);
   return (res as any).data ?? (res as any);
 }
 

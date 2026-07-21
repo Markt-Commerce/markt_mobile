@@ -99,7 +99,7 @@ export default function SignupScreen() {
       <TouchableOpacity
         onPress={() => setUserRole("buyer")}
         className={`flex-1 py-2.5 rounded items-center ${
-          role === "buyer" ? "bg-primary shadow-sm" : ""
+          role === "buyer" ? "bg-primary shadow-sm" : "shadow-none"
         }`}
       >
         <Text className={`font-geist font-bold text-sm ${role === "buyer" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
@@ -109,7 +109,7 @@ export default function SignupScreen() {
       <TouchableOpacity
         onPress={() => setUserRole("seller")}
         className={`flex-1 py-2.5 rounded items-center ${
-          role === "seller" ? "bg-primary shadow-sm" : ""
+          role === "seller" ? "bg-primary shadow-sm" : "shadow-none"
         }`}
       >
         <Text className={`font-geist font-bold text-sm ${role === "seller" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>

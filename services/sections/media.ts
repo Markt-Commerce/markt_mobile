@@ -4,6 +4,7 @@ import { InstagramGridProps } from '../../components/imagePicker'
 import { Media } from "../../models/feed";
 import { Buffer } from 'buffer';
 import logger from '../../utils/logger';
+import { useToast } from "../../components/ToastProvider";
 
 /** 
  * Uploads an image
@@ -89,7 +90,12 @@ export async function attemptMultipleUpload(
           const result = await uploadImage(formData);
           return result;
         } catch (error) {
-          logger.error("Upload failed:", error);
+          //logger.error("Upload failed:", error);
+          useToast().show({
+            variant: "error",
+            title: "Upload failed",
+            message: "There was a problem uploading the image. Try reducing the file size or check your internet connection."
+          });
         }
         //return result
       }) as Promise<MediaUploadResponse>[]

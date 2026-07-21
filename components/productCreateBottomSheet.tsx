@@ -101,6 +101,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         try {
           setSending(true);
           const newProduct = await createProduct(product);
+          console.log("Product created successfully:", newProduct);
           show({
             variant: "success",
             title: "Product Created",
@@ -123,7 +124,9 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
       //upload images first
       const ImageResponse = await attemptMultipleUpload(Imagevalue);
 
-      const imageIds = ImageResponse.map((imgId)=>imgId.media.id)
+      const filteredImageResponse = ImageResponse.filter((img) => img && img.media && img.media.id);
+
+      const imageIds = filteredImageResponse.map((imgId) => imgId.media.id);
 
       // ensure category_ids includes selectedCategories if not provided by form UI
       const category_ids = (data && (data as any).category_ids && (data as any).category_ids.length > 0)
@@ -145,7 +148,11 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
       await submitProduct(payload);
     } catch (err) {
       logger.error("Create product failed:", err);
-      // optionally: show UI feedback here
+      show({
+        variant: "error",
+        title: "Error creating product",
+        message: "There was a problem creating the product. Please try again later."
+      });
     }
   };
 

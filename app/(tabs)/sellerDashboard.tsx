@@ -348,7 +348,7 @@ export default function SellerDashboard() {
               <TouchableOpacity
                 key={d}
                 onPress={() => { setWindowDays(d); setExportMenuVisible(false); }}
-                className={`px-5 py-2 rounded ${windowDays === d ? "bg-primary shadow-sm" : ""}`}
+                className={`px-5 py-2 rounded ${windowDays === d ? "bg-primary shadow-sm" : "shadow-none"}`}
                 accessibilityLabel={`${d} days`}
                 accessibilityState={{ selected: windowDays === d }}
               >
