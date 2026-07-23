@@ -8,7 +8,9 @@ import {
   getNicheFeed,
 } from "../services/sections/feedApi";
 
-const PER_PAGE = 20;
+// 10 keeps first paint light and makes infinite scroll engage while the
+// platform's content volume is still small.
+const PER_PAGE = 10;
 
 function deduplicateById(items: FeedItem[]): FeedItem[] {
   const seen = new Set<string>();
