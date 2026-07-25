@@ -116,6 +116,15 @@ export default function ProfileScreen() {
   const dualRole = hasBuyerAccount && hasSellerAccount;
 
   const handleSwitchRole = async () => {
+    // If the user doesn't have the other role yet, open the create sheet
+    // directly instead of hitting the switch API (which would just fail).
+    const targetRole = role === "buyer" ? "seller" : "buyer";
+    const hasTargetAccount = targetRole === "buyer" ? hasBuyerAccount : hasSellerAccount;
+    if (!hasTargetAccount) {
+      setCreateMode(targetRole);
+      return;
+    }
+
     try {
       const result = await switchUserRole();
       const nextRole = (result.user?.current_role ?? result.current_role) as "buyer" | "seller";
@@ -134,7 +143,7 @@ export default function ProfileScreen() {
         message: `Now in ${nextRole} mode.`,
       });
     } catch {
-      setCreateMode(role === "buyer" ? "seller" : "buyer");
+      setCreateMode(targetRole);
     }
   };
 

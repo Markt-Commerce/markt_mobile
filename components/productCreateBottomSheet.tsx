@@ -77,7 +77,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
   const [Imagevalue, setImageValue] = React.useState<InstagramGridProps["value"]>(productImages ? productImages.map((uri, index) => ({ id: index.toString(), uri })) : []);
   const [sending, setSending] = React.useState(false);
 
-  const { control, handleSubmit, formState: { errors } } = useForm<ProductFormData>({
+  const { control, handleSubmit, reset, formState: { errors } } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema) as any,
   });
 
@@ -97,36 +97,20 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
     setSelectedCategories(prev => prev.filter(c => c.id !== id));
   };
 
-  const submitProduct = async (product: CreateProductRequest) => {
-        try {
-          setSending(true);
-          const newProduct = await createProduct(product);
-          console.log("Product created successfully:", newProduct);
-          show({
-            variant: "success",
-            title: "Product Created",
-            message: "Your product has been successfully created."
-          });
-          setSending(false);
-          sheetRef?.current?.close();
-        } catch (error) {
-          show({
-            variant: "error",
-            title: "Error creating product",
-            message: "There was a problem creating the product. Please try again later."
-          });
-        }
-      }
-
-
-  const handleLocalSubmit = async (data: ProductFormData) => {
+  // Single submit path: upload images, build the payload, create the product,
+  // and only on success clear the form and close. try/finally guarantees the
+  // button leaves its "Sending..." state even when creation fails (previously
+  // an error left `sending` stuck true forever).
+  const onSubmit = async (data: ProductFormData) => {
+    if (sending) return;
     try {
-      //upload images first
+      setSending(true);
+
+      // upload images first
       const ImageResponse = await attemptMultipleUpload(Imagevalue);
-
-      const filteredImageResponse = ImageResponse.filter((img) => img && img.media && img.media.id);
-
-      const imageIds = filteredImageResponse.map((imgId) => imgId.media.id);
+      const imageIds = ImageResponse
+        .filter((img) => img && img.media && img.media.id)
+        .map((imgId) => imgId.media.id);
 
       // ensure category_ids includes selectedCategories if not provided by form UI
       const category_ids = (data && (data as any).category_ids && (data as any).category_ids.length > 0)
@@ -137,31 +121,46 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
       data.compare_at_price = data.compare_at_price ?? 0.01;
       data.cost_per_item = data.cost_per_item ?? 0.01;
 
-      // prepare payload: keep form data, add category_ids (if we generated them) and add images
       const payload: CreateProductRequest = {
         ...data,
         category_ids,
         media_ids: imageIds ?? [],
       };
 
-      // call parent-provided onSubmit
-      await submitProduct(payload);
-    } catch (err) {
-      logger.error("Create product failed:", err);
+      await createProduct(payload);
+
+      show({
+        variant: "success",
+        title: "Product Created",
+        message: "Your product has been created successfully."
+      });
+
+      // Clear the form + local state, then close the sheet.
+      reset();
+      setImageValue([]);
+      setSelectedCategories([]);
+      sheetRef.current?.close();
+    } catch (error) {
+      logger.error("Create product failed:", error);
       show({
         variant: "error",
         title: "Error creating product",
-        message: "There was a problem creating the product. Please try again later."
+        message:
+          error instanceof Error && error.message
+            ? error.message
+            : "There was a problem creating the product. Please try again later."
       });
+    } finally {
+      setSending(false);
     }
   };
 
   return (
-    <BottomSheet 
-      ref={ref} 
-      index={-1} 
-      snapPoints={snapPoints} 
-      enablePanDownToClose
+    <BottomSheet
+      ref={sheetRef}
+      index={-1}
+      snapPoints={snapPoints}
+      enablePanDownToClose={!sending}
       backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}
       handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
     >
@@ -248,7 +247,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         {/* Submit Button */}
         <TouchableOpacity
           disabled={sending}
-          onPress={handleSubmit(handleLocalSubmit)} // call our merged submit handler
+          onPress={handleSubmit(onSubmit)} // call our merged submit handler
           className="bg-primary p-3 rounded mt-4"
         >
           <Text className="text-white text-center font-geist font-bold">{sending ? "Sending..." : "Create Product"}</Text>
