@@ -38,6 +38,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
 
   const snapPoints = useMemo(() => ["45%", "80%"], []);
   const { show } = useToast();
+  const [sending, setSending] = useState(false);
 
   // categories (for seller)
   const [categories, setCategories] = useState<Category[]>([]);
@@ -86,44 +87,62 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
   };
 
   const submitBuyer = async (data: BuyerForm) => {
+    if (sending) return;
     try {
+      setSending(true);
       await createBuyer({
         buyername: data.buyername,
         shipping_address: {},
       } as any);
       show({ variant: "success", title: "Buyer created", message: "Buyer account created." });
+      resetBuyer();
       onCreated?.("buyer");
       closeSheet();
     } catch (err) {
-      show({ variant: "error", title: "Create failed", message: "Could not create buyer account." });
+      show({
+        variant: "error",
+        title: "Create failed",
+        message: err instanceof Error && err.message ? err.message : "Could not create buyer account.",
+      });
+    } finally {
+      setSending(false);
     }
   };
 
   const submitSeller = async (data: SellerForm) => {
+    if (sending) return;
+    // ensure at least one category selected via the UI
+    if (!selectedCategories || selectedCategories.length === 0) {
+      show({ variant: "error", title: "Validation", message: "Select at least one category." });
+      return;
+    }
     try {
-      // ensure at least one category selected via the UI
-      if (!selectedCategories || selectedCategories.length === 0) {
-        show({ variant: "error", title: "Validation", message: "Select at least one category." });
-        return;
-      }
-
+      setSending(true);
       const payload = {
         shop_name: data.shop_name,
         description: data.description,
         category_ids: selectedCategories.map((c) => c.id),
         policies: {},
       };
-      const resultdata = await createSeller(payload as any);
+      await createSeller(payload as any);
       show({ variant: "success", title: "Seller created", message: "Seller account created." });
+      resetSeller();
+      setSelectedCategories([]);
       onCreated?.("seller");
       closeSheet();
     } catch (err) {
-      show({ variant: "error", title: "Create failed", message: "Could not create seller account." });
+      show({
+        variant: "error",
+        title: "Create failed",
+        message: err instanceof Error && err.message ? err.message : "Could not create seller account.",
+      });
+    } finally {
+      setSending(false);
     }
   };
 
   return (
-    <BottomSheet ref={sheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose onClose={onClose}>
+    <BottomSheet ref={sheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose={!sending} onClose={onClose}>
       <BottomSheetScrollView contentContainerStyle={{ padding: 16 }}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 12, color: "#000000" }}>
@@ -153,10 +172,11 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
               />
               {buyerErrors.buyername && <Text style={{ color: "#ba1a1a", marginBottom: 6 }}>{buyerErrors.buyername.message}</Text>}
               <TouchableOpacity
+                disabled={sending}
                 onPress={handleSubmitBuyer(submitBuyer)}
-                style={{ backgroundColor: "#000000", padding: 12, borderRadius: 8, alignItems: "center" }}
+                style={{ backgroundColor: "#000000", padding: 12, borderRadius: 8, alignItems: "center", opacity: sending ? 0.6 : 1 }}
               >
-                <Text style={{ color: "#fff", fontWeight: "700" }}>Create Buyer Account</Text>
+                <Text style={{ color: "#fff", fontWeight: "700" }}>{sending ? "Creating…" : "Create Buyer Account"}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -225,10 +245,11 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
               </TouchableOpacity>
 
               <TouchableOpacity
+                disabled={sending}
                 onPress={handleSubmitSeller(submitSeller)}
-                style={{ backgroundColor: "#000000", padding: 12, borderRadius: 8, alignItems: "center" }}
+                style={{ backgroundColor: "#000000", padding: 12, borderRadius: 8, alignItems: "center", opacity: sending ? 0.6 : 1 }}
               >
-                <Text style={{ color: "#fff", fontWeight: "700" }}>Create Seller Account</Text>
+                <Text style={{ color: "#fff", fontWeight: "700" }}>{sending ? "Creating…" : "Create Seller Account"}</Text>
               </TouchableOpacity>
 
               <CategoryAddition

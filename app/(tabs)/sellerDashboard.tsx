@@ -3,7 +3,7 @@ import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'expo-router';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, Dimensions, Animated, Easing, FlatList, RefreshControl } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { Search, ArrowBigDown as CaretDown, AlertTriangle, MoreVertical } from 'lucide-react-native';
+import { Search, ArrowBigDown as CaretDown, AlertTriangle } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSellerAnalyticsOverview, getSellerAnalyticsTimeseries } from '../../services/sections/analytics';
 import { getMyProducts } from '../../services/sections/product';
@@ -40,7 +40,10 @@ export default function SellerDashboard() {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [windowDays, setWindowDays] = useState<7 | 30 | 90>(30);
-  const [exportMenuVisible, setExportMenuVisible] = useState(false);
+  // Inventory filter: 'all' | 'low' (stock < 5) | product status. 'Status' chip
+  // opens a small menu to pick active/inactive.
+  const [invFilter, setInvFilter] = useState<'all' | 'low' | 'active' | 'inactive'>('all');
+  const [statusMenuVisible, setStatusMenuVisible] = useState(false);
 
   // Bottom sheet ref for product creation
   const productFormRef = useRef<BottomSheet>(null);
@@ -125,24 +128,29 @@ export default function SellerDashboard() {
     }
   }, [show, windowDays]);
 
-  // Debounce search filter
+  // Debounce search + apply the active inventory filter (status / low stock).
   useEffect(() => {
     const t = setTimeout(() => {
-      if (!searchText) {
-        setFilteredInventory(sellerInventory);
-        return;
+      let list = sellerInventory;
+      if (invFilter === 'low') {
+        list = list.filter((p: any) => (p.stock ?? 0) < 5);
+      } else if (invFilter === 'active') {
+        list = list.filter((p: any) => p.status === 'active');
+      } else if (invFilter === 'inactive') {
+        list = list.filter((p: any) => p.status === 'inactive');
       }
-      const q = searchText.trim().toLowerCase();
-      setFilteredInventory(
-        sellerInventory.filter((p: any) =>
+      if (searchText) {
+        const q = searchText.trim().toLowerCase();
+        list = list.filter((p: any) =>
           (p.name || '').toLowerCase().includes(q) ||
           (p.sku || '').toLowerCase().includes(q) ||
           String(p.id || '').toLowerCase().includes(q)
-        )
-      );
+        );
+      }
+      setFilteredInventory(list);
     }, 300);
     return () => clearTimeout(t);
-  }, [searchText, sellerInventory]);
+  }, [searchText, sellerInventory, invFilter]);
 
   // Currency: NGN (Nigerian Naira) — SELLER_DASHBOARD improvement §1
   const formatCurrency = useCallback((n?: number) => {
@@ -215,14 +223,19 @@ export default function SellerDashboard() {
   const chartColor = (opacity = 1) => isDark ? `rgba(240,241,242,${opacity})` : `rgba(0,0,0,${opacity})`;
   const chartLabelColor = (opacity = 1) => isDark ? `rgba(198,197,207,${opacity})` : `rgba(113,113,122,${opacity})`;
 
-  // Handlers (now wired)
-  const handleExport = () => {
-    setExportMenuVisible(false);
-    show({ variant: 'info', title: 'Export report', message: 'Export started (not implemented).' });
-  };
-
   const pendingOrderCount = sellerRecentOrders.filter((o) => o.status === 'pending').length;
   const periodLabel = windowDays === 7 ? 'Last 7 days' : windowDays === 30 ? 'Last 30 days' : 'Last 90 days';
+
+  // Trend %: period-over-period change from the last two timeseries buckets.
+  // null when there isn't enough data — so we don't show a fabricated number.
+  const trendPct = useMemo(() => {
+    const s = analyticsTimeseries?.series ?? [];
+    if (s.length < 2) return null;
+    const prev = s[s.length - 2]?.value ?? 0;
+    const last = s[s.length - 1]?.value ?? 0;
+    if (prev === 0) return last > 0 ? 100 : null;
+    return ((last - prev) / prev) * 100;
+  }, [analyticsTimeseries]);
   const handleCreateProduct = () => {
     productFormRef.current?.expand?.();
   };
@@ -347,8 +360,8 @@ export default function SellerDashboard() {
             {([7, 30, 90] as const).map((d) => (
               <TouchableOpacity
                 key={d}
-                onPress={() => { setWindowDays(d); setExportMenuVisible(false); }}
-                className={`px-5 py-2 rounded ${windowDays === d ? "bg-primary shadow-sm" : ""}`}
+                onPress={() => { setWindowDays(d); setStatusMenuVisible(false); }}
+                className={`px-5 py-2 rounded ${windowDays === d ? "bg-primary shadow-sm" : "shadow-none"}`}
                 accessibilityLabel={`${d} days`}
                 accessibilityState={{ selected: windowDays === d }}
               >
@@ -358,22 +371,7 @@ export default function SellerDashboard() {
               </TouchableOpacity>
             ))}
           </View>
-          <TouchableOpacity
-            onPress={() => setExportMenuVisible(!exportMenuVisible)}
-            className="p-2 -mr-2"
-            accessibilityLabel="More options"
-          >
-            <MoreVertical size={22} color={isDark ? "#f0f1f2" : "#000000"} />
-          </TouchableOpacity>
         </View>
-        {exportMenuVisible && (
-          <TouchableOpacity
-            onPress={handleExport}
-            className={`mx-6 mb-4 py-4 px-5 rounded border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}
-          >
-            <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Export report</Text>
-          </TouchableOpacity>
-        )}
 
         {/* Period label */}
         <Text className={`font-inter text-xs px-6 -mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{periodLabel}</Text>
@@ -463,8 +461,12 @@ export default function SellerDashboard() {
             <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Sales Trends</Text>
             <Text className={`text-[32px] font-geist font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatCurrency(analyticsOverview?.revenue_30d ?? 0)}</Text>
             <View className="flex-row gap-2 items-center mt-2">
-              <Text className={`font-inter text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Last 30 Days</Text>
-              <Text className="text-success font-inter text-sm font-bold">+15%</Text>
+              <Text className={`font-inter text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{periodLabel}</Text>
+              {trendPct !== null && (
+                <Text className={`font-inter text-sm font-bold ${trendPct >= 0 ? "text-success" : "text-error"}`}>
+                  {trendPct >= 0 ? "+" : ""}{trendPct.toFixed(0)}%
+                </Text>
+              )}
             </View>
             <View className="py-6">
               <LineChart
@@ -584,15 +586,41 @@ export default function SellerDashboard() {
             </View>
 
             <View className="flex-row gap-3 mt-4">
-              <TouchableOpacity className={`h-10 items-center justify-center rounded pl-5 pr-4 flex-row gap-2 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-                <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Status</Text>
-                <CaretDown size={16} color={isDark ? "#f0f1f2" : "#000000"} />
+              <View>
+                <TouchableOpacity
+                  onPress={() => setStatusMenuVisible((v) => !v)}
+                  className={`h-10 items-center justify-center rounded pl-5 pr-4 flex-row gap-2 border ${(invFilter === 'active' || invFilter === 'inactive') ? "bg-primary border-primary" : (isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border")}`}
+                >
+                  <Text className={`font-geist font-bold text-sm capitalize ${(invFilter === 'active' || invFilter === 'inactive') ? "text-white" : (isDark ? "text-[#f0f1f2]" : "text-black")}`}>
+                    {invFilter === 'active' || invFilter === 'inactive' ? invFilter : 'Status'}
+                  </Text>
+                  <CaretDown size={16} color={(invFilter === 'active' || invFilter === 'inactive') ? "#ffffff" : (isDark ? "#f0f1f2" : "#000000")} />
+                </TouchableOpacity>
+                {statusMenuVisible && (
+                  <View className={`absolute top-11 left-0 z-10 rounded border overflow-hidden min-w-[130px] ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
+                    {(['active', 'inactive'] as const).map((s) => (
+                      <TouchableOpacity
+                        key={s}
+                        onPress={() => { setInvFilter(s); setStatusMenuVisible(false); }}
+                        className="px-4 py-3"
+                      >
+                        <Text className={`font-geist font-bold text-sm capitalize ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{s}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+              <TouchableOpacity
+                onPress={() => { setInvFilter('all'); setStatusMenuVisible(false); }}
+                className={`h-10 items-center justify-center rounded px-5 border ${invFilter === 'all' ? "bg-primary border-primary" : (isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border")}`}
+              >
+                <Text className={`font-geist font-bold text-sm ${invFilter === 'all' ? "text-white" : (isDark ? "text-[#f0f1f2]" : "text-black")}`}>All</Text>
               </TouchableOpacity>
-              <TouchableOpacity className="h-10 items-center justify-center rounded bg-primary px-5">
-                <Text className="text-white font-geist font-bold text-sm">All</Text>
-              </TouchableOpacity>
-              <TouchableOpacity className={`h-10 items-center justify-center rounded px-5 border ${isDark ? "bg-[#ba1a1a]/10 border-[#ba1a1a]" : "bg-error-bg border-error"}`}>
-                <Text className="text-error font-geist font-bold text-sm">Low</Text>
+              <TouchableOpacity
+                onPress={() => { setInvFilter(invFilter === 'low' ? 'all' : 'low'); setStatusMenuVisible(false); }}
+                className={`h-10 items-center justify-center rounded px-5 border ${invFilter === 'low' ? "bg-error border-error" : (isDark ? "bg-[#ba1a1a]/10 border-[#ba1a1a]" : "bg-error-bg border-error")}`}
+              >
+                <Text className={`font-geist font-bold text-sm ${invFilter === 'low' ? "text-white" : "text-error"}`}>Low</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -616,14 +644,7 @@ export default function SellerDashboard() {
           )}
         </View>
 
-        {/* Pager dots */}
-        <View className="flex-row w-full items-center justify-center gap-3 py-10">
-          <View className="h-2 w-2 rounded bg-primary" />
-          <View className={`h-2 w-2 rounded ${isDark ? "bg-[#46464e]" : "bg-border"}`} />
-          <View className={`h-2 w-2 rounded ${isDark ? "bg-[#46464e]" : "bg-border"}`} />
-        </View>
-
-        <View className="h-4" />
+        <View className="h-8" />
       </ScrollView>
 
       <ProductFormBottomSheet ref={productFormRef} />

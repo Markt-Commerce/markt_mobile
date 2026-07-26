@@ -13,7 +13,7 @@ import InstagramGrid, { InstagramGridProps } from "./imagePicker";
 import { Category } from "../models/categories";
 import { getAllCategories } from "../services/sections/categories";
 import { X } from "lucide-react-native";
-import { getSellerProducts } from "../services/sections/product";
+import { getMyProducts } from "../services/sections/product";
 import { PlaceholderProduct } from "../models/products";
 import { uploadImage, attemptMultipleUpload } from "../services/sections/media";
 import { MediaResponse } from "../models/media";
@@ -58,7 +58,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
     const [postStatus, setPostStatus] = useState<"active" | "draft">("active")
 
     const snapPoints = useMemo(() => ["50%", "85%"], []);
-    const { control, handleSubmit, formState: { errors } } = useForm<PostFormData>({
+    const { control, handleSubmit, reset, formState: { errors } } = useForm<PostFormData>({
       resolver: zodResolver(postSchema) as any
     });
 
@@ -77,73 +77,65 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
       path: ["category_ids"]
     });
 
-    const submitForm = async (data: PostFormData) => {
+    // Single submit path: upload images, build the payload, create the post,
+    // and only on success clear the form and close. A single toast either way
+    // (previously two functions each fired their own, so a failure showed both
+    // an error AND a success).
+    const onSubmit = async (data: PostFormData) => {
+      if (sending) return;
       try {
         setSending(true);
-        data.products = postProducts.map((prod) => { return { product_id: prod.id }; });
-        
+
+        const ImageResponse = await attemptMultipleUpload(Imagevalue);
+        const imageIds = ImageResponse.map((imgId) => imgId.media.id);
+
+        // ensure category_ids includes selectedCategories if not provided by form UI
+        const category_ids =
+          (data as any)?.category_ids && (data as any).category_ids.length > 0
+            ? (data as any).category_ids
+            : selectedCategories.map((c) => c.id);
+
+        const payload = {
+          ...data,
+          category_ids,
+          status: postStatus,
+          products: currentProducts.map((val) => ({ product_id: val })),
+          media_ids: imageIds ?? [],
+        };
+
         // If nicheId is provided, create a niche post instead
         if (nicheId) {
-          await createNichePost(nicheId, data);
+          await createNichePost(nicheId, payload);
         } else {
-          await createPost(data);
+          await createPost(payload);
         }
-        
+
         show({
           variant: "success",
           title: "Post Created",
-          message: "Your post has been successfully created."
+          message: "Your post has been created successfully.",
         });
+
+        // Clear the form + local state, then close the sheet.
+        reset();
+        setImageValue([]);
+        setSelectedCategories([]);
+        setCurrentProducts([]);
         sheetRef.current?.close();
-        
       } catch (error) {
+        logger.error("Failed to create post:", error);
         show({
           variant: "error",
           title: "Error creating post",
-          message: "There was a problem creating the post. Please try again later."
+          message:
+            error instanceof Error && error.message
+              ? error.message
+              : "There was a problem creating the post. Please try again later.",
         });
+      } finally {
+        setSending(false);
       }
-    }
-
-
-    const handleLocalSubmit = async (data: PostFormData) => {
-    try {
-      setSending(true);
-      const ImageResponse = await attemptMultipleUpload(Imagevalue);
-
-      const imageIds = ImageResponse.map((imgId)=>imgId.media.id)
-      // ensure category_ids includes selectedCategories if not provided by form UI
-      const category_ids = (data && (data as any).category_ids && (data as any).category_ids.length > 0)
-        ? (data as any).category_ids
-        : selectedCategories.map(c => c.id);
-
-      // prepare payload: keep form data, add category_ids (if we generated them) and add images
-      const payload = {
-        ...data,
-        category_ids,
-        status: postStatus,
-        products: currentProducts.map((val)=>{
-          return {product_id:val}
-        }),
-        media_ids: imageIds ?? [],
-      };
-
-      // call parent-provided onSubmit
-      submitForm(payload);
-      setSending(false);
-      show({
-        variant: "success",
-        title: "Post Created",
-        message: "Your post has been created successfully."
-      })
-    } catch (err) {
-      show({
-        variant: "error",
-        title: "Error creating post",
-        message: "There was a problem creating the post. Please try again later."
-      })
-    }
-  };
+    };
 
     React.useEffect(() => {
       async function fetchCategories() {
@@ -170,8 +162,10 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
     React.useEffect(() => {
       async function fetchProducts() {
         try {
-          //work on this later. user_id is a string. Might bring up a Nan if we don't check properly
-          const products = await getSellerProducts(Number(user?.user_id) || 0); //ensure user_id is a number
+          // Use the dedicated "my products" route. The old getSellerProducts
+          // path took a numeric seller_id, but user_id is a string ("USR_..."),
+          // so Number() gave NaN -> 0 and it always fetched nothing.
+          const products = await getMyProducts();
           setProductList(products);
         } catch (error) {
           logger.error("Failed to fetch products:", error);
@@ -186,11 +180,11 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
 
 
     return (
-      <BottomSheet 
-        ref={ref} 
-        index={-1} 
-        snapPoints={snapPoints} 
-        enablePanDownToClose
+      <BottomSheet
+        ref={sheetRef}
+        index={-1}
+        snapPoints={snapPoints}
+        enablePanDownToClose={!sending}
         backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}
         handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
       >
@@ -198,7 +192,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
         <Text className={`text-lg font-geist font-bold mb-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Post</Text>
 
           {/* Caption */}
-          <Input name="caption" className="" control={control} numberOfLines={10} placeholder="What's on your mind?"></Input>
+          <Input name="caption" control={control} label="Caption" placeholder="Share a product you're curious about…" multiline numberOfLines={6} />
 
           {/* Images */}
           <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Images</Text>
@@ -260,7 +254,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
 
           {/* Submit Button */}
           <TouchableOpacity className="bg-primary p-3 rounded" onPress={
-              handleSubmit(handleLocalSubmit)
+              handleSubmit(onSubmit)
           } disabled={sending}>
             <Text className="text-white text-center font-geist font-bold">{sending ? "Sending..." : "Create Post"}</Text>
           </TouchableOpacity>

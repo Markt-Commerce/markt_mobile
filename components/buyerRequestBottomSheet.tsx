@@ -26,16 +26,12 @@ import { useToast } from "./ToastProvider";
 import { useTheme } from "./themeProvider";
 import logger from "../utils/logger";
 
-//temporary date parser to create an expiry date. This default expiry date would be seven days from when the request was first placed
+// Default expiry: seven days from when the request is placed. The backend
+// expects an ISO datetime (marshmallow DateTime), so return ISO — a "DD/MM/YY"
+// string would fail validation and the request would never be created.
 function getDateSevenDaysFromNow() {
-  const today = new Date(Date.now());
-
-  const futureDate = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const day = String(futureDate.getDate()).padStart(2, "0");
-  const month = String(futureDate.getMonth() + 1).padStart(2, "0");
-  const year = String(futureDate.getFullYear()).slice(-2);
-
-  return `${day}/${month}/${year}`;
+  const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  return futureDate.toISOString();
 }
 
 const requestSchema = z.object({
@@ -72,6 +68,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
   const {
     control,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<RequestFormData>({
     resolver: zodResolver(requestSchema) as any, // todo: remember to solve later
@@ -111,31 +108,15 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
     setSelectedCategories((prev) => prev.filter((c) => c.id !== id));
   };
 
-  const createRequest = async (request: CreateRequestPayload) => {
+  // Single submit path: upload images, build the payload, create the request,
+  // and only on success clear the form and close. try/finally guarantees the
+  // button leaves its "Sending…" state even when creation fails.
+  const onSubmit = async (data: RequestFormData) => {
+    if (sending) return;
     try {
       setSending(true);
-      const newRequest = await createBuyerRequest(request);
-      show({
-        variant: "success",
-        title: "Request Created",
-        message: "Your request has been successfully created.",
-      });
-      setSending(false);
-      sheetRef.current?.close();
-    } catch (error) {
-      show({
-        variant: "error",
-        title: "Error creating buyer request",
-        message:
-          "There was a problem creating the buyer request. Please try again later.",
-      });
-    }
-  };
 
-  const handleLocalSubmit = async (data: RequestFormData) => {
-    try {
       const ImageResponse = await attemptMultipleUpload(Imagevalue);
-
       const imageIds = ImageResponse.map((imgId) => imgId.media.id);
 
       // ensure category_ids includes selectedCategories if not provided by form UI
@@ -146,20 +127,38 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
           ? (data as any).category_ids
           : selectedCategories.map((c) => c.id);
 
-      // prepare payload: keep form data, add category_ids (if we generated them) and add images
-      const payload = {
+      // Backend expects media_ids (the old `images` key was silently dropped).
+      const payload: CreateRequestPayload = {
         ...data,
         category_ids,
-        // include raw image objects for parent to handle upload or attach to request body
-        //remember to work on this later
-        images: imageIds ?? [],
+        media_ids: imageIds ?? [],
       };
 
-      // call parent-provided onSubmit
-      await createRequest(payload);
-    } catch (err) {
-      logger.error("Create buyer request failed:", err);
-      // optionally: show UI feedback here
+      await createBuyerRequest(payload);
+
+      show({
+        variant: "success",
+        title: "Request Created",
+        message: "Your request has been successfully created.",
+      });
+
+      // Clear the form + local state, then close the sheet.
+      reset();
+      setImageValue([]);
+      setSelectedCategories([]);
+      sheetRef.current?.close();
+    } catch (error) {
+      logger.error("Create buyer request failed:", error);
+      show({
+        variant: "error",
+        title: "Error creating buyer request",
+        message:
+          error instanceof Error && error.message
+            ? error.message
+            : "There was a problem creating the buyer request. Please try again later.",
+      });
+    } finally {
+      setSending(false);
     }
   };
 
@@ -168,7 +167,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
       ref={sheetRef}
       index={-1}
       snapPoints={snapPoints}
-      enablePanDownToClose
+      enablePanDownToClose={!sending}
       backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }}
       handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
     >
@@ -185,7 +184,8 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
         <Input
           name="title"
           control={control}
-          placeholder="Title"
+          label="Title"
+          placeholder="Give your request a short title"
           errors={errors}
         />
 
@@ -193,18 +193,19 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
         <Input
           name="description"
           control={control}
-          placeholder="Description"
+          label="What are you looking for?"
+          placeholder="Describe the item, condition, quantity…"
           errors={errors}
           multiline
-          numberOfLines={4}
-          style={{ height: 100, textAlignVertical: "top" }}
+          numberOfLines={5}
         />
 
         {/* Budget */}
         <Input
           name="budget"
           control={control}
-          placeholder="Budget"
+          label="Budget (₦)"
+          placeholder="e.g. 15000"
           errors={errors}
           keyboardType="numeric"
         />
@@ -268,7 +269,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
         <TouchableOpacity
           disabled={sending}
           className="bg-primary py-4 rounded items-center justify-center"
-          onPress={handleSubmit(handleLocalSubmit)}
+          onPress={handleSubmit(onSubmit)}
         >
           <Text className="text-white font-geist font-semibold">
             {sending ? "Sending…" : "Create Request"}

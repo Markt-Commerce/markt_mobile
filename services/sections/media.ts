@@ -85,13 +85,12 @@ export async function attemptMultipleUpload(
           name: name,
           type: mimeType
         } as any);
-        try {
-          const result = await uploadImage(formData);
-          return result;
-        } catch (error) {
-          logger.error("Upload failed:", error);
-        }
-        //return result
+        // NOTE: this is a plain service function, not a React component, so it
+        // must NOT call hooks (useToast() here caused "Invalid hook call").
+        // Let the failure propagate — the calling component shows the toast in
+        // its own catch, and this avoids returning `undefined` into the id list.
+        const result = await uploadImage(formData);
+        return result;
       }) as Promise<MediaUploadResponse>[]
     );
     return ImageResponse;

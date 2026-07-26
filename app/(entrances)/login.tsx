@@ -203,7 +203,7 @@ export default function LoginScreen() {
                     onPress={() => setRole("buyer")}
                     accessibilityRole="button"
                     accessibilityState={{ selected: role === "buyer" }}
-                    className={`flex-1 rounded py-2.5 items-center ${role === "buyer" ? "bg-primary shadow-sm" : ""}`}
+                    className={`flex-1 rounded py-2.5 items-center ${role === "buyer" ? "bg-primary shadow-sm" : "shadow-none"}`}
                   >
                     <Text className={`font-geist font-bold text-sm ${role === "buyer" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                       Buyer
@@ -214,7 +214,7 @@ export default function LoginScreen() {
                     onPress={() => setRole("seller")}
                     accessibilityRole="button"
                     accessibilityState={{ selected: role === "seller" }}
-                    className={`flex-1 rounded py-2.5 items-center ${role === "seller" ? "bg-primary shadow-sm" : ""}`}
+                    className={`flex-1 rounded py-2.5 items-center ${role === "seller" ? "bg-primary shadow-sm" : "shadow-none"}`}
                   >
                     <Text className={`font-geist font-bold text-sm ${role === "seller" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                       Seller

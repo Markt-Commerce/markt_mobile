@@ -37,11 +37,14 @@ import type { Niches } from "../../models/niches";
 import type { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";
 
+// Early launch: only the main feed is live. Discover/Trending/Following are
+// hidden until their backend pipelines are ready — restore entries here to bring
+// them back.
 const MAIN_TABS = [
   { id: "for_you" as const, label: "For You" },
-  { id: "discover" as const, label: "Discover" },
-  { id: "trending" as const, label: "Trending" },
-  { id: "following" as const, label: "Following" },
+  // { id: "discover" as const, label: "Discover" },
+  // { id: "trending" as const, label: "Trending" },
+  // { id: "following" as const, label: "Following" },
 ];
 
 type TabId = "for_you" | "discover" | "trending" | "following" | string;
