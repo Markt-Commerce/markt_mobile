@@ -2,7 +2,10 @@ name: EAS APK Build
 
 on:
   workflow_dispatch:
-
+  push:
+    branches:
+      - develop
+      - main
 jobs:
   build:
     name: Build Android APK
