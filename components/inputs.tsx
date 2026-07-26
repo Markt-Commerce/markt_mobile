@@ -7,6 +7,9 @@ import { useTheme } from "./themeProvider";
 interface InputProps<TFieldValues extends FieldValues = FieldValues> extends React.ComponentProps<typeof TextInput> {
   name?: Path<TFieldValues>;
   placeholder: string;
+  /** Optional field label rendered above the input. When set, the field also
+   * gets its own bottom spacing so stacked form fields are evenly separated. */
+  label?: string;
   secureTextEntry?: boolean;
   value?: string;
   onChangeText?: (text: string) => void;
@@ -23,21 +26,33 @@ interface InputProps<TFieldValues extends FieldValues = FieldValues> extends Rea
 export function Input<TFieldValues extends FieldValues = FieldValues>({
   name,
   placeholder,
+  label,
   secureTextEntry = false,
   value,
   onChangeText,
   errors,
   control,
   multiline = false,
+  numberOfLines,
   keyboardType = "default",
+  style,
 }: InputProps<TFieldValues>) {
   const hasError = name && errors?.[name];
   const errorMessage = hasError ? (errors[name!]?.message as string) : undefined;
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
 
+  // Multiline fields (post caption, request description) render as a taller
+  // top-aligned textbox instead of a single-line 48px input.
+  const sizeClass = multiline ? "min-h-[120px] py-3" : "h-12";
+
   return (
-    <View className="w-full">
+    <View className={`w-full ${label ? "mb-5" : ""}`}>
+      {label ? (
+        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          {label}
+        </Text>
+      ) : null}
       <Controller
         control={control}
         name={name!}
@@ -50,10 +65,13 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
               placeholder={placeholder}
               placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
               secureTextEntry={secureTextEntry}
-              className={`w-full rounded h-12 px-4 text-base font-inter ${isDark ? "text-[#f0f1f2] bg-[#1a1c1d]" : "text-secondary bg-background"} border ${
+              className={`w-full rounded ${sizeClass} px-4 text-base font-inter ${isDark ? "text-[#f0f1f2] bg-[#1a1c1d]" : "text-secondary bg-background"} border ${
                 hasError ? "border-error" : isDark ? "border-[#46464e] focus:border-[#f0f1f2]" : "border-border focus:border-secondary"
               }`}
               multiline={multiline}
+              numberOfLines={numberOfLines}
+              textAlignVertical={multiline ? "top" : "auto"}
+              style={style}
               keyboardType={keyboardType}
               accessibilityLabel={placeholder}
               accessibilityState={{ disabled: false }}

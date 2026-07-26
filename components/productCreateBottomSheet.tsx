@@ -168,24 +168,16 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         <Text className={`text-lg font-geist font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Product</Text>
 
         {/* Product Name */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Product Name</Text>
-        <Input name='name' placeholder='Product Name' control={control}></Input>
-        {errors.name && <Text className="text-error text-xs font-geist mt-1">{errors.name.message}</Text>}
+        <Input name='name' label='Product Name' placeholder='e.g. Wireless headphones' control={control} errors={errors} />
 
         {/* Price */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Price</Text>
-        <Input name='price' placeholder='Price' control={control} keyboardType='numeric'></Input>
-        {errors.price && <Text className="text-error text-xs font-geist mt-1">{errors.price.message}</Text>}
+        <Input name='price' label='Price (₦)' placeholder='e.g. 15000' control={control} keyboardType='numeric' errors={errors} />
 
         {/* Stock */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Stock</Text>
-        <Input name='stock' placeholder='Stock' control={control} keyboardType='numeric'></Input>
-        {errors.stock && <Text className="text-error text-xs font-geist mt-1">{errors.stock.message}</Text>}
+        <Input name='stock' label='Stock' placeholder='How many are available?' control={control} keyboardType='numeric' errors={errors} />
 
         {/* Description */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Description</Text>
-        <Input name='description' placeholder='Description' control={control} multiline></Input>
-        {errors.description && <Text className="text-error text-xs font-geist mt-1">{errors.description.message}</Text>}
+        <Input name='description' label='Description' placeholder='Describe your product…' control={control} multiline errors={errors} />
 
         {/* Category IDs */}
         <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Categories</Text>
@@ -219,29 +211,19 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         <Text className={`text-xs font-geist font-bold uppercase tracking-[2px] mt-6 mb-3 ${isDark ? "text-[#f0f1f2]" : "text-tertiary"}`}>Optional Details</Text>
 
         {/* Barcode */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Barcode</Text>
-        <Input name='barcode' placeholder='Barcode' control={control}></Input>
-        {errors.barcode && <Text className="text-error text-xs font-geist mt-1">{errors.barcode.message}</Text>}
+        <Input name='barcode' label='Barcode' placeholder='Scan or enter a barcode' control={control} errors={errors} />
 
         {/* Weight */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Weight (in grams)</Text>
-        <Input name='weight' placeholder='Weight' control={control} keyboardType='numeric' value='0'></Input>
-        {errors.weight && <Text className="text-error text-xs font-geist mt-1">{errors.weight.message}</Text>}
+        <Input name='weight' label='Weight (grams)' placeholder='e.g. 500' control={control} keyboardType='numeric' errors={errors} />
 
         {/* SKU */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>SKU</Text>
-        <Input name='sku' placeholder='SKU' control={control}></Input>
-        {errors.sku && <Text className="text-error text-xs font-geist mt-1">{errors.sku.message}</Text>}
+        <Input name='sku' label='SKU' placeholder='Your stock-keeping code' control={control} errors={errors} />
 
         {/* Compare at Price */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Compare at Price</Text>
-        <Input name='compare_at_price' placeholder='Compare at Price' control={control} keyboardType='numeric' value='0'></Input>
-        {errors.compare_at_price && <Text className="text-error text-xs font-geist mt-1">{errors.compare_at_price.message}</Text>}
+        <Input name='compare_at_price' label='Compare at Price (₦)' placeholder='Original price, if discounted' control={control} keyboardType='numeric' errors={errors} />
 
         {/* Cost per Item */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Cost per Item</Text>
-        <Input name='cost_per_item' placeholder='Cost per Item' control={control} keyboardType='numeric' value='0'></Input>
-        {errors.cost_per_item && <Text className="text-error text-xs font-geist mt-1">{errors.cost_per_item.message}</Text>}
+        <Input name='cost_per_item' label='Cost per Item (₦)' placeholder='What it costs you' control={control} keyboardType='numeric' errors={errors} />
         
 
         {/* Submit Button */}

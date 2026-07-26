@@ -192,7 +192,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
         <Text className={`text-lg font-geist font-bold mb-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Post</Text>
 
           {/* Caption */}
-          <Input name="caption" className="" control={control} numberOfLines={10} placeholder="What's on your mind?"></Input>
+          <Input name="caption" control={control} label="Caption" placeholder="Share a product you're curious about…" multiline numberOfLines={6} />
 
           {/* Images */}
           <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Images</Text>

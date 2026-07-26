@@ -184,7 +184,8 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
         <Input
           name="title"
           control={control}
-          placeholder="Title"
+          label="Title"
+          placeholder="Give your request a short title"
           errors={errors}
         />
 
@@ -192,18 +193,19 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
         <Input
           name="description"
           control={control}
-          placeholder="Description"
+          label="What are you looking for?"
+          placeholder="Describe the item, condition, quantity…"
           errors={errors}
           multiline
-          numberOfLines={4}
-          style={{ height: 100, textAlignVertical: "top" }}
+          numberOfLines={5}
         />
 
         {/* Budget */}
         <Input
           name="budget"
           control={control}
-          placeholder="Budget"
+          label="Budget (₦)"
+          placeholder="e.g. 15000"
           errors={errors}
           keyboardType="numeric"
         />
