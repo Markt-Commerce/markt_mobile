@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   Settings,
   ShieldCheck,
+  Trophy,
 } from "lucide-react-native";
 import BottomSheet from "@gorhom/bottom-sheet";
 import Avatar from "../../components/Avatar";
@@ -266,6 +267,13 @@ export default function ProfileScreen() {
         </Section>
 
         <Section title="Account Navigation" isDark={isDark}>
+          <Row
+            icon={Trophy}
+            title="Rewards & Badges"
+            subtitle="Your points, tier progress, badges, and the leaderboard."
+            onPress={() => router.push("/gamification" as any)}
+            isDark={isDark}
+          />
           <Row
             icon={Settings}
             title="Settings"
