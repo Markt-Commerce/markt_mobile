@@ -2,6 +2,8 @@ import { RegisterRequest, LoginRequest, AuthUser, ApiResponse, UserSwitchRespons
 import { CommonBuyerResponseData, CommonSellerResponseData } from "../../models/user";
 import { BASE_URL, request } from "../api";
 import { setAuthToken, extractTokenFromResponse, setUserSession, clearUserSession } from "../authStorage";
+import { getStoredPushToken } from "../notifications";
+import { unregisterPushToken } from "./push";
 
 
 /**
@@ -59,6 +61,13 @@ export async function loginUser(data: LoginRequest): Promise<AuthUser> {
  */
 export async function logoutUser(): Promise<void> {
   try {
+    // Stop remote push to this device (while still authenticated).
+    try {
+      const token = await getStoredPushToken();
+      if (token) await unregisterPushToken(token);
+    } catch {
+      /* non-fatal */
+    }
     await request<void>(`${BASE_URL}/users/logout`, { method: "POST" });
   } finally {
     await setAuthToken(null);
