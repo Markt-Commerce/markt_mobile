@@ -14,7 +14,17 @@ import { RegisterRequest } from "../models/auth";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import PaymentDeepLinkHandler from "../components/PaymentDeepLinkHandler";
+
+// Single app-wide query client. Created once at module scope so it survives
+// re-renders and Fast Refresh. Powers the tanstack-query hooks (useAuth,
+// useNotification, useProfileMutations).
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: 2, staleTime: 30_000 },
+  },
+});
 
 export default function RootLayout() {
   const [regData, setRegData] = useState<RegisterRequest>({
@@ -28,19 +38,21 @@ export default function RootLayout() {
   });
 
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <ToastProvider>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <UserProvider>
-              <RegisterProvider value={{ regData, setRegData }}>
-                <AppStack />
-              </RegisterProvider>
-            </UserProvider>
-          </GestureHandlerRootView>
-        </ToastProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <QueryClientProvider client={queryClient}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <UserProvider>
+                <RegisterProvider value={{ regData, setRegData }}>
+                  <AppStack />
+                </RegisterProvider>
+              </UserProvider>
+            </GestureHandlerRootView>
+          </ToastProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </QueryClientProvider>
   );
 }
 
