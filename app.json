@@ -44,7 +44,14 @@
           "locationAlwaysAndWhenInUsePermission": "Allow Markt Commerce to use your location."
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-background-task",
+      [
+        "expo-notifications",
+        {
+          "color": "#E94C2A"
+        }
+      ]
     ],
     "extra": {
       "router": {},
