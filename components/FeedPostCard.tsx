@@ -16,6 +16,8 @@ import { useToast } from "./ToastProvider";
 import Avatar from "./Avatar";
 import SkeletonImage from "./SkeletonImage";
 import { useTheme } from "./themeProvider";
+import { useGamificationLookup } from "../hooks/useGamificationLookup";
+import TierBadge from "./gamification/TierBadge";
 
 const MEDIA_MAX_HEIGHT = 320;
 
@@ -31,6 +33,7 @@ export default function FeedPostCard({ post, onLike }: Props) {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const { profile: authorGamification } = useGamificationLookup(post.user?.id);
 
   const mediaUrl = post.media?.[0]?.url;
 
@@ -85,12 +88,22 @@ export default function FeedPostCard({ post, onLike }: Props) {
               className="mr-3"
             />
             <View className="flex-1">
-              <Text
-                className={`font-semibold text-sm ${isDark ? "text-[#f0f1f2]" : "text-text-primary"}`}
-                numberOfLines={1}
-              >
-                {post.user?.username ?? "Unknown"}
-              </Text>
+              <View className="flex-row items-center gap-2">
+                <Text
+                  className={`font-semibold text-sm ${isDark ? "text-[#f0f1f2]" : "text-text-primary"}`}
+                  numberOfLines={1}
+                >
+                  {post.user?.username ?? "Unknown"}
+                </Text>
+                {authorGamification && (
+                  <TierBadge
+                    tier={authorGamification.tier.key}
+                    stars={authorGamification.tier.stars}
+                    colorHex={authorGamification.tier.color_hex}
+                    size="sm"
+                  />
+                )}
+              </View>
               {post.niche && (
                 <Text
                   className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-text-secondary"}`}

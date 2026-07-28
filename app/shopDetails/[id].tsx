@@ -26,6 +26,10 @@ import { Product } from "../../models/feed";
 import { defaultProfilePicture } from "../../models/defaults";
 import { useTheme } from "../../components/themeProvider";
 import { parseDate } from "../../utils/parseDate";
+import { useGamificationLookup } from "../../hooks/useGamificationLookup";
+import { useBadges } from "../../hooks/useBadges";
+import TierBadge from "../../components/gamification/TierBadge";
+import BadgeGrid from "../../components/gamification/BadgeGrid";
 
 function ShopPostCard({ post, isDark }: { post: ShopPost; isDark: boolean }) {
   const firstImage = post.media?.find((m) => m.type === "image");
@@ -76,6 +80,8 @@ export default function Shop() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const { profile: sellerGamification } = useGamificationLookup(shop?.user?.id);
+  const { badges: sellerBadges } = useBadges(shop?.user?.id);
 
   useEffect(() => {
     const fetchShopData = async () => {
@@ -188,6 +194,14 @@ export default function Shop() {
                 >
                   {shop?.shop_name}
                 </Text>
+                {sellerGamification && (
+                  <TierBadge
+                    tier={sellerGamification.tier.key}
+                    stars={sellerGamification.tier.stars}
+                    colorHex={sellerGamification.tier.color_hex}
+                    size="sm"
+                  />
+                )}
               </View>
               <View className="flex-row items-center gap-2 mt-2">
                 <Text
@@ -277,6 +291,23 @@ export default function Shop() {
             </View>
           </View>
         </View>
+
+        {/* Badges earned */}
+        {sellerBadges.filter((b) => b.earned).length > 0 && (
+          <View
+            className={`px-6 py-6 border-b ${isDark ? "border-dark-border" : "border-border"}`}
+          >
+            <Text
+              className={`${isDark ? "text-dark-text" : "text-black"} text-xl font-geist font-bold mb-4`}
+            >
+              Badges earned
+            </Text>
+            <BadgeGrid
+              badges={sellerBadges.filter((b) => b.earned)}
+              onBadgePress={(b) => router.push(`/gamification/badge/${b.slug}` as any)}
+            />
+          </View>
+        )}
 
         {/* Description */}
         {shop?.description && (

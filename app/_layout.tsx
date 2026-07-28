@@ -16,6 +16,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import PaymentDeepLinkHandler from "../components/PaymentDeepLinkHandler";
+import { GamificationProvider } from "../hooks/gamificationContext";
 
 // Single app-wide query client. Created once at module scope so it survives
 // re-renders and Fast Refresh. Powers the tanstack-query hooks (useAuth,
@@ -83,27 +84,37 @@ export function AppStack() {
 
   // Single stack + Stack.Protected: when logged in, guest routes are removed from
   // navigation history (fixes iOS swipe-back landing on introduction after login).
+  const stack = (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: isDark ? "#0b0b0c" : "#ffffff" },
+      }}
+    >
+      <Stack.Protected guard={isLoggedIn}>
+        <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+      </Stack.Protected>
+
+      <Stack.Protected guard={!isLoggedIn}>
+        <Stack.Screen name="introduction" />
+        <Stack.Screen name="(entrances)" />
+      </Stack.Protected>
+
+      <Stack.Screen name="support" />
+    </Stack>
+  );
+
   return (
     <>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-      {isLoggedIn ? <PaymentDeepLinkHandler /> : null}
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: isDark ? "#0b0b0c" : "#ffffff" },
-        }}
-      >
-        <Stack.Protected guard={isLoggedIn}>
-          <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
-        </Stack.Protected>
-
-        <Stack.Protected guard={!isLoggedIn}>
-          <Stack.Screen name="introduction" />
-          <Stack.Screen name="(entrances)" />
-        </Stack.Protected>
-
-        <Stack.Screen name="support" />
-      </Stack>
+      {isLoggedIn ? (
+        <>
+          <PaymentDeepLinkHandler />
+          <GamificationProvider>{stack}</GamificationProvider>
+        </>
+      ) : (
+        stack
+      )}
     </>
   );
 }

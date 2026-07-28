@@ -20,6 +20,8 @@ import { getUserProfile } from "../../services/sections/profile";
 import { switchUserRole } from "../../services/sections/auth";
 import type { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";
+import { useGamificationContext } from "../../hooks/gamificationContext";
+import GamificationStrip from "../../components/gamification/GamificationStrip";
 
 function Section({
   title,
@@ -96,6 +98,7 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [createMode, setCreateMode] = useState<"buyer" | "seller" | null>(null);
   const createRoleRef = useRef<BottomSheet | null>(null);
+  const { profile: gamification, badges: gamificationBadges } = useGamificationContext();
 
   useEffect(() => {
     getUserProfile().then(setProfile).catch(() => setProfile(null));
@@ -235,6 +238,17 @@ export default function ProfileScreen() {
             </View>
           </View>
         </View>
+
+        {gamification && (
+          <View className="px-6 pt-8">
+            <GamificationStrip
+              profile={gamification}
+              badges={gamificationBadges}
+              onPress={() => router.push("/gamification" as any)}
+              onBadgePress={(b) => router.push(`/gamification/badge/${b.slug}` as any)}
+            />
+          </View>
+        )}
 
         <Section title="Role Overview" isDark={isDark}>
           <Row
