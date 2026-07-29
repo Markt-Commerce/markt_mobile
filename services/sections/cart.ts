@@ -11,6 +11,7 @@ import {
   CheckoutResponse,
 } from "../../models/cart";
 import { ApiResponse } from "../../models/auth";
+import { setPendingCartCount } from "../notifications";
 
 // Get cart
 export async function getCart(): Promise<Cart> {
@@ -19,6 +20,13 @@ export async function getCart(): Promise<Cart> {
   const res = await request<Cart>(`${BASE_URL}/cart/`, {
     method: "GET",
   });
+  // Cache the count so the background reminder worker can nudge an abandoned
+  // cart without a network call.
+  try {
+    await setPendingCartCount(res?.items?.length ?? 0);
+  } catch {
+    /* non-fatal */
+  }
   return res;
 }
 

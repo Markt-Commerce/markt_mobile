@@ -45,6 +45,7 @@ export default function RootLayout() {
           <ToastProvider>
             <GestureHandlerRootView style={{ flex: 1 }}>
               <UserProvider>
+                <NotificationsBootstrap />
                 <RegisterProvider value={{ regData, setRegData }}>
                   <AppStack />
                 </RegisterProvider>
