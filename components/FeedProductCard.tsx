@@ -17,6 +17,9 @@ import SkeletonImage from "./SkeletonImage";
 import { useUser } from "../hooks/userContextProvider";
 import { useToast } from "./ToastProvider";
 import { useTheme } from "./themeProvider";
+import { useGamificationLookup } from "../hooks/useGamificationLookup";
+import TierBadge from "./gamification/TierBadge";
+import BadgeChip from "./gamification/BadgeChip";
 
 interface Props {
   product: FeedProduct;
@@ -35,6 +38,10 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
 
   const followeeId = product.seller?.user?.id;
   const followerCount = product.seller?.follower_count ?? 0;
+  const { profile: sellerGamification } = useGamificationLookup(followeeId);
+  const topBadges = [...(sellerGamification?.badges ?? [])]
+    .sort((a, b) => b.priority - a.priority)
+    .slice(0, 2);
 
   const imageUrl = product.images?.[0]?.url;
   const isBuyer = role === "buyer";
@@ -131,10 +138,23 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
               )}
 
               <View className="flex-row items-center justify-between mt-2 gap-2">
-                <Text className={`text-xs flex-1 ${isDark ? "text-[#c6c5cf]" : "text-text-secondary"}`} numberOfLines={1}>
-                  By {product.seller?.shop_name ?? "Seller"}
-                  {followerCount > 0 && ` · ${followerCount} follower${followerCount !== 1 ? "s" : ""}`}
-                </Text>
+                <View className="flex-1 flex-row items-center gap-1.5">
+                  <Text className={`text-xs flex-shrink ${isDark ? "text-[#c6c5cf]" : "text-text-secondary"}`} numberOfLines={1}>
+                    By {product.seller?.shop_name ?? "Seller"}
+                    {followerCount > 0 && ` · ${followerCount} follower${followerCount !== 1 ? "s" : ""}`}
+                  </Text>
+                  {sellerGamification && (
+                    <TierBadge
+                      tier={sellerGamification.tier.key}
+                      stars={sellerGamification.tier.stars}
+                      colorHex={sellerGamification.tier.color_hex}
+                      size="sm"
+                    />
+                  )}
+                  {topBadges.map((b) => (
+                    <BadgeChip key={b.slug} badge={b} size="xs" />
+                  ))}
+                </View>
                 {followeeId && !isOwnProduct && (
                   <TouchableOpacity
                     onPress={(e) => handleFollowToggle(e)}

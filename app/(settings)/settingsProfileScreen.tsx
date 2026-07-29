@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
@@ -13,6 +13,7 @@ import {
   LogOut,
   Palette,
   ShieldCheck,
+  Trophy,
   UserCog,
 } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
@@ -23,6 +24,8 @@ import { getUserProfile } from "../../services/sections/profile";
 import { logoutUser } from "../../services/sections/auth";
 import { useToast } from "../../components/ToastProvider";
 import { navigateToGuestHome } from "../../utils/authNavigation";
+import { useGamificationContext } from "../../hooks/gamificationContext";
+import { updateGamificationPreferences } from "../../services/sections/gamification";
 import type { UserProfile } from "../../models/profile";
 
 const LANGUAGE_KEY = "app_lang_v1";
@@ -92,6 +95,49 @@ function SettingsRow({
   );
 }
 
+function SettingsSwitchRow({
+  icon: Icon,
+  title,
+  subtitle,
+  value,
+  onValueChange,
+  disabled = false,
+  last = false,
+  dark = false,
+}: {
+  icon: React.ElementType;
+  title: string;
+  subtitle: string;
+  value: boolean;
+  onValueChange: (v: boolean) => void;
+  disabled?: boolean;
+  last?: boolean;
+  dark?: boolean;
+}) {
+  return (
+    <View
+      className={`flex-row items-center justify-between px-4 py-4 ${last ? "" : dark ? "border-b border-[#46464e]" : "border-b border-border"}`}
+    >
+      <View className="flex-row items-center gap-3 flex-1 pr-3">
+        <View className={`w-10 h-10 rounded items-center justify-center ${dark ? "bg-[#2f3132]" : "bg-surface"}`}>
+          <Icon size={18} color={dark ? "#f0f1f2" : "#000000"} strokeWidth={1.7} />
+        </View>
+        <View className="flex-1">
+          <Text className={`font-geist font-bold text-[15px] ${dark ? "text-[#f0f1f2]" : "text-black"}`}>{title}</Text>
+          <Text className={`font-inter text-[13px] mt-1 ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{subtitle}</Text>
+        </View>
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        disabled={disabled}
+        trackColor={{ false: dark ? "#46464e" : "#E4E4E7", true: "#000000" }}
+        thumbColor={dark ? "#F0F1F2" : "#FFFFFF"}
+      />
+    </View>
+  );
+}
+
 export default function SettingsProfileScreen() {
   const router = useRouter();
   const { user, role, setUser } = useUser();
@@ -100,6 +146,9 @@ export default function SettingsProfileScreen() {
   const { show } = useToast();
   const [language, setLanguage] = useState("EN");
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const { profile: gamification, refresh: refreshGamification } = useGamificationContext();
+  const [leaderboardOptOut, setLeaderboardOptOut] = useState(false);
+  const [leaderboardUpdating, setLeaderboardUpdating] = useState(false);
 
   const displayName =
     role === "buyer"
@@ -114,6 +163,27 @@ export default function SettingsProfileScreen() {
       })
       .catch(() => { });
   }, []);
+
+  useEffect(() => {
+    if (gamification) setLeaderboardOptOut(gamification.opt_out_leaderboard);
+  }, [gamification]);
+
+  const handleLeaderboardToggle = async (showOnLeaderboard: boolean) => {
+    if (leaderboardUpdating) return;
+    const nextOptOut = !showOnLeaderboard;
+    const prev = leaderboardOptOut;
+    setLeaderboardOptOut(nextOptOut);
+    setLeaderboardUpdating(true);
+    try {
+      await updateGamificationPreferences({ opt_out_leaderboard: nextOptOut });
+      refreshGamification();
+    } catch {
+      setLeaderboardOptOut(prev);
+      show({ variant: "error", title: "Error", message: "Could not update leaderboard preference." });
+    } finally {
+      setLeaderboardUpdating(false);
+    }
+  };
 
   const handleThemeToggle = async () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
@@ -238,6 +308,15 @@ export default function SettingsProfileScreen() {
             subtitle="Set your preferred language for the app experience."
             value={language}
             onPress={handleLanguageToggle}
+            dark={isDark}
+          />
+          <SettingsSwitchRow
+            icon={Trophy}
+            title="Show on leaderboard"
+            subtitle="Let other users see your rank and username on the gamification leaderboard."
+            value={!leaderboardOptOut}
+            onValueChange={handleLeaderboardToggle}
+            disabled={leaderboardUpdating}
             last
             dark={isDark}
           />

@@ -12,37 +12,26 @@ import { useRouter } from "expo-router";
 import { ArrowLeft, ChevronRight } from "lucide-react-native";
 
 import { useTheme } from "../../components/themeProvider";
-import { useToast } from "../../components/ToastProvider";
 import { useUser } from "../../hooks/userContextProvider";
-import { useGamificationProfile } from "../../hooks/useGamificationProfile";
-import { useBadges } from "../../hooks/useBadges";
-import { useGamificationSocket } from "../../hooks/useGamificationSocket";
+import { useGamificationContext } from "../../hooks/gamificationContext";
 import { getPointsHistory, getLeaderboard } from "../../services/sections/gamification";
 import TierBadge from "../../components/gamification/TierBadge";
 import TierProgressBar from "../../components/gamification/TierProgressBar";
 import BadgeGrid from "../../components/gamification/BadgeGrid";
 import LeaderboardRow from "../../components/gamification/LeaderboardRow";
-import BadgeUnlockModal from "../../components/gamification/BadgeUnlockModal";
 import { reasonLabel } from "../../utils/gamification";
-import type {
-  PointsHistoryItem,
-  LeaderboardRow as LBRow,
-  BadgeEarnedEvent,
-} from "../../types/gamification";
+import type { PointsHistoryItem, LeaderboardRow as LBRow } from "../../types/gamification";
 
 export default function GamificationScreen() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
-  const { show } = useToast();
   const { user } = useUser();
   const isDark = resolvedTheme === "dark";
 
-  const { data, loading, error, refresh, bump } = useGamificationProfile();
-  const { badges, refresh: refreshBadges } = useBadges(user?.user_id);
+  const { profile: data, badges, loading, error, refresh, refreshBadges } = useGamificationContext();
 
   const [recent, setRecent] = useState<PointsHistoryItem[]>([]);
   const [preview, setPreview] = useState<LBRow[]>([]);
-  const [unlocked, setUnlocked] = useState<BadgeEarnedEvent["badge"] | null>(null);
 
   const loadExtras = useCallback(async () => {
     try {
@@ -67,29 +56,9 @@ export default function GamificationScreen() {
     loadExtras();
   }, [refresh, refreshBadges, loadExtras]);
 
-  // Realtime: toast points, celebrate badges, refresh on tier-up.
-  useGamificationSocket({
-    onPoints: (e) => {
-      bump(e.delta);
-      show({
-        variant: "success",
-        title: `+${e.delta} pts`,
-        message: reasonLabel(e.reason),
-      });
-    },
-    onBadge: (e) => {
-      setUnlocked(e.badge);
-      refreshBadges();
-    },
-    onTier: (e) => {
-      show({
-        variant: "success",
-        title: "Level up!",
-        message: `You reached a new tier (${e.stars}★)`,
-      });
-      refresh();
-    },
-  });
+  // Realtime points/badge/tier updates are handled globally by
+  // GamificationProvider (toast + celebratory modals); this screen just
+  // re-reads the shared, already-live profile/badges data.
 
   return (
     <SafeAreaView
@@ -288,12 +257,6 @@ export default function GamificationScreen() {
           </>
         )}
       </ScrollView>
-
-      <BadgeUnlockModal
-        visible={!!unlocked}
-        badge={unlocked}
-        onClose={() => setUnlocked(null)}
-      />
     </SafeAreaView>
   );
 }
