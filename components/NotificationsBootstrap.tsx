@@ -4,65 +4,95 @@
  * Expo push-token registration with the backend. Renders nothing.
  *
  * Mounted once inside the provider tree in app/_layout.tsx.
+ *
+ * Every notification module is imported *dynamically*, gated on
+ * notificationsEnabled(). Static imports would pull in expo-background-task and
+ * expo-notifications, both of which resolve native modules at module scope and
+ * throw in Expo Go — crashing the app before this component could opt out. Only
+ * ./notificationState (plain AsyncStorage) is safe to import statically.
  */
 import { useEffect } from "react";
 import { AppState, Platform } from "react-native";
-import * as Notifications from "expo-notifications";
+import type { EventSubscription } from "expo-modules-core";
 
 import { useUser } from "../hooks/userContextProvider";
-import {
-  configureHandler,
-  ensureAndroidChannels,
-  requestPermissions,
-  registerForPushToken,
-  markAppOpened,
-} from "../services/notifications";
-import { registerBackgroundReminders } from "../services/backgroundTasks";
-import { registerPushToken } from "../services/sections/push";
+import { markAppOpened } from "../services/notificationState";
+import { notificationsEnabled } from "../services/notificationSupport";
 import logger from "../utils/logger";
 
 export default function NotificationsBootstrap() {
   const { user } = useUser();
+  const enabled = notificationsEnabled();
 
   // One-time device setup.
   useEffect(() => {
-    configureHandler();
-    let responseSub: Notifications.Subscription | undefined;
+    // The worker's re-engagement rule reads this, so keep it current even when
+    // notifications themselves are unavailable.
+    markAppOpened();
 
-    (async () => {
-      await ensureAndroidChannels();
-      await markAppOpened();
-      await requestPermissions();
-      await registerBackgroundReminders();
-    })();
-
-    // Tapping a reminder opens the app; deep-linking by data.type can be added
-    // here later.
-    responseSub = Notifications.addNotificationResponseReceivedListener(() => {});
-
-    // Refresh the "last opened" timestamp the worker uses for re-engagement.
     const appStateSub = AppState.addEventListener("change", (s) => {
       if (s === "active") markAppOpened();
     });
 
+    if (!enabled) {
+      logger.info("notifications disabled in this environment (Expo Go?)");
+      return () => appStateSub.remove();
+    }
+
+    let responseSub: EventSubscription | undefined;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const Notifications = await import("expo-notifications");
+        const { configureHandler, ensureAndroidChannels, requestPermissions } =
+          await import("../services/notifications");
+        const { registerBackgroundReminders } = await import(
+          "../services/backgroundTasks"
+        );
+
+        if (cancelled) return;
+
+        configureHandler();
+        await ensureAndroidChannels();
+        await requestPermissions();
+        await registerBackgroundReminders();
+
+        if (cancelled) return;
+
+        // Tapping a reminder opens the app; deep-linking by data.type can be
+        // added here later.
+        responseSub = Notifications.addNotificationResponseReceivedListener(
+          () => {}
+        );
+      } catch (e) {
+        logger.error("notification setup failed:", e);
+      }
+    })();
+
     return () => {
+      cancelled = true;
       responseSub?.remove();
       appStateSub.remove();
     };
-  }, []);
+  }, [enabled]);
 
   // Register the push token once we know who the user is.
   useEffect(() => {
-    if (!user?.user_id) return;
+    if (!enabled || !user?.user_id) return;
     (async () => {
       try {
+        const { registerForPushToken } = await import(
+          "../services/notifications"
+        );
+        const { registerPushToken } = await import("../services/sections/push");
         const token = await registerForPushToken();
         if (token) await registerPushToken(token, Platform.OS);
       } catch (e) {
         logger.error("push token registration failed:", e);
       }
     })();
-  }, [user?.user_id]);
+  }, [enabled, user?.user_id]);
 
   return null;
 }

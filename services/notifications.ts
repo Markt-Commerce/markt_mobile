@@ -17,6 +17,7 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 import logger from "../utils/logger";
 import { setStoredPushToken } from "./notificationState";
+import { notificationsEnabled } from "./notificationSupport";
 
 export * from "./notificationState";
 
@@ -77,6 +78,11 @@ export async function requestPermissions(): Promise<boolean> {
 export async function registerForPushToken(): Promise<string | null> {
   try {
     if (!Device.isDevice) return null;
+    // On Android in Expo Go this call throws outright rather than failing soft.
+    if (!notificationsEnabled()) {
+      logger.info("registerForPushToken: skipped (push unavailable here)");
+      return null;
+    }
     const projectId =
       Constants?.expoConfig?.extra?.eas?.projectId ??
       (Constants as any)?.easConfig?.projectId;
