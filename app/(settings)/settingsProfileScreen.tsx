@@ -20,13 +20,11 @@ import ScreenHeader from "../../components/ScreenHeader";
 import Avatar from "../../components/Avatar";
 import { useUser } from "../../hooks/userContextProvider";
 import { useTheme } from "../../components/themeProvider";
-import { getUserProfile } from "../../services/sections/profile";
 import { logoutUser } from "../../services/sections/auth";
 import { useToast } from "../../components/ToastProvider";
 import { navigateToGuestHome } from "../../utils/authNavigation";
 import { useGamificationContext } from "../../hooks/gamificationContext";
 import { updateGamificationPreferences } from "../../services/sections/gamification";
-import type { UserProfile } from "../../models/profile";
 
 const LANGUAGE_KEY = "app_lang_v1";
 
@@ -140,12 +138,11 @@ function SettingsSwitchRow({
 
 export default function SettingsProfileScreen() {
   const router = useRouter();
-  const { user, role, setUser } = useUser();
+  const { user, role, setUser, profile } = useUser();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const { show } = useToast();
   const [language, setLanguage] = useState("EN");
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const { profile: gamification, refresh: refreshGamification } = useGamificationContext();
   const [leaderboardOptOut, setLeaderboardOptOut] = useState(false);
   const [leaderboardUpdating, setLeaderboardUpdating] = useState(false);
@@ -156,7 +153,6 @@ export default function SettingsProfileScreen() {
       : profile?.seller_account?.shop_name ?? profile?.username ?? "Shop";
 
   useEffect(() => {
-    getUserProfile().then(setProfile).catch(() => setProfile(null));
     AsyncStorage.getItem(LANGUAGE_KEY)
       .then((stored) => {
         if (stored) setLanguage(stored.toUpperCase());

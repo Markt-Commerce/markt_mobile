@@ -9,6 +9,8 @@ import { getStoredUser } from "../services/authStorage";
 import { setOnUnauthorized } from "../services/api";
 import { useToast } from "../components/ToastProvider";
 import { navigateToGuestHome } from "../utils/authNavigation";
+import { getUserProfile } from "../services/sections/profile";
+import type { UserProfile } from "../models/profile";
 
 type UserRole = "buyer" | "seller" | null;
 
@@ -23,6 +25,9 @@ export interface UserContextType {
   role: UserRole;
   setUser: (user: User | null) => void;
   setRole: (role: UserRole) => void;
+  profile: UserProfile | null;
+  setProfile: React.Dispatch<React.SetStateAction<UserProfile | null>>;
+  refreshProfile: () => Promise<UserProfile | null>;
   /** True while restoring session from storage on app start */
   isRestoringSession: boolean;
   /** Re-check stored session (e.g. after returning from background) */
@@ -35,6 +40,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<UserRole>("buyer");
   const [isRestoringSession, setIsRestoringSession] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const { show } = useToast();
   const hasShownSessionExpiredRef = useRef(false);
 
@@ -64,6 +70,25 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     checkAuthStatus();
   }, [checkAuthStatus]);
 
+  const refreshProfile = useCallback(async () => {
+    if (!user) {
+      setProfile(null);
+      return null;
+    }
+    try {
+      const nextProfile = await getUserProfile();
+      setProfile(nextProfile);
+      return nextProfile;
+    } catch {
+      return null;
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user) void refreshProfile();
+    else setProfile(null);
+  }, [user, refreshProfile]);
+
   // Reset "session expired" toast flag when user logs in (so next 401 shows it again)
   useEffect(() => {
     if (user) hasShownSessionExpiredRef.current = false;
@@ -73,6 +98,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const handleUnauthorized = () => {
       setUser(null);
       setRole("buyer");
+      setProfile(null);
       if (!hasShownSessionExpiredRef.current) {
         hasShownSessionExpiredRef.current = true;
         show({ variant: "info", title: "Session expired", message: "Please sign in again." });
@@ -84,7 +110,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }, [show]);
 
   return (
-    <UserContext.Provider value={{ user, role, setUser, setRole, isRestoringSession, checkAuthStatus }}>
+    <UserContext.Provider value={{ user, role, setUser, setRole, profile, setProfile, refreshProfile, isRestoringSession, checkAuthStatus }}>
       {children}
     </UserContext.Provider>
   );
