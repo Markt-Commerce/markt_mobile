@@ -16,6 +16,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import PaymentDeepLinkHandler from "../components/PaymentDeepLinkHandler";
+import NotificationsBootstrap from "../components/NotificationsBootstrap";
 import { GamificationProvider } from "../hooks/gamificationContext";
 
 // Single app-wide query client. Created once at module scope so it survives

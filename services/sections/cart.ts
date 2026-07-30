@@ -11,7 +11,7 @@ import {
   CheckoutResponse,
 } from "../../models/cart";
 import { ApiResponse } from "../../models/auth";
-import { setPendingCartCount } from "../notifications";
+import { setPendingCartCount } from "../notificationState";
 
 // Get cart
 export async function getCart(): Promise<Cart> {

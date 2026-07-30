@@ -2,7 +2,7 @@ import { RegisterRequest, LoginRequest, AuthUser, ApiResponse, UserSwitchRespons
 import { CommonBuyerResponseData, CommonSellerResponseData } from "../../models/user";
 import { BASE_URL, request } from "../api";
 import { setAuthToken, extractTokenFromResponse, setUserSession, clearUserSession } from "../authStorage";
-import { getStoredPushToken } from "../notifications";
+import { getStoredPushToken } from "../notificationState";
 import { unregisterPushToken } from "./push";
 
 

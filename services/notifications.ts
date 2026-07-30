@@ -6,21 +6,19 @@
  * Local notifications work in any dev/prod build. Remote push additionally
  * needs FCM configured (google-services.json + EAS credentials) — see
  * registerForPushToken.
+ *
+ * Importing this module pulls in expo-notifications, which throws at load time
+ * in Expo Go. Import from ./notificationState instead if you only need the
+ * stored state (token, cart count, timestamps) — those are re-exported below.
  */
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import logger from "../utils/logger";
+import { setStoredPushToken } from "./notificationState";
 
-// --- storage keys ------------------------------------------------------------
-const K_LAST_OPEN = "notif.lastAppOpen";
-const K_CART_COUNT = "notif.cartCount";
-const K_PUSH_TOKEN = "notif.pushToken";
-const K_SENT_PREFIX = "notif.sent.";
-
-export type ReminderType = "reengagement" | "cart" | "gamification";
+export * from "./notificationState";
 
 export const ANDROID_CHANNEL_DEFAULT = "default";
 export const ANDROID_CHANNEL_REMINDERS = "reminders";
@@ -87,17 +85,13 @@ export async function registerForPushToken(): Promise<string | null> {
       return null;
     }
     const { data } = await Notifications.getExpoPushTokenAsync({ projectId });
-    if (data) await AsyncStorage.setItem(K_PUSH_TOKEN, data);
+    if (data) await setStoredPushToken(data);
     return data ?? null;
   } catch (e) {
     // Common when FCM isn't set up yet — non-fatal for local reminders.
     logger.error("registerForPushToken failed:", e);
     return null;
   }
-}
-
-export async function getStoredPushToken(): Promise<string | null> {
-  return AsyncStorage.getItem(K_PUSH_TOKEN);
 }
 
 /** Fire a local notification immediately (used by the background worker). */
@@ -121,45 +115,4 @@ export async function scheduleReminder(
   } catch (e) {
     logger.error("scheduleReminder failed:", e);
   }
-}
-
-// --- background-worker state -------------------------------------------------
-export async function markAppOpened() {
-  await AsyncStorage.setItem(K_LAST_OPEN, new Date().toISOString());
-}
-
-export async function getLastAppOpen(): Promise<Date | null> {
-  const raw = await AsyncStorage.getItem(K_LAST_OPEN);
-  return raw ? new Date(raw) : null;
-}
-
-/** The app caches its pending cart count so the worker needs no network. */
-export async function setPendingCartCount(count: number) {
-  await AsyncStorage.setItem(K_CART_COUNT, String(count));
-}
-
-export async function getPendingCartCount(): Promise<number> {
-  const raw = await AsyncStorage.getItem(K_CART_COUNT);
-  const n = raw ? parseInt(raw, 10) : 0;
-  return Number.isFinite(n) ? n : 0;
-}
-
-/** True if a reminder of this type was already sent within `withinHours`. */
-export async function sentRecently(
-  type: ReminderType,
-  withinHours: number
-): Promise<boolean> {
-  const raw = await AsyncStorage.getItem(K_SENT_PREFIX + type);
-  if (!raw) return false;
-  const last = new Date(raw).getTime();
-  return Date.now() - last < withinHours * 3600_000;
-}
-
-export async function markSent(type: ReminderType) {
-  await AsyncStorage.setItem(K_SENT_PREFIX + type, new Date().toISOString());
-}
-
-export function hoursSince(date: Date | null): number {
-  if (!date) return Infinity;
-  return (Date.now() - date.getTime()) / 3600_000;
 }
