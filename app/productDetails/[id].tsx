@@ -1,6 +1,6 @@
 // app/product/[id].tsx
 import React, { useEffect, useState, useRef } from "react";
-import { View, Text, Image, ScrollView, ActivityIndicator, TouchableOpacity, ImageBackground, Pressable, FlatList, Dimensions } from "react-native";
+import { View, Text, Image, ActivityIndicator, TouchableOpacity, ImageBackground, Pressable, FlatList, Dimensions } from "react-native";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { getProductById, trackProductView } from "../../services/sections/product";
 import { ProductDetail } from "../../models/products";
@@ -191,7 +191,7 @@ const addProductToCart = async (product:ProductDetail)=>{
       ListHeaderComponent={
         <>
 
-        <ScrollView className={isDark ? "flex-1 bg-[#1a1c1d]" : "flex-1 bg-white"}>
+        <View className={isDark ? "bg-[#1a1c1d]" : "bg-white"}>
         {/* Header */}
         <View className="flex-row items-center justify-between p-4 pb-2">
           <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -370,7 +370,7 @@ const addProductToCart = async (product:ProductDetail)=>{
         </View>
 
         <View className={`h-4 ${isDark ? "bg-[#1a1c1d]" : "bg-surface"}`} />
-      </ScrollView>
+      </View>
 
           {/* Title before similar products */}
           <Text className={`px-6 pt-10 pb-4 text-xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
