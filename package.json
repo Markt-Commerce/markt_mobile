@@ -35,13 +35,11 @@
     "lodash": "^4.17.21",
     "lucide-react-native": "^0.544.0",
     "nativewind": "^4.2.1",
-    "prettier-plugin-tailwindcss": "^0.6.14",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.63.0",
     "react-native": "0.86.0",
     "react-native-chart-kit": "^6.12.0",
-    "react-native-css-interop": "0.2.4",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-maps": "1.27.2",
     "react-native-masonry-list": "^2.16.2",
@@ -62,6 +60,7 @@
     "@types/lodash": "^4.17.20",
     "@types/react": "~19.2.4",
     "babel-preset-expo": "~57.0.0",
+    "prettier-plugin-tailwindcss": "^0.6.14",
     "typescript": "~6.0.3"
   }
 }
