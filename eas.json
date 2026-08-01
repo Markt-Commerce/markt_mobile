@@ -8,7 +8,10 @@
       "android": {
         "buildType": "apk"
       },
-      "node": "24.15.0"
+      "node": "24.15.0",
+      "env": {
+        "DEBUG": "nativewind,react-native-css-interop"
+      }
     },
     "preview2": {
       "android": {
