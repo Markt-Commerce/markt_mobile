@@ -17,6 +17,7 @@ import { normalizeUri, resolveMediaUri } from "../../utils/imageUri";
 import Avatar from "../../components/Avatar";
 import { useTheme } from "../../components/themeProvider";
 import { runMessageSellerFlow } from "../../utils/messageSellerFlow";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
 
 export default function ProductDetails() {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -167,8 +168,6 @@ const addProductToCart = async (product:ProductDetail)=>{
       });
     } catch (err: unknown) {
       const status = (err as { status?: number })?.status;
-      const message =
-        err instanceof Error ? err.message : "Could not start chat. Please try again.";
       if (status === 401) {
         router.push("/login");
         return;
@@ -176,7 +175,7 @@ const addProductToCart = async (product:ProductDetail)=>{
       show({
         variant: "error",
         title: "Message seller",
-        message,
+        message: friendlyErrorMessage(err, "Could not start the chat. Please try again."),
       });
     } finally {
       setMessageSellerBusy(false);

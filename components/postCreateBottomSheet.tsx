@@ -20,6 +20,7 @@ import { MediaResponse } from "../models/media";
 import { createPost } from "../services/sections/post";
 import { createNichePost } from "../services/sections/niches";
 import { useToast } from "./ToastProvider";
+import { friendlyErrorMessage } from "../utils/errorMessages";
 import { useTheme } from "./themeProvider";
 import logger from "../utils/logger";
 
@@ -127,10 +128,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
         show({
           variant: "error",
           title: "Error creating post",
-          message:
-            error instanceof Error && error.message
-              ? error.message
-              : "There was a problem creating the post. Please try again later.",
+          message: friendlyErrorMessage(error, "There was a problem creating the post. Please try again later."),
         });
       } finally {
         setSending(false);

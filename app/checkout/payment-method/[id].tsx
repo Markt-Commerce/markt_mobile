@@ -18,6 +18,7 @@ import { getOrderDetails } from "../../../services/sections/orders";
 import { useToast } from "../../../components/ToastProvider";
 import { useTheme } from "../../../components/themeProvider";
 import { getOrCreateIdempotencyKey } from "../../../utils/idempotency";
+import { friendlyErrorMessage } from "../../../utils/errorMessages";
 import type { PaymentMethod } from "../../../models/payments";
 
 export default function PaymentMethod() {
@@ -130,12 +131,10 @@ export default function PaymentMethod() {
         },
       });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Unable to initiate payment.";
       show({
         variant: "error",
         title: "Payment error",
-        message,
+        message: friendlyErrorMessage(err, "Could not start the payment. Please try again."),
       });
     } finally {
       setIsProcessing(false);

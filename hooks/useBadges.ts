@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getUserBadges } from "../services/sections/gamification";
 import type { UserBadge } from "../types/gamification";
+import { friendlyErrorMessage } from "../utils/errorMessages";
 
 /**
  * A user's badge grid: the full active catalog with earned/locked state and
@@ -19,7 +20,7 @@ export function useBadges(userId?: string) {
       const res = await getUserBadges(userId);
       setBadges(res.items ?? []);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load badges");
+      setError(friendlyErrorMessage(e, "Could not load badges. Please try again."));
     } finally {
       setLoading(false);
     }

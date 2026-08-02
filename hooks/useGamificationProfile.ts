@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getMyGamification } from "../services/sections/gamification";
 import type { GamMe } from "../types/gamification";
+import { friendlyErrorMessage } from "../utils/errorMessages";
 
 /**
  * Current user's gamification stats (GET /gamification/me).
@@ -18,7 +19,7 @@ export function useGamificationProfile() {
     try {
       setData(await getMyGamification());
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load gamification profile");
+      setError(friendlyErrorMessage(e, "Could not load your rewards profile. Please try again."));
     } finally {
       setLoading(false);
     }

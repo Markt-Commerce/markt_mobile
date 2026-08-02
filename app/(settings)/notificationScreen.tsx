@@ -6,6 +6,7 @@ import ScreenHeader from '../../components/ScreenHeader';
 import { useRouter } from 'expo-router';
 import { useNotifications, useUpdateNotifications } from '../../hooks/useNotification';
 import { useTheme } from '../../components/themeProvider';
+import { friendlyErrorMessage } from '../../utils/errorMessages';
 
 export default function NotificationsScreen() {
   const { resolvedTheme } = useTheme();
@@ -18,7 +19,7 @@ export default function NotificationsScreen() {
   const toggle = (k: 'push' | 'email' | 'sms', val: boolean) => {
     if (isUpdating) return;
     update.mutate({ ...settings, [k]: val }, {
-      onError(e) { Alert.alert('Failed', (e as any).message || 'Could not update'); }
+      onError(e) { Alert.alert('Failed', friendlyErrorMessage(e, 'Could not update your notification settings.')); }
     });
   };
 

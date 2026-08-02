@@ -10,6 +10,7 @@ import { Category } from "../models/categories";
 import CategoryAddition from "./categoryAddition";
 import { createBuyer, createSeller } from "../services/sections/auth";
 import { useToast } from "./ToastProvider";
+import { friendlyErrorMessage } from "../utils/errorMessages";
 
 type Mode = "buyer" | "seller" | null;
 
@@ -102,7 +103,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
       show({
         variant: "error",
         title: "Create failed",
-        message: err instanceof Error && err.message ? err.message : "Could not create buyer account.",
+        message: friendlyErrorMessage(err, "Could not create the buyer account. Please try again."),
       });
     } finally {
       setSending(false);
@@ -134,7 +135,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
       show({
         variant: "error",
         title: "Create failed",
-        message: err instanceof Error && err.message ? err.message : "Could not create seller account.",
+        message: friendlyErrorMessage(err, "Could not create the seller account. Please try again."),
       });
     } finally {
       setSending(false);

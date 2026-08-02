@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getLeaderboard } from "../services/sections/gamification";
+import { friendlyErrorMessage } from "../utils/errorMessages";
 import type {
   LeaderboardRow,
   LeaderboardRank,
@@ -52,7 +53,7 @@ export function useLeaderboard(
         setCursor(res.next_cursor);
         setHasMore(res.next_cursor != null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load leaderboard");
+        setError(friendlyErrorMessage(e, "Could not load the leaderboard. Please try again."));
       } finally {
         setLoading(false);
         setLoadingMore(false);

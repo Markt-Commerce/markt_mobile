@@ -12,6 +12,7 @@ import { OTPInput } from "../../components/inputs";
 import { useToast } from "../../components/ToastProvider"; // <-- toast
 import Button from "../../components/button";
 import { useTheme } from "../../components/themeProvider";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
 
 const schema = z.object({
   code: z
@@ -65,7 +66,7 @@ const EmailVerification = () => {
       show({
         variant: "error",
         title: "Couldn’t send code",
-        message: error?.message || "Please check your connection and try again.",
+        message: friendlyErrorMessage(error, "Could not send the code. Please check your connection and try again."),
       });
     } finally {
       setSending(false);

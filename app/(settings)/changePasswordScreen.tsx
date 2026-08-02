@@ -6,6 +6,7 @@ import ScreenHeader from '../../components/ScreenHeader';
 import { useRouter } from 'expo-router';
 import { usePasswordResetConfirm } from '../../hooks/useAuth';
 import { useTheme } from '../../components/themeProvider';
+import { friendlyErrorMessage } from '../../utils/errorMessages';
 
 export default function ChangePasswordScreen() {
   const [email, setEmail] = useState('');
@@ -28,7 +29,7 @@ export default function ChangePasswordScreen() {
       await reset.mutateAsync({ code: trimmedCode, new_password: trimmedPassword, email: trimmedEmail });
       Alert.alert('Success', 'Password changed');
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to change password');
+      Alert.alert('Error', friendlyErrorMessage(e, 'Could not change your password. Please check your reset code and try again.'));
     }
   };
 

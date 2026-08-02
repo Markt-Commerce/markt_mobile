@@ -219,8 +219,7 @@ export default function FeedScreen() {
 
   useEffect(() => {
     if (!error) return;
-    // Don't toast "Unauthorized" — we redirect to login; avoid spam from parallel 401s
-    if (error.toLowerCase().includes("unauthorized")) return;
+    // useFeed stores user-friendly messages only (401s are swallowed there).
     show({ variant: "error", title: "Feed error", message: error });
   }, [error]);
 

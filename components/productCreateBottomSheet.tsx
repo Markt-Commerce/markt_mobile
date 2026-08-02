@@ -17,6 +17,7 @@ import { createPost } from '../services/sections/post';
 import { CreateProductRequest } from '../models/products';
 import { createProduct } from '../services/sections/product';
 import { useToast } from './ToastProvider';
+import { friendlyErrorMessage } from '../utils/errorMessages';
 import { useTheme } from './themeProvider';
 import logger from '../utils/logger';
 
@@ -145,10 +146,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
       show({
         variant: "error",
         title: "Error creating product",
-        message:
-          error instanceof Error && error.message
-            ? error.message
-            : "There was a problem creating the product. Please try again later."
+        message: friendlyErrorMessage(error, "There was a problem creating the product. Please try again later.")
       });
     } finally {
       setSending(false);

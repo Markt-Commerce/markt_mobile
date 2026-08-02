@@ -122,7 +122,7 @@ export default function NicheDetailScreen() {
         setIsBanned(false);
       }
     } catch (err) {
-      show({ variant: "error", title: "Error", message: "Could not verify membership status." + err});
+      show({ variant: "error", title: "Error", message: "Could not verify membership status." });
 
       // If check fails, assume not joined
       setIsJoined(false);

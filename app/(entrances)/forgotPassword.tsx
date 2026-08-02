@@ -12,6 +12,7 @@ import Button from '../../components/button';
 import { useToast } from '../../components/ToastProvider';
 import { sendPasswordResetEmail, resetPassword } from '../../services/sections/auth';
 import { useTheme } from "../../components/themeProvider";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
 
 // Step 1: Email Schema
 const emailSchema = z.object({
@@ -83,7 +84,7 @@ const ForgotPasswordScreen = () => {
       show({
         variant: "error",
         title: "Request Failed",
-        message: error instanceof Error ? error.message : "Could not send reset code",
+        message: friendlyErrorMessage(error, "Could not send the reset code. Please check the email address and try again."),
       });
     } finally {
       setLoading(false);
@@ -106,7 +107,7 @@ const ForgotPasswordScreen = () => {
       show({
         variant: "error",
         title: "Reset Failed",
-        message: error instanceof Error ? error.message : "Could not reset password",
+        message: friendlyErrorMessage(error, "Could not reset your password. Please check the code and try again."),
       });
     } finally {
       setLoading(false);

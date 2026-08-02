@@ -27,6 +27,7 @@ import type { Niches } from "../models/niches";
 import type { Category } from "../models/categories";
 import { useToast } from "../components/ToastProvider";
 import { useTheme } from "../components/themeProvider";
+import { friendlyErrorMessage } from "../utils/errorMessages";
 
 function dedupeById<T extends { id: string | number }>(items: T[]): T[] {
   const seen = new Set<string | number>();
@@ -193,7 +194,7 @@ export default function DiscoverNichesScreen() {
       show({
         variant: "error",
         title: "Could not join",
-        message: e instanceof Error ? e.message : "Please try again.",
+        message: friendlyErrorMessage(e, "Could not join this community. Please try again."),
       });
     } finally {
       setJoiningId(null);

@@ -19,6 +19,7 @@ import { attemptMultipleUpload } from '../../services/sections/media';
 import { isArray } from 'lodash';
 import { useTheme } from '../../components/themeProvider';
 import logger from '../../utils/logger';
+import { friendlyErrorMessage } from '../../utils/errorMessages';
 
 const BuyerSchema = z.object({
   buyername: z.string().min(2).max(60).optional(),
@@ -164,7 +165,7 @@ export default function AccountInfoScreen() {
       show({
         variant: "error",
         title: "Image upload failed",
-        message: err.message || "Could not update profile picture.",
+        message: friendlyErrorMessage(err, "Could not update your profile picture."),
       });
     } finally {
       setImageLoading(false);
@@ -200,7 +201,7 @@ export default function AccountInfoScreen() {
       setSharedProfile((current) => ({ ...(current ?? {}), ...updated } as UserProfile));
       show({ variant: 'success', title: 'Profile updated', message: 'Your profile information has been saved.' });
     } catch (err: any) {
-      show({ variant: 'error', title: 'Error updating profile', message: err.message || 'Please try again later.' });
+      show({ variant: 'error', title: 'Error updating profile', message: friendlyErrorMessage(err, 'Could not save your profile. Please try again later.') });
     } finally {
       setLoading(false);
     }

@@ -21,6 +21,7 @@ import { useRegData } from "../../models/signupSteps";
 import { useToast } from "../../components/ToastProvider";
 import { navigateToAppHome } from "../../utils/authNavigation"; 
 import { useTheme } from "../../components/themeProvider";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
 
 const schema = z.object({
   email: z.string().min(1, "Email is required"),
@@ -74,10 +75,15 @@ export default function LoginScreen() {
 
       navigateToAppHome();
     } catch (error: any) {
-      const errMsg =
-        typeof error === "object" && error?.message
-          ? String(error.message)
-          : "Please try again.";
+      const errMsg = friendlyErrorMessage(
+        error,
+        "Could not sign you in. Please try again.",
+        {
+          400: "Incorrect email or password.",
+          401: "Incorrect email or password.",
+          403: "Incorrect email or password.",
+        },
+      );
 
       // If backend asks for email verification, route + info toast
       if (

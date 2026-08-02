@@ -7,6 +7,7 @@ import {
   getFollowingFeed,
   getNicheFeed,
 } from "../services/sections/feedApi";
+import { friendlyErrorMessage } from "../utils/errorMessages";
 
 // 10 keeps first paint light and makes infinite scroll engage while the
 // platform's content volume is still small.
@@ -67,7 +68,9 @@ export function useFeed(tab: keyof typeof MAIN_TABS | string) {
       setHasNext(res.pagination.has_next);
       cache[tab] = { items: deduped, page: 1, hasNext: res.pagination.has_next };
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load feed");
+      // 401 redirects to login via the api layer — no error banner/toast needed.
+      if ((e as { status?: number })?.status !== 401)
+        setError(friendlyErrorMessage(e, "Could not load the feed. Pull down to try again."));
     } finally {
       setLoading(false);
       loadingRef.current = false;
@@ -90,7 +93,8 @@ export function useFeed(tab: keyof typeof MAIN_TABS | string) {
       setHasNext(res.pagination.has_next);
       cache[tab] = { items: newItems, page: nextPage, hasNext: res.pagination.has_next };
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load more");
+      if ((e as { status?: number })?.status !== 401)
+        setError(friendlyErrorMessage(e, "Could not load more posts. Please try again."));
     } finally {
       setLoadingMore(false);
       loadingMoreRef.current = false;

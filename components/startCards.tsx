@@ -14,6 +14,7 @@ import {
 } from "lucide-react-native";
 import { getSellerStartCards } from "../services/sections/analytics";
 import { useToast } from "./ToastProvider";
+import { friendlyErrorMessage } from "../utils/errorMessages";
 
 type StartCardUI = {
   id: string;
@@ -133,8 +134,7 @@ export default function StartCards({
       const norm = normalizeResponse(res);
       setState({ loading: false, data: norm, error: null });
     } catch (e: any) {
-      const message =
-        typeof e?.message === "string" ? e.message : "Failed to load tasks";
+      const message = friendlyErrorMessage(e, "Could not load your tasks. Please try again.");
       setState({ loading: false, data: null, error: message });
       // toast (optional)
       show?.({

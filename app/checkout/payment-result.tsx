@@ -13,6 +13,7 @@ import { getOrderDetails } from "../../services/sections/orders";
 import type { Order } from "../../models/orders";
 import { useTheme } from "../../components/themeProvider";
 import { clearIdempotencyKey } from "../../utils/idempotency";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
 
 export default function PaymentResult() {
   const router = useRouter();
@@ -53,7 +54,7 @@ export default function PaymentResult() {
       } catch (err) {
         if (!cancelled) {
           setVerifyError(
-            err instanceof Error ? err.message : "Could not verify payment."
+            friendlyErrorMessage(err, "Could not verify your payment. If you were charged, it will be reconciled shortly.")
           );
         }
       } finally {

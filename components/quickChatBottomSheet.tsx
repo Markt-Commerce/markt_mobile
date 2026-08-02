@@ -26,6 +26,7 @@ import { getProductById } from "../services/sections/product";
 import { ChatRoomLite } from "../models/chat";
 import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { useToast } from "./ToastProvider";
+import { friendlyErrorMessage } from "../utils/errorMessages";
 import { useUser } from "../hooks/userContextProvider";
 import { isOwnProductListing } from "../utils/chatGuards";
 import { useTheme } from "./themeProvider";
@@ -205,8 +206,7 @@ export default function QuickChatBottomSheet({
       }
     } catch (err) {
       if (stale()) return;
-      const msg =
-        err instanceof Error ? err.message : "Could not create chat room.";
+      const msg = friendlyErrorMessage(err, "Could not open this chat. Please try again.");
       setRoomError(msg);
       show({ variant: "error", title: "Chat error", message: msg });
     } finally {

@@ -23,6 +23,7 @@ import { createBuyerRequest } from "../services/sections/request";
 import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { CreateRequestPayload } from "../models/request";
 import { useToast } from "./ToastProvider";
+import { friendlyErrorMessage } from "../utils/errorMessages";
 import { useTheme } from "./themeProvider";
 import logger from "../utils/logger";
 
@@ -152,10 +153,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
       show({
         variant: "error",
         title: "Error creating buyer request",
-        message:
-          error instanceof Error && error.message
-            ? error.message
-            : "There was a problem creating the buyer request. Please try again later.",
+        message: friendlyErrorMessage(error, "There was a problem creating the buyer request. Please try again later."),
       });
     } finally {
       setSending(false);

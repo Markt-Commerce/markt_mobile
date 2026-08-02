@@ -26,6 +26,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useDebouncedCallback } from "../../hooks/useDebouncedCallback";
 import { useWatch } from "react-hook-form"; 
 import { useTheme } from "../../components/themeProvider";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 const schema = z.object({
@@ -149,7 +150,7 @@ const ShopInformationScreen = () => {
       show({
         variant: "error",
         title: "Could not complete signup",
-        message: error?.message || "Please review your details and try again.",
+        message: friendlyErrorMessage(error, "Could not save your shop details. Please review them and try again."),
       });
     }
   };
