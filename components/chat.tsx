@@ -1292,7 +1292,13 @@ export default function ChatScreen({
 
   const ListComponent = embedInSheet ? BottomSheetFlatList : FlatList;
   const InputComponent = embedInSheet ? BottomSheetTextInput : TextInput;
-  const inputBottomPad = embedInSheet ? 8 : Math.max(insets.bottom, 8);
+  // Sheet mode: the footer sits flush with the screen bottom (bottomInset=0 in
+  // QuickChatBottomSheet), so the safe-area gap is padded inside the bar itself.
+  const inputBottomPad = Math.max(insets.bottom, 8);
+  // Sheet mode: the BottomSheetFooter overlays the list, so the list needs
+  // bottom padding equal to the measured footer height to keep the newest
+  // message visible just above the input bar.
+  const [sheetFooterHeight, setSheetFooterHeight] = useState(64);
 
   const messageList = loading ? (
     <View style={[styles.sheetListWrap, styles.sheetLoading]}>
@@ -1308,8 +1314,14 @@ export default function ChatScreen({
       onContentSizeChange={handleContentSizeChange}
       contentContainerStyle={
         sortedMessages.length === 0
-          ? styles.emptyListContent
-          : { paddingVertical: 12, paddingBottom: 8 }
+          ? [
+              styles.emptyListContent,
+              embedInSheet && { paddingBottom: sheetFooterHeight },
+            ]
+          : {
+              paddingTop: 12,
+              paddingBottom: embedInSheet ? sheetFooterHeight + 12 : 8,
+            }
       }
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
@@ -1523,10 +1535,12 @@ export default function ChatScreen({
       return;
     }
     onSheetFooterReady(
-      <>
+      <View
+        onLayout={(e) => setSheetFooterHeight(e.nativeEvent.layout.height)}
+      >
         {typingIndicator}
         {inputBar}
-      </>,
+      </View>,
     );
     return () => onSheetFooterReady(null);
   }, [

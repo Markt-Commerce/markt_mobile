@@ -30,7 +30,6 @@ import { useUser } from "../hooks/userContextProvider";
 import { isOwnProductListing } from "../utils/chatGuards";
 import { useTheme } from "./themeProvider";
 import { pickProfilePicture, type ChatOtherUser } from "../utils/chatAvatar";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export type QuickChatBottomSheetProps = {
   /** Seller's user id (UUID) — used when current user is buyer (CHATS_API §1.2) */
@@ -74,7 +73,6 @@ export default function QuickChatBottomSheet({
   const [otherUserResolved, setOtherUserResolved] = useState(otherUser);
   const fetchGenRef = useRef(0);
   const [sheetFooter, setSheetFooter] = useState<React.ReactNode>(null);
-  const insets = useSafeAreaInsets();
 
   const handleClose = useCallback(() => {
     sheetRef.current?.close();
@@ -230,13 +228,16 @@ export default function QuickChatBottomSheet({
     if (!sheetOpen || !showChat) setSheetFooter(null);
   }, [sheetOpen, showChat]);
 
+  // bottomInset={0}: the footer must sit flush against the sheet bottom — the
+  // safe-area gap is padded inside the input bar itself so its background
+  // reaches the screen edge instead of leaving a floating strip.
   const renderFooter = useCallback(
     (props: BottomSheetFooterProps) => (
-      <BottomSheetFooter {...props} bottomInset={insets.bottom}>
+      <BottomSheetFooter {...props} bottomInset={0}>
         {sheetFooter}
       </BottomSheetFooter>
     ),
-    [sheetFooter, insets.bottom],
+    [sheetFooter],
   );
 
   return (
