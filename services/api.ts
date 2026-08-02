@@ -35,11 +35,35 @@ export async function request<T = any>(path: string, opts: RequestInit = {}): Pr
     }
   }
 
-  const res = await fetch(url, {
+  const fetchOpts: RequestInit = {
     credentials: "include",
     ...opts,
     headers,
-  });
+  };
+
+  let res: Response;
+  try {
+    res = await fetch(url, fetchOpts);
+  } catch (networkErr) {
+    // Slash-mismatch safety net: some backend routes 308-redirect between
+    // `/path` and `/path/`, and behind the proxy the redirect URL is built with
+    // a cleartext http scheme, which release Android builds refuse to follow —
+    // that surfaces here as a bare network failure. The server never processed
+    // the request (it only redirected), so retrying with the trailing slash
+    // toggled is safe. A genuine offline failure just fails again and we
+    // rethrow the original error.
+    const qIdx = url.indexOf("?");
+    const pathPart = qIdx === -1 ? url : url.slice(0, qIdx);
+    const queryPart = qIdx === -1 ? "" : url.slice(qIdx);
+    const toggledPath = pathPart.endsWith("/")
+      ? pathPart.slice(0, -1)
+      : `${pathPart}/`;
+    try {
+      res = await fetch(`${toggledPath}${queryPart}`, fetchOpts);
+    } catch {
+      throw networkErr;
+    }
+  }
 
   // No body
   if (res.status === 204 || res.status === 205) return undefined as unknown as T;

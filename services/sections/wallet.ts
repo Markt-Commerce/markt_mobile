@@ -7,8 +7,10 @@ export interface WalletBalance {
 }
 
 export async function getWallet(): Promise<WalletBalance> {
+  // Trailing slash: `/wallet` 308-redirects to cleartext http, which release
+  // Android blocks.
   const res = await request<WalletBalance | { data: WalletBalance }>(
-    `${BASE_URL}/wallet`,
+    `${BASE_URL}/wallet/`,
     { method: "GET" }
   );
   return unwrapApi(res);

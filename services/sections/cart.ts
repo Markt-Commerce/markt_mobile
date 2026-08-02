@@ -32,7 +32,9 @@ export async function getCart(): Promise<Cart> {
 
 // Clear cart
 export async function clearCart(): Promise<void> {
-  await request<void>(`${BASE_URL}/cart`, {
+  // Trailing slash — see getCart: the slash-less URL 308-redirects to cleartext
+  // http, which release Android blocks.
+  await request<void>(`${BASE_URL}/cart/`, {
     method: "DELETE",
   });
 }

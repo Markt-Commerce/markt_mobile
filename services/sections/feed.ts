@@ -5,7 +5,9 @@ import { ApiResponse } from "../../models/auth";
 // Fetch products
 export async function getProducts(page = 1, perPage = 10): Promise<Product[]> {
   const res = await request<{ items: Product[] }>(
-    `${BASE_URL}/products?page=${page}&per_page=${perPage}`,
+    // Trailing slash: `/products` 308-redirects to cleartext http (blocked in
+    // release Android builds).
+    `${BASE_URL}/products/?page=${page}&per_page=${perPage}`,
     { method: "GET" }
   );
   return res.items;

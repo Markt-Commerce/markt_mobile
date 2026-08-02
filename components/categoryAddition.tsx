@@ -7,9 +7,11 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { Check, Search, X } from "lucide-react-native";
 import { Category } from "../models/categories";
+import { getAllCategories } from "../services/sections/categories";
 import { useTheme } from "./themeProvider";
 
 interface CategoryAdditionProps {
@@ -31,6 +33,33 @@ export const CategoryAddition = ({
     Category[]
   >(parentSelectedCategories);
   const [query, setQuery] = React.useState("");
+  // Self-heal: parents fetch categories once on mount and swallow failures, so
+  // a single bad request used to leave this picker empty forever ('No
+  // categories match ""'). If we open with nothing, fetch our own copy.
+  const [fallbackCategories, setFallbackCategories] = React.useState<
+    Category[]
+  >([]);
+  const [loadingFallback, setLoadingFallback] = React.useState(false);
+  const allCategories =
+    categories.length > 0 ? categories : fallbackCategories;
+
+  React.useEffect(() => {
+    if (!visible || categories.length > 0 || fallbackCategories.length > 0)
+      return;
+    let cancelled = false;
+    setLoadingFallback(true);
+    getAllCategories()
+      .then((cats) => {
+        if (!cancelled) setFallbackCategories(cats ?? []);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingFallback(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, categories.length, fallbackCategories.length]);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const textColor = isDark ? "#f5f5f5" : "#000000";
@@ -54,13 +83,13 @@ export const CategoryAddition = ({
   };
 
   const handleClear = () => setSelectedCategories([]);
-  const handleSelectAll = () => setSelectedCategories(categories);
+  const handleSelectAll = () => setSelectedCategories(allCategories);
 
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return categories;
-    return categories.filter((c) => c.name.toLowerCase().includes(q));
-  }, [categories, query]);
+    if (!q) return allCategories;
+    return allCategories.filter((c) => c.name.toLowerCase().includes(q));
+  }, [allCategories, query]);
 
   return (
     <Modal
@@ -160,10 +189,21 @@ export const CategoryAddition = ({
             contentContainerClassName="px-5 py-4"
             keyboardShouldPersistTaps="handled"
           >
-            {filtered.length === 0 ? (
+            {loadingFallback ? (
+              <View className="py-10 items-center">
+                <ActivityIndicator size="small" color={mutedColor} />
+                <Text
+                  className={`mt-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                >
+                  Loading categories…
+                </Text>
+              </View>
+            ) : filtered.length === 0 ? (
               <View className="py-10 items-center">
                 <Text className={isDark ? "text-dark-muted" : "text-tertiary"}>
-                  No categories match "{query}".
+                  {allCategories.length === 0
+                    ? "Couldn't load categories. Please check your connection, close this window, and try again."
+                    : `No categories match "${query}".`}
                 </Text>
               </View>
             ) : (

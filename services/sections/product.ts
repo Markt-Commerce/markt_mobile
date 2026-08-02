@@ -7,7 +7,9 @@ import { ApiResponse } from "../../models/auth";
  * Create a new product (seller only)
  */
 export async function createProduct(payload: CreateProductRequest): Promise<ProductResponse> {
-  const res = await request<ApiResponse<ProductResponse>>(`${BASE_URL}/products`, {
+  // Trailing slash: `/products` 308-redirects to cleartext http, which release
+  // Android blocks — and a redirected POST can drop its body anyway.
+  const res = await request<ApiResponse<ProductResponse>>(`${BASE_URL}/products/`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -20,7 +22,7 @@ export async function createProduct(payload: CreateProductRequest): Promise<Prod
  */
 export async function getSellerProducts(sellerId: number, page = 1, per_page = 20): Promise<ProductResponse[]> {
   const res = await request<ApiResponse<{ items: ProductResponse[] }>>(
-    `${BASE_URL}/products?seller_id=${sellerId}&page=${page}&per_page=${per_page}`,
+    `${BASE_URL}/products/?seller_id=${sellerId}&page=${page}&per_page=${per_page}`,
     {
       method: "GET",
     }

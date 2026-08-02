@@ -35,7 +35,7 @@ export async function getBuyerOrders(page = 1, per_page = 10): Promise<Order[]> 
   // Create new order
   /** @deprecated Use checkoutCart (POST /cart/checkout) — POST /orders returns 410 Gone. */
   export async function createOrder(data: CreateOrderPayload): Promise<Order> {
-    const res = await request<Order>(`${BASE_URL}/orders`, {
+    const res = await request<Order>(`${BASE_URL}/orders/`, {
       method: "POST",
       body: JSON.stringify(data),
     });
