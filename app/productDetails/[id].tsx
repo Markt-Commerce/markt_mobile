@@ -18,12 +18,14 @@ import Avatar from "../../components/Avatar";
 import { useTheme } from "../../components/themeProvider";
 import { runMessageSellerFlow } from "../../utils/messageSellerFlow";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
+import { MediaViewerModal } from "../../components/postMedia";
 
 export default function ProductDetails() {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState<boolean>(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [fullscreenIndex, setFullscreenIndex] = useState<number | null>(null);
   const [openDetails, setOpenDetails] = useState<{ [key: string]: boolean }>({
     details: true,
   });
@@ -217,16 +219,18 @@ const addProductToCart = async (product:ProductDetail)=>{
                 const idx = Math.round(e.nativeEvent.contentOffset.x / Dimensions.get("window").width);
                 setCurrentImageIndex(idx);
               }}
-              renderItem={({ item }) => {
+              renderItem={({ item, index }) => {
                 const uri = resolveMediaUri(item?.media);
                 return (
                   <View style={{ width: Dimensions.get("window").width }}>
                     {uri ? (
-                      <ImageBackground
-                        source={{ uri }}
-                        className="h-80 w-full justify-end p-5"
-                        imageStyle={{ borderRadius: 8 }}
-                      />
+                      <Pressable onPress={() => setFullscreenIndex(index)}>
+                        <ImageBackground
+                          source={{ uri }}
+                          className="h-80 w-full justify-end p-5"
+                          imageStyle={{ borderRadius: 8 }}
+                        />
+                      </Pressable>
                     ) : (
                       <View className={`h-80 w-full items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
                         <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No image</Text>
@@ -250,6 +254,17 @@ const addProductToCart = async (product:ProductDetail)=>{
                 ))}
               </View>
             )}
+
+            {/* Fullscreen view — X or tap the image to close */}
+            <MediaViewerModal
+              visible={fullscreenIndex !== null}
+              items={product.images
+                .map((img) => resolveMediaUri(img?.media))
+                .filter((u): u is string => !!u)
+                .map((u) => ({ uri: u, type: "image" as const }))}
+              initialIndex={fullscreenIndex ?? 0}
+              onClose={() => setFullscreenIndex(null)}
+            />
           </View>
         )}
 

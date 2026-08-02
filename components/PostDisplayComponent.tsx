@@ -5,6 +5,7 @@ import { Post } from "../models/feed";
 import { likePost } from "../services/sections/post";
 import { Heart, MessageCircle, Send } from "lucide-react-native";
 import { highlightMentions } from "../utils/highLightMentions";
+import { PostMediaGrid, mediaTypeOf, type MediaItem } from "./postMedia";
 import { useTheme } from "./themeProvider";
 import logger from "../utils/logger";
 import { defaultProfilePicture } from "../models/defaults";
@@ -38,11 +39,18 @@ export default function PostDisplayComponent({ post, onLike }: Props) {
             ? post.user.profile_picture_url
             : defaultProfilePicture;
 
-    // Get all image URLs from social_media array
-    const imageUrls = useMemo(() => {
+    // All media (images AND videos) from the social_media array
+    const mediaItems = useMemo<MediaItem[]>(() => {
         return (post.social_media ?? [])
-            .map((item) => item?.media?.original_url)
-            .filter((url): url is string => !!url);
+            .filter((item) => !!item?.media?.original_url)
+            .map((item) => ({
+                uri: item.media.original_url,
+                type: mediaTypeOf({
+                    media_type: (item.media as any)?.media_type,
+                    mime_type: (item.media as any)?.mime_type,
+                    url: item.media.original_url,
+                }),
+            }));
     }, [post.social_media]);
 
     const handleLike = async () => {
@@ -99,12 +107,9 @@ export default function PostDisplayComponent({ post, onLike }: Props) {
                         </Text>
                     ) : null}
 
-                    {imageUrls.length > 0 && (
+                    {mediaItems.length > 0 && (
                         <View className="mb-3">
-                            <Image
-                                source={{ uri: imageUrls[0] }}
-                                className={`w-full h-56 rounded-xl ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
-                            />
+                            <PostMediaGrid media={mediaItems} />
                         </View>
                     )}
 

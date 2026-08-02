@@ -198,7 +198,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
             <Text className={`text-xs font-inter mb-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Long press on each image to remove it</Text>
           )}
           {/* <<< IMPORTANT: pass value & onChange so we can receive images >>> */}
-          <InstagramGrid value={Imagevalue} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} />
+          <InstagramGrid value={Imagevalue} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} allowVideos />
   
 
           {/* Categories */}

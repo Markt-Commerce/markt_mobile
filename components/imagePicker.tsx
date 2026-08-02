@@ -2,8 +2,9 @@ import * as React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Dimensions, FlatList, Modal, Pressable, StatusBar, Text, View, StyleSheet } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { Plus, X } from "lucide-react-native";
+import { Plus, Play, X } from "lucide-react-native";
 import { Image } from "expo-image";
+import { InlineVideo } from "./postMedia";
 import logger from "../utils/logger";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -14,6 +15,10 @@ export type PickedImage = {
   fileName?: string | null;
   width?: number;
   height?: number;
+  /** "video" when picked from the library as a video; defaults to image */
+  mediaType?: "image" | "video";
+  /** Exact mime type reported by the picker (used for upload) */
+  mimeType?: string | null;
 };
 
 export type InstagramGridProps = {
@@ -28,6 +33,8 @@ export type InstagramGridProps = {
   enableRemoveOnLongPress?: boolean;
   emptyLabel?: string;
   previewEnabled?: boolean;
+  /** Also allow picking videos from the library (posts support video) */
+  allowVideos?: boolean;
 };
 
 export default function InstagramGrid({
@@ -42,6 +49,7 @@ export default function InstagramGrid({
   enableRemoveOnLongPress = true,
   emptyLabel = "No posts yet",
   previewEnabled = true,
+  allowVideos = false,
 }: InstagramGridProps) {
   const [internalImages, setInternalImages] = useState<PickedImage[]>(value ?? []);
   const [viewerVisible, setViewerVisible] = useState(false);
@@ -86,7 +94,9 @@ export default function InstagramGrid({
     try {
       const remaining = max ? Math.max(0, max - images.length) : undefined;
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: allowVideos
+          ? ImagePicker.MediaTypeOptions.All
+          : ImagePicker.MediaTypeOptions.Images,
         allowsMultipleSelection: true,
         selectionLimit: remaining,
         quality: 0.9,
@@ -100,6 +110,8 @@ export default function InstagramGrid({
         fileName: (a as any).fileName ?? null,
         width: a.width,
         height: a.height,
+        mediaType: (a.type === "video" ? "video" : "image") as "image" | "video",
+        mimeType: (a as any).mimeType ?? null,
       })) ?? [];
 
       const next = [...images, ...picked].slice(0, max ?? Number.MAX_SAFE_INTEGER);
@@ -150,7 +162,18 @@ export default function InstagramGrid({
 
         return (
           <Pressable onPress={onPress} onLongPress={onLongPress} android_ripple={{ color: "#00000022" }} className="relative bg-surface rounded overflow-hidden flex-1" style={[sizeStyle, marginStyle]}>
-            <Image source={{ uri: img.uri }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
+            {img.mediaType === "video" ? (
+              <>
+                <InlineVideo uri={img.uri} style={StyleSheet.absoluteFill} controls={false} />
+                <View style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center" }]} pointerEvents="none">
+                  <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(0,0,0,0.55)", alignItems: "center", justifyContent: "center", paddingLeft: 2 }}>
+                    <Play size={16} color="#ffffff" fill="#ffffff" />
+                  </View>
+                </View>
+              </>
+            ) : (
+              <Image source={{ uri: img.uri }} style={StyleSheet.absoluteFill} contentFit="cover" />
+            )}
           </Pressable>
         );
     },
@@ -207,7 +230,11 @@ export default function InstagramGrid({
             }}
             renderItem={({ item }) => (
               <View style={{ width: SCREEN_WIDTH, height: "100%", backgroundColor: "#000" }}>
-                <Image source={{ uri: item.uri }} className="w-full h-full" contentFit="contain" />
+                {item.mediaType === "video" ? (
+                  <InlineVideo uri={item.uri} style={{ width: "100%", height: "100%" }} muted={false} controls contentFit="contain" />
+                ) : (
+                  <Image source={{ uri: item.uri }} className="w-full h-full" contentFit="contain" />
+                )}
               </View>
             )}
           />

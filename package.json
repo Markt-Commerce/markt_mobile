@@ -32,6 +32,7 @@
     "expo-splash-screen": "~57.0.5",
     "expo-status-bar": "~57.0.1",
     "expo-task-manager": "~57.0.6",
+    "expo-video": "~57.0.2",
     "lodash": "^4.17.21",
     "lucide-react-native": "^0.544.0",
     "nativewind": "^4.2.1",

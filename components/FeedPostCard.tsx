@@ -14,12 +14,10 @@ import type { FeedPost } from "../types/feed";
 import { likePost } from "../services/sections/post";
 import { useToast } from "./ToastProvider";
 import Avatar from "./Avatar";
-import SkeletonImage from "./SkeletonImage";
+import { PostMediaGrid, mediaTypeOf, type MediaItem } from "./postMedia";
 import { useTheme } from "./themeProvider";
 import { useGamificationLookup } from "../hooks/useGamificationLookup";
 import TierBadge from "./gamification/TierBadge";
-
-const MEDIA_MAX_HEIGHT = 320;
 
 interface Props {
   post: FeedPost;
@@ -35,7 +33,12 @@ export default function FeedPostCard({ post, onLike }: Props) {
   const isDark = resolvedTheme === "dark";
   const { profile: authorGamification } = useGamificationLookup(post.user?.id);
 
-  const mediaUrl = post.media?.[0]?.url;
+  const mediaItems: MediaItem[] = (post.media ?? [])
+    .filter((m) => !!m?.url)
+    .map((m) => ({
+      uri: m.url,
+      type: mediaTypeOf(m),
+    }));
 
   const handleShare = async () => {
     try {
@@ -125,18 +128,10 @@ export default function FeedPostCard({ post, onLike }: Props) {
             </Text>
           ) : null}
 
-          {/* Media */}
-          {mediaUrl && (
-            <View
-              className={`mb-3 overflow-hidden rounded-xl w-full ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
-              style={{ aspectRatio: 1, maxHeight: MEDIA_MAX_HEIGHT }}
-            >
-              <SkeletonImage
-                source={{ uri: mediaUrl }}
-                containerClassName="w-full h-full rounded-xl"
-                resizeMode="cover"
-                accessibilityLabel="Post media"
-              />
+          {/* Media — grid of up to 5 images/videos, tap opens fullscreen */}
+          {mediaItems.length > 0 && (
+            <View className="mb-3">
+              <PostMediaGrid media={mediaItems} />
             </View>
           )}
 

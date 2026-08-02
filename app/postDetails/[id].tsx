@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import {View,Text,ScrollView,FlatList,ActivityIndicator,TouchableOpacity,TextInput,Image, KeyboardAvoidingView, Dimensions, Share} from "react-native";
+import {View,Text,ScrollView,FlatList,ActivityIndicator,TouchableOpacity,TextInput,Image, KeyboardAvoidingView, Share} from "react-native";
 import {  ArrowLeft,  Heart,  MessageCircle,  Send,  Image as ImageIcon, X, SendHorizonal} from "lucide-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { commentOnPost, getPostById, getPostComments, likePost } from "../../services/sections/post";
@@ -18,6 +18,7 @@ import type { ProductDetail } from "../../models/products";
 import { formatNaira } from "../../utils/formatCurrency";
 import { resolveProductImageUri } from "../../utils/imageUri";
 import logger from "../../utils/logger";
+import { PostMediaGrid, mediaTypeOf, type MediaItem } from "../../components/postMedia";
 
 
 
@@ -59,7 +60,6 @@ export default function PostDetailsScreen() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true); // Control for infinite scroll
   const loadingCommentsRef = useRef(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { show } = useToast();
@@ -243,6 +243,17 @@ export default function PostDetailsScreen() {
     );
   }
 
+  const postMedia: MediaItem[] = (post.social_media ?? [])
+    .filter((sm) => !!sm?.media?.original_url)
+    .map((sm) => ({
+      uri: sm.media.original_url,
+      type: mediaTypeOf({
+        media_type: (sm.media as any)?.media_type,
+        mime_type: (sm.media as any)?.mime_type,
+        url: sm.media.original_url,
+      }),
+    }));
+
   // Header, post content, and sponsored ad are rendered in the ListHeaderComponent
   const renderListHeader = () => (
     <View>
@@ -276,68 +287,13 @@ export default function PostDetailsScreen() {
         {post.caption}
       </Text>
 
-      {/* Main Image */}
-      {post.social_media.length > 0 && (
+      {/* Media — Instagram-style grid (max 5), tap any tile for fullscreen */}
+      {postMedia.length > 0 && (
         <View className={`flex w-full grow p-4 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
-          {post.social_media.length === 1 ? (
-            // Single image
-            <View className={`w-full gap-1 overflow-hidden aspect-[2/3] rounded flex md:gap-2 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
-              <Image
-                source={{ uri: post.social_media[0].media.original_url }}
-                className="w-full bg-center bg-no-repeat bg-cover aspect-auto rounded flex-1"
-              />
-            </View>
-          ) : (
-            // Multiple images - Carousel
-            <View>
-              <FlatList
-                data={post.social_media}
-                keyExtractor={(_, idx) => idx.toString()}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onMomentumScrollEnd={(e) => {
-                  const idx = Math.round(e.nativeEvent.contentOffset.x / Dimensions.get("window").width);
-                  setCurrentImageIndex(idx);
-                }}
-                renderItem={({ item }) => (
-                  <View style={{ width: Dimensions.get("window").width - 32 }} className={`gap-1 overflow-hidden aspect-[2/3] rounded flex ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
-                    <Image
-                      source={{ uri: item.media.original_url }}
-                      className="w-full bg-center bg-no-repeat bg-cover aspect-auto rounded flex-1"
-                    />
-                    {/* Left arrow indicator */}
-                    {currentImageIndex > 0 && (
-                      <View className="absolute left-2 top-1/2 transform -translate-y-1/2">
-                        <Text className="text-white text-2xl opacity-70 font-bold">‹</Text>
-                      </View>
-                    )}
-                    {/* Right arrow indicator */}
-                    {currentImageIndex < post.social_media.length - 1 && (
-                      <View className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                        <Text className="text-white text-2xl opacity-70 font-bold">›</Text>
-                      </View>
-                    )}
-                  </View>
-                )}
-              />
-
-              {/* Dots indicator */}
-              <View className="flex-row justify-center gap-2 py-3">
-                {post.social_media.map((_, idx) => (
-                  <View
-                    key={idx}
-                    className={`h-2 rounded transition-all ${
-                      idx === currentImageIndex ? "bg-primary w-6" : (isDark ? "bg-[#46464e] w-2" : "bg-border w-2")
-                    }`}
-                  />
-                ))}
-              </View>
-            </View>
-          )}
+          <PostMediaGrid media={postMedia} />
         </View>
       )}
-      
+
 
       {/* Attached product — resolved from the post's product_id */}
       {sponsoredProduct && (

@@ -87,6 +87,7 @@ import { normalizeUri, resolveProductImageUri } from "../utils/imageUri";
 import { getUserProfile } from "../services/sections/profile";
 import { useTheme } from "./themeProvider";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { InlineVideo, MediaViewerModal } from "./postMedia";
 
 export type ChatScreenVariant = "screen" | "sheet";
 
@@ -193,6 +194,8 @@ export default function ChatScreen({
     null,
   );
   const [myProfile, setMyProfile] = useState<ChatOtherUser | undefined>();
+  /** Fullscreen image viewer for tapped chat images */
+  const [viewerUri, setViewerUri] = useState<string | null>(null);
   const didInitialScrollRef = useRef(false);
   const pendingScrollToBottomRef = useRef(false);
 
@@ -1043,7 +1046,10 @@ export default function ChatScreen({
                 );
               }
               return (
-                <TouchableOpacity activeOpacity={0.9}>
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPress={() => setViewerUri(imageUri)}
+                >
                   <Image
                     source={{ uri: imageUri }}
                     className={`w-56 h-40 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
@@ -1056,11 +1062,43 @@ export default function ChatScreen({
               );
             })()}
 
-          {item.message_type === "video" && (
-            <View className="w-56 h-40 rounded bg-primary items-center justify-center">
-              <Text className="text-white">Video</Text>
-            </View>
-          )}
+          {item.message_type === "video" &&
+            (() => {
+              const videoUri = normalizeUri(
+                item.message_data?.url ??
+                  (item.message_data as any)?.video_url ??
+                  item.content,
+              );
+              if (!videoUri) {
+                return (
+                  <View
+                    className={`w-56 h-40 rounded items-center justify-center px-3 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                  >
+                    <Text
+                      className={`text-sm text-center ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                    >
+                      Video unavailable
+                    </Text>
+                  </View>
+                );
+              }
+              return (
+                <View>
+                  <View
+                    className={`w-56 h-40 rounded overflow-hidden ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                  >
+                    <InlineVideo
+                      uri={videoUri}
+                      style={{ width: "100%", height: "100%" }}
+                      controls
+                    />
+                  </View>
+                  {item.pending && (
+                    <Text className="text-tertiary text-xs mt-1">Sending…</Text>
+                  )}
+                </View>
+              );
+            })()}
 
           {item.message_type === "product" &&
             (() => {
@@ -1416,6 +1454,11 @@ export default function ChatScreen({
 
   const overlays = (
     <>
+      <MediaViewerModal
+        visible={viewerUri !== null}
+        items={viewerUri ? [{ uri: viewerUri, type: "image" }] : []}
+        onClose={() => setViewerUri(null)}
+      />
       <ChatAttachmentSheet
         visible={attachmentVisible}
         busy={sending}

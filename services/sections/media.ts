@@ -32,8 +32,12 @@ export async function attemptMultipleUpload(
       formList?.map(
       async (img)=>{
         const formData = new FormData();
-        //attempt to determine the type of the image
-        let mimeType: string | undefined = (img as any).type;
+        // Prefer the exact mime type reported by the picker; `type` is kept as
+        // a legacy fallback but ignored when it's just an "image"/"video"
+        // discriminator rather than a real mime type.
+        let mimeType: string | undefined =
+          (img as any).mimeType ?? (img as any).type;
+        if (mimeType && !mimeType.includes("/")) mimeType = undefined;
 
         // If type not provided try to infer from the uri or filename
         if (!mimeType) {
