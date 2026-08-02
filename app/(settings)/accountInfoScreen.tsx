@@ -1,7 +1,7 @@
 // screens/AccountInfoScreen.tsx
 import React, { useState, useEffect } from 'react';
 import { Camera } from 'lucide-react-native';
-import { View, Text, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Image, ActivityIndicator } from 'react-native';
 import { useUser } from '../../hooks/userContextProvider';
 import { request } from "../../services/api";
 import { z } from 'zod';
@@ -37,13 +37,14 @@ const GeneralSchema = z.object({
 });
 
 export default function AccountInfoScreen() {
-  const { user, setUser, role } = useUser();
+  const { user, role, profile: sharedProfile, setProfile: setSharedProfile } = useUser();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const [profileData, setProfileData] = useState<UserProfile | null>(null);
+  const [profileData, setProfileData] = useState<UserProfile | null>(sharedProfile);
   const { show } = useToast();
   const [currentProfilePic, setCurrentProfilePic] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [imageLoading, setImageLoading] = useState(false);
   const nav = useRouter();
 
   const {
@@ -87,7 +88,7 @@ export default function AccountInfoScreen() {
     if (user) {
       const fetchProfile = async () => {
         try {
-          const profile = await getUserProfile();
+          const profile = sharedProfile ?? await getUserProfile();
           setProfileData(profile);
           setCurrentProfilePic(profile.profile_picture_url || profile.profile_picture || null);
           if (role === 'buyer') {
@@ -107,11 +108,17 @@ export default function AccountInfoScreen() {
       };
       fetchProfile();
     }
-  }, [user, role, resetGeneral, resetBuyer, resetSeller]);
+  }, [user, role, sharedProfile, resetGeneral, resetBuyer, resetSeller]);
 
   const uploadAndSaveProfileImage = async (uri: string) => {
     try {
-      setLoading(true);
+      setImageLoading(true);
+      show({
+        variant: "info",
+        title: "Updating profile photo",
+        message: "Uploading and saving your new picture…",
+        duration: 3000,
+      });
 
       const uploadResult = await attemptMultipleUpload([
         {
@@ -129,12 +136,30 @@ export default function AccountInfoScreen() {
 
       const imageUrl = media.urls.original;
 
-      // PATCH profile with image URL
-      await handleSave("/users/profile", {
-        profile_picture: imageUrl,
+      const updated = await request<UserProfile>("/users/profile", {
+        method: "PATCH",
+        body: JSON.stringify({
+          profile_picture: imageUrl,
+        }),
       });
 
-      setCurrentProfilePic(imageUrl);
+      // Force native image caches to reload even if the CDN reuses its URL.
+      const separator = imageUrl.includes("?") ? "&" : "?";
+      const freshImageUrl = `${imageUrl}${separator}v=${Date.now()}`;
+      const freshProfile = {
+        ...(sharedProfile ?? profileData ?? updated),
+        ...updated,
+        profile_picture: imageUrl,
+        profile_picture_url: freshImageUrl,
+      };
+      setCurrentProfilePic(freshImageUrl);
+      setProfileData(freshProfile);
+      setSharedProfile(freshProfile);
+      show({
+        variant: "success",
+        title: "Profile photo updated",
+        message: "Your new photo is now visible across Markt.",
+      });
     } catch (err: any) {
       show({
         variant: "error",
@@ -142,7 +167,7 @@ export default function AccountInfoScreen() {
         message: err.message || "Could not update profile picture.",
       });
     } finally {
-      setLoading(false);
+      setImageLoading(false);
     }
   };
 
@@ -161,7 +186,6 @@ export default function AccountInfoScreen() {
 
     if (!result.canceled) {
       const uri = result.assets[0].uri;
-      setCurrentProfilePic(uri); // instant UI feedback
       await uploadAndSaveProfileImage(uri);
     }
   };
@@ -172,8 +196,9 @@ export default function AccountInfoScreen() {
     try {
       setLoading(true);
       const updated = await request(url, { method: 'PATCH', body: JSON.stringify(payload) });
-      setUser(updated); // update context
-      show({ variant: 'success', title: 'Profile updated successfully', message: 'Your profile information has been saved.' });
+      setProfileData((current) => ({ ...(current ?? {}), ...updated } as UserProfile));
+      setSharedProfile((current) => ({ ...(current ?? {}), ...updated } as UserProfile));
+      show({ variant: 'success', title: 'Profile updated', message: 'Your profile information has been saved.' });
     } catch (err: any) {
       show({ variant: 'error', title: 'Error updating profile', message: err.message || 'Please try again later.' });
     } finally {
@@ -211,9 +236,9 @@ export default function AccountInfoScreen() {
   const originalDescription = (profileData?.seller_account?.description ?? '').trim();
   const sellerHasChanges = currentShopName !== originalShopName || currentDescription !== originalDescription;
 
-  const isGeneralDisabled = !isGeneralValid || loading || !generalHasChanges;
-  const isBuyerDisabled = !isBuyerValid || loading || !buyerHasChanges;
-  const isSellerDisabled = !isSellerValid || loading || !sellerHasChanges;
+  const isGeneralDisabled = !isGeneralValid || loading || imageLoading || !generalHasChanges;
+  const isBuyerDisabled = !isBuyerValid || loading || imageLoading || !buyerHasChanges;
+  const isSellerDisabled = !isSellerValid || loading || imageLoading || !sellerHasChanges;
 
   return (
     <SafeAreaView className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`} edges={["top", "left", "right", "bottom"]}>
@@ -228,6 +253,7 @@ export default function AccountInfoScreen() {
           <TouchableOpacity
             className={`flex-row items-center gap-3 rounded p-4 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
             onPress={changeImage}
+            disabled={imageLoading}
             activeOpacity={0.85}
           >
             {currentProfilePic ? (
@@ -240,9 +266,10 @@ export default function AccountInfoScreen() {
             <View className="flex-1">
               <Text className={`font-geist font-bold text-[15px] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Profile photo</Text>
               <Text className={`font-inter text-[13px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                Tap to update your profile image.
+                {imageLoading ? "Uploading and saving…" : "Tap to choose a new profile image."}
               </Text>
             </View>
+            {imageLoading && <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#E94C2A"} />}
           </TouchableOpacity>
 
           <View className="mt-8">

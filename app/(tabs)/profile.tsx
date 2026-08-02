@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
   ArrowRight,
+  ArrowRightLeft,
   Briefcase,
   CircleUserRound,
   LayoutGrid,
@@ -16,9 +17,7 @@ import Avatar from "../../components/Avatar";
 import CreateRoleBottomSheet from "../../components/createRoleBottomSheet";
 import { useUser } from "../../hooks/userContextProvider";
 import { useToast } from "../../components/ToastProvider";
-import { getUserProfile } from "../../services/sections/profile";
 import { switchUserRole } from "../../services/sections/auth";
-import type { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";
 import { useGamificationContext } from "../../hooks/gamificationContext";
 import GamificationStrip from "../../components/gamification/GamificationStrip";
@@ -91,18 +90,14 @@ function StatPill({ label, active, isDark }: { label: string; active: boolean; i
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { role, setRole } = useUser();
+  const { role, setRole, profile, setProfile, refreshProfile } = useUser();
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [switchingRole, setSwitchingRole] = useState(false);
   const [createMode, setCreateMode] = useState<"buyer" | "seller" | null>(null);
   const createRoleRef = useRef<BottomSheet | null>(null);
   const { profile: gamification, badges: gamificationBadges } = useGamificationContext();
-
-  useEffect(() => {
-    getUserProfile().then(setProfile).catch(() => setProfile(null));
-  }, []);
 
   useEffect(() => {
     if (createMode) {
@@ -130,6 +125,7 @@ export default function ProfileScreen() {
     }
 
     try {
+      setSwitchingRole(true);
       const result = await switchUserRole();
       const nextRole = (result.user?.current_role ?? result.current_role) as "buyer" | "seller";
       setRole(nextRole);
@@ -148,6 +144,8 @@ export default function ProfileScreen() {
       });
     } catch {
       setCreateMode(targetRole);
+    } finally {
+      setSwitchingRole(false);
     }
   };
 
@@ -170,7 +168,7 @@ export default function ProfileScreen() {
   const handleCreated = (newRole: "buyer" | "seller") => {
     setRole(newRole);
     setCreateMode(null);
-    getUserProfile().then(setProfile).catch(() => setProfile(null));
+    void refreshProfile();
   };
 
   return (
@@ -222,17 +220,33 @@ export default function ProfileScreen() {
                 activeOpacity={0.85}
                 className="flex-1 h-12 rounded bg-primary items-center justify-center"
               >
-                <Text className="text-white font-geist font-bold text-[11px] tracking-[2px] uppercase">
+                <Text
+                  className="text-white font-geist font-bold text-[11px] tracking-[2px] uppercase"
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
                   Edit Profile
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleSwitchRole}
                 activeOpacity={0.85}
-                className={`flex-1 h-12 rounded border items-center justify-center ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+                disabled={switchingRole}
+                className={`flex-1 h-12 rounded items-center justify-center flex-row gap-2 ${
+                  isDark ? "bg-[#f0f1f2]" : "bg-black"
+                } ${switchingRole ? "opacity-60" : ""}`}
               >
-                <Text className={`font-geist font-bold text-[11px] tracking-[2px] uppercase ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                  {dualRole ? `Switch to ${role === "buyer" ? "Seller" : "Buyer"}` : `Create ${role === "buyer" ? "Seller" : "Buyer"}`}
+                <ArrowRightLeft size={16} color={isDark ? "#1a1c1d" : "#FFFFFF"} strokeWidth={2} />
+                <Text
+                  className={`font-geist font-bold text-[12px] ${isDark ? "text-[#1a1c1d]" : "text-white"}`}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
+                  {switchingRole
+                    ? "Switching…"
+                    : dualRole
+                      ? `Use ${role === "buyer" ? "Seller" : "Buyer"} mode`
+                      : `Create ${role === "buyer" ? "Seller" : "Buyer"}`}
                 </Text>
               </TouchableOpacity>
             </View>

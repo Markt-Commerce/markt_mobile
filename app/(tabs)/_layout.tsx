@@ -5,18 +5,17 @@
  * Tabs: Home | Search | Requests | Orders | Messages
  * Profile: hidden (reached via drawer)
  */
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Platform, View } from "react-native";
 import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Home, Search, FileText, ShoppingBag, MessageCircle } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DrawerProvider, useDrawer } from "../../hooks/drawerContext";
-import { getUserProfile } from "../../services/sections/profile";
 import AppBar from "../../components/AppBar";
 import NavDrawer from "../../components/NavDrawer";
-import type { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";
+import { useUser } from "../../hooks/userContextProvider";
 
 const TAB_BAR_CONTENT_HEIGHT = 52;
 const TAB_BAR_PADDING_TOP = 6;
@@ -29,19 +28,13 @@ const BRAND_PRIMARY = "#E94C2A";
 
 function TabsWithDrawer() {
   const { isOpen, closeDrawer } = useDrawer();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const { profile } = useUser();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const insets = useSafeAreaInsets();
   const tabBarBottomInset = Math.max(insets.bottom, Platform.OS === "ios" ? 2 : 0);
   const tabBarHeight =
     TAB_BAR_CONTENT_HEIGHT + TAB_BAR_PADDING_TOP + TAB_BAR_PADDING_BOTTOM + tabBarBottomInset;
-
-  useEffect(() => {
-    getUserProfile()
-      .then(setProfile)
-      .catch(() => { });
-  }, []);
 
   const displayName =
     profile?.current_role === "buyer"
@@ -170,7 +163,6 @@ function TabsWithDrawer() {
           visible={isOpen}
           onClose={closeDrawer}
           profile={profile}
-          onProfileLoaded={setProfile}
         />
       </View>
     </SafeAreaView>

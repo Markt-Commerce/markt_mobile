@@ -31,7 +31,6 @@ import { useUser } from "../hooks/userContextProvider";
 import { switchUserRole } from "../services/sections/auth";
 import { setUserSession } from "../services/authStorage";
 import { useToast } from "./ToastProvider";
-import { getUserProfile } from "../services/sections/profile";
 import type { UserProfile } from "../models/profile";
 import { useTheme } from "./themeProvider";
 
@@ -41,7 +40,6 @@ interface NavDrawerProps {
   visible: boolean;
   onClose: () => void;
   profile?: UserProfile | null;
-  onProfileLoaded?: (p: UserProfile) => void;
 }
 
 const Row = ({
@@ -71,10 +69,9 @@ export default function NavDrawer({
   visible,
   onClose,
   profile,
-  onProfileLoaded,
 }: NavDrawerProps) {
   const router = useRouter();
-  const { role, setRole, user } = useUser();
+  const { role, setRole, setProfile } = useUser();
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
@@ -112,19 +109,12 @@ export default function NavDrawer({
     }
   }, [visible]);
 
-  useEffect(() => {
-    if (visible && user && !profile) {
-      getUserProfile()
-        .then((p) => onProfileLoaded?.(p))
-        .catch(() => { });
-    }
-  }, [visible, user, profile]);
-
   const handleSwitchMode = async () => {
     try {
       const res = await switchUserRole();
       const newRole = (res.user?.current_role ?? res.current_role) as "buyer" | "seller";
       setRole(newRole);
+      setProfile((current) => current ? { ...current, current_role: newRole } : current);
       if (res.user?.email) {
         await setUserSession(
           {
