@@ -78,15 +78,6 @@ function Row({
   );
 }
 
-function StatPill({ label, active, isDark }: { label: string; active: boolean; isDark: boolean }) {
-  return (
-    <View className={`px-3 py-2 rounded border ${active ? (isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border") : (isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border")}`}>
-      <Text className={`font-geist font-bold text-[10px] tracking-[2px] uppercase ${active ? (isDark ? "text-[#f0f1f2]" : "text-black") : (isDark ? "text-[#c6c5cf]" : "text-tertiary")}`}>
-        {label}
-      </Text>
-    </View>
-  );
-}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -209,21 +200,15 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            <View className="flex-row gap-2 mt-4">
-              <StatPill label="Buyer" active={role === "buyer"} isDark={isDark} />
-              <StatPill label="Seller" active={role === "seller"} isDark={isDark} />
-            </View>
-
-            <View className="flex-row gap-3 mt-5">
+            <View className="gap-3 mt-5">
               <TouchableOpacity
                 onPress={() => router.push("/(settings)/accountInfoScreen")}
                 activeOpacity={0.85}
-                className="flex-1 h-12 rounded bg-primary items-center justify-center"
+                className="w-full h-12 rounded bg-primary items-center justify-center"
               >
                 <Text
                   className="text-white font-geist font-bold text-[11px] tracking-[2px] uppercase"
                   numberOfLines={1}
-                  adjustsFontSizeToFit
                 >
                   Edit Profile
                 </Text>
@@ -232,20 +217,19 @@ export default function ProfileScreen() {
                 onPress={handleSwitchRole}
                 activeOpacity={0.85}
                 disabled={switchingRole}
-                className={`flex-1 h-12 rounded items-center justify-center flex-row gap-2 ${
+                className={`w-full h-12 rounded items-center justify-center flex-row gap-2 ${
                   isDark ? "bg-[#f0f1f2]" : "bg-black"
                 } ${switchingRole ? "opacity-60" : ""}`}
               >
                 <ArrowRightLeft size={16} color={isDark ? "#1a1c1d" : "#FFFFFF"} strokeWidth={2} />
                 <Text
-                  className={`font-geist font-bold text-[12px] ${isDark ? "text-[#1a1c1d]" : "text-white"}`}
+                  className={`font-geist font-bold text-[11px] tracking-[2px] uppercase ${isDark ? "text-[#1a1c1d]" : "text-white"}`}
                   numberOfLines={1}
-                  adjustsFontSizeToFit
                 >
                   {switchingRole
                     ? "Switching…"
                     : dualRole
-                      ? `Use ${role === "buyer" ? "Seller" : "Buyer"} mode`
+                      ? `Use ${role === "buyer" ? "Seller" : "Buyer"} Mode`
                       : `Create ${role === "buyer" ? "Seller" : "Buyer"}`}
                 </Text>
               </TouchableOpacity>
