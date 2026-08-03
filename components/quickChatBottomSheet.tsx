@@ -245,6 +245,9 @@ export default function QuickChatBottomSheet({
       ref={sheetRef}
       index={-1}
       snapPoints={snapPoints}
+      // v5 defaults dynamic sizing ON, which adds a content-height snap point
+      // and makes the closed sheet peek up over the screen's bottom bar.
+      enableDynamicSizing={false}
       enablePanDownToClose
       onChange={handleSheetChange}
       keyboardBehavior="extend"

@@ -31,6 +31,12 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
   const isOwnRequest =
     !!user?.user_id && String(req.user?.id ?? req.user_id) === String(user.user_id);
 
+  const isExpired =
+    !!req.expires_at && new Date(req.expires_at).getTime() < Date.now();
+  const statusRaw = (req.status ?? "OPEN").toUpperCase();
+  const statusLabel = statusRaw === "OPEN" && isExpired ? "EXPIRED" : statusRaw;
+  const isOpen = statusLabel === "OPEN";
+
   return (
     <TouchableOpacity
       onPress={() => router.push(`/requestDetails/${req.id}`)}
@@ -63,12 +69,20 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
             </View>
           </View>
           <View
-            className={`px-3 py-1.5 rounded border ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border"}`}
+            className={`px-3 py-1.5 rounded border ${
+              isOpen
+                ? "bg-primary-muted border-primary/30"
+                : isDark
+                  ? "bg-dark-elevated border-dark-border-strong"
+                  : "bg-surface border-border"
+            }`}
           >
             <Text
-              className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-dark-text" : "text-black"}`}
+              className={`text-[10px] font-geist font-bold uppercase tracking-wider ${
+                isOpen ? "text-primary" : isDark ? "text-dark-muted" : "text-tertiary"
+              }`}
             >
-              Open
+              {statusLabel}
             </Text>
           </View>
         </View>

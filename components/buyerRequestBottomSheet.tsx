@@ -166,6 +166,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
       ref={sheetRef}
       index={-1}
       snapPoints={snapPoints}
+      enableDynamicSizing={false}
       enablePanDownToClose={!sending}
       backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }}
       handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}

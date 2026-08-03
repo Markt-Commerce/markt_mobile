@@ -106,17 +106,15 @@ export function AppStack() {
     </Stack>
   );
 
+  // GamificationProvider stays mounted regardless of auth state: its data
+  // hooks no-op while logged out, and unmounting it on logout/401 would crash
+  // any still-mounted consumer screen mid-transition ("useGamificationContext
+  // must be used within a GamificationProvider").
   return (
     <>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-      {isLoggedIn ? (
-        <>
-          <PaymentDeepLinkHandler />
-          <GamificationProvider>{stack}</GamificationProvider>
-        </>
-      ) : (
-        stack
-      )}
+      {isLoggedIn && <PaymentDeepLinkHandler />}
+      <GamificationProvider>{stack}</GamificationProvider>
     </>
   );
 }
