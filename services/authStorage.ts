@@ -4,6 +4,7 @@
  * - auth_token: Bearer token fallback if backend supports it (cookies may not work in RN)
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { clearAllIdempotencyKeys } from "../utils/idempotency";
 
 const AUTH_TOKEN_KEY = "@markt_auth_token";
 const USER_SESSION_KEY = "user_session";
@@ -39,6 +40,9 @@ export async function setUserSession(user: StoredUser, role: "buyer" | "seller")
 }
 
 export async function clearUserSession(): Promise<void> {
+  // Idempotency keys are per-login-session: a new account on this device must
+  // never reuse them (the backend would replay the previous account's orders).
+  clearAllIdempotencyKeys();
   await AsyncStorage.removeItem(USER_SESSION_KEY);
 }
 

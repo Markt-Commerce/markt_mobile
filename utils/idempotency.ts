@@ -20,3 +20,10 @@ export function getOrCreateIdempotencyKey(scope: string): string {
 export function clearIdempotencyKey(scope: string): void {
   sessionKeys.delete(scope);
 }
+
+/** Drop every cached key — call when the auth session changes (logout/401),
+ * otherwise the next account on this device reuses the previous account's
+ * keys and the backend replays their orders/payments. */
+export function clearAllIdempotencyKeys(): void {
+  sessionKeys.clear();
+}

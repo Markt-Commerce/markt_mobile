@@ -3,6 +3,7 @@ import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator, Ref
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getCart, updateCartItem, deleteCartItem, getCartSummary, checkoutCart } from "../../services/sections/cart";
 import { buildCheckoutRequest } from "../../utils/checkoutPayload";
+import { clearIdempotencyKey } from "../../utils/idempotency";
 import { Cart, CartItem, CartSummary } from "../../models/cart";
 import { ArrowLeft, Trash2, ShoppingCart } from "lucide-react-native";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -102,6 +103,10 @@ export default function CartScreen() {
       const checkout = await checkoutCart(
         buildCheckoutRequest(shipping.address!, "Checkout from mobile app")
       );
+      // The order now exists — retire this checkout's idempotency key so the
+      // next checkout creates a fresh order instead of replaying this one.
+      // (Failed checkouts keep the key, which is the point of idempotency.)
+      clearIdempotencyKey("checkout-cart");
       show({
         variant: "success",
         title: "Checkout successful",
