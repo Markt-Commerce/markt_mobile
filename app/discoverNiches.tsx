@@ -21,7 +21,7 @@ import { useRouter } from "expo-router";
 import { Search, ArrowLeft } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { debounce } from "lodash";
-import { getNiches, joinNiche } from "../services/sections/niches";
+import { getNiches, joinNiche, getMyNiches } from "../services/sections/niches";
 import { getAllCategories } from "../services/sections/categories";
 import type { Niches } from "../models/niches";
 import type { Category } from "../models/categories";
@@ -43,12 +43,14 @@ function NicheCard({
   onPress,
   onJoin,
   joining,
+  joined,
   isDark,
 }: {
   niche: Niches;
   onPress: () => void;
   onJoin: () => void;
   joining: boolean;
+  joined: boolean;
   isDark: boolean;
 }) {
   const visibilityLabel =
@@ -83,19 +85,32 @@ function NicheCard({
           </View>
         </View>
       </TouchableOpacity>
-      <TouchableOpacity
-        onPress={onJoin}
-        disabled={joining}
-        className="self-center ml-3 px-5 py-2 rounded bg-primary min-h-[36px] justify-center"
-        accessibilityRole="button"
-        accessibilityLabel="Join community"
-      >
-        {joining ? (
-          <ActivityIndicator size="small" color="white" />
-        ) : (
-          <Text className="text-white font-geist font-semibold text-sm">Join</Text>
-        )}
-      </TouchableOpacity>
+      {joined ? (
+        <TouchableOpacity
+          onPress={onPress}
+          className={`self-center ml-3 px-4 py-2 rounded border min-h-[36px] justify-center ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+          accessibilityRole="button"
+          accessibilityLabel="Already joined — open community"
+        >
+          <Text className={`font-geist font-semibold text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            Joined
+          </Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          onPress={onJoin}
+          disabled={joining}
+          className="self-center ml-3 px-5 py-2 rounded bg-primary min-h-[36px] justify-center"
+          accessibilityRole="button"
+          accessibilityLabel="Join community"
+        >
+          {joining ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Text className="text-white font-geist font-semibold text-sm">Join</Text>
+          )}
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -115,6 +130,35 @@ export default function DiscoverNichesScreen() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [joiningId, setJoiningId] = useState<string | null>(null);
+  // The niches list response carries no membership info, so cross-reference
+  // GET /socials/my-niches to mark communities the user already joined.
+  const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set());
+
+  const loadJoined = useCallback(async () => {
+    try {
+      const ids = new Set<string>();
+      let p = 1;
+      // Memberships are few; page through defensively with a hard cap.
+      while (p <= 10) {
+        const res = await getMyNiches(p, 50);
+        (res.items ?? []).forEach((m) => {
+          if (m.is_active === false) return;
+          const id = m.niche_id ?? m.niche?.id;
+          if (id) ids.add(String(id));
+        });
+        const totalPages = res.pagination?.total_pages ?? 1;
+        if (p >= totalPages) break;
+        p += 1;
+      }
+      setJoinedIds(ids);
+    } catch {
+      /* non-fatal — cards just show Join */
+    }
+  }, []);
+
+  useEffect(() => {
+    loadJoined();
+  }, [loadJoined]);
 
   // Ref guard, not state — onEndReached can fire more than once before a state
   // update flushes, letting two calls fetch the same page and append duplicate
@@ -180,7 +224,7 @@ export default function DiscoverNichesScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchNiches(1, false);
+    await Promise.all([fetchNiches(1, false), loadJoined()]);
     setRefreshing(false);
   };
 
@@ -188,6 +232,7 @@ export default function DiscoverNichesScreen() {
     setJoiningId(nicheId);
     try {
       await joinNiche(nicheId);
+      setJoinedIds((prev) => new Set(prev).add(String(nicheId)));
       show({ variant: "success", title: "Joined!", message: "You are now a member of this community." });
       await fetchNiches(1, false);
     } catch (e) {
@@ -284,6 +329,7 @@ export default function DiscoverNichesScreen() {
               onPress={() => router.push(`/niches/${item.id}`)}
               onJoin={() => handleJoin(item.id)}
               joining={joiningId === item.id}
+              joined={joinedIds.has(String(item.id))}
               isDark={isDark}
             />
           )}
