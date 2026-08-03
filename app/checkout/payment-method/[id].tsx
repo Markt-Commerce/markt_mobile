@@ -88,10 +88,14 @@ export default function PaymentMethod() {
           return;
         }
 
+        // Send amount explicitly: the deployed backend 500s (KeyError) when
+        // the optional `amount` key is absent from the payload. It must match
+        // order.total, which is exactly what we fetched.
         const payment = await createPayment({
           method: "wallet",
           currency: "NGN",
           order_id: orderId,
+          amount: orderTotal > 0 ? orderTotal : undefined,
           metadata: { platform: "mobile" },
           idempotency_key: idempotencyKey,
         });
@@ -115,11 +119,15 @@ export default function PaymentMethod() {
         return;
       }
 
+      // Paystack's hosted checkout page (authorization_url) offers card, bank
+      // transfer, and USSD — but the backend only returns an authorization_url
+      // for method "card", so route the bank-transfer option through it too.
       const init = await initializePayment({
-        method: selectedMethod,
+        method: "card",
         currency: "NGN",
         order_id: orderId,
-        metadata: { platform: "mobile" },
+        amount: orderTotal > 0 ? orderTotal : undefined,
+        metadata: { platform: "mobile", chosen_method: selectedMethod },
         idempotency_key: idempotencyKey,
       });
 

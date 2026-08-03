@@ -8,11 +8,6 @@ import {
 import { BASE_URL, request } from "../api";
 import { unwrapApi } from "../../utils/apiUnwrap";
 
-export const getPaymentMethods = async () => {
-  const response = await request(`${BASE_URL}/payment-methods`);
-  return unwrapApi(response);
-};
-
 /** POST /payments/create — card, bank_transfer, wallet (instant when wallet). */
 export const createPayment = async (paymentData: PaymentInit): Promise<Transaction> => {
   const body: Record<string, unknown> = {
