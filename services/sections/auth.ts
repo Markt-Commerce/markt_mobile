@@ -1,6 +1,7 @@
 import { RegisterRequest, LoginRequest, AuthUser, ApiResponse, UserSwitchResponse, RoleCreationResult } from "../../models/auth";
 import { CommonBuyerResponseData, CommonSellerResponseData } from "../../models/user";
 import { BASE_URL, request } from "../api";
+import { appendLocalFile } from "../../utils/formDataFile";
 import { setAuthToken, extractTokenFromResponse, setUserSession, clearUserSession } from "../authStorage";
 import { getStoredPushToken } from "../notificationState";
 import { unregisterPushToken } from "./push";
@@ -146,11 +147,9 @@ export async function checkUsername(username: string): Promise<{ available: bool
 /** Upload profile picture. Call after registration. */
 export async function uploadProfilePicture(uri: string, fileName = "profile.jpg"): Promise<{ url?: string; profile_picture?: string }> {
   const formData = new FormData();
-  formData.append("file", {
-    uri,
-    name: fileName,
-    type: "image/jpeg",
-  } as any);
+  // Classic `{uri, name, type}` parts throw "Unsupported FormDataPart
+  // implementation" under Expo's fetch — append a File (Blob) instead.
+  appendLocalFile(formData, "file", uri, fileName);
 
   const res = await request<any>(`${BASE_URL}/users/profile/picture`, {
     method: "POST",

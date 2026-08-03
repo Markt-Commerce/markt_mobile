@@ -2,8 +2,8 @@ import { BASE_URL,request } from "../api";
 import { ProductImageResponse,SocialPostMediaResponse, RequestImageResponse, MediaResponse, MediaUploadResponse } from "../../models/media";
 import { InstagramGridProps } from '../../components/imagePicker'
 import { Media } from "../../models/feed";
-import { Buffer } from 'buffer';
 import logger from '../../utils/logger';
+import { appendLocalFile } from '../../utils/formDataFile';
 
 /** 
  * Uploads an image
@@ -81,14 +81,11 @@ export async function attemptMultipleUpload(
         // ensure a filename exists; if not, derive from mime type
         const name = img.fileName ?? `upload.${mimeType.split('/')[1] || 'jpg'}`;
 
-        // Read the file as an ArrayBuffer/Blob and append that to FormData
         const uri = img.uri || '';
 
-        formData.append('file', {
-          uri,
-          name: name,
-          type: mimeType
-        } as any);
+        // Classic `{uri, name, type}` parts throw "Unsupported FormDataPart
+        // implementation" under Expo's fetch — append a File (Blob) instead.
+        appendLocalFile(formData, 'file', uri, name);
         // NOTE: this is a plain service function, not a React component, so it
         // must NOT call hooks (useToast() here caused "Invalid hook call").
         // Let the failure propagate — the calling component shows the toast in

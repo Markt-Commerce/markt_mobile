@@ -164,7 +164,9 @@ export default function InstagramGrid({
           <Pressable onPress={onPress} onLongPress={onLongPress} android_ripple={{ color: "#00000022" }} className="relative bg-surface rounded overflow-hidden flex-1" style={[sizeStyle, marginStyle]}>
             {img.mediaType === "video" ? (
               <>
-                <InlineVideo uri={img.uri} style={StyleSheet.absoluteFill} controls={false} />
+                <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                  <InlineVideo uri={img.uri} style={StyleSheet.absoluteFill} controls={false} />
+                </View>
                 <View style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center" }]} pointerEvents="none">
                   <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(0,0,0,0.55)", alignItems: "center", justifyContent: "center", paddingLeft: 2 }}>
                     <Play size={16} color="#ffffff" fill="#ffffff" />

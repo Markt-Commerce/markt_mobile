@@ -62,8 +62,13 @@ export function InlineVideo({
   const player = useVideoPlayer(uri, (p) => {
     p.loop = true;
     p.muted = muted;
-    if (autoPlay) p.play();
   });
+  // play() in the setup callback can race the native view attaching — start
+  // playback from an effect once the player exists.
+  React.useEffect(() => {
+    if (autoPlay) player.play();
+    else player.pause();
+  }, [player, autoPlay]);
   return (
     <VideoView
       player={player}
@@ -112,7 +117,11 @@ function Tile({
       accessibilityRole="imagebutton"
     >
       {item.type === "video" ? (
-        <TileVideo uri={item.uri} />
+        // pointerEvents="none": the native video surface must not swallow the
+        // tap — the Pressable opens the fullscreen viewer.
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <TileVideo uri={item.uri} />
+        </View>
       ) : (
         <Image
           source={{ uri: item.uri }}
@@ -242,9 +251,11 @@ export function PostMediaGrid({
 function ViewerPage({
   item,
   onClose,
+  active,
 }: {
   item: MediaItem;
   onClose: () => void;
+  active: boolean;
 }) {
   if (item.type === "video") {
     return (
@@ -254,7 +265,7 @@ function ViewerPage({
           style={styles.viewerMedia}
           muted={false}
           controls
-          autoPlay
+          autoPlay={active}
           contentFit="contain"
         />
       </View>
@@ -322,7 +333,9 @@ export function MediaViewerModal({
           onMomentumScrollEnd={(e) =>
             setIndex(Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH))
           }
-          renderItem={({ item }) => <ViewerPage item={item} onClose={onClose} />}
+          renderItem={({ item, index: i }) => (
+            <ViewerPage item={item} onClose={onClose} active={i === index} />
+          )}
         />
         <View style={styles.viewerTopBar}>
           <Pressable
