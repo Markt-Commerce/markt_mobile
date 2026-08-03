@@ -1,8 +1,8 @@
 /**
- * Requests — My requests (buyer) | Browse requests (buyer + seller)
+ * Requests — buyers manage their own requests, sellers browse open requests.
  */
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -13,41 +13,16 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { FileText, Plus, Search, Sparkles } from "lucide-react-native";
+import BottomSheet from "@gorhom/bottom-sheet";
+import { FileText, Plus } from "lucide-react-native";
 import { useUser } from "../../hooks/userContextProvider";
 import { getBuyerRequests } from "../../services/sections/feed";
 import { BuyerRequest } from "../../models/feed";
 import RequestDisplayComponent from "../../components/requestDisplayComponent";
+import BuyerRequestFormBottomSheet from "../../components/buyerRequestBottomSheet";
+import QuickChatBottomSheet from "../../components/quickChatBottomSheet";
 import { useTheme } from "../../components/themeProvider";
 import { getMyRequests } from "../../services/sections/request";
-
-function RequestTabPill({
-  label,
-  active,
-  onPress,
-  isDark,
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-  isDark: boolean;
-}) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.85}
-      className={`flex-1 h-11 rounded items-center justify-center ${active ? "bg-primary" : "bg-transparent"}`}
-    >
-      <Text
-        className={`font-geist font-bold text-[11px] tracking-[2px] uppercase ${
-          active ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"
-        }`}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-}
 
 function EmptyRequestsState({
   title,
@@ -78,9 +53,8 @@ function EmptyRequestsState({
       <TouchableOpacity
         onPress={onAction}
         activeOpacity={0.85}
-        className="mt-8 h-12 px-7 rounded bg-primary items-center justify-center flex-row gap-2"
+        className="mt-8 h-12 px-7 rounded bg-primary items-center justify-center"
       >
-        <Sparkles size={16} color="#FFFFFF" strokeWidth={2} />
         <Text className="text-white font-geist font-bold text-[11px] tracking-[2px] uppercase">
           {actionLabel}
         </Text>
@@ -91,38 +65,53 @@ function EmptyRequestsState({
 
 export default function RequestsScreen() {
   const router = useRouter();
-  const { role } = useUser();
+  const { role, user } = useUser();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const [tab, setTab] = useState<"my" | "browse">(role === "buyer" ? "my" : "browse");
+  const isBuyer = role === "buyer";
   const [items, setItems] = useState<BuyerRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const requestFormRef = useRef<BottomSheet>(null);
+  const chatSheetRef = useRef<BottomSheet>(null);
+  const [chatTarget, setChatTarget] = useState<BuyerRequest | null>(null);
+
+  const openChatWithBuyer = (req: BuyerRequest) => {
+    setChatTarget(req);
+    chatSheetRef.current?.expand();
+  };
+
+  const myId = user?.user_id ? String(user.user_id) : "";
 
   const fetchRequests = useCallback(async () => {
     try {
-      const data = await getMyRequests();
-      setItems(data);
+      const data = isBuyer ? await getMyRequests() : await getBuyerRequests(1, 20);
+      // Sellers browsing requests shouldn't see the ones they created as a buyer.
+      setItems(
+        isBuyer
+          ? data
+          : data.filter((r) => String(r.user?.id ?? r.user_id) !== myId)
+      );
     } catch {
       setItems([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [isBuyer, myId]);
 
   useEffect(() => {
     setLoading(true);
     fetchRequests();
-  }, [fetchRequests, tab]);
+  }, [fetchRequests]);
 
   const onRefresh = () => {
     setRefreshing(true);
     fetchRequests();
   };
 
-  const handlePrimaryAction = () => {
-    router.push("/(tabs)");
+  const openCreateRequest = () => {
+    requestFormRef.current?.expand();
   };
 
   if (loading && !refreshing) {
@@ -144,54 +133,45 @@ export default function RequestsScreen() {
         <View className="flex-row items-center justify-between">
           <View className="flex-1 pr-4">
             <Text className={`font-geist font-bold text-[28px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-              Requests
+              {isBuyer ? "My Requests" : "Buyer Requests"}
             </Text>
             <Text className={`font-inter text-sm mt-1 leading-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-              Track buyer intent, discover open requests, and keep the flow clean.
+              {isBuyer
+                ? "Tell sellers what you need and let offers come to you."
+                : "Open requests from buyers looking for what you sell."}
             </Text>
           </View>
-          <View className={`w-14 h-14 rounded items-center justify-center border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-            <Plus size={24} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={2.2} />
-          </View>
-        </View>
-
-        <View className={`mt-4 rounded border p-1 flex-row ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-          {role === "buyer" && (
-            <RequestTabPill label="My Requests" active={tab === "my"} onPress={() => setTab("my")} isDark={isDark} />
+          {isBuyer && (
+            <TouchableOpacity
+              onPress={openCreateRequest}
+              activeOpacity={0.85}
+              className={`w-14 h-14 rounded items-center justify-center border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+            >
+              <Plus size={24} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={2.2} />
+            </TouchableOpacity>
           )}
-          <RequestTabPill label="Browse" active={tab === "browse"} onPress={() => setTab("browse")} isDark={isDark} />
         </View>
       </View>
 
       <FlatList
         data={items}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <RequestDisplayComponent req={item} />}
-        ListHeaderComponent={
-          <View className="px-6 pt-5 pb-2">
-            <View className="flex-row items-center justify-between">
-              <Text className={`text-[11px] font-geist font-bold tracking-[2px] uppercase ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                {tab === "my" ? "Your request board" : "Open requests"}
-              </Text>
-              <View className="flex-row items-center gap-1.5">
-                <Search size={14} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={2} />
-                <Text className={`text-[11px] font-geist font-bold tracking-[2px] uppercase ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                  Fresh
-                </Text>
-              </View>
-            </View>
-          </View>
-        }
+        renderItem={({ item }) => (
+          <RequestDisplayComponent
+            req={item}
+            onMessagePress={!isBuyer ? () => openChatWithBuyer(item) : undefined}
+          />
+        )}
         ListEmptyComponent={
           <EmptyRequestsState
-            title={tab === "my" ? "No requests yet" : "No open requests"}
+            title={isBuyer ? "No requests yet" : "No open requests"}
             description={
-              tab === "my" && role === "buyer"
+              isBuyer
                 ? "Create a request to tell sellers what you need and let the right offers come to you."
                 : "Check back later for active buyer requests that match your category."
             }
-            actionLabel={tab === "my" && role === "buyer" ? "Create request" : "Browse feed"}
-            onAction={handlePrimaryAction}
+            actionLabel={isBuyer ? "Create request" : "Browse feed"}
+            onAction={isBuyer ? openCreateRequest : () => router.push("/(tabs)")}
             isDark={isDark}
           />
         }
@@ -201,6 +181,25 @@ export default function RequestsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "#f0f1f2" : "#000000"} />
         }
       />
+
+      {isBuyer && (
+        <BuyerRequestFormBottomSheet ref={requestFormRef} onCreated={fetchRequests} />
+      )}
+      {!isBuyer && (
+        <QuickChatBottomSheet
+          sheetRef={chatSheetRef}
+          buyerId={chatTarget?.user?.id ?? chatTarget?.user_id ?? ""}
+          otherUser={
+            chatTarget
+              ? {
+                  username: chatTarget.user?.username,
+                  profile_picture: chatTarget.user?.profile_picture_url ?? undefined,
+                }
+              : undefined
+          }
+          asBuyer={false}
+        />
+      )}
     </SafeAreaView>
   );
 }

@@ -5,22 +5,20 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
   Dimensions,
 } from "react-native";
 import {
   ArrowLeft,
-  Share2,
-  MoreHorizontal,
-  BadgeCheck,
-  MapPin,
+  Eye,
+  Clock,
   MessageCircle,
-  Tag,
+  Wallet,
+  FileText,
 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Link, useRouter } from "expo-router";
-import { useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { getRequestDetails } from "../../services/sections/request";
-import { useToast } from "../../components/ToastProvider";
 import { Request } from "../../models/request";
 import { parseDate } from "../../utils/parseDate";
 import QuickChatBottomSheet from "../../components/quickChatBottomSheet";
@@ -31,229 +29,391 @@ import { defaultProfilePicture } from "../../models/defaults";
 
 const { width } = Dimensions.get("window");
 
+/** Images may arrive as plain URL strings or as media objects — resolve both. */
+function resolveImageUrls(images: any[] | undefined): string[] {
+  return (images ?? [])
+    .map((img: any) =>
+      typeof img === "string"
+        ? img
+        : img?.media?.mobile_url ??
+          img?.media?.original_url ??
+          img?.media?.thumbnail_url ??
+          img?.url ??
+          null
+    )
+    .filter(Boolean) as string[];
+}
+
+function SectionLabel({ children, isDark }: { children: React.ReactNode; isDark: boolean }) {
+  return (
+    <Text
+      className={`text-[11px] font-geist font-bold tracking-[2px] uppercase ${
+        isDark ? "text-dark-muted" : "text-tertiary"
+      }`}
+    >
+      {children}
+    </Text>
+  );
+}
+
 export default function BuyerRequestDetails() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const [requestDetails, setRequestDetails] = useState<Request>();
-  const { show } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const { role, user } = useUser();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#f5f5f5" : "#000000";
+  const iconColor = isDark ? "#f0f1f2" : "#000000";
   const mutedIconColor = isDark ? "#c6c5cf" : "#71717A";
 
   const chatSheetRef = useRef<BottomSheet>(null);
+  // Dual-role users in seller mode shouldn't be offered a chat with themselves
+  // on their own request.
+  const isOwnRequest =
+    !!user?.user_id &&
+    String(requestDetails?.user?.id ?? requestDetails?.user_id) === String(user.user_id);
+
   useEffect(() => {
     fetchData();
   }, [id]);
 
   const fetchData = async () => {
+    setLoading(true);
+    setLoadError(false);
     try {
       const data = await getRequestDetails(id as string);
       setRequestDetails(data);
     } catch (error) {
-      show({
-        variant: "error",
-        title: "Error",
-        message: "Could not fetch request details. Please try again later.",
-      });
+      setLoadError(true);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const imageUrls = resolveImageUrls(requestDetails?.images);
+  const isExpired =
+    requestDetails?.expires_at != null &&
+    new Date(requestDetails.expires_at).getTime() < Date.now();
+  const statusRaw = (requestDetails?.status ?? "OPEN").toUpperCase();
+  const statusLabel =
+    statusRaw === "OPEN" && isExpired ? "EXPIRED" : statusRaw;
+  const isOpen = statusLabel === "OPEN";
+  const showMessageBar = role === "seller" && !isOwnRequest && !!requestDetails;
+
+  const Header = (
+    <View
+      className={`flex-row items-center justify-between px-4 py-3 border-b ${
+        isDark ? "bg-dark-page border-dark-border" : "bg-white border-border"
+      }`}
+    >
+      <View className="flex-row items-center gap-3">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          className={`w-10 h-10 rounded items-center justify-center border ${
+            isDark ? "bg-dark-surface border-dark-border-strong" : "bg-surface border-border"
+          }`}
+        >
+          <ArrowLeft size={20} color={iconColor} />
+        </TouchableOpacity>
+        <Text
+          className={`text-lg font-geist font-bold tracking-tight ${
+            isDark ? "text-dark-text" : "text-black"
+          }`}
+        >
+          Request Details
+        </Text>
+      </View>
+    </View>
+  );
+
+  if (loading) {
+    return (
+      <SafeAreaView className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}>
+        {Header}
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={iconColor} />
+          <Text
+            className={`mt-4 font-geist font-bold text-[11px] tracking-[2px] uppercase ${
+              isDark ? "text-dark-muted" : "text-tertiary"
+            }`}
+          >
+            Loading request
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (loadError || !requestDetails) {
+    return (
+      <SafeAreaView className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}>
+        {Header}
+        <View className="flex-1 items-center justify-center px-8">
+          <View
+            className={`w-16 h-16 rounded items-center justify-center border mb-5 ${
+              isDark ? "bg-dark-surface border-dark-border-strong" : "bg-surface border-border"
+            }`}
+          >
+            <FileText size={26} color={iconColor} strokeWidth={1.8} />
+          </View>
+          <Text
+            className={`text-xl font-geist font-bold text-center ${
+              isDark ? "text-dark-text" : "text-black"
+            }`}
+          >
+            Couldn't load this request
+          </Text>
+          <Text
+            className={`font-inter text-sm text-center mt-2 leading-5 ${
+              isDark ? "text-dark-muted" : "text-tertiary"
+            }`}
+          >
+            Check your connection and try again.
+          </Text>
+          <TouchableOpacity
+            onPress={fetchData}
+            activeOpacity={0.85}
+            className="mt-6 h-12 px-7 rounded bg-primary items-center justify-center"
+          >
+            <Text className="text-white font-geist font-bold text-[11px] tracking-[2px] uppercase">
+              Try again
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}>
-      <View className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}>
-        {/* Top Navigation */}
-        <View
-          className={`flex-row items-center justify-between px-4 py-3 border-b ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
-        >
-          <View className="flex-row items-center gap-3">
-            <TouchableOpacity onPress={() => router.back()}>
-              <ArrowLeft size={20} color={iconColor} />
-            </TouchableOpacity>
-            <Text
-              className={`text-lg font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
-            >
-              Request Details
-            </Text>
-          </View>
+      {Header}
 
-          <View className="flex-row gap-3">
-            <TouchableOpacity>
-              <Share2 size={20} color={iconColor} />
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <MoreHorizontal size={20} color={iconColor} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Content */}
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ paddingBottom: 140 }}
-        >
-          {/* Buyer Header */}
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: showMessageBar ? 120 : 32 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Status + posted */}
+        <View className="px-6 pt-5 flex-row items-center justify-between">
           <View
-            className={`flex-row items-center gap-4 px-4 py-4 ${isDark ? "bg-dark-page" : "bg-white"}`}
+            className={`px-3 py-1.5 rounded border ${
+              isOpen
+                ? "bg-primary-muted border-primary/30"
+                : isDark
+                  ? "bg-dark-elevated border-dark-border-strong"
+                  : "bg-surface border-border"
+            }`}
           >
-            {requestDetails?.user.profile_picture_url ? (
-              <Image
-                source={{ uri: requestDetails.user.profile_picture_url }}
-                className={`h-12 w-12 rounded-full border-2 ${isDark ? "border-dark-border-strong" : "border-border"}`}
-              />
-            ) : (
-              <Image
-                source={{ uri: defaultProfilePicture }}
-                className={`h-12 w-12 rounded-full border-2 ${isDark ? "border-dark-border-strong" : "border-border"}`}
-              />
-            )}
-
-            <View>
-              <View className="flex-row items-center gap-1">
-                <Text
-                  className={`font-geist font-bold text-base ${isDark ? "text-dark-text" : "text-black"}`}
-                >
-                  @{requestDetails?.user.username}
-                </Text>
-                <BadgeCheck size={14} color={mutedIconColor} />
-              </View>
-              {requestDetails?.created_at ? (
-                <Text className="text-xs text-tertiary font-inter">
-                  Posted {parseDate(requestDetails.created_at)} ago • Verified
-                  Buyer
-                </Text>
-              ) : (
-                <Text className="text-xs text-tertiary font-inter">
-                  Posted • Verified Buyer
-                </Text>
-              )}
-            </View>
-          </View>
-
-          {/* Image Gallery */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={width * 0.8 + 12}
-            decelerationRate="fast"
-            className="px-4 py-2"
-          >
-            {requestDetails?.images.map((uri, i) => (
-              <Image
-                key={i}
-                source={{ uri }}
-                style={{ width: width * 0.8 }}
-                className="h-52 mr-3 rounded"
-              />
-            ))}
-          </ScrollView>
-
-          {/* Details */}
-          <View className="px-4 py-2 space-y-4">
-            {/* Tags */}
-            <View className="flex-row flex-wrap gap-2">
-              <View
-                className={`flex-row items-center gap-1 px-3 h-7 rounded border ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border"}`}
-              >
-                <Tag size={12} color={mutedIconColor} />
-                <Text
-                  className={`text-xs font-bold uppercase ${isDark ? "text-dark-text" : "text-black"}`}
-                >
-                  {requestDetails?.categories[0]?.name || "General"}
-                </Text>
-              </View>
-
-              <View className="px-3 h-7 rounded justify-center">
-                <Text
-                  className={`text-xs font-bold flex items-center ${isDark ? "text-dark-text" : "text-black"}`}
-                >
-                  Urgent
-                </Text>
-              </View>
-            </View>
-
-            {/* Title */}
             <Text
-              className={`text-2xl font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+              className={`text-[10px] font-geist font-bold uppercase tracking-[2px] ${
+                isOpen ? "text-primary" : isDark ? "text-dark-muted" : "text-tertiary"
+              }`}
             >
-              {requestDetails?.title}
+              {statusLabel}
             </Text>
-
-            {/* Location */}
-            <View className="flex-row items-center gap-1">
-              <MapPin size={14} color={mutedIconColor} />
-              <Text className="text-sm text-tertiary">
-                Shipping to Direct Location
-              </Text>
-            </View>
-
-            {/* Description */}
-            <View
-              className={`pt-4 border-t ${isDark ? "border-dark-border" : "border-border"}`}
-            >
-              <Text className="text-xs font-geist font-bold uppercase tracking-[2px] mb-2 text-tertiary">
-                Description
-              </Text>
-              <Text
-                className={`text-base leading-relaxed font-inter ${isDark ? "text-dark-text" : "text-black"}`}
-              >
-                {requestDetails?.description}
-              </Text>
-            </View>
-
-            {/* Meta */}
-            <View
-              className={`flex-row gap-4 p-4 rounded border ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
-            >
-              <View className="flex-1">
-                <Text className="text-xs uppercase text-tertiary font-bold mb-1">
-                  Budget Range
-                </Text>
-                <Text
-                  className={`text-lg font-bold ${isDark ? "text-dark-text" : "text-black"}`}
-                >
-                  {requestDetails?.budget || "$150 – $250"}
-                </Text>
-              </View>
-
-              <View className="flex-1">
-                <Text className="text-xs uppercase text-tertiary font-bold mb-1">
-                  Quantity Needed
-                </Text>
-                <Text
-                  className={`text-lg font-bold ${isDark ? "text-dark-text" : "text-black"}`}
-                >
-                  1 Unit
-                </Text>
-              </View>
-            </View>
           </View>
-        </ScrollView>
+          {requestDetails.created_at ? (
+            <Text
+              className={`text-xs font-inter ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+            >
+              Posted {parseDate(requestDetails.created_at)}
+            </Text>
+          ) : null}
+        </View>
 
-        {/* Bottom Action Bar */}
-        <View
-          className={`absolute bottom-0 left-0 right-0 border-t px-4 py-4 ${isDark ? "bg-dark-surface/95 border-dark-border" : "bg-white/90 border-border"}`}
-        >
-          <View className="flex-row gap-3">
-            {role === "seller" && (
-              <TouchableOpacity
-                onPress={() => chatSheetRef.current?.expand()}
-                className="flex-[2] h-14 rounded bg-primary items-center justify-center flex-row gap-2"
+        {/* Title */}
+        <View className="px-6 pt-3">
+          <Text
+            className={`text-[26px] font-geist font-bold leading-8 tracking-tight ${
+              isDark ? "text-dark-text" : "text-black"
+            }`}
+          >
+            {requestDetails.title || "Untitled request"}
+          </Text>
+        </View>
+
+        {/* Category chips */}
+        {(requestDetails.categories?.length ?? 0) > 0 && (
+          <View className="px-6 pt-4 flex-row flex-wrap gap-2">
+            {requestDetails.categories.map((cat) => (
+              <View
+                key={cat.id}
+                className={`px-3 h-7 rounded border justify-center ${
+                  isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border"
+                }`}
               >
-                <MessageCircle size={18} className="text-white" />
-                <Text className="text-white font-bold">Message</Text>
-              </TouchableOpacity>
-            )}
+                <Text
+                  className={`text-[11px] font-geist font-bold uppercase tracking-wider ${
+                    isDark ? "text-dark-text" : "text-black"
+                  }`}
+                >
+                  {cat.name}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
 
-            {/* <TouchableOpacity className="flex-[2] h-14 rounded bg-primary items-center justify-center flex-row gap-2">
-                <Tag size={18} className="text-white" />
-                <Text className="text-white font-bold">Offer Product</Text>
-            </TouchableOpacity> */}
+        {/* Budget + expiry card */}
+        <View className="px-6 pt-5">
+          <View
+            className={`rounded border overflow-hidden ${
+              isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"
+            }`}
+          >
+            <View className="flex-row">
+              <View className="flex-1 p-5">
+                <View className="flex-row items-center gap-1.5 mb-2">
+                  <Wallet size={13} color={mutedIconColor} strokeWidth={2} />
+                  <SectionLabel isDark={isDark}>Budget</SectionLabel>
+                </View>
+                <Text
+                  className={`text-[22px] font-geist font-bold tracking-tight ${
+                    isDark ? "text-dark-text" : "text-black"
+                  }`}
+                >
+                  {requestDetails.budget != null
+                    ? `₦${Number(requestDetails.budget).toLocaleString()}`
+                    : "Not stated"}
+                </Text>
+              </View>
+              <View className={`w-px ${isDark ? "bg-dark-border" : "bg-border"}`} />
+              <View className="flex-1 p-5">
+                <View className="flex-row items-center gap-1.5 mb-2">
+                  <Clock size={13} color={mutedIconColor} strokeWidth={2} />
+                  <SectionLabel isDark={isDark}>
+                    {isExpired ? "Expired" : "Expires"}
+                  </SectionLabel>
+                </View>
+                <Text
+                  className={`text-base font-geist font-bold ${
+                    isDark ? "text-dark-text" : "text-black"
+                  }`}
+                >
+                  {requestDetails.expires_at
+                    ? new Date(requestDetails.expires_at).toLocaleDateString(undefined, {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "No deadline"}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
-      </View>
-      {role === "seller" && requestDetails && (
+
+        {/* Buyer card */}
+        <View className="px-6 pt-4">
+          <View
+            className={`rounded border p-4 flex-row items-center ${
+              isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"
+            }`}
+          >
+            <Image
+              source={{
+                uri: requestDetails.user?.profile_picture_url || defaultProfilePicture,
+              }}
+              className={`h-12 w-12 rounded-full ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+            />
+            <View className="ml-3 flex-1">
+              <Text
+                className={`font-geist font-bold text-base ${
+                  isDark ? "text-dark-text" : "text-black"
+                }`}
+                numberOfLines={1}
+              >
+                @{requestDetails.user?.username ?? "unknown"}
+              </Text>
+              <View className="mt-1 flex-row items-center">
+                <View className="h-1.5 w-1.5 rounded bg-primary mr-2" />
+                <Text
+                  className={`text-[10px] font-geist font-bold uppercase tracking-wider ${
+                    isDark ? "text-dark-muted" : "text-tertiary"
+                  }`}
+                >
+                  {isOwnRequest ? "Your request" : "Requested by"}
+                </Text>
+              </View>
+            </View>
+            {typeof requestDetails.views === "number" && (
+              <View className="flex-row items-center gap-1.5">
+                <Eye size={14} color={mutedIconColor} strokeWidth={2} />
+                <Text
+                  className={`text-xs font-inter ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                >
+                  {requestDetails.views}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Description */}
+        <View className="px-6 pt-6">
+          <SectionLabel isDark={isDark}>Description</SectionLabel>
+          <Text
+            className={`mt-2 text-base font-inter leading-7 ${
+              isDark ? "text-dark-text" : "text-black"
+            }`}
+          >
+            {requestDetails.description || "No description provided."}
+          </Text>
+        </View>
+
+        {/* Photos */}
+        {imageUrls.length > 0 && (
+          <View className="pt-6">
+            <View className="px-6">
+              <SectionLabel isDark={isDark}>Photos</SectionLabel>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={width * 0.7 + 12}
+              decelerationRate="fast"
+              contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 12 }}
+            >
+              {imageUrls.map((uri, i) => (
+                <Image
+                  key={i}
+                  source={{ uri }}
+                  style={{ width: width * 0.7, height: 208 }}
+                  className={`mr-3 rounded border ${
+                    isDark ? "bg-dark-elevated border-dark-border" : "bg-surface border-border"
+                  }`}
+                  resizeMode="cover"
+                />
+              ))}
+            </ScrollView>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Bottom Action Bar — sellers only, never on your own request */}
+      {showMessageBar && (
+        <View
+          className={`absolute bottom-0 left-0 right-0 border-t px-6 pt-4 pb-8 ${
+            isDark ? "bg-dark-page border-dark-border" : "bg-white border-border"
+          }`}
+        >
+          <TouchableOpacity
+            onPress={() => chatSheetRef.current?.expand()}
+            activeOpacity={0.85}
+            className="h-14 rounded bg-primary items-center justify-center flex-row gap-2"
+          >
+            <MessageCircle size={18} color="#FFFFFF" strokeWidth={2} />
+            <Text className="text-white font-geist font-bold text-[12px] tracking-[2px] uppercase">
+              Message buyer
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {showMessageBar && (
         <QuickChatBottomSheet
           sheetRef={chatSheetRef}
           sellerId={user?.user_id ?? ""}

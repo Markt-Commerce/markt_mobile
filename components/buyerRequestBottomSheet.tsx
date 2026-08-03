@@ -51,8 +51,8 @@ export type RequestFormData = z.infer<typeof requestSchema>;
 
 const BuyerRequestFormBottomSheet = React.forwardRef<
   BottomSheetMethods | null,
-  {}
->((props, ref) => {
+  { onCreated?: () => void }
+>(({ onCreated }, ref) => {
   const sheetRef = React.useRef<BottomSheetMethods | null>(null);
   React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
   const { show } = useToast();
@@ -148,6 +148,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
       setImageValue([]);
       setSelectedCategories([]);
       sheetRef.current?.close();
+      onCreated?.();
     } catch (error) {
       logger.error("Create buyer request failed:", error);
       show({

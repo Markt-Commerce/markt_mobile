@@ -27,11 +27,17 @@ export async function getRequestDetails(id: string): Promise<Request> {
 
 
 /**
- * Get details of a specific request by ID
+ * Get the current buyer's own requests.
+ * Tolerates the paginated `{items: [...]}` shape, a bare array, or an
+ * ApiResponse-style `{data: [...]}` wrapper.
  */
 export async function getMyRequests(): Promise<BuyerRequest[]> {
-  const res = await request<{items: BuyerRequest[]}>(`${BASE_URL}/requests/my-requests`, {
+  const res = await request<any>(`${BASE_URL}/requests/my-requests`, {
     method: "GET",
   });
-  return res.items;
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res?.items)) return res.items;
+  if (Array.isArray(res?.data)) return res.data;
+  if (Array.isArray(res?.data?.items)) return res.data.items;
+  return [];
 }

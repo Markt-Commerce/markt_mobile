@@ -696,7 +696,7 @@ export default function ChatScreen({
       setRequestLoading(true);
       try {
         const all = await getBuyerRequests(1, 50);
-        const mine = all.filter((r) => String(r.buyer?.id) === myId);
+        const mine = all.filter((r) => String(r.user?.id) === myId);
         setRequestList(mine);
       } catch {
         show({

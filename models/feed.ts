@@ -112,12 +112,19 @@ export interface BuyerRequest {
     title: string;
     description: string;
     budget: number;
-    deadline: string;
+    status: "OPEN" | "CLOSED" | "EXPIRED" | string;
+    expires_at: string;
     created_at: string;
-    buyer: {
+    updated_at?: string;
+    upvotes?: number;
+    views?: number;
+    images?: any[];
+    categories?: any[];
+    user_id?: string;
+    user: {
       id: string;
       username: string;
-      profile_picture_url: string;
+      profile_picture_url: string | null;
     };
   }
   

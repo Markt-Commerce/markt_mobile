@@ -3,6 +3,7 @@ import { View, Text, Image, TouchableOpacity } from "react-native";
 import { BuyerRequest } from "../models/feed";
 import { router } from "expo-router";
 import { useTheme } from "./themeProvider";
+import { useUser } from "../hooks/userContextProvider";
 import { defaultProfilePicture } from "../models/defaults";
 
 type Buyer = {
@@ -24,7 +25,11 @@ const formatDeadline = (d?: string | number | Date) => {
 
 const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
   const { resolvedTheme } = useTheme();
+  const { user } = useUser();
   const isDark = resolvedTheme === "dark";
+  // No messaging yourself about your own request.
+  const isOwnRequest =
+    !!user?.user_id && String(req.user?.id ?? req.user_id) === String(user.user_id);
 
   return (
     <TouchableOpacity
@@ -39,7 +44,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
           <View className="flex-row items-center flex-1 pr-3">
             <Image
               source={{
-                uri: req.buyer?.profile_picture_url || defaultProfilePicture,
+                uri: req.user?.profile_picture_url || defaultProfilePicture,
               }}
               className={`w-10 h-10 rounded-full mr-3 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
             />
@@ -47,7 +52,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
               <Text
                 className={`font-geist font-bold text-base ${isDark ? "text-dark-text" : "text-black"}`}
               >
-                {req.buyer?.username || "Unknown buyer"}
+                {req.user?.username || "Unknown buyer"}
               </Text>
               <View className="mt-1 flex-row items-center">
                 <View className="h-1.5 w-1.5 rounded bg-primary mr-2" />
@@ -93,18 +98,20 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
             <Text
               className={`text-[11px] font-inter mt-0.5 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
             >
-              Deadline: {formatDeadline(req.deadline)}
+              Deadline: {formatDeadline(req.expires_at)}
             </Text>
           </View>
-          <TouchableOpacity
-            className="px-5 py-2.5 bg-primary rounded"
-            onPress={() => onMessagePress?.()}
-            activeOpacity={0.85}
-          >
-            <Text className="text-white text-xs font-geist font-bold tracking-[1px] uppercase">
-              Message
-            </Text>
-          </TouchableOpacity>
+          {!isOwnRequest && (
+            <TouchableOpacity
+              className="px-5 py-2.5 bg-primary rounded"
+              onPress={() => onMessagePress?.()}
+              activeOpacity={0.85}
+            >
+              <Text className="text-white text-xs font-geist font-bold tracking-[1px] uppercase">
+                Message
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </TouchableOpacity>
