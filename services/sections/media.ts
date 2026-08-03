@@ -4,6 +4,7 @@ import { InstagramGridProps } from '../../components/imagePicker'
 import { Media } from "../../models/feed";
 import logger from '../../utils/logger';
 import { appendLocalFile } from '../../utils/formDataFile';
+import { prepareImageForUpload } from '../../utils/imagePrep';
 
 /** 
  * Uploads an image
@@ -82,10 +83,31 @@ export async function attemptMultipleUpload(
         const name = img.fileName ?? `upload.${mimeType.split('/')[1] || 'jpg'}`;
 
         const uri = img.uri || '';
+        const isVideo =
+          (img as any).mediaType === 'video' ||
+          (mimeType?.startsWith('video/') ?? false) ||
+          /\.(mp4|mov|m4v|mkv|avi|webm)(\?|#|$)/i.test(uri);
 
         // Classic `{uri, name, type}` parts throw "Unsupported FormDataPart
         // implementation" under Expo's fetch — append a File (Blob) instead.
-        appendLocalFile(formData, 'file', uri, name);
+        if (isVideo) {
+          appendLocalFile(formData, 'file', uri, name);
+        } else {
+          // Downscale/re-encode so backend dimension/size/format limits pass.
+          // When re-encoded the temp file is a .jpg — let File derive the
+          // filename so the extension matches the actual content.
+          const prepped = await prepareImageForUpload({
+            uri,
+            width: (img as any).width,
+            height: (img as any).height,
+          });
+          appendLocalFile(
+            formData,
+            'file',
+            prepped.uri,
+            prepped.uri === uri ? name : undefined,
+          );
+        }
         // NOTE: this is a plain service function, not a React component, so it
         // must NOT call hooks (useToast() here caused "Invalid hook call").
         // Let the failure propagate — the calling component shows the toast in

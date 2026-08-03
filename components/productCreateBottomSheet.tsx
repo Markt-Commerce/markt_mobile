@@ -1,6 +1,6 @@
 import 'react-native-reanimated';
 import React, { useRef, useMemo, forwardRef, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useForm } from 'react-hook-form';
 import { z } from "zod";
@@ -23,9 +23,11 @@ import logger from '../utils/logger';
 
 
 // Zod Schema for Validation
+// Mirrors the backend ProductCreateSchema limits (name 2–100 chars, price ≥ 0.01)
+// so validation fails fast client-side instead of after a full image upload.
 const productSchema = z.object({
-  name: z.string().min(1, "Product name is required").max(200),
-  price: z.preprocess((val) => Number(val), z.number().min(0, "Price must be non-negative")),
+  name: z.string().min(2, "Product name must be at least 2 characters").max(100, "Product name must be at most 100 characters"),
+  price: z.preprocess((val) => Number(val), z.number().min(0.01, "Price must be at least ₦0.01")),
   stock: z.preprocess((val) => Number(val), z.number().min(0, "Stock must be non-negative")),
   description: z.string().max(2000).optional(),
   category_ids: z.array(z.number()).optional(),
@@ -76,7 +78,11 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
 
   // images state: store PickedImage[] from InstagramGrid
   const [Imagevalue, setImageValue] = React.useState<InstagramGridProps["value"]>(productImages ? productImages.map((uri, index) => ({ id: index.toString(), uri })) : []);
-  const [sending, setSending] = React.useState(false);
+  // Submission stage drives the slow-network UI protection: while not idle the
+  // button is locked (no double-submit), the sheet can't be swiped closed, and
+  // the form is non-interactive.
+  const [stage, setStage] = useState<"idle" | "uploading" | "creating">("idle");
+  const sending = stage !== "idle";
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema) as any,
@@ -105,7 +111,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
   const onSubmit = async (data: ProductFormData) => {
     if (sending) return;
     try {
-      setSending(true);
+      setStage("uploading");
 
       // upload images first
       const ImageResponse = await attemptMultipleUpload(Imagevalue);
@@ -128,6 +134,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         media_ids: imageIds ?? [],
       };
 
+      setStage("creating");
       await createProduct(payload);
 
       show({
@@ -149,7 +156,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         message: friendlyErrorMessage(error, "There was a problem creating the product. Please try again later.")
       });
     } finally {
-      setSending(false);
+      setStage("idle");
     }
   };
 
@@ -159,11 +166,26 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
       index={-1}
       snapPoints={snapPoints}
       enablePanDownToClose={!sending}
+      enableContentPanningGesture={!sending}
       backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}
       handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
     >
       <BottomSheetScrollView className="p-4">
         <Text className={`text-lg font-geist font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Product</Text>
+
+        {/* In-flight banner — visible while a slow network keeps us waiting */}
+        {sending && (
+          <View className={`flex-row items-center gap-3 rounded border px-4 py-3 mb-4 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
+            <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
+            <Text className={`flex-1 text-xs leading-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              {stage === "uploading"
+                ? "Uploading images… please keep this sheet open."
+                : "Creating your product… almost done."}
+            </Text>
+          </View>
+        )}
+
+        <View pointerEvents={sending ? "none" : "auto"}>
 
         {/* Product Name */}
         <Input name='name' label='Product Name' placeholder='e.g. Wireless headphones' control={control} errors={errors} />
@@ -228,10 +250,18 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         <TouchableOpacity
           disabled={sending}
           onPress={handleSubmit(onSubmit)} // call our merged submit handler
-          className="bg-primary p-3 rounded mt-4"
+          className={`bg-primary p-3 rounded mt-4 flex-row items-center justify-center gap-2 ${sending ? "opacity-70" : ""}`}
         >
-          <Text className="text-white text-center font-geist font-bold">{sending ? "Sending..." : "Create Product"}</Text>
+          {sending && <ActivityIndicator size="small" color="white" />}
+          <Text className="text-white text-center font-geist font-bold">
+            {stage === "uploading"
+              ? "Uploading images…"
+              : stage === "creating"
+                ? "Creating product…"
+                : "Create Product"}
+          </Text>
         </TouchableOpacity>
+        </View>
 
 
         <CategoryAddition
