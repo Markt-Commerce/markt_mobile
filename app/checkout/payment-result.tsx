@@ -45,11 +45,15 @@ export default function PaymentResult() {
         const result = await verifyPayment(payment_id);
         if (cancelled) return;
         setVerified(result.verified === true);
-        if (order_id) {
-          const orderData = await getOrderDetails(order_id);
+        // Payment-first checkout has no order_id route param (no order
+        // existed when payscreen launched) — the verify response is the
+        // only place it's learned from, once payment completes it.
+        const effectiveOrderId = order_id || result.order_id;
+        if (effectiveOrderId) {
+          const orderData = await getOrderDetails(effectiveOrderId);
           if (!cancelled) setOrder(orderData);
         }
-        if (order_id) clearIdempotencyKey(`pay-${order_id}`);
+        if (effectiveOrderId) clearIdempotencyKey(`pay-${effectiveOrderId}`);
         clearIdempotencyKey("checkout-cart");
       } catch (err) {
         if (!cancelled) {

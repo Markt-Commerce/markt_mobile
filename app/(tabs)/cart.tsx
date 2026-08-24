@@ -1,11 +1,13 @@
 import React, { useState, useCallback } from "react";
 import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getCart, updateCartItem, deleteCartItem, getCartSummary, checkoutCart } from "../../services/sections/cart";
-import { buildCheckoutRequest } from "../../utils/checkoutPayload";
+import { getCart, updateCartItem, deleteCartItem, getCartSummary } from "../../services/sections/cart";
+import { initializeCheckoutPayment } from "../../services/sections/payments";
+import { buildCheckoutPaymentInitRequest } from "../../utils/checkoutPayload";
 import { clearIdempotencyKey } from "../../utils/idempotency";
 import { Cart, CartItem, CartSummary } from "../../models/cart";
-import { ArrowLeft, Trash2, ShoppingCart } from "lucide-react-native";
+import { FulfilmentPreference } from "../../models/payments";
+import { ArrowLeft, Trash2, ShoppingCart, Check } from "lucide-react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useToast } from "../../components/ToastProvider";
 import { useTheme } from "../../components/themeProvider";
@@ -24,6 +26,9 @@ export default function CartScreen() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [fulfilmentPreference, setFulfilmentPreference] =
+    useState<FulfilmentPreference>("auto");
+  const [reliabilityFeeOptedIn, setReliabilityFeeOptedIn] = useState(false);
   const { show } = useToast();
   const shipping = useShippingAddress();
 
@@ -100,20 +105,30 @@ export default function CartScreen() {
     }
     try {
       setProcessing(true);
-      const checkout = await checkoutCart(
-        buildCheckoutRequest(shipping.address!, "Checkout from mobile app")
+      // Payment-first checkout (11.5): reserves stock and starts payment
+      // before any Order exists — the fee breakdown below comes straight
+      // from this response, so the buyer sees it before Paystack.
+      const init = await initializeCheckoutPayment(
+        buildCheckoutPaymentInitRequest(
+          shipping.address!,
+          fulfilmentPreference,
+          reliabilityFeeOptedIn
+        )
       );
-      // The order now exists — retire this checkout's idempotency key so the
-      // next checkout creates a fresh order instead of replaying this one.
-      // (Failed checkouts keep the key, which is the point of idempotency.)
-      clearIdempotencyKey("checkout-cart");
-      show({
-        variant: "success",
-        title: "Checkout successful",
-        message: "Your order has been placed successfully.",
+      router.push({
+        pathname: "/checkout/confirm",
+        params: {
+          payment_id: init.payment_id,
+          authorization_url: init.authorization_url ?? "",
+          subtotal: String(init.subtotal),
+          shipping_fee: String(init.shipping_fee),
+          service_fee: String(init.service_fee),
+          reliability_fee_opted_in: String(init.reliability_fee_opted_in),
+          reliability_fee_estimate: String(init.reliability_fee_estimate),
+          capture_ceiling: String(init.capture_ceiling),
+          amount: String(init.amount),
+        },
       });
-      fetchCart();
-      router.push(`/checkout/payment-method/${checkout.order_id}`);
     } catch (err) {
       logger.error("Checkout failed:", err);
       show({
@@ -293,6 +308,80 @@ export default function CartScreen() {
               <Text className={`text-base font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Total</Text>
               <Text className={`text-lg font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(summary?.total)}</Text>
             </View>
+            <Text className={`text-xs font-inter ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              Service fee, and the reliability fee if you opt in, are shown at the next step.
+            </Text>
+
+            <View className={`h-[1px] my-4 ${isDark ? "bg-[#46464e]" : "bg-border"}`} />
+
+            {/* Fulfilment preference (6): how a substitution is handled if an item can't be fulfilled as ordered */}
+            <Text className={`text-sm font-geist font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              If an item can&apos;t be fulfilled
+            </Text>
+            <View className="flex-row gap-2">
+              {(
+                [
+                  { id: "auto", label: "Auto-substitute" },
+                  { id: "ask", label: "Ask me first" },
+                  { id: "seller_only", label: "Don't substitute" },
+                ] as { id: FulfilmentPreference; label: string }[]
+              ).map((opt) => {
+                const selected = fulfilmentPreference === opt.id;
+                return (
+                  <TouchableOpacity
+                    key={opt.id}
+                    onPress={() => setFulfilmentPreference(opt.id)}
+                    className={`flex-1 px-2 py-2 rounded border items-center justify-center ${
+                      selected
+                        ? "border-primary bg-primary/10"
+                        : isDark
+                          ? "border-[#46464e]"
+                          : "border-border"
+                    }`}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                  >
+                    <Text
+                      className={`text-xs text-center font-inter font-medium ${
+                        selected ? "text-primary font-bold" : isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                      }`}
+                    >
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Reliability fee opt-in (11.2): only ever charged if a reroute fires */}
+            <TouchableOpacity
+              onPress={() => setReliabilityFeeOptedIn((v) => !v)}
+              className="flex-row items-center justify-between mt-4 py-2"
+              activeOpacity={0.8}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: reliabilityFeeOptedIn }}
+            >
+              <View className="flex-1 pr-3">
+                <Text className={`text-sm font-inter font-medium ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                  Guarantee my order
+                </Text>
+                <Text className={`text-xs font-inter mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                  A reliability fee applies only if a substitution happens.
+                </Text>
+              </View>
+              <View
+                className={`w-6 h-6 rounded items-center justify-center border ${
+                  reliabilityFeeOptedIn
+                    ? "bg-primary border-primary"
+                    : isDark
+                      ? "border-[#46464e]"
+                      : "border-border"
+                }`}
+              >
+                {reliabilityFeeOptedIn ? <Check size={16} color="#ffffff" /> : null}
+              </View>
+            </TouchableOpacity>
 
             <TouchableOpacity
               onPress={handleCheckout}

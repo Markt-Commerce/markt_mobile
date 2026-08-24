@@ -1,4 +1,8 @@
 import type { CheckoutRequest, ShippingAddressPayload } from "../models/cart";
+import type {
+  CheckoutPaymentInitRequest,
+  FulfilmentPreference,
+} from "../models/payments";
 import { getOrCreateIdempotencyKey } from "./idempotency";
 
 /** Mirror shipping fields into billing (server accepts same shape without lat/lng). */
@@ -31,6 +35,23 @@ export function buildCheckoutRequest(
     billing_address: shippingToBilling(shipping),
     notes,
     use_saved_address: false,
+    idempotency_key: getOrCreateIdempotencyKey("checkout-cart"),
+  };
+}
+
+/** Payment-first checkout (POST /payments/checkout/initialize): reserves
+ * stock and starts payment before any Order exists. */
+export function buildCheckoutPaymentInitRequest(
+  shipping: ShippingAddressPayload,
+  fulfilmentPreference: FulfilmentPreference,
+  reliabilityFeeOptedIn: boolean
+): CheckoutPaymentInitRequest {
+  return {
+    shipping_address: shipping,
+    use_saved_address: false,
+    platform: "mobile",
+    reliability_fee_opted_in: reliabilityFeeOptedIn,
+    fulfilment_preference: fulfilmentPreference,
     idempotency_key: getOrCreateIdempotencyKey("checkout-cart"),
   };
 }
