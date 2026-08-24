@@ -1,5 +1,5 @@
 import { request, BASE_URL } from "../api";
-import { Order, OrderItem, CreateOrderPayload, PayOrderPayload, UpdateOrderItemPayload, Pagination, SellerOrderItem } from "../../models/orders";
+import { Order, OrderItem, CreateOrderPayload, PayOrderPayload, UpdateOrderItemPayload, Pagination, SellerOrderItem, OrderTracking, DeliveryWaitChoiceResponse } from "../../models/orders";
 
 // Get buyer orders
 export async function getBuyerOrders(page = 1, per_page = 10): Promise<Order[]> {
@@ -52,6 +52,30 @@ export async function getBuyerOrders(page = 1, per_page = 10): Promise<Order[]> 
     return res;
   }
   
+  // Track order status and delivery progress, per-item (Phase 13)
+  export async function trackOrder(order_id: string): Promise<OrderTracking> {
+    const res = await request<OrderTracking>(`${BASE_URL}/orders/${order_id}/track`, { method: "GET" });
+    return res;
+  }
+
+  // 10.3: buyer's response to the thin-volume delivery prompt (wait for a
+  // fuller run, optionally consenting to the single-drop fallback rate --
+  // or pay now for single/near-single delivery).
+  export async function submitDeliveryWaitChoice(
+    order_id: string,
+    choice: "wait" | "pay_now",
+    fallback_consent = false,
+  ): Promise<DeliveryWaitChoiceResponse> {
+    const res = await request<DeliveryWaitChoiceResponse>(
+      `${BASE_URL}/orders/${order_id}/delivery-wait-choice`,
+      {
+        method: "POST",
+        body: JSON.stringify({ choice, fallback_consent }),
+      },
+    );
+    return res;
+  }
+
   // Update seller order item status
   export async function updateSellerOrderItem(order_item_id: number, data: UpdateOrderItemPayload): Promise<OrderItem> {
     const res = await request<OrderItem>(`${BASE_URL}/orders/seller/items/${order_item_id}`, {

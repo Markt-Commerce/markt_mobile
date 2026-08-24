@@ -102,3 +102,51 @@ export interface PayOrderPayload {
 export interface UpdateOrderItemPayload {
   status: string;
 }
+
+export interface TrackingTimelineEntry {
+  status: string;
+  label: string;
+  timestamp: string | null;
+}
+
+export interface TrackingItem {
+  id: number;
+  product_id: string;
+  quantity: number;
+  status: string;
+  seller_id: number;
+}
+
+export interface TrackingShipment {
+  carrier: string | null;
+  tracking_number: string | null;
+  tracking_url: string | null;
+  status: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
+}
+
+export interface TrackingDelivery {
+  assignment_id: string;
+  status: string;
+  logistical_status: string | null;
+  assigned_at: string | null;
+}
+
+export interface DeliveryWaitChoiceResponse {
+  order_id: string;
+  choice: "wait" | "pay_now";
+  fallback_consent: boolean;
+  refund_amount: number;
+}
+
+export interface OrderTracking {
+  order_id: string;
+  order_number: string | null;
+  status: string;
+  timeline: TrackingTimelineEntry[];
+  shipping_address: Record<string, any> | null;
+  items: TrackingItem[];
+  shipment: TrackingShipment | null;
+  delivery: TrackingDelivery | null;
+}

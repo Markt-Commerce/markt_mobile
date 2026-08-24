@@ -22,8 +22,16 @@ import {
   getNotifications,
   markAllAsRead,
 } from "../services/sections/notifications";
+import {
+  approveSubstitution,
+  rejectSubstitution,
+} from "../services/sections/fulfilment";
+import { submitDeliveryWaitChoice } from "../services/sections/orders";
 import { useRouter } from "expo-router";
 import { useTheme } from "../components/themeProvider";
+import { useToast } from "../components/ToastProvider";
+
+type DecisionState = "pending" | "resolved" | "error";
 
 // ---- Small presentational helpers ----
 const IconBubble = ({
@@ -55,8 +63,57 @@ export default function NotificationsScreen() {
   const [tab, setTab] = useState<"all" | "orders" | "messages" | "promos">(
     "all",
   );
+  // Tracks in-progress/resolved state for the two notification types that
+  // carry a pending buyer decision (9.1 ASK approval, 10.3 thin-volume
+  // wait-vs-pay) -- surfaced in-app here rather than relying on the push
+  // tap alone, since deep-linking by notification type isn't wired yet
+  // (see NotificationsBootstrap.tsx).
+  const [decisionState, setDecisionState] = useState<Record<number, DecisionState>>({});
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const { show } = useToast();
+
+  const handleSubstitutionDecision = async (n: NotificationItem, approve: boolean) => {
+    setDecisionState((prev) => ({ ...prev, [n.id]: "pending" }));
+    try {
+      if (approve) await approveSubstitution(n.reference_id);
+      else await rejectSubstitution(n.reference_id);
+      setDecisionState((prev) => ({ ...prev, [n.id]: "resolved" }));
+      show({
+        variant: "success",
+        title: approve ? "Substitution approved" : "Substitution rejected",
+        message: approve
+          ? "We'll go ahead with the replacement seller."
+          : "We'll keep looking for another match.",
+      });
+    } catch {
+      setDecisionState((prev) => ({ ...prev, [n.id]: "error" }));
+      show({ variant: "error", title: "Couldn't submit your decision", message: "Please try again." });
+    }
+  };
+
+  const handleWaitChoice = async (n: NotificationItem, choice: "wait" | "pay_now") => {
+    setDecisionState((prev) => ({ ...prev, [n.id]: "pending" }));
+    try {
+      // fallback_consent is always false here: the backend doesn't yet
+      // collect the single-drop upcharge on consent (logged 10.3 gap in
+      // deliveries/runs.py), so "wait" always resolves to either a fuller
+      // run or a free cancellation -- never a silent surprise charge.
+      await submitDeliveryWaitChoice(n.reference_id, choice, false);
+      setDecisionState((prev) => ({ ...prev, [n.id]: "resolved" }));
+      show({
+        variant: "success",
+        title: choice === "wait" ? "We'll wait for a fuller run" : "Paying for faster delivery",
+        message:
+          choice === "wait"
+            ? "If it doesn't fill by the deadline, you'll be cancelled and refunded automatically."
+            : "Your order will go out on the next available run.",
+      });
+    } catch {
+      setDecisionState((prev) => ({ ...prev, [n.id]: "error" }));
+      show({ variant: "error", title: "Couldn't submit your choice", message: "Please try again." });
+    }
+  };
 
   useEffect(() => {
     const getpresentNotifs = async () => {
@@ -121,30 +178,97 @@ export default function NotificationsScreen() {
     </TouchableOpacity>
   );
 
-  const Row = ({ n }: { n: NotificationItem }) => (
-    <View className="flex-row items-center gap-4 px-5 py-5">
-      <IconBubble isDark={isDark} />
-
-      <View className="flex-1">
-        <Text
-          className={`font-geist font-bold text-sm ${isDark ? "text-dark-text" : "text-black"}`}
-        >
-          {n.title}
-        </Text>
-        <Text
-          className={`text-sm font-inter mt-1 leading-5 ${n.is_read ? (isDark ? "text-dark-muted" : "text-tertiary") : isDark ? "text-dark-text font-medium" : "text-black font-medium"}`}
-          numberOfLines={2}
-        >
-          {n.message}
-        </Text>
-        <Text
-          className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-inter text-[10px] mt-1.5`}
-        >
-          {n.created_at}
-        </Text>
-      </View>
-    </View>
+  const DecisionButton = ({
+    label,
+    onPress,
+    primary,
+  }: {
+    label: string;
+    onPress: () => void;
+    primary?: boolean;
+  }) => (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.8}
+      className={`flex-1 h-9 rounded items-center justify-center ${primary ? "bg-primary" : isDark ? "bg-dark-elevated" : "bg-surface"}`}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <Text
+        className={`text-xs font-geist font-bold ${primary ? "text-white" : isDark ? "text-dark-text" : "text-black"}`}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
   );
+
+  const Row = ({ n }: { n: NotificationItem }) => {
+    const state = decisionState[n.id];
+    const needsSubstitutionDecision = n.type === "substitution_approval_required";
+    const needsWaitChoice = n.type === "thin_volume_delivery_choice";
+
+    return (
+      <View className="flex-row items-start gap-4 px-5 py-5">
+        <IconBubble isDark={isDark} />
+
+        <View className="flex-1">
+          <Text
+            className={`font-geist font-bold text-sm ${isDark ? "text-dark-text" : "text-black"}`}
+          >
+            {n.title}
+          </Text>
+          <Text
+            className={`text-sm font-inter mt-1 leading-5 ${n.is_read ? (isDark ? "text-dark-muted" : "text-tertiary") : isDark ? "text-dark-text font-medium" : "text-black font-medium"}`}
+            numberOfLines={3}
+          >
+            {n.message}
+          </Text>
+          <Text
+            className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-inter text-[10px] mt-1.5`}
+          >
+            {n.created_at}
+          </Text>
+
+          {(needsSubstitutionDecision || needsWaitChoice) && state !== "resolved" && (
+            <View className="flex-row gap-2 mt-3">
+              {state === "pending" ? (
+                <Text className={`text-xs font-inter ${isDark ? "text-dark-muted" : "text-tertiary"}`}>
+                  Submitting…
+                </Text>
+              ) : needsSubstitutionDecision ? (
+                <>
+                  <DecisionButton
+                    label="Approve"
+                    primary
+                    onPress={() => handleSubstitutionDecision(n, true)}
+                  />
+                  <DecisionButton
+                    label="Reject"
+                    onPress={() => handleSubstitutionDecision(n, false)}
+                  />
+                </>
+              ) : (
+                <>
+                  <DecisionButton
+                    label="Wait for fuller run"
+                    primary
+                    onPress={() => handleWaitChoice(n, "wait")}
+                  />
+                  <DecisionButton
+                    label="Pay now"
+                    onPress={() => handleWaitChoice(n, "pay_now")}
+                  />
+                </>
+              )}
+            </View>
+          )}
+          {(needsSubstitutionDecision || needsWaitChoice) && state === "resolved" && (
+            <Text className="text-xs font-geist font-bold text-primary mt-2">Submitted</Text>
+          )}
+        </View>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}>
