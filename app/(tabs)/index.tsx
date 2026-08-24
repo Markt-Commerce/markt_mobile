@@ -11,7 +11,7 @@ import {
   type NativeScrollEvent,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Plus, Search, Compass } from "lucide-react-native";
+import { Plus, Search, Compass, Store } from "lucide-react-native";
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from "@gorhom/bottom-sheet";
 import { useRouter, useFocusEffect } from "expo-router";
 import type { FeedItem, FeedProduct } from "../../types/feed";
@@ -310,6 +310,15 @@ export default function FeedScreen() {
           >
             <Compass size={16} color="#E94C2A" strokeWidth={2} />
             <Text className="font-geist font-bold text-[13px] tracking-widest uppercase text-primary">Explore</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push("/markets")}
+            className="py-1 px-3 flex-row items-center gap-2"
+            accessibilityRole="button"
+            accessibilityLabel="Browse markets"
+          >
+            <Store size={16} color="#E94C2A" strokeWidth={2} />
+            <Text className="font-geist font-bold text-[13px] tracking-widest uppercase text-primary">Markets</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
