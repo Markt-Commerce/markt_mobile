@@ -133,6 +133,14 @@ export interface TrackingDelivery {
   assigned_at: string | null;
 }
 
+export interface OrderCancelResponse {
+  order_id: string;
+  status: string;
+  cancelled_at: string | null;
+  cancel_reason: string | null;
+  refund_amount: number;
+}
+
 export interface DeliveryWaitChoiceResponse {
   order_id: string;
   choice: "wait" | "pay_now";

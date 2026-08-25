@@ -206,6 +206,7 @@ export default function NotificationsScreen() {
     const state = decisionState[n.id];
     const needsSubstitutionDecision = n.type === "substitution_approval_required";
     const needsWaitChoice = n.type === "thin_volume_delivery_choice";
+    const needsEscalationChoice = n.type === "item_unfulfilled";
 
     return (
       <View className="flex-row items-start gap-4 px-5 py-5">
@@ -264,6 +265,16 @@ export default function NotificationsScreen() {
           )}
           {(needsSubstitutionDecision || needsWaitChoice) && state === "resolved" && (
             <Text className="text-xs font-geist font-bold text-primary mt-2">Submitted</Text>
+          )}
+
+          {needsEscalationChoice && (
+            <View className="flex-row gap-2 mt-3">
+              <DecisionButton
+                label="Choose what happens next"
+                primary
+                onPress={() => router.push(`/orders/escalation/${n.reference_id}` as any)}
+              />
+            </View>
           )}
         </View>
       </View>

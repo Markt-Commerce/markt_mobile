@@ -13,11 +13,13 @@
  */
 import { useEffect } from "react";
 import { AppState, Platform } from "react-native";
+import { router } from "expo-router";
 import type { EventSubscription } from "expo-modules-core";
 
 import { useUser } from "../hooks/userContextProvider";
 import { markAppOpened } from "../services/notificationState";
 import { notificationsEnabled } from "../services/notificationSupport";
+import { resolveNotificationRoute } from "../utils/notificationDeepLink";
 import logger from "../utils/logger";
 
 export default function NotificationsBootstrap() {
@@ -60,10 +62,19 @@ export default function NotificationsBootstrap() {
 
         if (cancelled) return;
 
-        // Tapping a reminder opens the app; deep-linking by data.type can be
-        // added here later.
         responseSub = Notifications.addNotificationResponseReceivedListener(
-          () => {}
+          (response) => {
+            const data = response.notification.request.content.data as
+              | Record<string, unknown>
+              | undefined;
+            if (!data) return;
+            const route = resolveNotificationRoute({
+              type: data.type as string | undefined,
+              reference_type: data.reference_type as string | undefined,
+              reference_id: data.reference_id as string | undefined,
+            });
+            if (route) router.push(route as any);
+          }
         );
       } catch (e) {
         logger.error("notification setup failed:", e);

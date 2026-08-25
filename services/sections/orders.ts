@@ -1,5 +1,5 @@
 import { request, BASE_URL } from "../api";
-import { Order, OrderItem, CreateOrderPayload, PayOrderPayload, UpdateOrderItemPayload, Pagination, SellerOrderItem, OrderTracking, DeliveryWaitChoiceResponse } from "../../models/orders";
+import { Order, OrderItem, CreateOrderPayload, PayOrderPayload, UpdateOrderItemPayload, Pagination, SellerOrderItem, OrderTracking, DeliveryWaitChoiceResponse, OrderCancelResponse } from "../../models/orders";
 
 // Get buyer orders
 export async function getBuyerOrders(page = 1, per_page = 10): Promise<Order[]> {
@@ -73,6 +73,15 @@ export async function getBuyerOrders(page = 1, per_page = 10): Promise<Order[]> 
         body: JSON.stringify({ choice, fallback_consent }),
       },
     );
+    return res;
+  }
+
+  // Cancel an order (buyer only, before shipment)
+  export async function cancelOrder(order_id: string, reason?: string): Promise<OrderCancelResponse> {
+    const res = await request<OrderCancelResponse>(`${BASE_URL}/orders/${order_id}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    });
     return res;
   }
 
