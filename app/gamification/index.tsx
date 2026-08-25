@@ -74,7 +74,7 @@ export default function GamificationScreen() {
           <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
         </TouchableOpacity>
         <Text
-          className={`text-lg font-geist font-bold ml-2 ${
+          className={`text-lg font-bold ml-2 ${
             isDark ? "text-[#f0f1f2]" : "text-black"
           }`}
         >
@@ -95,7 +95,7 @@ export default function GamificationScreen() {
         {error && !data ? (
           <View className="items-center py-16 px-6">
             <Text
-              className={`font-inter text-sm text-center ${
+              className={`text-sm text-center ${
                 isDark ? "text-[#c6c5cf]" : "text-tertiary"
               }`}
             >
@@ -105,7 +105,7 @@ export default function GamificationScreen() {
               onPress={onRefresh}
               className="mt-3 px-5 py-2 bg-primary rounded"
             >
-              <Text className="text-white font-geist font-bold text-sm">Retry</Text>
+              <Text className="text-white font-bold text-sm">Retry</Text>
             </TouchableOpacity>
           </View>
         ) : !data ? (
@@ -130,14 +130,14 @@ export default function GamificationScreen() {
                   showName
                 />
                 <Text
-                  className={`font-geist font-bold text-[40px] mt-4 ${
+                  className={`font-bold text-[40px] mt-4 ${
                     isDark ? "text-[#f0f1f2]" : "text-black"
                   }`}
                 >
                   {data.lifetime_points.toLocaleString()}
                 </Text>
                 <Text
-                  className={`font-inter text-xs -mt-1 mb-4 ${
+                  className={`text-xs -mt-1 mb-4 ${
                     isDark ? "text-[#c6c5cf]" : "text-tertiary"
                   }`}
                 >
@@ -181,7 +181,7 @@ export default function GamificationScreen() {
             <View className="px-6">
               {recent.length === 0 ? (
                 <Text
-                  className={`font-inter text-sm ${
+                  className={`text-sm ${
                     isDark ? "text-[#c6c5cf]" : "text-tertiary"
                   }`}
                 >
@@ -196,14 +196,14 @@ export default function GamificationScreen() {
                     }`}
                   >
                     <Text
-                      className={`font-geist text-sm ${
+                      className={`text-sm ${
                         isDark ? "text-[#f0f1f2]" : "text-black"
                       }`}
                     >
                       {reasonLabel(r.reason)}
                     </Text>
                     <Text
-                      className={`font-geist font-bold text-sm ${
+                      className={`font-bold text-sm ${
                         r.delta >= 0 ? "text-success" : "text-error"
                       }`}
                     >
@@ -238,7 +238,7 @@ export default function GamificationScreen() {
             >
               {preview.length === 0 ? (
                 <Text
-                  className={`font-inter text-sm p-4 ${
+                  className={`text-sm p-4 ${
                     isDark ? "text-[#c6c5cf]" : "text-tertiary"
                   }`}
                 >
@@ -277,14 +277,14 @@ function StatTile({
       }`}
     >
       <Text
-        className={`text-[10px] font-geist font-bold uppercase tracking-wider ${
+        className={`text-[10px] font-bold uppercase tracking-wider ${
           isDark ? "text-[#c6c5cf]" : "text-tertiary"
         }`}
       >
         {label}
       </Text>
       <Text
-        className={`text-lg font-geist font-bold mt-1 ${
+        className={`text-lg font-bold mt-1 ${
           isDark ? "text-[#f0f1f2]" : "text-black"
         }`}
       >
@@ -308,7 +308,7 @@ function SectionHeader({
   return (
     <View className="flex-row items-center justify-between px-6 pt-8 pb-3">
       <Text
-        className={`text-xl font-geist font-bold ${
+        className={`text-xl font-bold ${
           isDark ? "text-[#f0f1f2]" : "text-black"
         }`}
       >
@@ -316,7 +316,7 @@ function SectionHeader({
       </Text>
       {actionLabel && onAction && (
         <TouchableOpacity onPress={onAction} className="flex-row items-center">
-          <Text className="text-primary font-geist font-bold text-sm">{actionLabel}</Text>
+          <Text className="text-primary font-bold text-sm">{actionLabel}</Text>
           <ChevronRight size={16} color="#E94C2A" />
         </TouchableOpacity>
       )}

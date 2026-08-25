@@ -172,7 +172,7 @@ export default function StartCards({
     <View className="px-4 pt-2 pb-3">
       {/* Header */}
       <View className="mb-2 flex-row justify-between">
-        <Text className="text-[20px] font-geist font-bold text-black">{title}</Text>
+        <Text className="text-[20px] font-bold text-black">{title}</Text>
         <Pressable onPress={() => { onRemoved?.(); setRemoved(true); }}>
           <X size={20}/>
         </Pressable>

@@ -41,7 +41,7 @@ export default function LeaderboardScopeTabs({
             className={`flex-1 py-2 rounded items-center ${active ? "bg-primary" : ""}`}
           >
             <Text
-              className={`font-geist font-bold text-xs ${
+              className={`font-bold text-xs ${
                 active ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"
               }`}
             >

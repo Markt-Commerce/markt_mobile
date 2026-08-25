@@ -46,7 +46,7 @@ export default function GamificationStrip({
             size="lg"
             showName
           />
-          <Text className={`font-geist font-bold text-[24px] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className={`font-bold text-[24px] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
             {profile.lifetime_points.toLocaleString()}
           </Text>
         </View>

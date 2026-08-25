@@ -156,7 +156,7 @@ const ShopInformationScreen = () => {
   };
 
   const Label = ({ children }: { children: React.ReactNode }) => (
-    <Text className={`mb-2 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>{children}</Text>
+    <Text className={`mb-2 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>{children}</Text>
   );
 
   return (
@@ -178,7 +178,7 @@ const ShopInformationScreen = () => {
           >
             <ArrowLeft size={20} color={iconColor} />
           </TouchableOpacity>
-          <Text className={`text-xl font-geist font-bold text-center flex-1 pr-10 ${isDark ? "text-[#f0f1f2]" : "text-[#000000]"}`}>
+          <Text className={`text-xl font-bold text-center flex-1 pr-10 ${isDark ? "text-[#f0f1f2]" : "text-[#000000]"}`}>
             Shop setup
           </Text>
         </View>
@@ -205,7 +205,7 @@ const ShopInformationScreen = () => {
                 ) : (
                   <View className="items-center">
                     <Camera size={32} color={mutedIconColor} />
-                    <Text className={`text-[10px] font-geist font-bold mt-1 text-center px-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>ADD SHOP LOGO</Text>
+                    <Text className={`text-[10px] font-bold mt-1 text-center px-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>ADD SHOP LOGO</Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -223,14 +223,14 @@ const ShopInformationScreen = () => {
               <Input placeholder="markt_handle" control={control} name="userName" errors={errors} autoCapitalize="none" />
               <View className="mt-2 h-4">
                 {usernameStatus === "taken" ? (
-                  <Text className="text-xs text-error font-inter">{usernameMessage}</Text>
+                  <Text className="text-xs text-error ">{usernameMessage}</Text>
                 ) : usernameStatus === "available" ? (
                   <View className="flex-row items-center gap-1">
                     <Check size={12} color="#178b1f" />
-                    <Text className="text-xs text-success font-inter">Handle is available</Text>
+                    <Text className="text-xs text-success ">Handle is available</Text>
                   </View>
                 ) : usernameStatus === "checking" ? (
-                  <Text className="text-xs text-tertiary font-inter italic">Checking...</Text>
+                  <Text className="text-xs text-tertiary italic">Checking...</Text>
                 ) : null}
               </View>
             </View>
@@ -249,11 +249,11 @@ const ShopInformationScreen = () => {
 
             {/* Categories */}
             <View className="mb-10">
-              <Text className={`mb-4 text-sm font-geist font-bold uppercase tracking-widest ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Niches & Categories</Text>
+              <Text className={`mb-4 text-sm font-bold uppercase tracking-widest ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Niches & Categories</Text>
               <View className="flex-row flex-wrap gap-3">
                 {selectedCategories.map((cat) => (
                   <View key={cat.id.toString()} className={`flex-row items-center rounded px-4 py-2 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-                    <Text className={`text-xs font-geist font-bold mr-2 ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>{cat.name}</Text>
+                    <Text className={`text-xs font-bold mr-2 ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>{cat.name}</Text>
                     <TouchableOpacity onPress={() => removeCategory(cat.id)}>
                       <X size={14} color={mutedIconColor} />
                     </TouchableOpacity>
@@ -263,11 +263,11 @@ const ShopInformationScreen = () => {
                   onPress={() => setModalVisible(true)}
                   className={`border-2 border-dashed rounded px-4 py-2 justify-center items-center ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
                 >
-                  <Text className={`text-xs font-geist font-bold ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>+ Add Categories</Text>
+                  <Text className={`text-xs font-bold ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>+ Add Categories</Text>
                 </TouchableOpacity>
               </View>
               {selectedCategories.length < 3 && (
-                <Text className={`text-[10px] font-inter mt-3 italic ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                <Text className={`text-[10px] mt-3 italic ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                   Tip: Add 3+ categories for better visibility.
                 </Text>
               )}

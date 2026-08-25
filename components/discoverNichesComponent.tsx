@@ -71,7 +71,7 @@ export default function DiscoverNiches() {
 
   return (
     <View className={`my-4 border-y py-6 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}>
-      <Text className={`px-4 pb-4 text-[20px] font-geist font-bold tracking-[-0.015em] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+      <Text className={`px-4 pb-4 text-[20px] font-bold tracking-[-0.015em] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
         Discover Niches
       </Text>
 
@@ -102,7 +102,7 @@ export default function DiscoverNiches() {
                   </Text>
                 </Pressable>
 
-                <Text className={`text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+                <Text className={`text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
                   {niche.name}
                 </Text>
 

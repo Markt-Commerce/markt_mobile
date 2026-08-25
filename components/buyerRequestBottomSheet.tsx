@@ -175,7 +175,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
       >
         <Text
-          className={`text-lg font-geist font-bold mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
+          className={`text-lg font-bold mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
         >
           Create Buyer Request
         </Text>
@@ -212,7 +212,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
 
         {/* Category IDs */}
         <Text
-          className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+          className={`mb-2 text-xs font-bold uppercase tracking-[2px] ${isDark ? "text-dark-muted" : "text-tertiary"}`}
         >
           Categories
         </Text>
@@ -246,7 +246,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
 
         {/* Images Select */}
         <Text
-          className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+          className={`mb-2 text-xs font-bold uppercase tracking-[2px] ${isDark ? "text-dark-muted" : "text-tertiary"}`}
         >
           Images
         </Text>
@@ -271,7 +271,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
           className="bg-primary py-4 rounded items-center justify-center"
           onPress={handleSubmit(onSubmit)}
         >
-          <Text className="text-white font-geist font-semibold">
+          <Text className="text-white font-semibold">
             {sending ? "Sending…" : "Create Request"}
           </Text>
         </TouchableOpacity>

@@ -39,7 +39,7 @@ export default function BadgeDetailScreen() {
           <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
         </TouchableOpacity>
         <Text
-          className={`text-lg font-geist font-bold ml-2 ${
+          className={`text-lg font-bold ml-2 ${
             isDark ? "text-[#f0f1f2]" : "text-black"
           }`}
         >
@@ -53,7 +53,7 @@ export default function BadgeDetailScreen() {
         </View>
       ) : !badge ? (
         <Text
-          className={`text-center font-inter text-sm py-16 ${
+          className={`text-center text-sm py-16 ${
             isDark ? "text-[#c6c5cf]" : "text-tertiary"
           }`}
         >
@@ -80,7 +80,7 @@ export default function BadgeDetailScreen() {
           </View>
 
           <Text
-            className={`font-geist font-bold text-2xl mt-6 text-center ${
+            className={`font-bold text-2xl mt-6 text-center ${
               isDark ? "text-[#f0f1f2]" : "text-black"
             }`}
           >
@@ -90,13 +90,13 @@ export default function BadgeDetailScreen() {
           {badge.earned ? (
             <View className="flex-row items-center mt-2">
               <CheckCircle2 size={16} color="#16a34a" />
-              <Text className="text-success font-geist font-bold text-sm ml-1">
+              <Text className="text-success font-bold text-sm ml-1">
                 Earned{awardedDate ? ` · ${awardedDate}` : ""}
               </Text>
             </View>
           ) : (
             <Text
-              className={`font-geist font-bold text-sm mt-2 ${
+              className={`font-bold text-sm mt-2 ${
                 isDark ? "text-[#c6c5cf]" : "text-tertiary"
               }`}
             >
@@ -106,7 +106,7 @@ export default function BadgeDetailScreen() {
 
           {!!badge.description && (
             <Text
-              className={`font-inter text-base text-center mt-4 leading-6 ${
+              className={`text-base text-center mt-4 leading-6 ${
                 isDark ? "text-[#c6c5cf]" : "text-tertiary"
               }`}
             >
@@ -117,7 +117,7 @@ export default function BadgeDetailScreen() {
           {!badge.earned && badge.progress > 0 && (
             <View className="w-full mt-8">
               <Text
-                className={`font-geist font-bold text-xs mb-2 ${
+                className={`font-bold text-xs mb-2 ${
                   isDark ? "text-[#c6c5cf]" : "text-tertiary"
                 }`}
               >

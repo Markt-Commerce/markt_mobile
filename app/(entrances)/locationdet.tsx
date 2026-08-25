@@ -141,7 +141,7 @@ export default function AddAddressScreen() {
   };
 
   const Label = ({ children }: { children: React.ReactNode }) => (
-    <Text className={`mb-2 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>{children}</Text>
+    <Text className={`mb-2 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>{children}</Text>
   );
 
   return (
@@ -161,7 +161,7 @@ export default function AddAddressScreen() {
             >
               <ArrowLeft color={iconColor} size={20} />
             </TouchableOpacity>
-            <Text className={`text-xl font-geist font-bold text-center flex-1 pr-10 ${isDark ? "text-[#f0f1f2]" : "text-[#000000]"}`}>
+            <Text className={`text-xl font-bold text-center flex-1 pr-10 ${isDark ? "text-[#f0f1f2]" : "text-[#000000]"}`}>
               Your location
             </Text>
           </View>
@@ -175,10 +175,10 @@ export default function AddAddressScreen() {
 
           <View className="px-4">
             <View className={`rounded border px-6 py-8 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-              <Text className={`text-[24px] font-geist font-bold leading-tight mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`text-[24px] font-bold leading-tight mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                 Where are you based?
               </Text>
-              <Text className={`font-inter text-sm mb-8 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`text-sm mb-8 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                 This helps us show you relevant products and calculate shipping.
               </Text>
 
@@ -187,7 +187,7 @@ export default function AddAddressScreen() {
                 onPress={useCurrentLocation}
                 disabled={geocoding}
               >
-                {geocoding ? <ActivityIndicator size="small" color={iconColor} /> : <Text className={`font-geist font-bold text-xs tracking-widest uppercase ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Use Current Location</Text>}
+                {geocoding ? <ActivityIndicator size="small" color={iconColor} /> : <Text className={`font-bold text-xs tracking-widest uppercase ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Use Current Location</Text>}
               </TouchableOpacity>
 
               <View className="gap-6">
@@ -195,7 +195,7 @@ export default function AddAddressScreen() {
                   <Label>Street Address</Label>
                   <Input placeholder="123 Main St" control={control} name="street" errors={errors} />
                   {location && !geocoding && (
-                    <Text className={`text-[10px] font-inter mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Detected near you</Text>
+                    <Text className={`text-[10px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Detected near you</Text>
                   )}
                 </View>
 
@@ -238,7 +238,7 @@ export default function AddAddressScreen() {
                   onPress={onSkip}
                   disabled={isSubmitting}
                 >
-                  <Text className={`font-inter text-sm underline ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Skip for now</Text>
+                  <Text className={`text-sm underline ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Skip for now</Text>
                 </TouchableOpacity>
               </View>
             </View>

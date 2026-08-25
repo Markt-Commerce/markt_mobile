@@ -24,7 +24,7 @@ export default function VerificationScreen() {
             </TouchableOpacity>
           </View>
 
-          <Text className={`text-[22px] font-geist font-bold leading-tight text-center pb-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className={`text-[22px] font-bold leading-tight text-center pb-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
             Verify Your Email
           </Text>
           <Text className={`text-sm font-normal text-center mb-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>

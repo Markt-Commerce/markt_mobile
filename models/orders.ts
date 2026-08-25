@@ -133,6 +133,12 @@ export interface TrackingDelivery {
   assigned_at: string | null;
 }
 
+export interface PodCode {
+  ready: boolean;
+  system: "single_order" | "run" | null;
+  code: string | null;
+}
+
 export interface OrderCancelResponse {
   order_id: string;
   status: string;

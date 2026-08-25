@@ -199,7 +199,7 @@ export default function PaymentMethod() {
 
         <View className="px-4 pt-4">
           <Text
-            className={`text-lg font-geist font-bold mb-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+            className={`text-lg font-bold mb-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
           >
             Choose payment method
           </Text>
@@ -253,7 +253,7 @@ export default function PaymentMethod() {
               Order total
             </Text>
             <Text
-              className={`text-xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+              className={`text-xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
             >
               {orderTotal ? formatMoney(orderTotal) : "NGN 0.00"}
             </Text>
@@ -277,7 +277,7 @@ export default function PaymentMethod() {
           {isProcessing ? (
             <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
           ) : null}
-          <Text className="text-white text-sm font-geist font-bold tracking-[0.015em]">
+          <Text className="text-white text-sm font-bold tracking-[0.015em]">
             {isProcessing ? "Processing…" : "Proceed"}
           </Text>
         </TouchableOpacity>

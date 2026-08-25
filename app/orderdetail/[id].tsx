@@ -111,12 +111,12 @@ export default function OrderDetail() {
           </TouchableOpacity>
           <View className="flex-1">
             <Text
-              className={`text-xl font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+              className={`text-xl font-bold ${isDark ? "text-dark-text" : "text-black"}`}
             >
               Order #{order.order_number ?? order.id}
             </Text>
             {orderDate ? (
-              <Text className="text-xs font-inter text-tertiary mt-0.5">{orderDate}</Text>
+              <Text className="text-xs text-tertiary mt-0.5">{orderDate}</Text>
             ) : null}
           </View>
         </View>
@@ -125,11 +125,11 @@ export default function OrderDetail() {
         <View
           className={`rounded border p-6 mb-6 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
         >
-          <Text className="text-xs font-geist font-bold uppercase tracking-wider text-tertiary">
+          <Text className="text-xs font-bold uppercase tracking-wider text-tertiary">
             Status
           </Text>
           <Text
-            className={`text-xl font-geist font-bold mt-2 capitalize ${isDark ? "text-dark-text" : "text-black"}`}
+            className={`text-xl font-bold mt-2 capitalize ${isDark ? "text-dark-text" : "text-black"}`}
           >
             {order.status}
           </Text>
@@ -142,10 +142,10 @@ export default function OrderDetail() {
           >
             <User size={18} color={mutedColor} />
             <View>
-              <Text className="text-xs font-geist font-bold uppercase tracking-wider text-tertiary">
+              <Text className="text-xs font-bold uppercase tracking-wider text-tertiary">
                 Buyer
               </Text>
-              <Text className={`text-base font-geist font-bold mt-1 ${isDark ? "text-dark-text" : "text-black"}`}>
+              <Text className={`text-base font-bold mt-1 ${isDark ? "text-dark-text" : "text-black"}`}>
                 {order.buyer.buyername}
               </Text>
             </View>
@@ -159,16 +159,16 @@ export default function OrderDetail() {
           >
             <View className="flex-row items-center gap-2">
               <MapPin size={16} color={mutedColor} />
-              <Text className="text-xs font-geist font-bold uppercase tracking-wider text-tertiary">
+              <Text className="text-xs font-bold uppercase tracking-wider text-tertiary">
                 Shipping Address
               </Text>
             </View>
             {recipientName ? (
-              <Text className={`text-base font-geist font-bold mt-2 ${isDark ? "text-dark-text" : "text-black"}`}>
+              <Text className={`text-base font-bold mt-2 ${isDark ? "text-dark-text" : "text-black"}`}>
                 {recipientName}
               </Text>
             ) : null}
-            <Text className={`text-sm font-inter mt-1 ${isDark ? "text-dark-text" : "text-black"}`}>
+            <Text className={`text-sm mt-1 ${isDark ? "text-dark-text" : "text-black"}`}>
               {shippingAddressLine}
             </Text>
           </View>
@@ -182,7 +182,7 @@ export default function OrderDetail() {
             {order.payment_method ? (
               <View className="flex-row items-center gap-2 mb-3">
                 <CreditCard size={16} color={mutedColor} />
-                <Text className={`text-sm font-inter capitalize ${isDark ? "text-dark-text" : "text-black"}`}>
+                <Text className={`text-sm capitalize ${isDark ? "text-dark-text" : "text-black"}`}>
                   {order.payment_method.replace(/_/g, " ")}
                 </Text>
               </View>
@@ -190,7 +190,7 @@ export default function OrderDetail() {
             {order.customer_note ? (
               <View className="flex-row items-start gap-2">
                 <FileText size={16} color={mutedColor} style={{ marginTop: 2 }} />
-                <Text className={`text-sm font-inter flex-1 ${isDark ? "text-dark-text" : "text-black"}`}>
+                <Text className={`text-sm flex-1 ${isDark ? "text-dark-text" : "text-black"}`}>
                   {order.customer_note}
                 </Text>
               </View>
@@ -203,12 +203,12 @@ export default function OrderDetail() {
           className={`rounded border p-6 mb-6 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
         >
           <Text
-            className={`font-geist font-bold text-lg mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
+            className={`font-bold text-lg mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
           >
             Items
           </Text>
           {(order.items ?? []).length === 0 ? (
-            <Text className="text-sm font-inter text-tertiary">No items on this order.</Text>
+            <Text className="text-sm text-tertiary">No items on this order.</Text>
           ) : (
             order.items!.map((item, index) => (
               <ItemRow
@@ -227,7 +227,7 @@ export default function OrderDetail() {
           className={`rounded border p-6 mb-10 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
         >
           <Text
-            className={`font-geist font-bold text-lg mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
+            className={`font-bold text-lg mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
           >
             Summary
           </Text>
@@ -250,7 +250,7 @@ export default function OrderDetail() {
               className="bg-primary h-12 rounded justify-center items-center"
               onPress={() => router.push(`/checkout/payment-method/${order.id}`)}
             >
-              <Text className="text-white font-geist font-bold text-base">
+              <Text className="text-white font-bold text-base">
                 Pay now
               </Text>
             </TouchableOpacity>
@@ -259,7 +259,7 @@ export default function OrderDetail() {
             className="bg-primary h-12 rounded justify-center items-center relative"
             onPress={() => router.push(`/orders/${id}/track`)}
           >
-            <Text className="text-white font-geist font-bold text-base">
+            <Text className="text-white font-bold text-base">
               Track Order
             </Text>
             <ArrowRight size={20} color="#fff" className="absolute right-6" />
@@ -298,23 +298,23 @@ function ItemRow({
           )}
           <View className="flex-1">
             <Text
-              className={`text-base font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+              className={`text-base font-bold ${isDark ? "text-dark-text" : "text-black"}`}
             >
               {name}
             </Text>
             {item.variant_id ? (
-              <Text className="text-xs font-inter text-tertiary mt-0.5">Variant #{item.variant_id}</Text>
+              <Text className="text-xs text-tertiary mt-0.5">Variant #{item.variant_id}</Text>
             ) : null}
-            <Text className="text-xs font-inter text-tertiary mt-1 capitalize">
+            <Text className="text-xs text-tertiary mt-1 capitalize">
               Qty: {item.quantity} · {item.status}
             </Text>
           </View>
         </View>
         <View className="items-end">
-          <Text className={`text-sm font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}>
+          <Text className={`text-sm font-bold ${isDark ? "text-dark-text" : "text-black"}`}>
             ₦{lineTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </Text>
-          <Text className="text-xs font-inter text-tertiary mt-0.5">
+          <Text className="text-xs text-tertiary mt-0.5">
             ₦{(item.price ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} each
           </Text>
         </View>
@@ -337,12 +337,12 @@ function Row({
   return (
     <View className="flex-row justify-between py-2">
       <Text
-        className={`text-sm font-inter ${bold ? `font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}` : "text-tertiary"}`}
+        className={`text-sm ${bold ? `font-bold ${isDark ? "text-dark-text" : "text-black"}` : "text-tertiary"}`}
       >
         {label}
       </Text>
       <Text
-        className={`text-sm ${bold ? "font-geist font-bold" : "font-inter"} ${isDark ? "text-dark-text" : "text-black"}`}
+        className={`text-sm ${bold ? "font-bold" : ""} ${isDark ? "text-dark-text" : "text-black"}`}
       >
         ₦{(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
       </Text>

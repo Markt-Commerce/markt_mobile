@@ -220,7 +220,7 @@ export default function NicheDetailScreen() {
               <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
               <Text className={`font-semibold ml-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Back</Text>
             </TouchableOpacity>
-            <Text className={`text-lg font-geist font-bold mt-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{niche?.name || "Niche"}</Text>
+            <Text className={`text-lg font-bold mt-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{niche?.name || "Niche"}</Text>
             <Text className={`text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{niche?.member_count || 0} members • {niche?.post_count || 0} posts</Text>
           </View>
 

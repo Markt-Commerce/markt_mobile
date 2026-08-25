@@ -91,7 +91,7 @@ function AccordionItem({ question, answer, isDark }: { question: string; answer:
         className="flex-row items-center justify-between py-4"
         activeOpacity={0.7}
       >
-        <Text className={`flex-1 font-geist font-bold text-[15px] pr-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+        <Text className={`flex-1 font-bold text-[15px] pr-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
           {question}
         </Text>
         {expanded ? (
@@ -102,7 +102,7 @@ function AccordionItem({ question, answer, isDark }: { question: string; answer:
       </TouchableOpacity>
       {expanded && (
         <View className="pb-4">
-          <Text className={`font-inter text-sm leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className={`text-sm leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
             {answer}
           </Text>
         </View>
@@ -125,13 +125,13 @@ export default function HelpCenterScreen() {
       
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-6 pt-8">
-          <Text className={`font-geist font-bold text-[11px] tracking-[2px] uppercase mb-2 ${isDark ? "text-primary" : "text-primary"}`}>
+          <Text className={`font-bold text-[11px] tracking-[2px] uppercase mb-2 ${isDark ? "text-primary" : "text-primary"}`}>
             Support Center
           </Text>
-          <Text className={`text-4xl font-geist font-bold tracking-tighter ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className={`text-4xl font-bold tracking-tighter ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
             Common Questions
           </Text>
-          <Text className={`font-inter text-base mt-4 leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className={`text-base mt-4 leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
             Everything you need to know about getting started, buying, and selling on Markt.
           </Text>
         </View>
@@ -154,7 +154,7 @@ export default function HelpCenterScreen() {
                 }`}
               >
                 <Text
-                  className={`font-geist font-bold text-xs uppercase tracking-widest ${
+                  className={`font-bold text-xs uppercase tracking-widest ${
                     activeCategory === cat.id
                       ? (isDark ? "text-black" : "text-white")
                       : (isDark ? "text-[#c6c5cf]" : "text-tertiary")
@@ -179,10 +179,10 @@ export default function HelpCenterScreen() {
         {/* Contact Support CTA */}
         <View className="px-6 mt-12 mb-12">
           <View className={`rounded p-8 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-            <Text className={`font-geist font-bold text-lg ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+            <Text className={`font-bold text-lg ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
               Still need help?
             </Text>
-            <Text className={`font-inter text-sm mt-2 leading-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`text-sm mt-2 leading-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
               Our support team is available 24/7 to assist you with any inquiries.
             </Text>
             <TouchableOpacity
@@ -190,7 +190,7 @@ export default function HelpCenterScreen() {
               activeOpacity={0.85}
             >
               <Mail size={20} color="white" strokeWidth={2} />
-              <Text className="text-white font-geist font-bold text-xs uppercase tracking-[2px]">
+              <Text className="text-white font-bold text-xs uppercase tracking-[2px]">
                 Contact Support
               </Text>
             </TouchableOpacity>

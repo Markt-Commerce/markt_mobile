@@ -39,22 +39,22 @@ export default function ShippingAddressCard({
   const usable = isShippingAddressUsable(address);
   const showForm = !loading && (editing || !usable);
 
-  const fieldClass = `rounded h-11 px-3 text-sm font-inter border ${
+  const fieldClass = `rounded h-11 px-3 text-sm border ${
     isDark ? "bg-[#1a1c1d] border-[#46464e] text-[#f0f1f2]" : "bg-white border-border text-black"
   }`;
-  const labelClass = `text-xs font-geist font-bold mb-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`;
+  const labelClass = `text-xs font-bold mb-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`;
   const placeholderColor = isDark ? "#71717A" : "#A1A1AA";
 
   return (
     <View className={`rounded border p-4 mb-4 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
       <View className="flex-row items-center justify-between mb-2">
-        <Text className={`text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+        <Text className={`text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
           Shipping Address
         </Text>
         {!loading && usable && (
           <TouchableOpacity onPress={() => setEditing((e) => !e)} className="flex-row items-center gap-1">
             <Pencil size={14} color={isDark ? "#c6c5cf" : "#71717A"} />
-            <Text className={`text-xs font-geist font-bold ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`text-xs font-bold ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
               {editing ? "Done" : "Edit"}
             </Text>
           </TouchableOpacity>
@@ -94,7 +94,7 @@ export default function ShippingAddressCard({
             ) : (
               <MapPin size={16} color={isDark ? "#f0f1f2" : "#000000"} />
             )}
-            <Text className={`text-xs font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+            <Text className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
               Use current location
             </Text>
           </TouchableOpacity>

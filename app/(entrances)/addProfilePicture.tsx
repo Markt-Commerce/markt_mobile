@@ -64,10 +64,10 @@ export default function AddProfilePictureScreen() {
   return (
     <SafeAreaView className={`flex-1 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
       <View className="flex-1 items-center justify-center px-6">
-        <Text className={`text-[32px] font-geist font-bold text-center leading-tight mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+        <Text className={`text-[32px] font-bold text-center leading-tight mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
           Profile picture
         </Text>
-        <Text className={`font-inter text-sm text-center mb-12 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+        <Text className={`text-sm text-center mb-12 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
           Help others recognize you on Markt.{"\n"}You can change this later in settings.
         </Text>
 
@@ -81,7 +81,7 @@ export default function AddProfilePictureScreen() {
           ) : (
             <View className="items-center">
               <Camera size={48} color={iconColor} strokeWidth={1.5} />
-              <Text className={`text-[10px] font-geist font-bold mt-2 tracking-widest ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>TAP TO UPLOAD</Text>
+              <Text className={`text-[10px] font-bold mt-2 tracking-widest ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>TAP TO UPLOAD</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -99,7 +99,7 @@ export default function AddProfilePictureScreen() {
             disabled={uploading}
             className="h-12 items-center justify-center"
           >
-            <Text className={`font-inter font-semibold text-sm underline ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Skip for now</Text>
+            <Text className={`font-semibold text-sm underline ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Skip for now</Text>
           </TouchableOpacity>
         </View>
       </View>

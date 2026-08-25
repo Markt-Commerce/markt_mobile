@@ -72,7 +72,7 @@ export default function TierBadge({
           className="ml-2 px-2 py-0.5 rounded"
           style={{ backgroundColor: `${color}22`, borderColor: color, borderWidth: 1 }}
         >
-          <Text className={`font-geist font-bold ${TEXT_SIZE[size]}`} style={{ color }}>
+          <Text className={`font-bold ${TEXT_SIZE[size]}`} style={{ color }}>
             {displayName}
           </Text>
         </View>

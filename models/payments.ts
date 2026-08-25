@@ -86,6 +86,10 @@ export interface CheckoutPaymentInitResponse {
   amount: number;
   subtotal: number;
   shipping_fee: number;
+  /** How many separate delivery runs this order needs -- one per distinct
+   * market among its sellers (1.1/7.3). >1 means shipping_fee covers more
+   * than one delivery. */
+  delivery_count: number;
   service_fee: number;
   reliability_fee_opted_in: boolean;
   reliability_fee_estimate: number;

@@ -63,10 +63,6 @@ module.exports = {
         card: "8px",
         button: "8px",
       },
-      fontFamily: {
-        geist: ["Geist", "sans-serif"],
-        inter: ["Inter", "sans-serif"],
-      },
       boxShadow: {
         // Level 2 (Interactive/Floating)
         "level-2": "0px 10px 30px rgba(0, 0, 0, 0.04)",

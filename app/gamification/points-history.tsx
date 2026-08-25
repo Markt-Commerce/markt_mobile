@@ -76,7 +76,7 @@ export default function PointsHistoryScreen() {
           <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
         </TouchableOpacity>
         <Text
-          className={`text-lg font-geist font-bold ml-2 ${
+          className={`text-lg font-bold ml-2 ${
             isDark ? "text-[#f0f1f2]" : "text-black"
           }`}
         >
@@ -95,14 +95,14 @@ export default function PointsHistoryScreen() {
           >
             <View className="flex-1 pr-3">
               <Text
-                className={`font-geist font-bold text-sm ${
+                className={`font-bold text-sm ${
                   isDark ? "text-[#f0f1f2]" : "text-black"
                 }`}
               >
                 {reasonLabel(item.reason)}
               </Text>
               <Text
-                className={`font-inter text-xs mt-0.5 ${
+                className={`text-xs mt-0.5 ${
                   isDark ? "text-[#c6c5cf]" : "text-tertiary"
                 }`}
               >
@@ -110,7 +110,7 @@ export default function PointsHistoryScreen() {
               </Text>
             </View>
             <Text
-              className={`font-geist font-bold text-base ${
+              className={`font-bold text-base ${
                 item.delta >= 0 ? "text-success" : "text-error"
               }`}
             >
@@ -135,7 +135,7 @@ export default function PointsHistoryScreen() {
             </View>
           ) : (
             <Text
-              className={`text-center font-inter text-sm py-16 ${
+              className={`text-center text-sm py-16 ${
                 isDark ? "text-[#c6c5cf]" : "text-tertiary"
               }`}
             >

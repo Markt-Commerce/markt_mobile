@@ -41,12 +41,12 @@ export default function ChangePasswordScreen() {
       <ScrollView className={isDark ? "bg-[#1a1c1d]" : "bg-white"} contentContainerStyle={{ paddingBottom: 32 }}>
         <ScreenHeader title="Change Password" onBack={() => nav.back()} />
         <View className="px-6 pt-6">
-          <Text className={`font-inter text-sm leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className={`text-sm leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
             Enter the email tied to your account, the reset code you received, and a new password.
           </Text>
 
           <View className={`mt-6 border rounded p-4 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-sm font-geist font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Email</Text>
+            <Text className={`text-sm font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Email</Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
@@ -57,7 +57,7 @@ export default function ChangePasswordScreen() {
               placeholderTextColor={isDark ? "#8f8f98" : "#5b5b64"}
             />
 
-            <Text className={`text-sm font-geist font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Reset Code</Text>
+            <Text className={`text-sm font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Reset Code</Text>
             <TextInput
               value={code}
               onChangeText={setCode}
@@ -67,7 +67,7 @@ export default function ChangePasswordScreen() {
               placeholderTextColor={isDark ? "#8f8f98" : "#5b5b64"}
             />
 
-            <Text className={`text-sm font-geist font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>New Password</Text>
+            <Text className={`text-sm font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>New Password</Text>
             <TextInput
               value={newPassword}
               onChangeText={setNewPassword}
@@ -84,7 +84,7 @@ export default function ChangePasswordScreen() {
             disabled={!canSubmit}
             activeOpacity={0.85}
           >
-            <Text className="text-white font-geist font-bold text-xs tracking-[2px] uppercase">
+            <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
               {isSubmitting ? "Updating..." : "Change Password"}
             </Text>
           </TouchableOpacity>

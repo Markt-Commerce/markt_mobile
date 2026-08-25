@@ -55,7 +55,7 @@ const OptionCard = ({
         <Icon size={28} color={isDark ? "#f5f5f5" : "#000000"} />
       </View>
       <Text
-        className={`font-geist font-semibold text-sm ${isDark ? "text-dark-text" : "text-black"}`}
+        className={`font-semibold text-sm ${isDark ? "text-dark-text" : "text-black"}`}
         numberOfLines={1}
       >
         {label}
@@ -120,14 +120,14 @@ export default function ChatAttachmentSheet({
           className={`w-10 h-1 rounded self-center mt-3 mb-2 ${isDark ? "bg-dark-border-strong" : "bg-border"}`}
         />
         <Text
-          className={`font-geist font-bold text-lg px-5 mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
+          className={`font-bold text-lg px-5 mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
         >
           Attach
         </Text>
 
         <View className="px-5 pb-6">
           <Text
-            className={`text-xs font-geist font-bold uppercase tracking-wider mb-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+            className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
           >
             Media
           </Text>
@@ -152,7 +152,7 @@ export default function ChatAttachmentSheet({
           (role === "buyer" && onRequests) ? (
             <>
               <Text
-                className={`text-xs font-geist font-bold uppercase tracking-wider mt-5 mb-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                className={`text-xs font-bold uppercase tracking-wider mt-5 mb-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
               >
                 {role === "seller" ? "Share" : "More"}
               </Text>
@@ -190,7 +190,7 @@ export default function ChatAttachmentSheet({
             onDiscounts && (
               <>
                 <Text
-                  className={`text-xs font-geist font-bold uppercase tracking-wider mt-5 mb-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                  className={`text-xs font-bold uppercase tracking-wider mt-5 mb-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
                 >
                   Offers
                 </Text>

@@ -286,15 +286,15 @@ export default function SellerDashboard() {
     <View className={`px-4 py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
       <View className="flex-row justify-between items-start">
         <View style={{ flex: 1 }}>
-          <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.product?.name}</Text>
-          <Text className={`font-inter text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{formatCurrency(item.price)}</Text>
-          <Text className={`font-inter text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Order #: {item.order.order_number ?? item.order_id}</Text>
+          <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.product?.name}</Text>
+          <Text className={`text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{formatCurrency(item.price)}</Text>
+          <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Order #: {item.order.order_number ?? item.order_id}</Text>
           <View className="flex-row items-center mt-3">
             <Image
               source={{ uri: item.order?.buyer?.profile_picture ?? item.order?.buyer?.profile_picture_url ?? undefined }}
               className={`w-6 h-6 rounded-full ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
             />
-            <Text className={`font-inter text-xs ml-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.order?.buyer?.buyername ?? item.order?.buyer?.username ?? "Buyer"}</Text>
+            <Text className={`text-xs ml-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.order?.buyer?.buyername ?? item.order?.buyer?.username ?? "Buyer"}</Text>
           </View>
         </View>
 
@@ -302,27 +302,27 @@ export default function SellerDashboard() {
           {item.status === 'pending' ? (
             <>
               <TouchableOpacity onPress={() => handleAcceptOrder(item)} className="bg-primary rounded px-4 py-2 mb-2">
-                <Text className="text-white font-geist font-bold text-xs">Accept</Text>
+                <Text className="text-white font-bold text-xs">Accept</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleDeclineOrder(item)} className={`rounded px-4 py-2 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-                <Text className={`font-geist font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Decline</Text>
+                <Text className={`font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Decline</Text>
               </TouchableOpacity>
             </>
           ) : item.status === 'processing' ? (
             <>
               <TouchableOpacity onPress={() => handleUpdateOrderStatus(item, 'shipped')} className="bg-primary rounded px-4 py-2 mb-2">
-                <Text className="text-white font-geist font-bold text-xs">Mark Shipped</Text>
+                <Text className="text-white font-bold text-xs">Mark Shipped</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleDeclineOrder(item)} className={`rounded px-4 py-2 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-                <Text className={`font-geist font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Cancel</Text>
+                <Text className={`font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Cancel</Text>
               </TouchableOpacity>
             </>
           ) : item.status === 'shipped' ? (
             <TouchableOpacity onPress={() => handleUpdateOrderStatus(item, 'delivered')} className="bg-primary rounded px-4 py-2">
-              <Text className="text-white font-geist font-bold text-xs">Mark Delivered</Text>
+              <Text className="text-white font-bold text-xs">Mark Delivered</Text>
             </TouchableOpacity>
           ) : (
-            <Text className={`font-geist font-bold text-sm capitalize ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.status}</Text>
+            <Text className={`font-bold text-sm capitalize ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.status}</Text>
           )}
         </View>
       </View>
@@ -332,9 +332,9 @@ export default function SellerDashboard() {
   const renderProductItem = ({ item }: { item: any }) => (
     <View className={`flex-row items-center justify-between px-4 py-4 border-b ${isDark ? "border-[#46464e]" : "border-border"}`}>
       <View className="flex-1 pr-3">
-        <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>{item.name}</Text>
-        <Text className={`font-inter text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Status: {item.status}</Text>
-        <Text className={`font-inter text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Price: {formatCurrency(item.price)}, Stock: {item.stock}</Text>
+        <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>{item.name}</Text>
+        <Text className={`text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Status: {item.status}</Text>
+        <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Price: {formatCurrency(item.price)}, Stock: {item.stock}</Text>
       </View>
 
       <TouchableOpacity
@@ -342,7 +342,7 @@ export default function SellerDashboard() {
         onPress={() => handleDeleteProduct(item.id)}
         className={`rounded px-4 h-9 items-center justify-center border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
       >
-        <Text className="text-error font-geist font-bold text-xs">Delete</Text>
+        <Text className="text-error font-bold text-xs">Delete</Text>
       </TouchableOpacity>
     </View>
   );
@@ -365,7 +365,7 @@ export default function SellerDashboard() {
                 accessibilityLabel={`${d} days`}
                 accessibilityState={{ selected: windowDays === d }}
               >
-                <Text className={`text-xs font-geist font-bold ${windowDays === d ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                <Text className={`text-xs font-bold ${windowDays === d ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                   {d}d
                 </Text>
               </TouchableOpacity>
@@ -374,36 +374,36 @@ export default function SellerDashboard() {
         </View>
 
         {/* Period label */}
-        <Text className={`font-inter text-xs px-6 -mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{periodLabel}</Text>
+        <Text className={`text-xs px-6 -mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{periodLabel}</Text>
 
         {/* Metrics cards — Revenue first, visual hierarchy, empty states */}
         <View className="flex-row flex-wrap gap-4 p-6">
           <View className={`min-w-[160px] flex-1 rounded p-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`} style={{ borderLeftWidth: 4, borderLeftColor: isDark ? '#f0f1f2' : '#000000' }}>
-            <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Revenue</Text>
-            <Text className={`text-2xl font-geist font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+            <Text className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Revenue</Text>
+            <Text className={`text-2xl font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
               {formatCurrency(analyticsOverview?.revenue_30d)}
             </Text>
             {(analyticsOverview?.revenue_30d ?? 0) === 0 && (
-              <Text className={`font-inter text-[10px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No sales yet. Share your products to get started.</Text>
+              <Text className={`text-[10px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No sales yet. Share your products to get started.</Text>
             )}
           </View>
           <View className={`min-w-[158px] flex-1 rounded p-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Orders</Text>
-            <Text className={`text-2xl font-geist font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{analyticsOverview?.orders_30d ?? 0}</Text>
+            <Text className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Orders</Text>
+            <Text className={`text-2xl font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{analyticsOverview?.orders_30d ?? 0}</Text>
             {(analyticsOverview?.orders_30d ?? 0) === 0 && (
-              <Text className={`font-inter text-[10px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No orders yet.</Text>
+              <Text className={`text-[10px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No orders yet.</Text>
             )}
           </View>
           <View className={`min-w-[158px] flex-1 rounded p-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Product Views</Text>
-            <Text className={`text-2xl font-geist font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{analyticsOverview?.views_30d ?? 0}</Text>
+            <Text className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Product Views</Text>
+            <Text className={`text-2xl font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{analyticsOverview?.views_30d ?? 0}</Text>
             {(analyticsOverview?.views_30d ?? 0) === 0 && (
-              <Text className={`font-inter text-[10px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No product views yet.</Text>
+              <Text className={`text-[10px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No product views yet.</Text>
             )}
           </View>
           <View className={`min-w-[158px] flex-1 rounded p-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Conversion Rate</Text>
-            <Text className={`text-2xl font-geist font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{(analyticsOverview?.conversion_30d ?? 0)}%</Text>
+            <Text className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Conversion Rate</Text>
+            <Text className={`text-2xl font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{(analyticsOverview?.conversion_30d ?? 0)}%</Text>
           </View>
         </View>
 
@@ -417,13 +417,13 @@ export default function SellerDashboard() {
             onPress={handleCreateProduct}
             className="rounded h-12 items-center justify-center bg-primary"
           >
-            <Text className="text-white font-geist font-bold text-base">Create Product</Text>
+            <Text className="text-white font-bold text-base">Create Product</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => nicheFormRef.current?.expand()}
             className={`mt-3 rounded h-12 items-center justify-center border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
           >
-            <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Community</Text>
+            <Text className={`font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Community</Text>
           </TouchableOpacity>
         </View>
 
@@ -434,7 +434,7 @@ export default function SellerDashboard() {
             onPress={() => router.push("/(tabs)/sellerOrders")}
             className={`flex-row items-center rounded h-12 px-6 ${pendingOrderCount > 0 ? "bg-primary border border-primary" : (isDark ? "border-[#46464e] bg-[#2f3132]" : "border border-border bg-white")}`}
           >
-            <Text className={`font-geist font-bold text-sm ${pendingOrderCount > 0 ? "text-white" : (isDark ? "text-[#f0f1f2]" : "text-black")}`}>Orders</Text>
+            <Text className={`font-bold text-sm ${pendingOrderCount > 0 ? "text-white" : (isDark ? "text-[#f0f1f2]" : "text-black")}`}>Orders</Text>
             {pendingOrderCount > 0 && (
               <View className={`ml-2 min-w-[20px] h-5 rounded items-center justify-center px-1.5 ${isDark ? "bg-[#1a1c1d]" : "bg-primary"}`}>
                 <Text className={`${isDark ? "text-primary" : "text-white"} text-[10px] font-bold`}>{pendingOrderCount}</Text>
@@ -445,25 +445,25 @@ export default function SellerDashboard() {
             onPress={() => router.push("/(tabs)/messages")}
             className={`rounded h-12 px-6 items-center justify-center border ${isDark ? "border-[#46464e] bg-[#2f3132]" : "border border-border bg-white"}`}
           >
-            <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Chats</Text>
+            <Text className={`font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Chats</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push("/(tabs)/requests")}
             className={`rounded h-12 px-6 items-center justify-center border ${isDark ? "border-[#46464e] bg-[#2f3132]" : "border border-border bg-white"}`}
           >
-            <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Requests</Text>
+            <Text className={`font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Requests</Text>
           </TouchableOpacity>
         </View>
 
         {/* Sales trends card */}
         <View className="px-6 py-6">
           <View className={`rounded border p-6 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Sales Trends</Text>
-            <Text className={`text-[32px] font-geist font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatCurrency(analyticsOverview?.revenue_30d ?? 0)}</Text>
+            <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Sales Trends</Text>
+            <Text className={`text-[32px] font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatCurrency(analyticsOverview?.revenue_30d ?? 0)}</Text>
             <View className="flex-row gap-2 items-center mt-2">
-              <Text className={`font-inter text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{periodLabel}</Text>
+              <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{periodLabel}</Text>
               {trendPct !== null && (
-                <Text className={`font-inter text-sm font-bold ${trendPct >= 0 ? "text-success" : "text-error"}`}>
+                <Text className={`text-sm font-bold ${trendPct >= 0 ? "text-success" : "text-error"}`}>
                   {trendPct >= 0 ? "+" : ""}{trendPct.toFixed(0)}%
                 </Text>
               )}
@@ -501,11 +501,11 @@ export default function SellerDashboard() {
 
         {/* Recent Orders card */}
         <View className="px-6 pt-4">
-          <Text className={`text-xl font-geist font-bold px-1 pb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Recent Orders</Text>
+          <Text className={`text-xl font-bold px-1 pb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Recent Orders</Text>
           {loading && !sellerRecentOrders.length ? (
-            <Text className={`font-inter text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading recent orders...</Text>
+            <Text className={`text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading recent orders...</Text>
           ) : sellerRecentOrders.length === 0 ? (
-            <Text className={`font-inter text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No recent orders</Text>
+            <Text className={`text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No recent orders</Text>
           ) : (
             <View className={`rounded border overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
               <FlatList
@@ -516,16 +516,16 @@ export default function SellerDashboard() {
               />
             </View>
           )}
-          {error ? <Text className="text-error font-inter text-sm mt-3 px-1">{error}</Text> : null}
+          {error ? <Text className="text-error text-sm mt-3 px-1">{error}</Text> : null}
         </View>
 
         {/* Low Stock Alerts (pulsing red-accent) */}
         <View className="px-6 pt-10">
-          <Text className={`text-xl font-geist font-bold px-1 pb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Low Stock Alerts</Text>
+          <Text className={`text-xl font-bold px-1 pb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Low Stock Alerts</Text>
 
           <View className={`rounded border overflow-hidden ${isDark ? "bg-[#2f3132] border-[#ba1a1a]" : "bg-error-bg border-error"}`}>
             {sellerInventory.filter((item) => (item.stock ?? 0) < 5).length === 0 ? (
-              <Text className={`font-inter text-sm px-6 py-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No low stock items</Text>
+              <Text className={`text-sm px-6 py-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No low stock items</Text>
             ) : (
               sellerInventory.filter((item) => (item.stock ?? 0) < 5).map((a, idx, arr) => (
                 <View
@@ -540,12 +540,12 @@ export default function SellerDashboard() {
                     <View className="flex-1 pr-4">
                       <View className="flex-row items-center gap-2">
                         <AlertTriangle size={16} color="#ba1a1a" />
-                        <Text className="text-error font-geist font-bold text-xs uppercase tracking-wider">Low stock</Text>
+                        <Text className="text-error font-bold text-xs uppercase tracking-wider">Low stock</Text>
                       </View>
 
-                      <Text className={`font-geist font-bold text-base mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{a.name}</Text>
-                      <Text className={`font-inter text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Last Updated: {formatDate(a.created_at)}</Text>
-                      <Text className={`font-inter text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Stock Left: {a.stock}</Text>
+                      <Text className={`font-bold text-base mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{a.name}</Text>
+                      <Text className={`text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Last Updated: {formatDate(a.created_at)}</Text>
+                      <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Stock Left: {a.stock}</Text>
 
                       {/* Visual urgency bar*/}
                       <View className={`mt-3 h-1.5 rounded overflow-hidden ${isDark ? "bg-[#1a1c1d]" : "bg-error/10"}`}>
@@ -558,7 +558,7 @@ export default function SellerDashboard() {
 
                     {/* Badge */}
                     <View className={`rounded px-3 py-1 border ${isDark ? "bg-[#1a1c1d] border-[#ba1a1a]" : "bg-white border-error"}`}>
-                      <Text className="text-error font-geist font-bold text-[10px] uppercase tracking-wider">Action needed</Text>
+                      <Text className="text-error font-bold text-[10px] uppercase tracking-wider">Action needed</Text>
                     </View>
                   </View>
                 </View>
@@ -569,7 +569,7 @@ export default function SellerDashboard() {
 
         {/* Inventory search + filters */}
         <View className="px-6 pt-10">
-          <Text className={`text-xl font-geist font-bold px-1 pb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Inventory</Text>
+          <Text className={`text-xl font-bold px-1 pb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Inventory</Text>
           <View className={`rounded border p-6 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
             <View className={`flex-row items-center rounded overflow-hidden border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
               <View className="w-12 items-center justify-center">
@@ -577,7 +577,7 @@ export default function SellerDashboard() {
               </View>
               <TextInput
                 placeholder="Search products"
-                className={`flex-1 h-12 px-3 font-inter text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+                className={`flex-1 h-12 px-3 text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
                 placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
                 value={searchText}
                 onChangeText={setSearchText}
@@ -591,7 +591,7 @@ export default function SellerDashboard() {
                   onPress={() => setStatusMenuVisible((v) => !v)}
                   className={`h-10 items-center justify-center rounded pl-5 pr-4 flex-row gap-2 border ${(invFilter === 'active' || invFilter === 'inactive') ? "bg-primary border-primary" : (isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border")}`}
                 >
-                  <Text className={`font-geist font-bold text-sm capitalize ${(invFilter === 'active' || invFilter === 'inactive') ? "text-white" : (isDark ? "text-[#f0f1f2]" : "text-black")}`}>
+                  <Text className={`font-bold text-sm capitalize ${(invFilter === 'active' || invFilter === 'inactive') ? "text-white" : (isDark ? "text-[#f0f1f2]" : "text-black")}`}>
                     {invFilter === 'active' || invFilter === 'inactive' ? invFilter : 'Status'}
                   </Text>
                   <CaretDown size={16} color={(invFilter === 'active' || invFilter === 'inactive') ? "#ffffff" : (isDark ? "#f0f1f2" : "#000000")} />
@@ -604,7 +604,7 @@ export default function SellerDashboard() {
                         onPress={() => { setInvFilter(s); setStatusMenuVisible(false); }}
                         className="px-4 py-3"
                       >
-                        <Text className={`font-geist font-bold text-sm capitalize ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{s}</Text>
+                        <Text className={`font-bold text-sm capitalize ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{s}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -614,13 +614,13 @@ export default function SellerDashboard() {
                 onPress={() => { setInvFilter('all'); setStatusMenuVisible(false); }}
                 className={`h-10 items-center justify-center rounded px-5 border ${invFilter === 'all' ? "bg-primary border-primary" : (isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border")}`}
               >
-                <Text className={`font-geist font-bold text-sm ${invFilter === 'all' ? "text-white" : (isDark ? "text-[#f0f1f2]" : "text-black")}`}>All</Text>
+                <Text className={`font-bold text-sm ${invFilter === 'all' ? "text-white" : (isDark ? "text-[#f0f1f2]" : "text-black")}`}>All</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => { setInvFilter(invFilter === 'low' ? 'all' : 'low'); setStatusMenuVisible(false); }}
                 className={`h-10 items-center justify-center rounded px-5 border ${invFilter === 'low' ? "bg-error border-error" : (isDark ? "bg-[#ba1a1a]/10 border-[#ba1a1a]" : "bg-error-bg border-error")}`}
               >
-                <Text className={`font-geist font-bold text-sm ${invFilter === 'low' ? "text-white" : "text-error"}`}>Low</Text>
+                <Text className={`font-bold text-sm ${invFilter === 'low' ? "text-white" : "text-error"}`}>Low</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -629,9 +629,9 @@ export default function SellerDashboard() {
         {/* Inventory list card */}
         <View className="px-6 pt-4">
           {loading && !filteredInventory.length ? (
-            <Text className={`font-inter text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading inventory...</Text>
+            <Text className={`text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading inventory...</Text>
           ) : filteredInventory.length === 0 ? (
-            <Text className={`font-inter text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No products in inventory</Text>
+            <Text className={`text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No products in inventory</Text>
           ) : (
             <View className={`rounded border overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
               <FlatList

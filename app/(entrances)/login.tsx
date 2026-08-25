@@ -151,10 +151,10 @@ export default function LoginScreen() {
 
             {/* Title */}
             <View className="mb-8">
-              <Text className={`text-[32px] font-geist font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`text-[32px] font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                 Welcome{"\n"}back
               </Text>
-              <Text className={`font-inter text-base mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`text-base mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                 Sign in to continue your journey.
               </Text>
             </View>
@@ -164,13 +164,13 @@ export default function LoginScreen() {
               {/* Error banner */}
               {error ? (
                 <View className="mb-6 rounded bg-error-bg px-4 py-3 border border-error/10">
-                  <Text className="font-inter text-error text-sm">{error}</Text>
+                  <Text className="text-error text-sm">{error}</Text>
                 </View>
               ) : null}
 
               {/* Email */}
               <View className="mb-6">
-                <Text className={`mb-2 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Email Address</Text>
+                <Text className={`mb-2 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Email Address</Text>
                 <Input
                   placeholder="Enter your email"
                   control={control}
@@ -185,7 +185,7 @@ export default function LoginScreen() {
 
               {/* Password — eye toggle */}
               <View className="mb-2">
-                <Text className={`mb-2 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Password</Text>
+                <Text className={`mb-2 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Password</Text>
                 <PasswordInput
                   placeholder="Enter your password"
                   control={control}
@@ -197,13 +197,13 @@ export default function LoginScreen() {
               {/* Forgot password */}
               <View className="items-end mb-8">
                 <Link href="/forgotPassword">
-                  <Text className={`font-inter text-sm underline ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Forgot Password?</Text>
+                  <Text className={`text-sm underline ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Forgot Password?</Text>
                 </Link>
               </View>
 
               {/* Role toggle */}
               <View className="mb-10">
-                <Text className={`mb-3 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Continue as</Text>
+                <Text className={`mb-3 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Continue as</Text>
                 <View className={`flex-row items-center rounded p-1 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
                   <TouchableOpacity
                     onPress={() => setRole("buyer")}
@@ -211,7 +211,7 @@ export default function LoginScreen() {
                     accessibilityState={{ selected: role === "buyer" }}
                     className={`flex-1 rounded py-2.5 items-center ${role === "buyer" ? "bg-primary shadow-sm" : "shadow-none"}`}
                   >
-                    <Text className={`font-geist font-bold text-sm ${role === "buyer" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                    <Text className={`font-bold text-sm ${role === "buyer" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                       Buyer
                     </Text>
                   </TouchableOpacity>
@@ -222,7 +222,7 @@ export default function LoginScreen() {
                     accessibilityState={{ selected: role === "seller" }}
                     className={`flex-1 rounded py-2.5 items-center ${role === "seller" ? "bg-primary shadow-sm" : "shadow-none"}`}
                   >
-                    <Text className={`font-geist font-bold text-sm ${role === "seller" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                    <Text className={`font-bold text-sm ${role === "seller" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                       Seller
                     </Text>
                   </TouchableOpacity>
@@ -241,11 +241,11 @@ export default function LoginScreen() {
               {/* Sign up */}
               <View className="mt-8 items-center">
                 <Text
-                  className={`font-inter text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                  className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
                 >
                   Don’t have an account?{" "}
                   <Text 
-                    className={`font-geist font-bold underline ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}
+                    className={`font-bold underline ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}
                     onPress={() => router.navigate("/signup")}
                   >
                     Sign up

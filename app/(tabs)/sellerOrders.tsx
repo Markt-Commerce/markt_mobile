@@ -8,7 +8,8 @@ import {
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Search } from "lucide-react-native";
+import { Search, Clock } from "lucide-react-native";
+import { useRouter } from "expo-router";
 
 import OrdersList from "../../components/orderList";
 import {
@@ -22,6 +23,7 @@ import { useTheme } from "../../components/themeProvider";
 type OrderStatus = "pending" | "shipped" | "delivered" | "canceled";
 
 export default function SellerOrders() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"all" | OrderStatus>("all");
   const [sort, setSort] = useState<"latest" | "price_asc" | "price_desc">(
@@ -135,7 +137,7 @@ export default function SellerOrders() {
       }`}
     >
       <Text
-        className={`text-xs font-geist font-bold ${
+        className={`text-xs font-bold ${
           active ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"
         }`}
       >
@@ -154,20 +156,31 @@ export default function SellerOrders() {
       } items-center justify-center`}
       activeOpacity={0.85}
     >
-      <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${sort === v ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{label}</Text>
+      <Text className={`text-[10px] font-bold uppercase tracking-wider ${sort === v ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{label}</Text>
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
       {/* Header */}
-      <View className={`px-6 py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-        <Text className={`text-xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-          Shop Orders
-        </Text>
-        <Text className={`text-xs font-inter mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-          Manage and fulfill customer orders
-        </Text>
+      <View className={`px-6 py-4 border-b flex-row items-center justify-between ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+        <View>
+          <Text className={`text-xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+            Shop Orders
+          </Text>
+          <Text className={`text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            Manage and fulfill customer orders
+          </Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => router.push("/fulfilment/allocations" as any)}
+          className={`h-10 px-3 rounded flex-row items-center gap-1.5 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+          accessibilityRole="button"
+          accessibilityLabel="Pending fulfilment requests"
+        >
+          <Clock size={16} color={isDark ? "#c6c5cf" : "#71717A"} />
+          <Text className={`text-xs font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Requests</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Search + Filters */}
@@ -178,7 +191,7 @@ export default function SellerOrders() {
             <Search size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
           </View>
           <TextInput
-            className={`flex-1 h-11 px-3 font-inter text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+            className={`flex-1 h-11 px-3 text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
             placeholder="Search product name"
             placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
             value={query}

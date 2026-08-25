@@ -24,7 +24,7 @@ export default function BadgeGrid({
   if (!badges.length) {
     return (
       <Text
-        className={`font-inter text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+        className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
       >
         No badges yet.
       </Text>

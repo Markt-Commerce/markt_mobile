@@ -35,7 +35,7 @@ export default function TierProgressBar({
         />
       </View>
       <Text
-        className={`font-inter text-xs mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+        className={`text-xs mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
       >
         {atMax
           ? "Top tier reached"

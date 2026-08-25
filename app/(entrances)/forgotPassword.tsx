@@ -142,12 +142,12 @@ const ForgotPasswordScreen = () => {
             </TouchableOpacity>
 
             <View className="mb-8">
-              <Text className={`text-[32px] font-geist font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`text-[32px] font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                 {step === 1 && "Forgot\npassword?"}
                 {step === 2 && "Enter\ncode"}
                 {step === 3 && "New\npassword"}
               </Text>
-              <Text className={`font-inter text-base mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`text-base mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                 {step === 1 && "Don't worry, it happens. Enter your email below to receive a reset code."}
                 {step === 2 && `We've sent a 6-digit code to ${email}. Enter it below.`}
                 {step === 3 && "Set a strong password to protect your account."}
@@ -157,7 +157,7 @@ const ForgotPasswordScreen = () => {
             {step === 1 && (
               <View className="space-y-6">
                 <View>
-                  <Text className={`text-sm font-geist font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Email Address</Text>
+                  <Text className={`text-sm font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Email Address</Text>
                   <Input
                     placeholder="Enter your email"
                     control={emailControl}
@@ -183,7 +183,7 @@ const ForgotPasswordScreen = () => {
             {step === 2 && (
               <View className="space-y-6">
                 <View>
-                  <Text className={`text-sm font-geist font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Verification Code</Text>
+                  <Text className={`text-sm font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Verification Code</Text>
                   <OTPInput 
                     value={code} 
                     onChange={setCode} 
@@ -203,7 +203,7 @@ const ForgotPasswordScreen = () => {
                   onPress={() => onSendCode({ email })}
                   className="items-center mt-4"
                 >
-                  <Text className={`font-inter text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                  <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                     Didn't receive the code? <Text className={`font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Resend</Text>
                   </Text>
                 </TouchableOpacity>
@@ -213,7 +213,7 @@ const ForgotPasswordScreen = () => {
             {step === 3 && (
               <View className="space-y-6">
                 <View>
-                  <Text className={`text-sm font-geist font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>New Password</Text>
+                  <Text className={`text-sm font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>New Password</Text>
                   <PasswordInput
                     placeholder="Minimum 8 characters"
                     control={passwordControl}
@@ -223,7 +223,7 @@ const ForgotPasswordScreen = () => {
                 </View>
 
                 <View className="mt-4">
-                  <Text className={`text-sm font-geist font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Confirm Password</Text>
+                  <Text className={`text-sm font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Confirm Password</Text>
                   <PasswordInput
                     placeholder="Re-enter new password"
                     control={passwordControl}

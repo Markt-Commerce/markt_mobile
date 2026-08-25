@@ -58,14 +58,14 @@ function SellerRow({
       <Avatar uri={seller.user?.profile_picture} name={label} size={48} />
       <View className="flex-1 ml-4">
         <Text
-          className={`font-geist font-bold text-base ${isDark ? "text-dark-text" : "text-black"}`}
+          className={`font-bold text-base ${isDark ? "text-dark-text" : "text-black"}`}
           numberOfLines={1}
         >
           {label}
         </Text>
         {seller.stats && (
           <Text
-            className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-inter text-xs mt-1`}
+            className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-xs mt-1`}
           >
             {seller.stats.product_count} products · {seller.stats.follower_count}{" "}
             followers
@@ -77,7 +77,7 @@ function SellerRow({
           className={`px-2 py-0.5 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
         >
           <Text
-            className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-geist font-medium text-[10px] uppercase tracking-wider`}
+            className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-medium text-[10px] uppercase tracking-wider`}
           >
             Verified
           </Text>
@@ -185,7 +185,7 @@ export default function MarketDetailScreen() {
           <ArrowLeft size={24} color={isDark ? "#f5f5f5" : "#000000"} />
         </TouchableOpacity>
         <Text
-          className={`flex-1 text-xl font-geist font-bold text-center pr-8 ${isDark ? "text-dark-text" : "text-black"}`}
+          className={`flex-1 text-xl font-bold text-center pr-8 ${isDark ? "text-dark-text" : "text-black"}`}
           numberOfLines={1}
         >
           {market?.name ?? "Market"}
@@ -204,7 +204,7 @@ export default function MarketDetailScreen() {
             accessibilityState={{ selected: activeTab === tab }}
           >
             <Text
-              className={`text-sm font-geist font-bold ${activeTab === tab ? (isDark ? "text-dark-text" : "text-black") : isDark ? "text-dark-muted" : "text-tertiary"}`}
+              className={`text-sm font-bold ${activeTab === tab ? (isDark ? "text-dark-text" : "text-black") : isDark ? "text-dark-muted" : "text-tertiary"}`}
             >
               {tabLabel[tab]}
             </Text>

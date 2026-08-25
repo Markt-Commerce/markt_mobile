@@ -44,10 +44,10 @@ function EmptyRequestsState({
           <FileText size={28} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.8} />
         </View>
       </View>
-      <Text className={`text-2xl font-geist font-bold text-center tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+      <Text className={`text-2xl font-bold text-center tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
         {title}
       </Text>
-      <Text className={`font-inter text-base text-center mt-3 leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+      <Text className={`text-base text-center mt-3 leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
         {description}
       </Text>
       <TouchableOpacity
@@ -55,7 +55,7 @@ function EmptyRequestsState({
         activeOpacity={0.85}
         className="mt-8 h-12 px-7 rounded bg-primary items-center justify-center"
       >
-        <Text className="text-white font-geist font-bold text-[11px] tracking-[2px] uppercase">
+        <Text className="text-white font-bold text-[11px] tracking-[2px] uppercase">
           {actionLabel}
         </Text>
       </TouchableOpacity>
@@ -119,7 +119,7 @@ export default function RequestsScreen() {
       <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
         <View className="flex-1 items-center justify-center py-16">
           <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
-          <Text className={`mt-4 font-geist font-bold text-[11px] tracking-[2px] uppercase ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className={`mt-4 font-bold text-[11px] tracking-[2px] uppercase ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
             Loading requests
           </Text>
         </View>
@@ -132,10 +132,10 @@ export default function RequestsScreen() {
       <View className={`px-6 pt-5 pb-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
         <View className="flex-row items-center justify-between">
           <View className="flex-1 pr-4">
-            <Text className={`font-geist font-bold text-[28px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+            <Text className={`font-bold text-[28px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
               {isBuyer ? "My Requests" : "Buyer Requests"}
             </Text>
-            <Text className={`font-inter text-sm mt-1 leading-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`text-sm mt-1 leading-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
               {isBuyer
                 ? "Tell sellers what you need and let offers come to you."
                 : "Open requests from buyers looking for what you sell."}

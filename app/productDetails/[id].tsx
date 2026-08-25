@@ -281,7 +281,7 @@ const addProductToCart = async (product:ProductDetail)=>{
                 onPress={() => addProductToCart(product)}
               >
                 <Text
-                  className="font-geist font-bold"
+                  className="font-bold"
                   style={{ color: addedToCart ? "#ffffff" : (isDark ? "#f0f1f2" : "#000000") }}
                 >
                   {!addedToCart ? "Add to Cart" : "Added"}
@@ -296,12 +296,12 @@ const addProductToCart = async (product:ProductDetail)=>{
                   {messageSellerBusy ? (
                     <ActivityIndicator color="#ffffff" />
                   ) : (
-                    <Text className="text-white font-geist font-bold">Message Seller</Text>
+                    <Text className="text-white font-bold">Message Seller</Text>
                   )}
                 </TouchableOpacity>
               ) : isOwnProduct ? (
                 <View className={`flex-1 rounded h-12 justify-center items-center px-2 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-                  <Text className={`text-xs text-center font-geist font-bold ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Your listing</Text>
+                  <Text className={`text-xs text-center font-bold ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Your listing</Text>
                 </View>
               ) : null}
             </View>
@@ -310,14 +310,14 @@ const addProductToCart = async (product:ProductDetail)=>{
 
         {/* Product Info */}
         <View className="px-6">
-          <Text className={`text-2xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{product.name}</Text>
-          <Text className={`text-base font-inter mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>sold by {product.seller.shop_name}</Text>
-          <Text className={`text-xl font-geist font-bold mt-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatNaira(product.price)}</Text>
+          <Text className={`text-2xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{product.name}</Text>
+          <Text className={`text-base mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>sold by {product.seller.shop_name}</Text>
+          <Text className={`text-xl font-bold mt-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatNaira(product.price)}</Text>
         </View>
 
         {/* Quantity Selection */}
         <View className="px-6 py-6">
-          <Text className={`font-geist font-bold text-sm mb-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Quantity</Text>
+          <Text className={`font-bold text-sm mb-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Quantity</Text>
           <View className="flex-row items-center gap-4">
             <TouchableOpacity
               onPress={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -325,7 +325,7 @@ const addProductToCart = async (product:ProductDetail)=>{
             >
               <Text className={`text-xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>−</Text>
             </TouchableOpacity>
-            <Text className={`text-lg font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{quantity}</Text>
+            <Text className={`text-lg font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{quantity}</Text>
             <TouchableOpacity
               onPress={() => product.stock && setQuantity((q) => Math.min(product.stock, q + 1))}
               className={`h-10 w-10 rounded justify-center items-center border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
@@ -342,7 +342,7 @@ const addProductToCart = async (product:ProductDetail)=>{
               onPress={() => toggleDetail("details")}
               className="flex-row justify-between items-center py-5"
             >
-              <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                 The Details
               </Text>
               <ArrowBigDown
@@ -352,7 +352,7 @@ const addProductToCart = async (product:ProductDetail)=>{
               />
             </Pressable>
             {openDetails.details && (
-              <Text className={`font-inter text-sm pb-5 leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`text-sm pb-5 leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                 {product.description}
               </Text>
             )}
@@ -361,7 +361,7 @@ const addProductToCart = async (product:ProductDetail)=>{
 
         {/* Seller Info */}
         <View className="px-6 pt-10">
-          <Text className={`text-xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Seller Information</Text>
+          <Text className={`text-xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Seller Information</Text>
           <View className="flex-row items-center gap-4 py-6">
             <Avatar
               uri={normalizeUri(product.seller?.profile_picture_url) ?? undefined}
@@ -370,14 +370,14 @@ const addProductToCart = async (product:ProductDetail)=>{
               className="rounded"
             />
             <View>
-              <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{product.seller.shop_name}</Text>
-              <Text className={`font-inter text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Average Rating: {product.seller.average_rating}</Text>
+              <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{product.seller.shop_name}</Text>
+              <Text className={`text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Average Rating: {product.seller.average_rating}</Text>
             </View>
           </View>
           <View className="flex-row justify-end pb-10">
             <Link href={`/shopDetails/${product.seller_id}`} asChild>
             <TouchableOpacity className="bg-primary h-12 rounded px-6 justify-center items-center">
-              <Text className="text-white font-geist font-bold">View Shop</Text>
+              <Text className="text-white font-bold">View Shop</Text>
             </TouchableOpacity>
             </Link>
           </View>
@@ -387,7 +387,7 @@ const addProductToCart = async (product:ProductDetail)=>{
       </View>
 
           {/* Title before similar products */}
-          <Text className={`px-6 pt-10 pb-4 text-xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className={`px-6 pt-10 pb-4 text-xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
             Other Similar Products
           </Text>
         </>
@@ -404,7 +404,7 @@ const addProductToCart = async (product:ProductDetail)=>{
                     resizeMode="cover"
                   >
                     <View className={`absolute right-3 top-3 rounded px-3 py-1 border ${isDark ? "bg-[#1a1c1d]/90 border-[#46464e]" : "bg-white/90 border-border"}`}>
-                      <Text className={`text-xs font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                      <Text className={`text-xs font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                         {formatNaira(item.price)}
                       </Text>
                     </View>
@@ -415,7 +415,7 @@ const addProductToCart = async (product:ProductDetail)=>{
                   </View>
                 )}
                 <View className="px-4 pt-3 pb-4">
-                  <Text className={`text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+                  <Text className={`text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
                     {item.name}
                   </Text>
                 </View>
@@ -435,14 +435,14 @@ const addProductToCart = async (product:ProductDetail)=>{
                   className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
                 >
                   <ShoppingCart size={14} color={isDark ? "#f0f1f2" : "#71717A"} />
-                  <Text className={`text-[11px] font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Add</Text>
+                  <Text className={`text-[11px] font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Add</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => router.push(`/productDetails/${item.id}`)}
                   className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
                 >
                   <MessageCircle size={14} color={isDark ? "#f0f1f2" : "#71717A"} />
-                  <Text className={`text-[11px] font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Chat</Text>
+                  <Text className={`text-[11px] font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Chat</Text>
                 </TouchableOpacity>
               </View>
             )}

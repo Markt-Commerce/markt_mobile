@@ -56,13 +56,13 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
             />
             <View>
               <Text
-                className={`font-geist font-bold text-base ${isDark ? "text-dark-text" : "text-black"}`}
+                className={`font-bold text-base ${isDark ? "text-dark-text" : "text-black"}`}
               >
                 {req.user?.username || "Unknown buyer"}
               </Text>
               <View className="mt-1 flex-row items-center">
                 <View className="h-1.5 w-1.5 rounded bg-primary mr-2" />
-                <Text className="text-[10px] font-geist font-bold text-tertiary uppercase tracking-wider">
+                <Text className="text-[10px] font-bold text-tertiary uppercase tracking-wider">
                   Buyer request
                 </Text>
               </View>
@@ -78,7 +78,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
             }`}
           >
             <Text
-              className={`text-[10px] font-geist font-bold uppercase tracking-wider ${
+              className={`text-[10px] font-bold uppercase tracking-wider ${
                 isOpen ? "text-primary" : isDark ? "text-dark-muted" : "text-tertiary"
               }`}
             >
@@ -88,13 +88,13 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
         </View>
 
         <Text
-          className={`font-geist font-bold text-lg mb-1 ${isDark ? "text-dark-text" : "text-black"}`}
+          className={`font-bold text-lg mb-1 ${isDark ? "text-dark-text" : "text-black"}`}
           numberOfLines={2}
         >
           {req.title || "Untitled request"}
         </Text>
         <Text
-          className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-inter text-sm mb-4 leading-6`}
+          className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm mb-4 leading-6`}
           numberOfLines={3}
         >
           {req.description || "No description provided."}
@@ -105,12 +105,12 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
         >
           <View>
             <Text
-              className={`text-base font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+              className={`text-base font-bold ${isDark ? "text-dark-text" : "text-black"}`}
             >
               ₦{(req.budget ?? 0).toLocaleString()}
             </Text>
             <Text
-              className={`text-[11px] font-inter mt-0.5 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+              className={`text-[11px] mt-0.5 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
             >
               Deadline: {formatDeadline(req.expires_at)}
             </Text>
@@ -121,7 +121,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
               onPress={() => onMessagePress?.()}
               activeOpacity={0.85}
             >
-              <Text className="text-white text-xs font-geist font-bold tracking-[1px] uppercase">
+              <Text className="text-white text-xs font-bold tracking-[1px] uppercase">
                 Message
               </Text>
             </TouchableOpacity>

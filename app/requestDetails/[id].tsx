@@ -47,7 +47,7 @@ function resolveImageUrls(images: any[] | undefined): string[] {
 function SectionLabel({ children, isDark }: { children: React.ReactNode; isDark: boolean }) {
   return (
     <Text
-      className={`text-[11px] font-geist font-bold tracking-[2px] uppercase ${
+      className={`text-[11px] font-bold tracking-[2px] uppercase ${
         isDark ? "text-dark-muted" : "text-tertiary"
       }`}
     >
@@ -119,7 +119,7 @@ export default function BuyerRequestDetails() {
           <ArrowLeft size={20} color={iconColor} />
         </TouchableOpacity>
         <Text
-          className={`text-lg font-geist font-bold tracking-tight ${
+          className={`text-lg font-bold tracking-tight ${
             isDark ? "text-dark-text" : "text-black"
           }`}
         >
@@ -136,7 +136,7 @@ export default function BuyerRequestDetails() {
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={iconColor} />
           <Text
-            className={`mt-4 font-geist font-bold text-[11px] tracking-[2px] uppercase ${
+            className={`mt-4 font-bold text-[11px] tracking-[2px] uppercase ${
               isDark ? "text-dark-muted" : "text-tertiary"
             }`}
           >
@@ -160,14 +160,14 @@ export default function BuyerRequestDetails() {
             <FileText size={26} color={iconColor} strokeWidth={1.8} />
           </View>
           <Text
-            className={`text-xl font-geist font-bold text-center ${
+            className={`text-xl font-bold text-center ${
               isDark ? "text-dark-text" : "text-black"
             }`}
           >
             Couldn't load this request
           </Text>
           <Text
-            className={`font-inter text-sm text-center mt-2 leading-5 ${
+            className={`text-sm text-center mt-2 leading-5 ${
               isDark ? "text-dark-muted" : "text-tertiary"
             }`}
           >
@@ -178,7 +178,7 @@ export default function BuyerRequestDetails() {
             activeOpacity={0.85}
             className="mt-6 h-12 px-7 rounded bg-primary items-center justify-center"
           >
-            <Text className="text-white font-geist font-bold text-[11px] tracking-[2px] uppercase">
+            <Text className="text-white font-bold text-[11px] tracking-[2px] uppercase">
               Try again
             </Text>
           </TouchableOpacity>
@@ -208,7 +208,7 @@ export default function BuyerRequestDetails() {
             }`}
           >
             <Text
-              className={`text-[10px] font-geist font-bold uppercase tracking-[2px] ${
+              className={`text-[10px] font-bold uppercase tracking-[2px] ${
                 isOpen ? "text-primary" : isDark ? "text-dark-muted" : "text-tertiary"
               }`}
             >
@@ -217,7 +217,7 @@ export default function BuyerRequestDetails() {
           </View>
           {requestDetails.created_at ? (
             <Text
-              className={`text-xs font-inter ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+              className={`text-xs ${isDark ? "text-dark-muted" : "text-tertiary"}`}
             >
               Posted {parseDate(requestDetails.created_at)}
             </Text>
@@ -227,7 +227,7 @@ export default function BuyerRequestDetails() {
         {/* Title */}
         <View className="px-6 pt-3">
           <Text
-            className={`text-[26px] font-geist font-bold leading-8 tracking-tight ${
+            className={`text-[26px] font-bold leading-8 tracking-tight ${
               isDark ? "text-dark-text" : "text-black"
             }`}
           >
@@ -246,7 +246,7 @@ export default function BuyerRequestDetails() {
                 }`}
               >
                 <Text
-                  className={`text-[11px] font-geist font-bold uppercase tracking-wider ${
+                  className={`text-[11px] font-bold uppercase tracking-wider ${
                     isDark ? "text-dark-text" : "text-black"
                   }`}
                 >
@@ -271,7 +271,7 @@ export default function BuyerRequestDetails() {
                   <SectionLabel isDark={isDark}>Budget</SectionLabel>
                 </View>
                 <Text
-                  className={`text-[22px] font-geist font-bold tracking-tight ${
+                  className={`text-[22px] font-bold tracking-tight ${
                     isDark ? "text-dark-text" : "text-black"
                   }`}
                 >
@@ -289,7 +289,7 @@ export default function BuyerRequestDetails() {
                   </SectionLabel>
                 </View>
                 <Text
-                  className={`text-base font-geist font-bold ${
+                  className={`text-base font-bold ${
                     isDark ? "text-dark-text" : "text-black"
                   }`}
                 >
@@ -321,7 +321,7 @@ export default function BuyerRequestDetails() {
             />
             <View className="ml-3 flex-1">
               <Text
-                className={`font-geist font-bold text-base ${
+                className={`font-bold text-base ${
                   isDark ? "text-dark-text" : "text-black"
                 }`}
                 numberOfLines={1}
@@ -331,7 +331,7 @@ export default function BuyerRequestDetails() {
               <View className="mt-1 flex-row items-center">
                 <View className="h-1.5 w-1.5 rounded bg-primary mr-2" />
                 <Text
-                  className={`text-[10px] font-geist font-bold uppercase tracking-wider ${
+                  className={`text-[10px] font-bold uppercase tracking-wider ${
                     isDark ? "text-dark-muted" : "text-tertiary"
                   }`}
                 >
@@ -343,7 +343,7 @@ export default function BuyerRequestDetails() {
               <View className="flex-row items-center gap-1.5">
                 <Eye size={14} color={mutedIconColor} strokeWidth={2} />
                 <Text
-                  className={`text-xs font-inter ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                  className={`text-xs ${isDark ? "text-dark-muted" : "text-tertiary"}`}
                 >
                   {requestDetails.views}
                 </Text>
@@ -356,7 +356,7 @@ export default function BuyerRequestDetails() {
         <View className="px-6 pt-6">
           <SectionLabel isDark={isDark}>Description</SectionLabel>
           <Text
-            className={`mt-2 text-base font-inter leading-7 ${
+            className={`mt-2 text-base leading-7 ${
               isDark ? "text-dark-text" : "text-black"
             }`}
           >
@@ -406,7 +406,7 @@ export default function BuyerRequestDetails() {
             className="h-14 rounded bg-primary items-center justify-center flex-row gap-2"
           >
             <MessageCircle size={18} color="#FFFFFF" strokeWidth={2} />
-            <Text className="text-white font-geist font-bold text-[12px] tracking-[2px] uppercase">
+            <Text className="text-white font-bold text-[12px] tracking-[2px] uppercase">
               Message buyer
             </Text>
           </TouchableOpacity>

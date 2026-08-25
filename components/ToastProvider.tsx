@@ -58,8 +58,8 @@ const ToastBubble = ({ item, onClose, index }: { item: ToastItem; onClose: (id: 
           <Icon size={20} color={item.variant === 'error' ? '#ba1a1a' : item.variant === 'success' ? '#178b1f' : '#000000'} strokeWidth={1.5} />
         </View>
         <View className="flex-1">
-          {!!item.title && <Text className={`font-geist font-bold text-sm ${v.title}`}>{item.title}</Text>}
-          {!!item.message && <Text className={`mt-1 font-inter text-xs leading-5 ${v.message}`}>{item.message}</Text>}
+          {!!item.title && <Text className={`font-bold text-sm ${v.title}`}>{item.title}</Text>}
+          {!!item.message && <Text className={`mt-1 text-xs leading-5 ${v.message}`}>{item.message}</Text>}
         </View>
         <TouchableOpacity onPress={handleClose} className="ml-4 p-1 active:opacity-70">
           <X size={18} color="#71717A" strokeWidth={1.5} />

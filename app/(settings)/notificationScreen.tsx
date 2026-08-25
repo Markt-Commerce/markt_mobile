@@ -31,7 +31,7 @@ export default function NotificationsScreen() {
         <ScreenHeader title="Notifications" onBack={() => nav.back()} />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
-          <Text className={`font-inter text-sm mt-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading preferences...</Text>
+          <Text className={`text-sm mt-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading preferences...</Text>
         </View>
       </SafeAreaView>
     );
@@ -42,14 +42,14 @@ export default function NotificationsScreen() {
       <ScrollView className={isDark ? "bg-[#1a1c1d]" : "bg-white"} contentContainerStyle={{ paddingBottom: 32 }}>
         <ScreenHeader title="Notifications" onBack={() => nav.back()} />
         <View className="px-6 pt-6">
-          <Text className={`font-inter text-sm leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className={`text-sm leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
             Decide how you want to be notified about orders, updates, and account activity.
           </Text>
 
           <View className={`mt-6 rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
             <View className={`flex-row justify-between items-center px-4 py-4 border-b ${isDark ? "border-[#46464e]" : "border-border"}`}>
               <View className="flex-1 pr-4">
-                <Text className={`text-base font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Push Notifications</Text>
+                <Text className={`text-base font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Push Notifications</Text>
                 <Text className={`text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Real-time updates on your device.</Text>
               </View>
               <Switch
@@ -63,7 +63,7 @@ export default function NotificationsScreen() {
 
             <View className={`flex-row justify-between items-center px-4 py-4 border-b ${isDark ? "border-[#46464e]" : "border-border"}`}>
               <View className="flex-1 pr-4">
-                <Text className={`text-base font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Email Notifications</Text>
+                <Text className={`text-base font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Email Notifications</Text>
                 <Text className={`text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Summaries and order updates.</Text>
               </View>
               <Switch
@@ -77,7 +77,7 @@ export default function NotificationsScreen() {
 
             <View className="flex-row justify-between items-center px-4 py-4">
               <View className="flex-1 pr-4">
-                <Text className={`text-base font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>SMS Notifications</Text>
+                <Text className={`text-base font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>SMS Notifications</Text>
                 <Text className={`text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Delivery and order status alerts.</Text>
               </View>
               <Switch

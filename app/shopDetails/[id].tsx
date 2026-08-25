@@ -159,7 +159,7 @@ export default function Shop() {
             <ArrowLeft size={24} color={isDark ? "#f5f5f5" : "#000000"} />
           </TouchableOpacity>
           <Text
-            className={`text-xl font-geist font-bold flex-1 text-center pr-4 ${isDark ? "text-dark-text" : "text-black"}`}
+            className={`text-xl font-bold flex-1 text-center pr-4 ${isDark ? "text-dark-text" : "text-black"}`}
           >
             Shop
           </Text>
@@ -190,7 +190,7 @@ export default function Shop() {
             <View className="flex-1 pb-1">
               <View className="flex-row items-center gap-2">
                 <Text
-                  className={`text-2xl font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+                  className={`text-2xl font-bold ${isDark ? "text-dark-text" : "text-black"}`}
                 >
                   {shop?.shop_name}
                 </Text>
@@ -205,7 +205,7 @@ export default function Shop() {
               </View>
               <View className="flex-row items-center gap-2 mt-2">
                 <Text
-                  className={`text-sm font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+                  className={`text-sm font-bold ${isDark ? "text-dark-text" : "text-black"}`}
                 >
                   {shop?.average_rating || 0}
                 </Text>
@@ -213,7 +213,7 @@ export default function Shop() {
                   className={`px-2 py-0.5 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
                 >
                   <Text
-                    className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-[10px] font-geist font-bold uppercase tracking-wider`}
+                    className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-[10px] font-bold uppercase tracking-wider`}
                   >
                     {shop?.verification_status || "Unverified"}
                   </Text>
@@ -237,7 +237,7 @@ export default function Shop() {
                 disabled={followLoading}
               >
                 <Text
-                  className={`font-geist font-bold text-sm ${isFollowing ? (isDark ? "text-dark-text" : "text-black") : "text-white"}`}
+                  className={`font-bold text-sm ${isFollowing ? (isDark ? "text-dark-text" : "text-black") : "text-white"}`}
                 >
                   {followLoading
                     ? "Loading..."
@@ -255,36 +255,36 @@ export default function Shop() {
           >
             <View className="flex-1 items-center">
               <Text
-                className={`text-xl font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+                className={`text-xl font-bold ${isDark ? "text-dark-text" : "text-black"}`}
               >
                 {shop?.stats.product_count || 0}
               </Text>
               <Text
-                className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-inter text-xs mt-1`}
+                className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-xs mt-1`}
               >
                 Products
               </Text>
             </View>
             <View className="flex-1 items-center">
               <Text
-                className={`text-xl font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+                className={`text-xl font-bold ${isDark ? "text-dark-text" : "text-black"}`}
               >
                 {shop?.stats.post_count || 0}
               </Text>
               <Text
-                className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-inter text-xs mt-1`}
+                className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-xs mt-1`}
               >
                 Posts
               </Text>
             </View>
             <View className="flex-1 items-center">
               <Text
-                className={`text-xl font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+                className={`text-xl font-bold ${isDark ? "text-dark-text" : "text-black"}`}
               >
                 {shop?.stats.follower_count || 0}
               </Text>
               <Text
-                className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-inter text-xs mt-1`}
+                className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-xs mt-1`}
               >
                 Followers
               </Text>
@@ -298,7 +298,7 @@ export default function Shop() {
             className={`px-6 py-6 border-b ${isDark ? "border-dark-border" : "border-border"}`}
           >
             <Text
-              className={`${isDark ? "text-dark-text" : "text-black"} text-xl font-geist font-bold mb-4`}
+              className={`${isDark ? "text-dark-text" : "text-black"} text-xl font-bold mb-4`}
             >
               Badges earned
             </Text>
@@ -315,7 +315,7 @@ export default function Shop() {
             className={`px-6 py-6 border-b ${isDark ? "border-dark-border" : "border-border"}`}
           >
             <Text
-              className={`${isDark ? "text-dark-text" : "text-black"} font-inter text-base leading-7`}
+              className={`${isDark ? "text-dark-text" : "text-black"} text-base leading-7`}
             >
               {shop?.description}
             </Text>
@@ -333,7 +333,7 @@ export default function Shop() {
             accessibilityState={{ selected: activeTab === "products" }}
           >
             <Text
-              className={`text-sm font-geist font-bold ${activeTab === "products" ? (isDark ? "text-dark-text" : "text-black") : isDark ? "text-dark-muted" : "text-tertiary"}`}
+              className={`text-sm font-bold ${activeTab === "products" ? (isDark ? "text-dark-text" : "text-black") : isDark ? "text-dark-muted" : "text-tertiary"}`}
             >
               Products
             </Text>
@@ -345,7 +345,7 @@ export default function Shop() {
             accessibilityState={{ selected: activeTab === "posts" }}
           >
             <Text
-              className={`text-sm font-geist font-bold ${activeTab === "posts" ? (isDark ? "text-dark-text" : "text-black") : isDark ? "text-dark-muted" : "text-tertiary"}`}
+              className={`text-sm font-bold ${activeTab === "posts" ? (isDark ? "text-dark-text" : "text-black") : isDark ? "text-dark-muted" : "text-tertiary"}`}
             >
               Posts
             </Text>
@@ -356,7 +356,7 @@ export default function Shop() {
           <>
             {/* Featured */}
             <Text
-              className={`${isDark ? "text-dark-text" : "text-black"} text-xl font-geist font-bold px-6 pb-4 pt-8`}
+              className={`${isDark ? "text-dark-text" : "text-black"} text-xl font-bold px-6 pb-4 pt-8`}
             >
               Featured
             </Text>
@@ -375,7 +375,7 @@ export default function Shop() {
 
             {/* All Products */}
             <Text
-              className={`${isDark ? "text-dark-text" : "text-black"} text-xl font-geist font-bold px-6 pb-4 pt-8`}
+              className={`${isDark ? "text-dark-text" : "text-black"} text-xl font-bold px-6 pb-4 pt-8`}
             >
               All Products
             </Text>

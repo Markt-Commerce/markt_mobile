@@ -73,7 +73,7 @@ const Button = ({
       ) : children != null ? (
         children
       ) : (
-        <Text className={`text-base font-inter font-semibold tracking-wide ${s.text}`} numberOfLines={1}>
+        <Text className={`text-base font-semibold tracking-wide ${s.text}`} numberOfLines={1}>
           {text}
         </Text>
       )}

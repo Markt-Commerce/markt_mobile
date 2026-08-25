@@ -1,5 +1,5 @@
 import { request, BASE_URL } from "../api";
-import { Order, OrderItem, CreateOrderPayload, PayOrderPayload, UpdateOrderItemPayload, Pagination, SellerOrderItem, OrderTracking, DeliveryWaitChoiceResponse, OrderCancelResponse } from "../../models/orders";
+import { Order, OrderItem, CreateOrderPayload, PayOrderPayload, UpdateOrderItemPayload, Pagination, SellerOrderItem, OrderTracking, DeliveryWaitChoiceResponse, OrderCancelResponse, PodCode } from "../../models/orders";
 
 // Get buyer orders
 export async function getBuyerOrders(page = 1, per_page = 10): Promise<Order[]> {
@@ -73,6 +73,16 @@ export async function getBuyerOrders(page = 1, per_page = 10): Promise<Order[]> 
         body: JSON.stringify({ choice, fallback_consent }),
       },
     );
+    return res;
+  }
+
+  // 10.6: buyer's proof-of-delivery code, to display for the rider to
+  // read/enter back. "ready: false" means no rider is close enough yet
+  // (or delivery already completed) -- not an error, just nothing to show.
+  export async function getPodCode(order_id: string): Promise<PodCode> {
+    const res = await request<PodCode>(`${BASE_URL}/orders/${order_id}/pod-code`, {
+      method: "GET",
+    });
     return res;
   }
 

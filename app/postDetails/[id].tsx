@@ -265,7 +265,7 @@ export default function PostDetailsScreen() {
         >
           <ArrowLeft size={24} color={isDark ? "#f0f1f2" : "#000000"} />
         </TouchableOpacity>
-        <Text className={`text-lg font-geist font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+        <Text className={`text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
           Post
         </Text>
       </View>
@@ -382,7 +382,7 @@ export default function PostDetailsScreen() {
       </View>
 
       {/* Comments Header */}
-      <Text className={`text-lg font-geist font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+      <Text className={`text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
         Comments
       </Text>
     </View>

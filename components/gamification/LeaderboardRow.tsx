@@ -42,7 +42,7 @@ export default function LeaderboardRow({
           <Text className="text-lg">{medalIcon}</Text>
         ) : (
           <Text
-            className={`font-geist font-bold text-sm ${
+            className={`font-bold text-sm ${
               isDark ? "text-[#c6c5cf]" : "text-tertiary"
             }`}
           >
@@ -64,7 +64,7 @@ export default function LeaderboardRow({
           }`}
         >
           <Text
-            className={`font-geist font-bold text-sm ${
+            className={`font-bold text-sm ${
               isDark ? "text-[#f0f1f2]" : "text-black"
             }`}
           >
@@ -76,7 +76,7 @@ export default function LeaderboardRow({
       <View className="flex-1 ml-3">
         <Text
           numberOfLines={1}
-          className={`font-geist font-bold text-sm ${
+          className={`font-bold text-sm ${
             isDark ? "text-[#f0f1f2]" : "text-black"
           }`}
         >
@@ -94,7 +94,7 @@ export default function LeaderboardRow({
       </View>
 
       <Text
-        className={`font-geist font-bold text-sm ${
+        className={`font-bold text-sm ${
           isDark ? "text-[#f0f1f2]" : "text-black"
         }`}
       >

@@ -50,7 +50,7 @@ export default function AppBar({
           <View className="w-10" />
         )}
       </View>
-      <Text className={`text-2xl font-geist font-bold flex-1 text-center tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+      <Text className={`text-2xl font-bold flex-1 text-center tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
         {title}
       </Text>
       <View className="w-10 h-10 items-center justify-center">

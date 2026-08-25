@@ -109,7 +109,7 @@ export const CategoryAddition = ({
           >
             <View className="flex-row items-center justify-between">
               <Text
-                className={`text-lg font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+                className={`text-lg font-bold ${isDark ? "text-dark-text" : "text-black"}`}
               >
                 Select Categories
               </Text>

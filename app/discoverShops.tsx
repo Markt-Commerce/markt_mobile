@@ -52,14 +52,14 @@ function ShopRow({
       <Avatar uri={shop.user?.profile_picture} name={label} size={56} />
       <View className="flex-1 ml-4">
         <Text
-          className={`font-geist font-bold text-base ${isDark ? "text-dark-text" : "text-black"}`}
+          className={`font-bold text-base ${isDark ? "text-dark-text" : "text-black"}`}
           numberOfLines={1}
         >
           {label}
         </Text>
         {shop.stats && (
           <Text
-            className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-inter text-xs mt-1`}
+            className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-xs mt-1`}
           >
             {shop.stats.product_count} products · {shop.stats.follower_count}{" "}
             followers
@@ -71,7 +71,7 @@ function ShopRow({
           className={`px-2 py-0.5 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
         >
           <Text
-            className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-geist font-medium text-[10px] uppercase tracking-wider`}
+            className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-medium text-[10px] uppercase tracking-wider`}
           >
             Verified
           </Text>
@@ -175,7 +175,7 @@ export default function DiscoverShopsScreen() {
           <ArrowLeft size={24} color={isDark ? "#f5f5f5" : "#000000"} />
         </TouchableOpacity>
         <Text
-          className={`flex-1 text-xl font-geist font-bold text-center pr-8 ${isDark ? "text-dark-text" : "text-black"}`}
+          className={`flex-1 text-xl font-bold text-center pr-8 ${isDark ? "text-dark-text" : "text-black"}`}
         >
           Discover Shops
         </Text>
@@ -186,7 +186,7 @@ export default function DiscoverShopsScreen() {
       >
         <Search size={20} color={isDark ? "#c6c5cf" : "#71717A"} />
         <TextInput
-          className={`ml-3 flex-1 font-inter text-base ${isDark ? "text-dark-text" : "text-black"}`}
+          className={`ml-3 flex-1 text-base ${isDark ? "text-dark-text" : "text-black"}`}
           placeholder="Search shops..."
           placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
           value={search}
@@ -211,7 +211,7 @@ export default function DiscoverShopsScreen() {
               className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === null ? "bg-primary" : isDark ? "bg-dark-elevated" : "bg-surface"}`}
             >
               <Text
-                className={`font-geist font-semibold text-sm ${selectedCategory === null ? "text-white" : isDark ? "text-dark-muted" : "text-tertiary"}`}
+                className={`font-semibold text-sm ${selectedCategory === null ? "text-white" : isDark ? "text-dark-muted" : "text-tertiary"}`}
               >
                 All
               </Text>
@@ -223,7 +223,7 @@ export default function DiscoverShopsScreen() {
                 className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === c.slug ? "bg-primary" : isDark ? "bg-dark-elevated" : "bg-surface"}`}
               >
                 <Text
-                  className={`font-geist font-semibold text-sm ${selectedCategory === c.slug ? "text-white" : isDark ? "text-dark-muted" : "text-tertiary"}`}
+                  className={`font-semibold text-sm ${selectedCategory === c.slug ? "text-white" : isDark ? "text-dark-muted" : "text-tertiary"}`}
                 >
                   {c.name}
                 </Text>
@@ -251,7 +251,7 @@ export default function DiscoverShopsScreen() {
               className={`py-1.5 px-3 min-h-[32px] justify-center rounded border ${sortBy === s ? "bg-primary border-primary" : isDark ? "bg-transparent border-dark-border-strong" : "bg-transparent border-border"}`}
             >
               <Text
-                className={`font-geist font-medium text-xs ${sortBy === s ? "text-white" : isDark ? "text-dark-muted" : "text-tertiary"}`}
+                className={`font-medium text-xs ${sortBy === s ? "text-white" : isDark ? "text-dark-muted" : "text-tertiary"}`}
               >
                 {s === "rating"
                   ? "Top rated"

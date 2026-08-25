@@ -66,21 +66,21 @@ function NicheCard({
     <View className={`mx-4 mb-4 rounded overflow-hidden border flex-row p-4 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
       <TouchableOpacity onPress={onPress} activeOpacity={0.9} className="flex-1 flex-row">
         <View className={`w-14 h-14 rounded justify-center items-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-          <Text className={`text-2xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{(niche.name ?? "").charAt(0).toUpperCase() || "?"}</Text>
+          <Text className={`text-2xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{(niche.name ?? "").charAt(0).toUpperCase() || "?"}</Text>
         </View>
         <View className="flex-1 ml-4">
-          <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+          <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
             {niche.name ?? "Unnamed"}
           </Text>
-          <Text className={`font-inter text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={2}>
+          <Text className={`text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={2}>
             {niche.description ?? ""}
           </Text>
           <View className="flex-row gap-3 mt-3 flex-wrap items-center">
-            <Text className={`font-inter text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
               {niche.member_count ?? 0} members · {niche.post_count ?? 0} posts
             </Text>
             <View className={`px-2 py-0.5 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-              <Text className={`font-geist font-medium text-[10px] uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{visibilityLabel}</Text>
+              <Text className={`font-medium text-[10px] uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{visibilityLabel}</Text>
             </View>
           </View>
         </View>
@@ -92,7 +92,7 @@ function NicheCard({
           accessibilityRole="button"
           accessibilityLabel="Already joined — open community"
         >
-          <Text className={`font-geist font-semibold text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className={`font-semibold text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
             Joined
           </Text>
         </TouchableOpacity>
@@ -107,7 +107,7 @@ function NicheCard({
           {joining ? (
             <ActivityIndicator size="small" color="white" />
           ) : (
-            <Text className="text-white font-geist font-semibold text-sm">Join</Text>
+            <Text className="text-white font-semibold text-sm">Join</Text>
           )}
         </TouchableOpacity>
       )}
@@ -257,7 +257,7 @@ export default function DiscoverNichesScreen() {
         >
           <ArrowLeft size={24} color={isDark ? "#f0f1f2" : "#000000"} />
         </TouchableOpacity>
-        <Text className={`flex-1 text-xl font-geist font-bold text-center pr-8 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+        <Text className={`flex-1 text-xl font-bold text-center pr-8 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
           Discover Communities
         </Text>
       </View>
@@ -265,7 +265,7 @@ export default function DiscoverNichesScreen() {
       <View className={`px-4 py-3 flex-row items-center rounded mx-6 mt-4 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
         <Search size={20} color={isDark ? "#c6c5cf" : "#71717A"} />
         <TextInput
-          className={`ml-3 flex-1 font-inter text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+          className={`ml-3 flex-1 text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
           placeholder="Search communities..."
           placeholderTextColor={isDark ? "#c6c5cf" : "#71717A"}
           value={search}
@@ -285,7 +285,7 @@ export default function DiscoverNichesScreen() {
               className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === null ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-surface"}`}
             >
               <Text
-                className={`font-geist font-semibold text-sm ${selectedCategory === null ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                className={`font-semibold text-sm ${selectedCategory === null ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
               >
                 All
               </Text>
@@ -297,7 +297,7 @@ export default function DiscoverNichesScreen() {
                 className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === c.id ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-surface"}`}
               >
                 <Text
-                  className={`font-geist font-semibold text-sm ${selectedCategory === c.id ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                  className={`font-semibold text-sm ${selectedCategory === c.id ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
                 >
                   {c.name}
                 </Text>

@@ -265,8 +265,8 @@ export default function AccountInfoScreen() {
               </View>
             )}
             <View className="flex-1">
-              <Text className={`font-geist font-bold text-[15px] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Profile photo</Text>
-              <Text className={`font-inter text-[13px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`font-bold text-[15px] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Profile photo</Text>
+              <Text className={`text-[13px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                 {imageLoading ? "Uploading and saving…" : "Tap to choose a new profile image."}
               </Text>
             </View>
@@ -274,7 +274,7 @@ export default function AccountInfoScreen() {
           </TouchableOpacity>
 
           <View className="mt-8">
-            <Text className={`font-geist font-bold text-[11px] tracking-[2px] uppercase mb-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`font-bold text-[11px] tracking-[2px] uppercase mb-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
               General
             </Text>
             <View className={`rounded p-4 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
@@ -293,7 +293,7 @@ export default function AccountInfoScreen() {
                 disabled={isGeneralDisabled}
                 activeOpacity={0.85}
               >
-                <Text className="text-white font-geist font-bold text-xs tracking-[2px] uppercase">
+                <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
                   {loading ? 'Saving...' : 'Save General Info'}
                 </Text>
               </TouchableOpacity>
@@ -302,7 +302,7 @@ export default function AccountInfoScreen() {
 
           {role === 'buyer' && (
             <View className="mt-8">
-              <Text className={`font-geist font-bold text-[11px] tracking-[2px] uppercase mb-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`font-bold text-[11px] tracking-[2px] uppercase mb-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                 Buyer information
               </Text>
               <View className={`rounded p-4 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
@@ -320,7 +320,7 @@ export default function AccountInfoScreen() {
                   disabled={isBuyerDisabled}
                   activeOpacity={0.85}
                 >
-                  <Text className="text-white font-geist font-bold text-xs tracking-[2px] uppercase">
+                  <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
                     {loading ? 'Saving...' : 'Save Buyer Info'}
                   </Text>
                 </TouchableOpacity>
@@ -330,7 +330,7 @@ export default function AccountInfoScreen() {
 
           {role === 'seller' && (
             <View className="mt-8">
-              <Text className={`font-geist font-bold text-[11px] tracking-[2px] uppercase mb-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`font-bold text-[11px] tracking-[2px] uppercase mb-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                 Seller information
               </Text>
               <View className={`rounded p-4 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
@@ -357,7 +357,7 @@ export default function AccountInfoScreen() {
                   disabled={isSellerDisabled}
                   activeOpacity={0.85}
                 >
-                  <Text className="text-white font-geist font-bold text-xs tracking-[2px] uppercase">
+                  <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
                     {loading ? 'Saving...' : 'Save Seller Info'}
                   </Text>
                 </TouchableOpacity>

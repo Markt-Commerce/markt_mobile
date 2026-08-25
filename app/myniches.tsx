@@ -103,7 +103,7 @@ export default function MyNichesScreen() {
           <View className="flex-row">
             {/* Niche Icon/Image */}
             <View className={`w-24 h-24 justify-center items-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-              <Text className={`text-3xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`text-3xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                 {(item.name ?? "").charAt(0).toUpperCase() || "?"}
               </Text>
             </View>
@@ -111,10 +111,10 @@ export default function MyNichesScreen() {
             {/* Content */}
             <View className="flex-1 p-4 justify-between">
               <View>
-                <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+                <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
                   {item.name ?? "Unnamed"}
                 </Text>
-                <Text className={`text-xs font-inter mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={2}>
+                <Text className={`text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={2}>
                   {item.description ?? ""}
                 </Text>
               </View>
@@ -122,14 +122,14 @@ export default function MyNichesScreen() {
               {/* Stats */}
               <View className="flex-row gap-4 mt-2">
                 <View>
-                  <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Members</Text>
-                  <Text className={`font-geist font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                  <Text className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Members</Text>
+                  <Text className={`font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                     {item.member_count}
                   </Text>
                 </View>
                 <View>
-                  <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Posts</Text>
-                  <Text className={`font-geist font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                  <Text className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Posts</Text>
+                  <Text className={`font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                     {item.post_count}
                   </Text>
                 </View>
@@ -169,8 +169,8 @@ export default function MyNichesScreen() {
             >
               <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
             </TouchableOpacity>
-            <Text className={`text-2xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>My Niches</Text>
-            <Text className={`text-sm font-inter mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`text-2xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>My Niches</Text>
+            <Text className={`text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
               {niches.length} niche{niches.length !== 1 ? "s" : ""} joined
             </Text>
           </View>
@@ -183,7 +183,7 @@ export default function MyNichesScreen() {
               accessibilityLabel="Create community"
             >
               <Plus size={18} color="#fff" strokeWidth={2} />
-              <Text className="text-white font-geist font-bold text-sm">Create</Text>
+              <Text className="text-white font-bold text-sm">Create</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -211,17 +211,17 @@ export default function MyNichesScreen() {
               <View className={`w-24 h-24 rounded items-center justify-center mb-6 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
                 <Compass size={40} color={isDark ? "#c6c5cf" : "#71717A"} strokeWidth={1.5} />
               </View>
-              <Text className={`font-geist font-bold text-xl text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`font-bold text-xl text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                 No niches yet
               </Text>
-              <Text className={`font-inter text-base mt-2 text-center leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`text-base mt-2 text-center leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                 Join or create a community to connect with others.
               </Text>
               <TouchableOpacity
                 onPress={() => router.push("/discoverNiches")}
                 className="mt-8 h-12 px-8 rounded bg-primary items-center justify-center"
               >
-                <Text className="text-white font-geist font-bold text-base">Explore communities</Text>
+                <Text className="text-white font-bold text-base">Explore communities</Text>
               </TouchableOpacity>
             </View>
           ) : null

@@ -34,7 +34,7 @@ export default function ScreenHeader({
       </TouchableOpacity>
 
       <Text
-        className={`flex-1 text-center text-lg font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+        className={`flex-1 text-center text-lg font-bold ${isDark ? "text-dark-text" : "text-black"}`}
         numberOfLines={1}
       >
         {title}

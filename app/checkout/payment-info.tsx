@@ -36,7 +36,7 @@ export default function PaymentInfo() {
           <TouchableOpacity onPress={() => router.back()} className="size-12 items-center justify-center">
             <ArrowLeft size={24} color={isDark ? "#f0f1f2" : "#000000"} />
           </TouchableOpacity>
-          <Text className={`text-lg font-geist font-bold text-center flex-1 pr-12 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className={`text-lg font-bold text-center flex-1 pr-12 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
             Direct from Account
           </Text>
         </View>

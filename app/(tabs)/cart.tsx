@@ -122,6 +122,7 @@ export default function CartScreen() {
           authorization_url: init.authorization_url ?? "",
           subtotal: String(init.subtotal),
           shipping_fee: String(init.shipping_fee),
+          delivery_count: String(init.delivery_count),
           service_fee: String(init.service_fee),
           reliability_fee_opted_in: String(init.reliability_fee_opted_in),
           reliability_fee_estimate: String(init.reliability_fee_estimate),
@@ -146,7 +147,7 @@ export default function CartScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
         <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
-        <Text className={`mt-3 font-geist font-medium ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Loading your cart…</Text>
+        <Text className={`mt-3 font-medium ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Loading your cart…</Text>
       </SafeAreaView>
     );
   }
@@ -159,7 +160,7 @@ export default function CartScreen() {
           <TouchableOpacity onPress={() => router.back()} className={`h-10 w-10 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
             <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
           </TouchableOpacity>
-          <Text className={`flex-1 text-center text-xl font-geist font-bold pr-10 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Cart</Text>
+          <Text className={`flex-1 text-center text-xl font-bold pr-10 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Cart</Text>
         </View>
 
         <ScrollView
@@ -169,8 +170,8 @@ export default function CartScreen() {
           <View className={`w-24 h-24 rounded items-center justify-center mb-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
             <ShoppingCart size={40} color={isDark ? "#c6c5cf" : "#A1A1AA"} strokeWidth={1} />
           </View>
-          <Text className={`text-2xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Your cart is empty</Text>
-          <Text className={`mt-2 font-inter text-base text-center leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className={`text-2xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Your cart is empty</Text>
+          <Text className={`mt-2 text-base text-center leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
             Explore the marketplace and add items you love.
           </Text>
           <TouchableOpacity
@@ -180,7 +181,7 @@ export default function CartScreen() {
             accessibilityRole="button"
             accessibilityLabel="Start shopping"
           >
-            <Text className="text-white font-geist font-bold">Start shopping</Text>
+            <Text className="text-white font-bold">Start shopping</Text>
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
@@ -195,7 +196,7 @@ export default function CartScreen() {
         <TouchableOpacity onPress={() => router.back()} className={`h-10 w-10 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
           <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
         </TouchableOpacity>
-        <Text className={`flex-1 text-center text-xl font-geist font-bold pr-10 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Cart</Text>
+        <Text className={`flex-1 text-center text-xl font-bold pr-10 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Cart</Text>
       </View>
 
       <ScrollView
@@ -220,15 +221,15 @@ export default function CartScreen() {
                   <View className="flex-row gap-4">
                     <Image source={{ uri: image }} className={`w-20 h-20 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`} />
                     <View className="flex-1">
-                      <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+                      <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
                         {name}
                       </Text>
-                      <Text className={`font-inter text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                      <Text className={`text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                         Variant #{item.variant_id}
                       </Text>
 
                       <View className="mt-3 flex-row items-center justify-between">
-                        <Text className={`font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(price)}</Text>
+                        <Text className={`font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(price)}</Text>
 
                         {/* Stepper + remove */}
                         <View className="flex-row items-center gap-2">
@@ -241,7 +242,7 @@ export default function CartScreen() {
                           </TouchableOpacity>
 
                           <View className="min-w-[32px] items-center justify-center">
-                            <Text className={`font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.quantity}</Text>
+                            <Text className={`font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.quantity}</Text>
                           </View>
 
                           <TouchableOpacity
@@ -263,8 +264,8 @@ export default function CartScreen() {
                       </View>
 
                       <View className="mt-3 flex-row justify-between">
-                        <Text className={`text-xs font-inter ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Line total</Text>
-                        <Text className={`text-xs font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                        <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Line total</Text>
+                        <Text className={`text-xs font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                           {formatMoney(lineTotal)}
                         </Text>
                       </View>
@@ -293,29 +294,29 @@ export default function CartScreen() {
         {/* Summary card */}
         <View className="px-6">
           <View className={`rounded border p-6 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-lg font-geist font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Order Summary</Text>
+            <Text className={`text-lg font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Order Summary</Text>
 
             <View className="flex-row justify-between py-2">
-              <Text className={`text-sm font-inter ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Subtotal</Text>
-              <Text className={`text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(summary?.subtotal)}</Text>
+              <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Subtotal</Text>
+              <Text className={`text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(summary?.subtotal)}</Text>
             </View>
             <View className="flex-row justify-between py-2">
-              <Text className={`text-sm font-inter ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Discount</Text>
-              <Text className={`text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>−{formatMoney(summary?.discount)}</Text>
+              <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Discount</Text>
+              <Text className={`text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>−{formatMoney(summary?.discount)}</Text>
             </View>
             <View className={`h-[1px] my-4 ${isDark ? "bg-[#46464e]" : "bg-border"}`} />
             <View className="flex-row justify-between py-2">
-              <Text className={`text-base font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Total</Text>
-              <Text className={`text-lg font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(summary?.total)}</Text>
+              <Text className={`text-base font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Total</Text>
+              <Text className={`text-lg font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(summary?.total)}</Text>
             </View>
-            <Text className={`text-xs font-inter ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
               Service fee, and the reliability fee if you opt in, are shown at the next step.
             </Text>
 
             <View className={`h-[1px] my-4 ${isDark ? "bg-[#46464e]" : "bg-border"}`} />
 
             {/* Fulfilment preference (6): how a substitution is handled if an item can't be fulfilled as ordered */}
-            <Text className={`text-sm font-geist font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+            <Text className={`text-sm font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
               If an item can&apos;t be fulfilled
             </Text>
             <View className="flex-row gap-2">
@@ -343,7 +344,7 @@ export default function CartScreen() {
                     accessibilityState={{ selected }}
                   >
                     <Text
-                      className={`text-xs text-center font-inter font-medium ${
+                      className={`text-xs text-center font-medium ${
                         selected ? "text-primary font-bold" : isDark ? "text-[#c6c5cf]" : "text-tertiary"
                       }`}
                     >
@@ -363,10 +364,10 @@ export default function CartScreen() {
               accessibilityState={{ checked: reliabilityFeeOptedIn }}
             >
               <View className="flex-1 pr-3">
-                <Text className={`text-sm font-inter font-medium ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                <Text className={`text-sm font-medium ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                   Guarantee my order
                 </Text>
-                <Text className={`text-xs font-inter mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                   A reliability fee applies only if a substitution happens.
                 </Text>
               </View>
@@ -391,7 +392,7 @@ export default function CartScreen() {
               accessibilityRole="button"
               accessibilityLabel={processing ? "Processing" : "Proceed to checkout"}
             >
-              <Text className={`text-base font-geist font-bold ${processing || !isShippingAddressUsable(shipping.address) ? (isDark ? "text-[#c6c5cf]" : "text-tertiary") : "text-white"}`}>
+              <Text className={`text-base font-bold ${processing || !isShippingAddressUsable(shipping.address) ? (isDark ? "text-[#c6c5cf]" : "text-tertiary") : "text-white"}`}>
                 {processing ? "Processing…" : "Proceed to Checkout"}
               </Text>
             </TouchableOpacity>

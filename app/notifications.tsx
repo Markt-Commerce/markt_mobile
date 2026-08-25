@@ -171,7 +171,7 @@ export default function NotificationsScreen() {
       }`}
     >
       <Text
-        className={`text-xs font-geist font-bold ${active ? "text-white" : "text-tertiary"}`}
+        className={`text-xs font-bold ${active ? "text-white" : "text-tertiary"}`}
       >
         {label}
       </Text>
@@ -195,7 +195,7 @@ export default function NotificationsScreen() {
       accessibilityLabel={label}
     >
       <Text
-        className={`text-xs font-geist font-bold ${primary ? "text-white" : isDark ? "text-dark-text" : "text-black"}`}
+        className={`text-xs font-bold ${primary ? "text-white" : isDark ? "text-dark-text" : "text-black"}`}
       >
         {label}
       </Text>
@@ -214,18 +214,18 @@ export default function NotificationsScreen() {
 
         <View className="flex-1">
           <Text
-            className={`font-geist font-bold text-sm ${isDark ? "text-dark-text" : "text-black"}`}
+            className={`font-bold text-sm ${isDark ? "text-dark-text" : "text-black"}`}
           >
             {n.title}
           </Text>
           <Text
-            className={`text-sm font-inter mt-1 leading-5 ${n.is_read ? (isDark ? "text-dark-muted" : "text-tertiary") : isDark ? "text-dark-text font-medium" : "text-black font-medium"}`}
+            className={`text-sm mt-1 leading-5 ${n.is_read ? (isDark ? "text-dark-muted" : "text-tertiary") : isDark ? "text-dark-text font-medium" : "text-black font-medium"}`}
             numberOfLines={3}
           >
             {n.message}
           </Text>
           <Text
-            className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-inter text-[10px] mt-1.5`}
+            className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-[10px] mt-1.5`}
           >
             {n.created_at}
           </Text>
@@ -233,7 +233,7 @@ export default function NotificationsScreen() {
           {(needsSubstitutionDecision || needsWaitChoice) && state !== "resolved" && (
             <View className="flex-row gap-2 mt-3">
               {state === "pending" ? (
-                <Text className={`text-xs font-inter ${isDark ? "text-dark-muted" : "text-tertiary"}`}>
+                <Text className={`text-xs ${isDark ? "text-dark-muted" : "text-tertiary"}`}>
                   Submitting…
                 </Text>
               ) : needsSubstitutionDecision ? (
@@ -264,7 +264,7 @@ export default function NotificationsScreen() {
             </View>
           )}
           {(needsSubstitutionDecision || needsWaitChoice) && state === "resolved" && (
-            <Text className="text-xs font-geist font-bold text-primary mt-2">Submitted</Text>
+            <Text className="text-xs font-bold text-primary mt-2">Submitted</Text>
           )}
 
           {needsEscalationChoice && (
@@ -297,7 +297,7 @@ export default function NotificationsScreen() {
           />
         </TouchableOpacity>
         <Text
-          className={`flex-1 text-center text-lg font-geist font-bold tracking-widest uppercase pr-10 ${isDark ? "text-dark-text" : "text-black"}`}
+          className={`flex-1 text-center text-lg font-bold tracking-widest uppercase pr-10 ${isDark ? "text-dark-text" : "text-black"}`}
         >
           Alerts
         </Text>
@@ -334,7 +334,7 @@ export default function NotificationsScreen() {
             className="h-10 px-4 rounded bg-primary items-center justify-center"
             activeOpacity={0.85}
           >
-            <Text className="text-[10px] font-geist font-bold text-white tracking-widest uppercase">
+            <Text className="text-[10px] font-bold text-white tracking-widest uppercase">
               Clear all
             </Text>
           </TouchableOpacity>
@@ -357,7 +357,7 @@ export default function NotificationsScreen() {
           <View
             className={`rounded border overflow-hidden ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
           >
-            <Text className="px-6 pt-6 pb-2 text-[10px] font-geist font-bold uppercase tracking-[0.2em] text-tertiary">
+            <Text className="px-6 pt-6 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-tertiary">
               Recents
             </Text>
             {today?.length ? (
@@ -372,7 +372,7 @@ export default function NotificationsScreen() {
             ) : (
               <View className="px-6 pb-10 pt-4">
                 <Text
-                  className={`${isDark ? "text-dark-muted" : "text-surface-dim"} font-geist font-bold text-xs tracking-widest uppercase italic`}
+                  className={`${isDark ? "text-dark-muted" : "text-surface-dim"} font-bold text-xs tracking-widest uppercase italic`}
                 >
                   No Activity
                 </Text>
@@ -384,7 +384,7 @@ export default function NotificationsScreen() {
             <View
               className={`rounded border overflow-hidden mt-8 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
             >
-              <Text className="px-6 pt-6 pb-2 text-[10px] font-geist font-bold uppercase tracking-[0.2em] text-tertiary">
+              <Text className="px-6 pt-6 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-tertiary">
                 Previous
               </Text>
               {yesterday.map((n, i) => (

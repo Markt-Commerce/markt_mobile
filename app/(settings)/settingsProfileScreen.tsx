@@ -39,7 +39,7 @@ function SettingsSection({
 }) {
   return (
     <View className="px-6 mt-8">
-      <Text className={`font-geist font-bold text-[11px] tracking-[2px] uppercase mb-3 ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+      <Text className={`font-bold text-[11px] tracking-[2px] uppercase mb-3 ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
         {title}
       </Text>
       <View className={`rounded overflow-hidden border ${dark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
@@ -77,13 +77,13 @@ function SettingsRow({
           <Icon size={18} color={dark ? "#f0f1f2" : "#000000"} strokeWidth={1.7} />
         </View>
         <View className="flex-1">
-          <Text className={`font-geist font-bold text-[15px] ${dark ? "text-[#f0f1f2]" : "text-black"}`}>{title}</Text>
-          <Text className={`font-inter text-[13px] mt-1 ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{subtitle}</Text>
+          <Text className={`font-bold text-[15px] ${dark ? "text-[#f0f1f2]" : "text-black"}`}>{title}</Text>
+          <Text className={`text-[13px] mt-1 ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{subtitle}</Text>
         </View>
       </View>
       <View className="flex-row items-center gap-2">
         {value ? (
-          <Text className={`font-geist font-bold text-[11px] tracking-widest uppercase ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className={`font-bold text-[11px] tracking-widest uppercase ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
             {value}
           </Text>
         ) : null}
@@ -121,8 +121,8 @@ function SettingsSwitchRow({
           <Icon size={18} color={dark ? "#f0f1f2" : "#000000"} strokeWidth={1.7} />
         </View>
         <View className="flex-1">
-          <Text className={`font-geist font-bold text-[15px] ${dark ? "text-[#f0f1f2]" : "text-black"}`}>{title}</Text>
-          <Text className={`font-inter text-[13px] mt-1 ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{subtitle}</Text>
+          <Text className={`font-bold text-[15px] ${dark ? "text-[#f0f1f2]" : "text-black"}`}>{title}</Text>
+          <Text className={`text-[13px] mt-1 ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{subtitle}</Text>
         </View>
       </View>
       <Switch
@@ -232,13 +232,13 @@ export default function SettingsProfileScreen() {
                 className="rounded"
               />
               <View className="flex-1">
-                <Text className={`font-geist font-bold text-[24px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+                <Text className={`font-bold text-[24px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
                   {displayName}
                 </Text>
-                <Text className={`font-inter text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={1}>
+                <Text className={`text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={1}>
                   @{profile?.username ?? user?.email ?? "user"}
                 </Text>
-                <Text className={`font-geist font-bold text-[10px] tracking-[2px] uppercase mt-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                <Text className={`font-bold text-[10px] tracking-[2px] uppercase mt-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                   {role} control center
                 </Text>
               </View>
@@ -246,17 +246,17 @@ export default function SettingsProfileScreen() {
 
             <View className="flex-row flex-wrap gap-2 mt-4">
               <View className={`px-3 py-2 rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-                <Text className={`font-geist font-bold text-[10px] tracking-[2px] uppercase ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                <Text className={`font-bold text-[10px] tracking-[2px] uppercase ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                   {theme}
                 </Text>
               </View>
               <View className={`px-3 py-2 rounded border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-                <Text className={`font-geist font-bold text-[10px] tracking-[2px] uppercase ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                <Text className={`font-bold text-[10px] tracking-[2px] uppercase ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                   {language}
                 </Text>
               </View>
               <View className="px-3 py-2 rounded bg-primary">
-                <Text className="font-geist font-bold text-[10px] tracking-[2px] uppercase text-white">
+                <Text className="font-bold text-[10px] tracking-[2px] uppercase text-white">
                   {role}
                 </Text>
               </View>
@@ -357,7 +357,7 @@ export default function SettingsProfileScreen() {
             className="h-14 rounded bg-primary items-center justify-center flex-row gap-2"
           >
             <LogOut size={18} color="#FFFFFF" strokeWidth={1.8} />
-            <Text className="text-white font-geist font-bold text-xs tracking-[2px] uppercase">
+            <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
               Sign Out
             </Text>
           </TouchableOpacity>

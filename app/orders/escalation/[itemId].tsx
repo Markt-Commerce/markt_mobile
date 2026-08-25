@@ -138,7 +138,7 @@ export default function ItemEscalationScreen() {
           <ArrowLeft size={18} color={isDark ? "#f5f5f5" : "#000000"} />
         </TouchableOpacity>
         <Text
-          className={`flex-1 text-center text-lg font-geist font-bold -ml-10 ${isDark ? "text-dark-text" : "text-black"}`}
+          className={`flex-1 text-center text-lg font-bold -ml-10 ${isDark ? "text-dark-text" : "text-black"}`}
         >
           Resolve item
         </Text>
@@ -169,7 +169,7 @@ export default function ItemEscalationScreen() {
       ) : (
         <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 20 }}>
           <View className={cardClass}>
-            <Text className={`font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}>
+            <Text className={`font-bold ${isDark ? "text-dark-text" : "text-black"}`}>
               We couldn't find a replacement seller
             </Text>
             <Text className={`${labelClass} mt-1`}>
@@ -180,7 +180,7 @@ export default function ItemEscalationScreen() {
           {/* Choose a seller */}
           <View className="mt-4">
             <Text
-              className={`text-[10px] font-geist font-bold uppercase tracking-[0.2em] mb-2 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+              className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-2 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
             >
               Choose a seller
             </Text>
@@ -212,7 +212,7 @@ export default function ItemEscalationScreen() {
                       className="h-9 px-4 rounded bg-primary items-center justify-center"
                       activeOpacity={0.85}
                     >
-                      <Text className="text-xs font-geist font-bold text-white">
+                      <Text className="text-xs font-bold text-white">
                         {busyOfferId === offer.id ? "Confirming…" : "Choose"}
                       </Text>
                     </TouchableOpacity>
@@ -232,7 +232,7 @@ export default function ItemEscalationScreen() {
           {/* Other options */}
           <View className="mt-6">
             <Text
-              className={`text-[10px] font-geist font-bold uppercase tracking-[0.2em] mb-2 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+              className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-2 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
             >
               Other options
             </Text>
@@ -248,7 +248,7 @@ export default function ItemEscalationScreen() {
                 </Text>
                 <Text className={labelClass}>Refunded, rest of the order is unaffected</Text>
               </View>
-              <Text className="text-xs font-geist font-bold text-primary">
+              <Text className="text-xs font-bold text-primary">
                 {busyAction === "remove" ? "Removing…" : "Remove"}
               </Text>
             </TouchableOpacity>
@@ -266,7 +266,7 @@ export default function ItemEscalationScreen() {
                     Cancel whole order
                   </Text>
                 </View>
-                <Text className="text-xs font-geist font-bold" style={{ color: "#e26136" }}>
+                <Text className="text-xs font-bold" style={{ color: "#e26136" }}>
                   {busyAction === "cancel" ? "Cancelling…" : "Cancel"}
                 </Text>
               </View>

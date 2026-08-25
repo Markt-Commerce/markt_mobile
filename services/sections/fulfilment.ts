@@ -1,6 +1,7 @@
 /**
- * Fulfilment API — buyer-facing actions on a pending ASK substitution (6.1, 9.1)
- * and on an escalated item Markt couldn't find a replacement seller for (7.3).
+ * Fulfilment API — buyer-facing actions on a pending ASK substitution (6.1, 9.1),
+ * an escalated item Markt couldn't find a replacement seller for (7.3), and
+ * seller-facing accept/decline/start-preparing of an allocation (12.1-12.2).
  */
 
 import { request } from "../api";
@@ -28,6 +29,57 @@ export async function rejectSubstitution(allocationId: number | string): Promise
     `/fulfilment/allocations/${allocationId}/reject-substitution`,
     { method: "POST" },
   );
+}
+
+// Seller-facing (12.1-12.2): previously nothing let a seller see or act on
+// their own pending allocations from the app at all -- only the
+// FULFILMENT_REQUEST notification existed, with nowhere to deep-link to.
+export interface SellerAllocation {
+  id: number;
+  order_item_id: number;
+  order_id: string | null;
+  seller_id: number;
+  quantity: number;
+  product_name: string | null;
+  status: string;
+  seller_response_deadline: string | null;
+  created_at: string | null;
+}
+
+export async function listSellerAllocations(status?: string): Promise<SellerAllocation[]> {
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
+  return request<SellerAllocation[]>(`/fulfilment/allocations${query}`, {
+    method: "GET",
+  });
+}
+
+export async function acceptAllocation(allocationId: number | string): Promise<FulfilmentAllocation> {
+  return request<FulfilmentAllocation>(`/fulfilment/allocations/${allocationId}/accept`, {
+    method: "POST",
+  });
+}
+
+export async function declineAllocation(allocationId: number | string): Promise<FulfilmentAllocation> {
+  return request<FulfilmentAllocation>(`/fulfilment/allocations/${allocationId}/decline`, {
+    method: "POST",
+  });
+}
+
+export async function startPreparingAllocation(
+  allocationId: number | string,
+): Promise<FulfilmentAllocation> {
+  return request<FulfilmentAllocation>(
+    `/fulfilment/allocations/${allocationId}/start-preparing`,
+    { method: "POST" },
+  );
+}
+
+export async function cancelAllocationAfterAccept(
+  allocationId: number | string,
+): Promise<FulfilmentAllocation> {
+  return request<FulfilmentAllocation>(`/fulfilment/allocations/${allocationId}/cancel`, {
+    method: "POST",
+  });
 }
 
 // 7.3 escalation -- see app.fulfilment.rerouting.get_item_escalation

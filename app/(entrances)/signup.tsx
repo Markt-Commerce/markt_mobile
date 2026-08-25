@@ -102,7 +102,7 @@ export default function SignupScreen() {
           role === "buyer" ? "bg-primary shadow-sm" : "shadow-none"
         }`}
       >
-        <Text className={`font-geist font-bold text-sm ${role === "buyer" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+        <Text className={`font-bold text-sm ${role === "buyer" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
           Buyer
         </Text>
       </TouchableOpacity>
@@ -112,7 +112,7 @@ export default function SignupScreen() {
           role === "seller" ? "bg-primary shadow-sm" : "shadow-none"
         }`}
       >
-        <Text className={`font-geist font-bold text-sm ${role === "seller" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+        <Text className={`font-bold text-sm ${role === "seller" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
           Seller
         </Text>
       </TouchableOpacity>
@@ -144,10 +144,10 @@ export default function SignupScreen() {
 
             {/* Title */}
             <View className="mb-8">
-              <Text className={`text-[32px] font-geist font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`text-[32px] font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                 Create{"\n"}account
               </Text>
-              <Text className={`font-inter text-base mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`text-base mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                 Join Markt to start shopping or selling.
               </Text>
             </View>
@@ -156,13 +156,13 @@ export default function SignupScreen() {
             <View className={`rounded border px-5 py-8 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
               {/* Role selection */}
               <View className="mb-8">
-                <Text className={`mb-3 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>I want to be a</Text>
+                <Text className={`mb-3 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>I want to be a</Text>
                 <RoleToggle />
               </View>
 
               {/* Email */}
               <View className="mb-6">
-                <Text className={`mb-2 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Email Address</Text>
+                <Text className={`mb-2 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Email Address</Text>
                 <Input
                   placeholder="you@example.com"
                   control={control}
@@ -175,7 +175,7 @@ export default function SignupScreen() {
 
               {/* Password */}
               <View className="mb-6">
-                <Text className={`mb-2 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Password</Text>
+                <Text className={`mb-2 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Password</Text>
                 <PasswordInput
                   placeholder="Min. 8 characters"
                   control={control}
@@ -205,25 +205,25 @@ export default function SignupScreen() {
                 <View className="flex-row flex-wrap gap-x-4 gap-y-1 mt-2">
                   <View className="flex-row items-center gap-1">
                     {strength.checks.length ? <Check size={12} color="#178b1f" /> : <Circle size={12} color={mutedIconColor} />}
-                    <Text className={`text-[11px] font-inter ${strength.checks.length ? "text-success" : "text-tertiary"}`}>
+                    <Text className={`text-[11px] ${strength.checks.length ? "text-success" : "text-tertiary"}`}>
                       8+ chars
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-1">
                     {strength.checks.digit ? <Check size={12} color="#178b1f" /> : <Circle size={12} color={mutedIconColor} />}
-                    <Text className={`text-[11px] font-inter ${strength.checks.digit ? "text-success" : "text-tertiary"}`}>
+                    <Text className={`text-[11px] ${strength.checks.digit ? "text-success" : "text-tertiary"}`}>
                       1 digit
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-1">
                     {strength.checks.lowercase ? <Check size={12} color="#178b1f" /> : <Circle size={12} color={mutedIconColor} />}
-                    <Text className={`text-[11px] font-inter ${strength.checks.lowercase ? "text-success" : "text-tertiary"}`}>
+                    <Text className={`text-[11px] ${strength.checks.lowercase ? "text-success" : "text-tertiary"}`}>
                       1 lower
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-1">
                     {strength.checks.uppercase ? <Check size={12} color="#178b1f" /> : <Circle size={12} color={mutedIconColor} />}
-                    <Text className={`text-[11px] font-inter ${strength.checks.uppercase ? "text-success" : "text-tertiary"}`}>
+                    <Text className={`text-[11px] ${strength.checks.uppercase ? "text-success" : "text-tertiary"}`}>
                       1 upper
                     </Text>
                   </View>
@@ -232,7 +232,7 @@ export default function SignupScreen() {
 
               {/* Confirm Password */}
               <View className="mb-8">
-                <Text className={`mb-2 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Confirm Password</Text>
+                <Text className={`mb-2 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Confirm Password</Text>
                 <PasswordInput
                   placeholder="Repeat password"
                   control={control}
@@ -254,8 +254,8 @@ export default function SignupScreen() {
                 onPress={() => router.push("/login")}
                 className="mt-8 items-center"
               >
-                <Text className={`font-inter text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                  Already have an account? <Text className={`font-geist font-bold underline ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Sign in</Text>
+                <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                  Already have an account? <Text className={`font-bold underline ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Sign in</Text>
                 </Text>
               </TouchableOpacity>
             </View>

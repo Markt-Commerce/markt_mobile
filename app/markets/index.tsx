@@ -59,7 +59,7 @@ export default function MarketsScreen() {
           <ArrowLeft size={24} color={isDark ? "#f5f5f5" : "#000000"} />
         </TouchableOpacity>
         <Text
-          className={`flex-1 text-xl font-geist font-bold text-center pr-8 ${isDark ? "text-dark-text" : "text-black"}`}
+          className={`flex-1 text-xl font-bold text-center pr-8 ${isDark ? "text-dark-text" : "text-black"}`}
         >
           Markets
         </Text>
@@ -112,13 +112,13 @@ export default function MarketsScreen() {
               </View>
               <View className="flex-1 ml-4">
                 <Text
-                  className={`font-geist font-bold text-base ${isDark ? "text-dark-text" : "text-black"}`}
+                  className={`font-bold text-base ${isDark ? "text-dark-text" : "text-black"}`}
                   numberOfLines={1}
                 >
                   {item.name}
                 </Text>
                 <Text
-                  className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-inter text-xs mt-1`}
+                  className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-xs mt-1`}
                 >
                   {item.seller_count} seller{item.seller_count !== 1 ? "s" : ""}
                 </Text>

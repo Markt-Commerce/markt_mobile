@@ -137,7 +137,7 @@ export default function UserInfoScreen() {
   };
 
   const Label = ({ children }: { children: React.ReactNode }) => (
-    <Text className={`mb-2 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>{children}</Text>
+    <Text className={`mb-2 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>{children}</Text>
   );
 
   return (
@@ -172,10 +172,10 @@ export default function UserInfoScreen() {
 
             {/* Title */}
             <View className="mb-8">
-              <Text className={`text-[32px] font-geist font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`text-[32px] font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                 Your{"\n"}profile
               </Text>
-              <Text className={`font-inter text-base mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`text-base mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                 Let's get to know you better.
               </Text>
             </View>
@@ -201,7 +201,7 @@ export default function UserInfoScreen() {
                   ) : (
                     <View className="items-center">
                       <ImageIcon size={32} color={mutedIconColor} />
-                      <Text className={`text-[10px] font-geist font-bold mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>ADD PHOTO</Text>
+                      <Text className={`text-[10px] font-bold mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>ADD PHOTO</Text>
                     </View>
                   )}
                 </TouchableOpacity>
@@ -232,16 +232,16 @@ export default function UserInfoScreen() {
                 />
                 <View className="mt-2 h-4">
                   {usernameStatus === "taken" ? (
-                    <Text className="text-xs text-error font-inter">{usernameMessage || "Username is already taken"}</Text>
+                    <Text className="text-xs text-error ">{usernameMessage || "Username is already taken"}</Text>
                   ) : usernameStatus === "available" ? (
                     <View className="flex-row items-center gap-1">
                       <Check size={12} color="#178b1f" strokeWidth={3} />
-                      <Text className="text-xs text-success font-inter">Username is available</Text>
+                      <Text className="text-xs text-success ">Username is available</Text>
                     </View>
                   ) : usernameStatus === "checking" ? (
-                    <Text className={`text-xs font-inter italic ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Checking availability...</Text>
+                    <Text className={`text-xs italic ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Checking availability...</Text>
                   ) : (
-                    <Text className={`text-xs font-inter ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>This will be your unique identifier.</Text>
+                    <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>This will be your unique identifier.</Text>
                   )}
                 </View>
               </View>

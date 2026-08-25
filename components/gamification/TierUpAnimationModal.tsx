@@ -33,7 +33,7 @@ export default function TierUpAnimationModal({
         >
           <Text className="text-3xl mb-2">🚀</Text>
           <Text
-            className={`font-geist font-bold text-[10px] tracking-[3px] uppercase ${
+            className={`font-bold text-[10px] tracking-[3px] uppercase ${
               isDark ? "text-[#c6c5cf]" : "text-tertiary"
             }`}
           >
@@ -47,14 +47,14 @@ export default function TierUpAnimationModal({
           )}
 
           <Text
-            className={`font-geist font-bold text-xl text-center ${
+            className={`font-bold text-xl text-center ${
               isDark ? "text-[#f0f1f2]" : "text-black"
             }`}
           >
             You reached a new tier!
           </Text>
           <Text
-            className={`font-inter text-sm text-center mt-2 ${
+            className={`text-sm text-center mt-2 ${
               isDark ? "text-[#c6c5cf]" : "text-tertiary"
             }`}
           >
@@ -65,7 +65,7 @@ export default function TierUpAnimationModal({
             onPress={onClose}
             className="bg-primary rounded h-12 items-center justify-center mt-6 w-full"
           >
-            <Text className="text-white font-geist font-bold">Awesome</Text>
+            <Text className="text-white font-bold">Awesome</Text>
           </TouchableOpacity>
         </View>
       </View>

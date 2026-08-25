@@ -92,7 +92,7 @@ export default function TrackOrderScreen() {
           <ArrowLeft size={18} color={isDark ? "#f5f5f5" : "#000000"} />
         </TouchableOpacity>
         <Text
-          className={`flex-1 text-center text-lg font-geist font-bold -ml-10 ${isDark ? "text-dark-text" : "text-black"}`}
+          className={`flex-1 text-center text-lg font-bold -ml-10 ${isDark ? "text-dark-text" : "text-black"}`}
         >
           Track order
         </Text>
@@ -116,7 +116,7 @@ export default function TrackOrderScreen() {
           <View className="px-4">
             <View className={cardClass}>
               <View className="flex-row items-center justify-between">
-                <Text className={`font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}>
+                <Text className={`font-bold ${isDark ? "text-dark-text" : "text-black"}`}>
                   Order #{tracking.order_number ?? tracking.order_id}
                 </Text>
                 <Text className={`font-semibold ${isDark ? "text-dark-text" : "text-black"}`}>
@@ -168,7 +168,7 @@ export default function TrackOrderScreen() {
           {/* Per-item status */}
           <View className="px-4 mt-4">
             <View className={cardClass}>
-              <Text className={`font-geist font-bold mb-3 ${isDark ? "text-dark-text" : "text-black"}`}>
+              <Text className={`font-bold mb-3 ${isDark ? "text-dark-text" : "text-black"}`}>
                 Items ({tracking.items.length})
               </Text>
               {tracking.items.map((item) => (
@@ -185,7 +185,7 @@ export default function TrackOrderScreen() {
                     className={`px-2 py-0.5 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
                   >
                     <Text
-                      className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                      className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-dark-muted" : "text-tertiary"}`}
                     >
                       {ITEM_STATUS_LABEL[item.status] ?? item.status}
                     </Text>
@@ -199,7 +199,7 @@ export default function TrackOrderScreen() {
           {tracking.shipment && (
             <View className="px-4 mt-4">
               <View className={cardClass}>
-                <Text className={`font-geist font-bold mb-2 ${isDark ? "text-dark-text" : "text-black"}`}>
+                <Text className={`font-bold mb-2 ${isDark ? "text-dark-text" : "text-black"}`}>
                   Shipment
                 </Text>
                 {tracking.shipment.carrier && (
@@ -230,7 +230,7 @@ export default function TrackOrderScreen() {
           {tracking.delivery && (
             <View className="px-4 mt-4">
               <View className={cardClass}>
-                <Text className={`font-geist font-bold mb-2 ${isDark ? "text-dark-text" : "text-black"}`}>
+                <Text className={`font-bold mb-2 ${isDark ? "text-dark-text" : "text-black"}`}>
                   Delivery
                 </Text>
                 <View className="flex-row justify-between py-1.5">
@@ -239,6 +239,14 @@ export default function TrackOrderScreen() {
                     {(tracking.delivery.logistical_status ?? tracking.delivery.status).replace(/_/g, " ")}
                   </Text>
                 </View>
+                <TouchableOpacity
+                  onPress={() => router.push(`/orders/pod/${tracking.order_id}` as any)}
+                  className="mt-2"
+                >
+                  <Text className="text-primary text-sm font-semibold">
+                    View my delivery code →
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
           )}
@@ -249,7 +257,7 @@ export default function TrackOrderScreen() {
               <View className={cardClass}>
                 <View className="flex-row items-center gap-2 mb-2">
                   <MapPin size={16} color={isDark ? "#c6c5cf" : "#71717A"} />
-                  <Text className={`font-geist font-bold ${isDark ? "text-dark-text" : "text-black"}`}>
+                  <Text className={`font-bold ${isDark ? "text-dark-text" : "text-black"}`}>
                     Delivery address
                   </Text>
                 </View>

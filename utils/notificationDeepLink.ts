@@ -55,10 +55,15 @@ export function resolveNotificationRoute(data: NotificationDeepLinkData): string
       // 7.3: ITEM_UNFULFILLED -- an item Markt couldn't find a
       // replacement seller for, awaiting the buyer's escalation choice.
       return `/orders/escalation/${reference_id}`;
+    case "fulfilment_allocation":
+      // 12.1-12.2: FULFILMENT_REQUEST / seller-facing pending-allocations
+      // list -- not scoped to this one allocation id since the list
+      // itself is small and the seller likely has other pending items
+      // too; opening straight to the list is more useful than a
+      // single-allocation detail view that doesn't otherwise exist.
+      return "/fulfilment/allocations";
     default:
-      // fulfilment_allocation (no seller-side screen yet -- see
-      // Unfinished-Tasks.md), offer, review, user: no dedicated screen
-      // today.
+      // offer, review, user: no dedicated screen today.
       return null;
   }
 }

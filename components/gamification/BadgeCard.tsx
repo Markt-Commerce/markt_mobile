@@ -54,7 +54,7 @@ export default function BadgeCard({
 
       <Text
         numberOfLines={1}
-        className={`font-geist font-bold text-xs text-center ${
+        className={`font-bold text-xs text-center ${
           isDark ? "text-[#f0f1f2]" : "text-black"
         }`}
       >

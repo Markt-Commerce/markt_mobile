@@ -61,7 +61,7 @@ const Row = ({
     <View className={`w-10 h-10 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
       <Icon size={20} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.5} />
     </View>
-    <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{label}</Text>
+    <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{label}</Text>
   </TouchableOpacity>
 );
 
@@ -222,10 +222,10 @@ export default function NavDrawer({
                 <X size={24} color={isDark ? "#c6c5cf" : "#71717A"} strokeWidth={1.5} />
               </TouchableOpacity>
             </View>
-            <Text className={`font-geist font-bold text-xl ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+            <Text className={`font-bold text-xl ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
               {displayName}
             </Text>
-            <Text className={`font-inter text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={1}>
+            <Text className={`text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={1}>
               @{profile?.username ?? "user"}
             </Text>
             <View className="flex-row mt-4 gap-2">
@@ -233,7 +233,7 @@ export default function NavDrawer({
                 className={`px-3 py-1 rounded ${role === "buyer" ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-surface"}`}
               >
                 <Text
-                  className={`text-[10px] font-geist font-bold uppercase tracking-wider ${role === "buyer" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                  className={`text-[10px] font-bold uppercase tracking-wider ${role === "buyer" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
                 >
                   Buyer
                 </Text>
@@ -242,7 +242,7 @@ export default function NavDrawer({
                 className={`px-3 py-1 rounded ${role === "seller" ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-surface"}`}
               >
                 <Text
-                  className={`text-[10px] font-geist font-bold uppercase tracking-wider ${role === "seller" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                  className={`text-[10px] font-bold uppercase tracking-wider ${role === "seller" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
                 >
                   Seller
                 </Text>
@@ -258,7 +258,7 @@ export default function NavDrawer({
               activeOpacity={0.85}
             >
               <RefreshCw size={18} color="white" strokeWidth={2} />
-              <Text className="text-white font-geist font-bold text-sm">
+              <Text className="text-white font-bold text-sm">
                 Switch to {role === "buyer" ? "Seller" : "Buyer"}
               </Text>
             </TouchableOpacity>

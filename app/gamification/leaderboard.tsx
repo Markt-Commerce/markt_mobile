@@ -60,7 +60,7 @@ export default function LeaderboardScreen() {
               }`}
             >
               <Text
-                className={`font-geist font-bold text-xs ${
+                className={`font-bold text-xs ${
                   active ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"
                 }`}
               >
@@ -87,7 +87,7 @@ export default function LeaderboardScreen() {
           <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
         </TouchableOpacity>
         <Text
-          className={`text-lg font-geist font-bold ml-2 ${
+          className={`text-lg font-bold ml-2 ${
             isDark ? "text-[#f0f1f2]" : "text-black"
           }`}
         >
@@ -108,11 +108,11 @@ export default function LeaderboardScreen() {
             className="rounded p-4 flex-row items-center justify-between"
             style={{ backgroundColor: "#E94C2A" }}
           >
-            <Text className="text-white font-geist font-bold text-sm">
+            <Text className="text-white font-bold text-sm">
               Your rank · #{yourRank.rank}
-              <Text className="font-inter"> of {yourRank.out_of.toLocaleString()}</Text>
+              <Text className=""> of {yourRank.out_of.toLocaleString()}</Text>
             </Text>
-            <Text className="text-white font-geist font-bold text-sm">
+            <Text className="text-white font-bold text-sm">
               {yourRank.points.toLocaleString()} pts
             </Text>
           </View>
@@ -142,7 +142,7 @@ export default function LeaderboardScreen() {
             </View>
           ) : (
             <Text
-              className={`text-center font-inter text-sm py-16 ${
+              className={`text-center text-sm py-16 ${
                 isDark ? "text-[#c6c5cf]" : "text-tertiary"
               }`}
             >

@@ -254,7 +254,7 @@ export default function FeedScreen() {
               accessibilityLabel={t.label}
             >
               <Text
-                className={`font-geist font-bold text-[13px] tracking-widest uppercase ${selectedTab === t.id ? "text-primary" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                className={`font-bold text-[13px] tracking-widest uppercase ${selectedTab === t.id ? "text-primary" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
               >
                 {t.label}
               </Text>
@@ -282,7 +282,7 @@ export default function FeedScreen() {
               accessibilityLabel={n.name}
             >
               <Text
-                className={`font-geist font-bold text-[10px] tracking-widest uppercase ${selectedTab === n.id ? "text-primary" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                className={`font-bold text-[10px] tracking-widest uppercase ${selectedTab === n.id ? "text-primary" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
                 numberOfLines={1}
                 style={{ maxWidth: 100 }}
               >
@@ -309,7 +309,7 @@ export default function FeedScreen() {
             accessibilityLabel="Explore communities"
           >
             <Compass size={16} color="#E94C2A" strokeWidth={2} />
-            <Text className="font-geist font-bold text-[13px] tracking-widest uppercase text-primary">Explore</Text>
+            <Text className="font-bold text-[13px] tracking-widest uppercase text-primary">Explore</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push("/markets")}
@@ -318,7 +318,7 @@ export default function FeedScreen() {
             accessibilityLabel="Browse markets"
           >
             <Store size={16} color="#E94C2A" strokeWidth={2} />
-            <Text className="font-geist font-bold text-[13px] tracking-widest uppercase text-primary">Markets</Text>
+            <Text className="font-bold text-[13px] tracking-widest uppercase text-primary">Markets</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
@@ -363,7 +363,7 @@ export default function FeedScreen() {
           loadingMore ? (
             <View className="py-2 items-center">
               <ActivityIndicator size="small" color="#E94C2A" />
-              <Text className={`font-geist font-bold text-[10px] tracking-widest uppercase mt-4 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Discovering more content</Text>
+              <Text className={`font-bold text-[10px] tracking-widest uppercase mt-4 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Discovering more content</Text>
             </View>
           ) : <View className="h-10" />
         }
@@ -373,10 +373,10 @@ export default function FeedScreen() {
               <View className={`w-24 h-24 rounded items-center justify-center mb-8 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
                 <Search size={40} color={isDark ? "#f0f1f2" : "#A1A1AA"} strokeWidth={1} />
               </View>
-              <Text className={`font-geist font-bold text-2xl text-center leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`font-bold text-2xl text-center leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                 {selectedTab === "following" ? "Expand your\ncommunity" : "The gallery is\nempty for now"}
               </Text>
-              <Text className={`font-inter text-base mt-4 text-center leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`text-base mt-4 text-center leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                 {role === "buyer"
                   ? "Explore trending creators or discover unique products curated just for you."
                   : "Start building your presence. Post your first product or share a story."}
@@ -388,7 +388,7 @@ export default function FeedScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Create something new"
               >
-                <Text className="text-white font-geist font-bold text-sm tracking-widest uppercase">Begin Creating</Text>
+                <Text className="text-white font-bold text-sm tracking-widest uppercase">Begin Creating</Text>
               </TouchableOpacity>
             </View>
           ) : null

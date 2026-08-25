@@ -171,7 +171,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
       handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
     >
       <BottomSheetScrollView className="p-4">
-        <Text className={`text-lg font-geist font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Product</Text>
+        <Text className={`text-lg font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Product</Text>
 
         {/* In-flight banner — visible while a slow network keeps us waiting */}
         {sending && (
@@ -200,7 +200,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         <Input name='description' label='Description' placeholder='Describe your product…' control={control} multiline errors={errors} />
 
         {/* Category IDs */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Categories</Text>
+        <Text className={`mb-2 text-xs font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Categories</Text>
         <View className="flex-row flex-wrap gap-3 p-3 pr-4">
           {selectedCategories.map(cat => (
             <View key={cat.id.toString()} className={`flex-row items-center border rounded px-3 py-1 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
@@ -217,18 +217,18 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
             <Text className={`text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>+ Add Categories</Text>
           </TouchableOpacity>
         </View>
-        {errors.category_ids && <Text className="text-error text-xs font-geist mt-1">{errors.category_ids.message}</Text>}
+        {errors.category_ids && <Text className="text-error text-xs mt-1">{errors.category_ids.message}</Text>}
 
         {/* Product Images */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Product Images</Text>
+        <Text className={`mb-2 text-xs font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Product Images</Text>
         {Array.isArray(Imagevalue) && Imagevalue.length > 0 && (
-          <Text className={`text-xs font-inter mb-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Long press on each image to remove it</Text>
+          <Text className={`text-xs mb-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Long press on each image to remove it</Text>
         )}
         {/* <<< IMPORTANT: pass value & onChange so we can receive images >>> */}
         <InstagramGrid value={Imagevalue} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} />
 
         {/* Optional forms*/}
-        <Text className={`text-xs font-geist font-bold uppercase tracking-[2px] mt-6 mb-3 ${isDark ? "text-[#f0f1f2]" : "text-tertiary"}`}>Optional Details</Text>
+        <Text className={`text-xs font-bold uppercase tracking-[2px] mt-6 mb-3 ${isDark ? "text-[#f0f1f2]" : "text-tertiary"}`}>Optional Details</Text>
 
         {/* Barcode */}
         <Input name='barcode' label='Barcode' placeholder='Scan or enter a barcode' control={control} errors={errors} />
@@ -253,7 +253,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
           className={`bg-primary p-3 rounded mt-4 flex-row items-center justify-center gap-2 ${sending ? "opacity-70" : ""}`}
         >
           {sending && <ActivityIndicator size="small" color="white" />}
-          <Text className="text-white text-center font-geist font-bold">
+          <Text className="text-white text-center font-bold">
             {stage === "uploading"
               ? "Uploading images…"
               : stage === "creating"

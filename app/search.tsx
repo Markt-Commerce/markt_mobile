@@ -169,7 +169,7 @@ export default function SearchPage() {
       className={`flex-row items-center gap-2 ${viewAllEnabled ? "" : "opacity-30"}`}
     >
       <Text
-        className={`font-geist font-bold text-[10px] tracking-widest uppercase ${headingColor}`}
+        className={`font-bold text-[10px] tracking-widest uppercase ${headingColor}`}
       >
         {label}
       </Text>
@@ -189,13 +189,13 @@ export default function SearchPage() {
           />
           <View className="flex-1">
             <Text
-              className={`font-geist font-bold text-sm tracking-tight ${headingColor}`}
+              className={`font-bold text-sm tracking-tight ${headingColor}`}
               numberOfLines={1}
             >
               {item.shop_name}
             </Text>
             <Text
-              className={`font-geist font-bold text-[9px] tracking-widest uppercase mt-1.5 ${mutedColor}`}
+              className={`font-bold text-[9px] tracking-widest uppercase mt-1.5 ${mutedColor}`}
             >
               {item.total_products
                 ? `${item.total_products} product${item.total_products === 1 ? "" : "s"}`
@@ -244,7 +244,7 @@ export default function SearchPage() {
         >
           <Search size={20} color={iconColor} strokeWidth={1.5} />
           <TextInput
-            className={`ml-4 flex-1 font-geist font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+            className={`ml-4 flex-1 font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
             placeholder="Search products, sellers, posts…"
             placeholderTextColor={mutedIconColor}
             value={query}
@@ -281,7 +281,7 @@ export default function SearchPage() {
             >
               <ChevronLeft size={14} color={iconColor} strokeWidth={2} />
               <Text
-                className={`font-geist font-bold text-[10px] tracking-widest uppercase ${headingColor}`}
+                className={`font-bold text-[10px] tracking-widest uppercase ${headingColor}`}
               >
                 All results
               </Text>
@@ -301,11 +301,11 @@ export default function SearchPage() {
             <Search size={40} color={mutedIconColor} strokeWidth={1} />
           </View>
           <Text
-            className={`font-geist font-bold text-xl text-center leading-tight ${headingColor}`}
+            className={`font-bold text-xl text-center leading-tight ${headingColor}`}
           >
             No results found
           </Text>
-          <Text className={`font-inter text-center mt-4 leading-6 ${mutedColor}`}>
+          <Text className={`text-center mt-4 leading-6 ${mutedColor}`}>
             Our search couldn't find a match for your query. Try different
             keywords or explore trending categories.
           </Text>
@@ -313,12 +313,12 @@ export default function SearchPage() {
       ) : filteredViewEmpty ? (
         <View className="flex-1 justify-center items-center px-12">
           <Text
-            className={`font-geist font-bold text-base text-center ${headingColor}`}
+            className={`font-bold text-base text-center ${headingColor}`}
           >
             No {sectionTitle[view as Exclude<SearchView, "all">].toLowerCase()}{" "}
             for “{query.trim()}”
           </Text>
-          <Text className={`font-inter text-center mt-3 leading-6 ${mutedColor}`}>
+          <Text className={`text-center mt-3 leading-6 ${mutedColor}`}>
             Try different keywords, or go back to all results.
           </Text>
         </View>
@@ -343,7 +343,7 @@ export default function SearchPage() {
             <View className="py-6">
               <View className="flex-row items-center justify-between mb-4 px-6">
                 <Text
-                  className={`font-geist font-bold text-xs tracking-[0.2em] uppercase ${headingColor}`}
+                  className={`font-bold text-xs tracking-[0.2em] uppercase ${headingColor}`}
                 >
                   Sellers
                 </Text>
@@ -367,7 +367,7 @@ export default function SearchPage() {
             >
               <View className="flex-row items-center justify-between mb-2 px-6">
                 <Text
-                  className={`font-geist font-bold text-xs tracking-[0.2em] uppercase ${headingColor}`}
+                  className={`font-bold text-xs tracking-[0.2em] uppercase ${headingColor}`}
                 >
                   Products
                 </Text>
@@ -387,7 +387,7 @@ export default function SearchPage() {
             >
               <View className="flex-row items-center justify-between mb-4 px-6">
                 <Text
-                  className={`font-geist font-bold text-xs tracking-[0.2em] uppercase ${headingColor}`}
+                  className={`font-bold text-xs tracking-[0.2em] uppercase ${headingColor}`}
                 >
                   Social Feed
                 </Text>

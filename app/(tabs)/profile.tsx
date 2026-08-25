@@ -33,7 +33,7 @@ function Section({
 }) {
   return (
     <View className="px-6 mt-8">
-      <Text className={`font-geist font-bold text-[11px] tracking-[2px] uppercase mb-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+      <Text className={`font-bold text-[11px] tracking-[2px] uppercase mb-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
         {title}
       </Text>
       <View className={`border rounded overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
@@ -69,8 +69,8 @@ function Row({
           <Icon size={18} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.7} />
         </View>
         <View className="flex-1">
-          <Text className={`font-geist font-bold text-[15px] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{title}</Text>
-          <Text className={`font-inter text-[13px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{subtitle}</Text>
+          <Text className={`font-bold text-[15px] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{title}</Text>
+          <Text className={`text-[13px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{subtitle}</Text>
         </View>
       </View>
       <ArrowRight size={18} color={isDark ? "#c6c5cf" : "#71717A"} strokeWidth={1.7} />
@@ -170,10 +170,10 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="px-6 pt-8">
-          <Text className={`font-geist font-bold text-[28px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className={`font-bold text-[28px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
             Profile
           </Text>
-          <Text className={`font-inter text-base mt-2 leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className={`text-base mt-2 leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
             Manage your identity, understand your active role, and jump into account tasks.
           </Text>
         </View>
@@ -188,13 +188,13 @@ export default function ProfileScreen() {
                 className="rounded"
               />
               <View className="flex-1">
-                <Text className={`font-geist font-bold text-[24px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+                <Text className={`font-bold text-[24px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
                   {displayName}
                 </Text>
-                <Text className={`font-inter text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={1}>
+                <Text className={`text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={1}>
                   @{profile?.username ?? "user"}
                 </Text>
-                <Text className={`font-geist font-bold text-[10px] tracking-[2px] uppercase mt-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                <Text className={`font-bold text-[10px] tracking-[2px] uppercase mt-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
                   {role} account active
                 </Text>
               </View>
@@ -207,7 +207,7 @@ export default function ProfileScreen() {
                 className="w-full h-12 rounded bg-primary items-center justify-center"
               >
                 <Text
-                  className="text-white font-geist font-bold text-[11px] tracking-[2px] uppercase"
+                  className="text-white font-bold text-[11px] tracking-[2px] uppercase"
                   numberOfLines={1}
                 >
                   Edit Profile
@@ -223,7 +223,7 @@ export default function ProfileScreen() {
               >
                 <ArrowRightLeft size={16} color={isDark ? "#1a1c1d" : "#FFFFFF"} strokeWidth={2} />
                 <Text
-                  className={`font-geist font-bold text-[11px] tracking-[2px] uppercase ${isDark ? "text-[#1a1c1d]" : "text-white"}`}
+                  className={`font-bold text-[11px] tracking-[2px] uppercase ${isDark ? "text-[#1a1c1d]" : "text-white"}`}
                   numberOfLines={1}
                 >
                   {switchingRole
