@@ -40,6 +40,12 @@
       "expo-asset",
       "expo-background-task",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Markt Commerce to use your camera to scan delivery codes."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",

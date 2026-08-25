@@ -1,21 +1,22 @@
 /**
  * 10.6 POD handshake, buyer side: displays the delivery code so the
- * rider can read it back and confirm receipt. The rider's confirm call
- * (single-order and run-based, markt_python) already just takes a
+ * rider can read/scan it back and confirm receipt. The rider's confirm
+ * call (single-order and run-based, markt_python) already just takes a
  * qr_code string with no assumption about how the rider learned it, so
  * this screen alone closes the buyer-facing half of the handshake.
  *
- * No real scannable QR image is rendered (would need a new dependency,
- * e.g. react-native-qrcode-svg, which this repo doesn't have) -- the
- * code is shown as large, spaced text instead. markt_logistics (the
- * rider app) has no scanning UI built yet either, so a scannable image
- * isn't useful until that exists; revisit together.
+ * Shows a real scannable QR image by default (react-native-qrcode-svg,
+ * built on react-native-svg -- already a dependency, no native module),
+ * with a toggle to fall back to the plain-text code for a rider who
+ * can't scan (no camera capability built into markt_logistics yet,
+ * poor lighting, etc).
  */
 import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, KeyRound, Clock } from "lucide-react-native";
+import { ArrowLeft, KeyRound, Clock, Type as TypeIcon } from "lucide-react-native";
+import QRCode from "react-native-qrcode-svg";
 import { getPodCode } from "../../../services/sections/orders";
 import { PodCode } from "../../../models/orders";
 import { useTheme } from "../../../components/themeProvider";
@@ -30,6 +31,7 @@ export default function OrderPodCodeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
+  const [showAsText, setShowAsText] = useState(false);
 
   const load = useCallback(
     (isRefresh = false) => {
@@ -110,16 +112,45 @@ export default function OrderPodCodeScreen() {
         ) : (
           <View className="flex-1 justify-center items-center py-10">
             <View className={`${cardClass} items-center px-8 py-10`}>
-              <KeyRound size={28} color={isDark ? "#f5f5f5" : "#000000"} />
-              <Text className={`${labelClass} mt-4 text-center`}>
-                Show this code to your rider to confirm delivery
-              </Text>
-              <Text
-                selectable
-                className={`mt-4 text-center font-bold text-2xl tracking-[0.15em] ${isDark ? "text-dark-text" : "text-black"}`}
+              {showAsText ? (
+                <>
+                  <KeyRound size={28} color={isDark ? "#f5f5f5" : "#000000"} />
+                  <Text className={`${labelClass} mt-4 text-center`}>
+                    Read this code out to your rider to confirm delivery
+                  </Text>
+                  <Text
+                    selectable
+                    className={`mt-4 text-center font-bold text-2xl tracking-[0.15em] ${isDark ? "text-dark-text" : "text-black"}`}
+                  >
+                    {data.code}
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Text className={`${labelClass} mb-4 text-center`}>
+                    Show this to your rider to scan and confirm delivery
+                  </Text>
+                  <View className="bg-white p-3 rounded">
+                    <QRCode value={data.code} size={180} />
+                  </View>
+                </>
+              )}
+
+              <TouchableOpacity
+                onPress={() => setShowAsText((prev) => !prev)}
+                activeOpacity={0.8}
+                className={`flex-row items-center gap-1.5 mt-5 h-9 px-4 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                accessibilityRole="button"
               >
-                {data.code}
-              </Text>
+                {showAsText ? (
+                  <KeyRound size={14} color={isDark ? "#f5f5f5" : "#000000"} />
+                ) : (
+                  <TypeIcon size={14} color={isDark ? "#f5f5f5" : "#000000"} />
+                )}
+                <Text className={`text-xs font-bold ${isDark ? "text-dark-text" : "text-black"}`}>
+                  {showAsText ? "Show QR instead" : "Show code instead"}
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
