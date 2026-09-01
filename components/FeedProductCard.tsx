@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { View, Text, TouchableOpacity, Pressable } from "react-native";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { ShoppingCart, MessageCircle, UserPlus } from "lucide-react-native";
 import type { FeedProduct } from "../types/feed";
 import { addToCart } from "../services/sections/cart";
@@ -27,6 +27,7 @@ interface Props {
 }
 
 function FeedProductCard({ product, onMessageSeller }: Props) {
+  const router = useRouter();
   const { role, user } = useUser();
   const isOwnProduct = user?.user_id && product.seller?.user?.id && product.seller.user.id === user.user_id;
   const { show } = useToast();
@@ -85,6 +86,11 @@ function FeedProductCard({ product, onMessageSeller }: Props) {
   const handleMessageSeller = useCallback(() => {
     onMessageSeller?.(product);
   }, [onMessageSeller, product]);
+
+  const handleOpenShop = useCallback(() => {
+    if (!product.seller?.id) return;
+    router.push(`/shopDetails/${product.seller.id}`);
+  }, [router, product.seller?.id]);
 
   const handleFollowToggle = useCallback(async (e: { stopPropagation?: () => void }) => {
     e?.stopPropagation?.();
@@ -150,10 +156,21 @@ function FeedProductCard({ product, onMessageSeller }: Props) {
 
               <View className="flex-row items-center justify-between mt-2 gap-2">
                 <View className="flex-1 flex-row items-center gap-1.5">
-                  <Text className={`text-xs flex-shrink ${isDark ? "text-[#c6c5cf]" : "text-text-secondary"}`} numberOfLines={1}>
-                    By {product.seller?.shop_name ?? "Seller"}
-                    {followerCount > 0 && ` · ${followerCount} follower${followerCount !== 1 ? "s" : ""}`}
-                  </Text>
+                  {/* Tapping the shop opened the product, same as anywhere
+                      else on the card. productDetails already routes shop
+                      taps to /shopDetails/<seller_id>; this matches it. */}
+                  <Pressable
+                    onPress={handleOpenShop}
+                    disabled={!product.seller?.id}
+                    className="flex-shrink"
+                    accessibilityRole="link"
+                    accessibilityLabel={`View ${product.seller?.shop_name ?? "seller"}'s shop`}
+                  >
+                    <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-text-secondary"}`} numberOfLines={1}>
+                      By {product.seller?.shop_name ?? "Seller"}
+                      {followerCount > 0 && ` · ${followerCount} follower${followerCount !== 1 ? "s" : ""}`}
+                    </Text>
+                  </Pressable>
                   {sellerGamification && (
                     <TierBadge
                       tier={sellerGamification.tier.key}
