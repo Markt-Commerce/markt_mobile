@@ -123,17 +123,33 @@ export interface WithdrawalRequestBody {
   currency?: string;
 }
 
-export interface Withdrawal {
+export type WithdrawalStatus =
+  | "pending"
+  | "processing"
+  | "completed"
+  | "failed"
+  | string;
+
+/**
+ * What POST /wallet/withdraw returns. Deliberately narrower than the list
+ * shape below — the create endpoint serializes through
+ * WithdrawalResponseSchema and sends only these five fields.
+ */
+export interface WithdrawalReceipt {
   id: string;
   amount: number;
   currency: string;
-  status: "pending" | "processing" | "completed" | "failed" | string;
+  status: WithdrawalStatus;
+  created_at: string | null;
+}
+
+/** What GET /wallet/withdrawals returns per row. */
+export interface Withdrawal extends WithdrawalReceipt {
   account_name: string;
   /** Masked server-side — only the last four digits are ever sent. */
   account_number: string;
   paystack_transfer_ref: string | null;
   failure_reason: string | null;
-  created_at: string | null;
 }
 
 /** Minimum enforced by the backend (MIN_WITHDRAWAL_AMOUNT). */
@@ -144,8 +160,8 @@ export const MIN_TOPUP_AMOUNT = 100;
 
 export async function requestWithdrawal(
   body: WithdrawalRequestBody
-): Promise<Withdrawal> {
-  const res = await request<Withdrawal | { data: Withdrawal }>(
+): Promise<WithdrawalReceipt> {
+  const res = await request<WithdrawalReceipt | { data: WithdrawalReceipt }>(
     `${BASE_URL}/wallet/withdraw`,
     {
       method: "POST",
