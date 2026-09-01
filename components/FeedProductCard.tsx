@@ -6,7 +6,7 @@
  * - Message seller (buyers)
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { View, Text, TouchableOpacity, Pressable } from "react-native";
 import { Link } from "expo-router";
 import { ShoppingCart, MessageCircle, UserPlus } from "lucide-react-native";
@@ -26,7 +26,7 @@ interface Props {
   onMessageSeller?: (product: FeedProduct) => void;
 }
 
-export default function FeedProductCard({ product, onMessageSeller }: Props) {
+function FeedProductCard({ product, onMessageSeller }: Props) {
   const { role, user } = useUser();
   const isOwnProduct = user?.user_id && product.seller?.user?.id && product.seller.user.id === user.user_id;
   const { show } = useToast();
@@ -39,14 +39,25 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
   const followeeId = product.seller?.user?.id;
   const followerCount = product.seller?.follower_count ?? 0;
   const { profile: sellerGamification } = useGamificationLookup(followeeId);
-  const topBadges = [...(sellerGamification?.badges ?? [])]
-    .sort((a, b) => b.priority - a.priority)
-    .slice(0, 2);
+  const topBadges = useMemo(
+    () =>
+      [...(sellerGamification?.badges ?? [])]
+        .sort((a, b) => b.priority - a.priority)
+        .slice(0, 2),
+    [sellerGamification]
+  );
+
+  // Follow state can change elsewhere (seller profile, another card for the
+  // same seller); re-seed from the refreshed payload rather than staying on
+  // whatever was true at mount.
+  useEffect(() => {
+    setIsFollowing(product.seller?.is_followed ?? false);
+  }, [product.seller?.user?.id, product.seller?.is_followed]);
 
   const imageUrl = product.images?.[0]?.url;
   const isBuyer = role === "buyer";
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = useCallback(async () => {
     if (adding) return;
     setAdding(true);
     try {
@@ -69,13 +80,13 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
     } finally {
       setAdding(false);
     }
-  };
+  }, [adding, product.id, product.name, show]);
 
-  const handleMessageSeller = () => {
+  const handleMessageSeller = useCallback(() => {
     onMessageSeller?.(product);
-  };
+  }, [onMessageSeller, product]);
 
-  const handleFollowToggle = async (e: { stopPropagation?: () => void }) => {
+  const handleFollowToggle = useCallback(async (e: { stopPropagation?: () => void }) => {
     e?.stopPropagation?.();
     if (!followeeId || followLoading) return;
     setFollowLoading(true);
@@ -95,7 +106,7 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
     } finally {
       setFollowLoading(false);
     }
-  };
+  }, [followeeId, followLoading, isFollowing, show]);
 
   return (
     <View className="px-4 pt-4">
@@ -210,3 +221,22 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
     </View>
   );
 }
+
+// See FeedPostCard — same reasoning. Seller identity and follow state are
+// compared explicitly because the seller object is rebuilt on every fetch.
+export default React.memo(FeedProductCard, (prev, next) => {
+  const a = prev.product;
+  const b = next.product;
+  return (
+    a.id === b.id &&
+    a.name === b.name &&
+    a.price === b.price &&
+    a.rating === b.rating &&
+    a.reviews_count === b.reviews_count &&
+    a.images === b.images &&
+    a.seller?.user?.id === b.seller?.user?.id &&
+    a.seller?.is_followed === b.seller?.is_followed &&
+    a.seller?.follower_count === b.seller?.follower_count &&
+    prev.onMessageSeller === next.onMessageSeller
+  );
+});
