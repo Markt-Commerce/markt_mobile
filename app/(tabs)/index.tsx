@@ -14,7 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Plus, Search, Compass, Store } from "lucide-react-native";
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from "@gorhom/bottom-sheet";
 import { useRouter, useFocusEffect } from "expo-router";
-import type { FeedItem, FeedProduct } from "../../types/feed";
+import type { FeedItem, FeedPost, FeedProduct } from "../../types/feed";
 import { useUser } from "../../hooks/userContextProvider";
 import { switchUserRole } from "../../services/sections/auth";
 import { setUserSession } from "../../services/authStorage";
@@ -30,6 +30,7 @@ import FeedPostCard from "../../components/FeedPostCard";
 import FeedProductCard from "../../components/FeedProductCard";
 import ShopStrip from "../../components/ShopStrip";
 import { useFeed } from "../../hooks/useFeed";
+import ContentActionsSheet, { type ContentActionsTarget } from "../../components/ContentActionsSheet";
 import { isFeedPost, isFeedProduct } from "../../types/feed";
 import { getMyNiches } from "../../services/sections/niches";
 import { getUserProfile } from "../../services/sections/profile";
@@ -92,6 +93,54 @@ export default function FeedScreen() {
   const [chatRoomOpen, setChatRoomOpen] = useState(false);
   const [selectedBuyerId, setSelectedBuyerId] = useState<string>("");
   const [productForChat, setProductForChat] = useState<FeedProduct | null>(null);
+
+  // Save / share / report / block. The sheet lives here rather than in the
+  // card so only one is ever mounted, and so blocking can drop the blocked
+  // author's items from the list immediately.
+  const [actionsTarget, setActionsTarget] = useState<ContentActionsTarget | null>(null);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [hiddenAuthorIds, setHiddenAuthorIds] = useState<Set<string>>(new Set());
+
+  const openPostActions = useCallback((post: FeedPost) => {
+    setActionsTarget({
+      type: "post",
+      id: post.id,
+      title: post.caption?.trim() ? post.caption.trim().slice(0, 60) : "This post",
+      authorId: post.user?.id,
+      authorName: post.user?.username,
+      isOwn: !!user?.user_id && post.user?.id === user.user_id,
+      shareUrl: `markt://post/${post.id}`,
+    });
+  }, [user?.user_id]);
+
+  const openProductActions = useCallback((product: FeedProduct) => {
+    setActionsTarget({
+      type: "product",
+      id: product.id,
+      title: product.name,
+      authorId: product.seller?.user?.id,
+      authorName: product.seller?.shop_name ?? product.seller?.user?.username,
+      isOwn: !!user?.user_id && product.seller?.user?.id === user.user_id,
+      shareUrl: `markt://product/${product.id}`,
+    });
+  }, [user?.user_id]);
+
+  const handleSavedChange = useCallback((next: boolean) => {
+    const id = actionsTarget?.id;
+    if (!id) return;
+    setSavedIds((prev) => {
+      const copy = new Set(prev);
+      if (next) copy.add(id);
+      else copy.delete(id);
+      return copy;
+    });
+  }, [actionsTarget?.id]);
+
+  // The server filters blocked authors out of the next feed response; this
+  // removes them from what's already on screen so the block reads as instant.
+  const handleBlocked = useCallback((userId: string) => {
+    setHiddenAuthorIds((prev) => new Set(prev).add(userId));
+  }, []);
 
   // Shop strip collapse on scroll: hide after a sustained scroll down, show only
   // after a sustained scroll back up. Distance is accumulated per-direction so a
@@ -363,14 +412,31 @@ export default function FeedScreen() {
     loadMore();
   }, [loadMore]);
 
+  const visibleItems = useMemo(() => {
+    if (hiddenAuthorIds.size === 0) return items;
+    return items.filter((item) => {
+      const authorId = isFeedPost(item)
+        ? item.user?.id
+        : item.seller?.user?.id;
+      return !authorId || !hiddenAuthorIds.has(authorId);
+    });
+  }, [items, hiddenAuthorIds]);
+
   const renderItem = useCallback(
     ({ item }: { item: FeedItem }) => {
-      if (isFeedPost(item)) return <FeedPostCard post={item} />;
+      if (isFeedPost(item))
+        return <FeedPostCard post={item} onOpenActions={openPostActions} />;
       if (isFeedProduct(item))
-        return <FeedProductCard product={item} onMessageSeller={openProductChat} />;
+        return (
+          <FeedProductCard
+            product={item}
+            onMessageSeller={openProductChat}
+            onOpenActions={openProductActions}
+          />
+        );
       return null;
     },
-    [openProductChat]
+    [openProductChat, openPostActions, openProductActions]
   );
 
 
@@ -379,7 +445,7 @@ export default function FeedScreen() {
       {header}
       <FlatList
         className={isDark ? "bg-[#1a1c1d]" : "bg-white"}
-        data={items}
+        data={visibleItems}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         onScroll={handleScroll}
@@ -518,6 +584,14 @@ export default function FeedScreen() {
           onCreated={fetchMyNiches}
         />
       )}
+
+      <ContentActionsSheet
+        target={actionsTarget}
+        saved={!!actionsTarget && savedIds.has(actionsTarget.id)}
+        onClose={() => setActionsTarget(null)}
+        onSavedChange={handleSavedChange}
+        onBlocked={handleBlocked}
+      />
 
       {/* FAB — bottom right, opens create menu */}
       <TouchableOpacity

@@ -9,7 +9,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { View, Text, TouchableOpacity, Pressable } from "react-native";
 import { Link, useRouter } from "expo-router";
-import { ShoppingCart, MessageCircle, UserPlus } from "lucide-react-native";
+import { ShoppingCart, MessageCircle, MoreHorizontal, UserPlus } from "lucide-react-native";
 import type { FeedProduct } from "../types/feed";
 import { addToCart } from "../services/sections/cart";
 import { followSeller, unfollowSeller } from "../services/sections/users";
@@ -24,9 +24,11 @@ import BadgeChip from "./gamification/BadgeChip";
 interface Props {
   product: FeedProduct;
   onMessageSeller?: (product: FeedProduct) => void;
+  /** Opens the save / share / report / block sheet. Omit to hide the "…". */
+  onOpenActions?: (product: FeedProduct) => void;
 }
 
-function FeedProductCard({ product, onMessageSeller }: Props) {
+function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
   const router = useRouter();
   const { role, user } = useUser();
   const isOwnProduct = user?.user_id && product.seller?.user?.id && product.seller.user.id === user.user_id;
@@ -87,6 +89,10 @@ function FeedProductCard({ product, onMessageSeller }: Props) {
     onMessageSeller?.(product);
   }, [onMessageSeller, product]);
 
+  const handleOpenActions = useCallback(() => {
+    onOpenActions?.(product);
+  }, [onOpenActions, product]);
+
   const handleOpenShop = useCallback(() => {
     if (!product.seller?.id) return;
     router.push(`/shopDetails/${product.seller.id}`);
@@ -132,6 +138,17 @@ function FeedProductCard({ product, onMessageSeller }: Props) {
                   <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-text-secondary"}`}>No image</Text>
                 </View>
               )}
+              {onOpenActions ? (
+                <Pressable
+                  onPress={handleOpenActions}
+                  hitSlop={10}
+                  className="absolute left-2 top-2 w-9 h-9 rounded-full bg-white/90 items-center justify-center"
+                  accessibilityRole="button"
+                  accessibilityLabel={`More options for ${product.name}`}
+                >
+                  <MoreHorizontal size={18} color="#3f3f46" />
+                </Pressable>
+              ) : null}
               <View className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-1">
                 <Text className="text-xs font-semibold text-text-primary">
                   ₦{product.price.toLocaleString()}
@@ -254,6 +271,7 @@ export default React.memo(FeedProductCard, (prev, next) => {
     a.seller?.user?.id === b.seller?.user?.id &&
     a.seller?.is_followed === b.seller?.is_followed &&
     a.seller?.follower_count === b.seller?.follower_count &&
-    prev.onMessageSeller === next.onMessageSeller
+    prev.onMessageSeller === next.onMessageSeller &&
+    prev.onOpenActions === next.onOpenActions
   );
 });

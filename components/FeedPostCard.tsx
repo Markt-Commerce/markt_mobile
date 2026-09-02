@@ -9,7 +9,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { View, Text, TouchableOpacity, Pressable, Share } from "react-native";
 import { Link, useRouter } from "expo-router";
-import { Heart, MessageCircle, Send } from "lucide-react-native";
+import { Heart, MessageCircle, MoreHorizontal, Send } from "lucide-react-native";
 import type { FeedPost } from "../types/feed";
 import { likePost } from "../services/sections/post";
 import { useToast } from "./ToastProvider";
@@ -22,9 +22,11 @@ import TierBadge from "./gamification/TierBadge";
 interface Props {
   post: FeedPost;
   onLike?: (postId: string) => Promise<void>;
+  /** Opens the save / share / report / block sheet. Omit to hide the "…". */
+  onOpenActions?: (post: FeedPost) => void;
 }
 
-function FeedPostCard({ post, onLike }: Props) {
+function FeedPostCard({ post, onLike, onOpenActions }: Props) {
   const router = useRouter();
   const [likeCount, setLikeCount] = useState(post.likes_count);
   const [likedByMe, setLikedByMe] = useState(post.liked_by_me ?? false);
@@ -71,6 +73,10 @@ function FeedPostCard({ post, onLike }: Props) {
     router.push(`/postDetails/${post.id}`);
   }, [router, post.id]);
 
+  const handleOpenActions = useCallback(() => {
+    onOpenActions?.(post);
+  }, [onOpenActions, post]);
+
   const handleOpenAuthor = useCallback(() => {
     if (!post.user?.id) return;
     router.push(`/profile/${post.user.id}`);
@@ -111,10 +117,11 @@ function FeedPostCard({ post, onLike }: Props) {
               header went to a profile, but there was nowhere to go: shopDetails
               takes a numeric seller id, post authors can be buyers, and
               /users/<id>/public was a stub until recently. */}
+          <View className="flex-row items-center mb-3">
           <Pressable
             onPress={handleOpenAuthor}
             disabled={!post.user?.id}
-            className="flex-row items-center mb-3"
+            className="flex-row items-center flex-1"
             accessibilityRole="link"
             accessibilityLabel={`View ${post.user?.username ?? "author"}'s profile`}
           >
@@ -151,6 +158,18 @@ function FeedPostCard({ post, onLike }: Props) {
               )}
             </View>
           </Pressable>
+            {onOpenActions ? (
+              <Pressable
+                onPress={handleOpenActions}
+                hitSlop={10}
+                className="w-11 h-11 -mr-2 items-center justify-center"
+                accessibilityRole="button"
+                accessibilityLabel="More options for this post"
+              >
+                <MoreHorizontal size={20} color={isDark ? "#c6c5cf" : "#876d64"} />
+              </Pressable>
+            ) : null}
+          </View>
 
           {/* Body: caption */}
           {post.caption ? (
@@ -222,6 +241,7 @@ export default React.memo(FeedPostCard, (prev, next) => {
     a.liked_by_me === b.liked_by_me &&
     a.caption === b.caption &&
     a.media === b.media &&
-    prev.onLike === next.onLike
+    prev.onLike === next.onLike &&
+    prev.onOpenActions === next.onOpenActions
   );
 });
