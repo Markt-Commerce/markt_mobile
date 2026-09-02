@@ -1,0 +1,162 @@
+/**
+ * Wallet top-up — hosted Paystack checkout in a WebView.
+ *
+ * Mirrors app/checkout/payscreen/[id].tsx. On return we call the server's
+ * verify endpoint rather than trusting the redirect: the client never decides
+ * that money moved.
+ */
+
+import React, { useCallback, useRef, useState } from "react";
+import { View, Text, ActivityIndicator, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { WebView, type WebViewNavigation } from "react-native-webview";
+import { ArrowLeft } from "lucide-react-native";
+import { useTheme } from "../../components/themeProvider";
+import { useToast } from "../../components/ToastProvider";
+import { verifyWalletTopUp } from "../../services/sections/wallet";
+import { isWalletReturnUrl, parseWalletDeepLink } from "../../utils/walletDeepLink";
+
+export default function WalletTopUpScreen() {
+  const router = useRouter();
+  const { show } = useToast();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
+  const { authorization_url, topup_id } = useLocalSearchParams<{
+    authorization_url?: string;
+    topup_id?: string;
+  }>();
+
+  const [verifying, setVerifying] = useState(false);
+  const handledReturn = useRef(false);
+
+  const finish = useCallback(
+    async (status: "success" | "failed", topupId?: string) => {
+      if (handledReturn.current) return;
+      handledReturn.current = true;
+
+      if (status !== "success") {
+        show({
+          variant: "error",
+          title: "Top-up not completed",
+          message: "No money has left your account.",
+        });
+        router.back();
+        return;
+      }
+
+      setVerifying(true);
+      try {
+        const result = await verifyWalletTopUp(topupId ?? (topup_id as string));
+        if (result.verified) {
+          show({
+            variant: "success",
+            title: "Wallet funded",
+            message: `${result.currency} ${result.amount.toLocaleString()} added to your wallet.`,
+          });
+        } else {
+          // Paystack hasn't settled it yet. The webhook will finish the job,
+          // so this is "pending", not "failed" — don't tell a user who paid
+          // that their money vanished.
+          show({
+            variant: "info",
+            title: "Top-up processing",
+            message: "We're confirming your payment. Your balance will update shortly.",
+          });
+        }
+      } catch {
+        show({
+          variant: "info",
+          title: "Top-up processing",
+          message: "We couldn't confirm it just yet. Pull to refresh in a moment.",
+        });
+      } finally {
+        setVerifying(false);
+        router.back();
+      }
+    },
+    [router, show, topup_id]
+  );
+
+  const handleReturnUrl = useCallback(
+    (url: string) => {
+      if (!isWalletReturnUrl(url)) return false;
+      const parsed = parseWalletDeepLink(url);
+      finish(parsed?.status ?? "failed", parsed?.topupId);
+      return true;
+    },
+    [finish]
+  );
+
+  if (verifying) {
+    return (
+      <SafeAreaView
+        className={`flex-1 items-center justify-center ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      >
+        <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+        <Text className={`mt-3 text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          Confirming top-up…
+        </Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (!authorization_url) {
+    return (
+      <SafeAreaView
+        className={`flex-1 items-center justify-center px-6 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      >
+        <Text
+          className={`text-center font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+        >
+          Payment link unavailable
+        </Text>
+        <TouchableOpacity
+          className="mt-4 px-6 py-3 rounded bg-primary"
+          onPress={() => router.back()}
+          accessibilityRole="button"
+        >
+          <Text className="text-white font-semibold">Go back</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView
+      className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      edges={["top", "left", "right", "bottom"]}
+    >
+      <View className="flex-row items-center px-4 py-3">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel top-up"
+        >
+          <ArrowLeft size={24} color={isDark ? "#f0f1f2" : "#000000"} />
+        </TouchableOpacity>
+        <Text
+          className={`ml-3 text-base font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+        >
+          Fund wallet
+        </Text>
+      </View>
+      <WebView
+        source={{ uri: authorization_url }}
+        style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}
+        onNavigationStateChange={(navState: WebViewNavigation) =>
+          handleReturnUrl(navState.url)
+        }
+        onShouldStartLoadWithRequest={(req) => !handleReturnUrl(req.url)}
+        startInLoadingState
+        renderLoading={() => (
+          <View className="flex-1 items-center justify-center">
+            <ActivityIndicator size="large" />
+          </View>
+        )}
+      />
+    </SafeAreaView>
+  );
+}

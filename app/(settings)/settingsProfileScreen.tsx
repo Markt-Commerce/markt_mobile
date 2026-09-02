@@ -17,6 +17,7 @@ import {
   ShieldOff,
   Trophy,
   UserCog,
+  Wallet,
 } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
 import Avatar from "../../components/Avatar";
@@ -279,6 +280,13 @@ export default function SettingsProfileScreen() {
             title="Password & Security"
             subtitle="Update credentials and protect access to your account."
             onPress={() => router.push("/(settings)/changePasswordScreen")}
+            dark={isDark}
+          />
+          <SettingsRow
+            icon={Wallet}
+            title="Wallet"
+            subtitle="View your balance, fund it, and withdraw to your bank."
+            onPress={() => router.push("/wallet" as any)}
             dark={isDark}
           />
           <SettingsRow
