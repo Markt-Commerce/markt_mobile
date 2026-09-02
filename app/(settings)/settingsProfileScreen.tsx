@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import {
   ArrowRight,
   Bell,
+  Bookmark,
   Globe,
   HelpCircle,
   Info,
@@ -13,6 +14,7 @@ import {
   LogOut,
   Palette,
   ShieldCheck,
+  ShieldOff,
   Trophy,
   UserCog,
 } from "lucide-react-native";
@@ -277,6 +279,20 @@ export default function SettingsProfileScreen() {
             title="Password & Security"
             subtitle="Update credentials and protect access to your account."
             onPress={() => router.push("/(settings)/changePasswordScreen")}
+            dark={isDark}
+          />
+          <SettingsRow
+            icon={Bookmark}
+            title="Saved"
+            subtitle="Posts and products you kept for later."
+            onPress={() => router.push("/saved" as any)}
+            dark={isDark}
+          />
+          <SettingsRow
+            icon={ShieldOff}
+            title="Blocked accounts"
+            subtitle="See who you've blocked and undo it."
+            onPress={() => router.push("/(settings)/blockedAccountsScreen" as any)}
             dark={isDark}
           />
           <SettingsRow
