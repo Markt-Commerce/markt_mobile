@@ -14,7 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Plus, Search, Compass, Store } from "lucide-react-native";
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from "@gorhom/bottom-sheet";
 import { useRouter, useFocusEffect } from "expo-router";
-import type { FeedItem, FeedProduct } from "../../types/feed";
+import type { FeedItem, FeedPost, FeedProduct } from "../../types/feed";
 import { useUser } from "../../hooks/userContextProvider";
 import { switchUserRole } from "../../services/sections/auth";
 import { setUserSession } from "../../services/authStorage";
@@ -30,6 +30,7 @@ import FeedPostCard from "../../components/FeedPostCard";
 import FeedProductCard from "../../components/FeedProductCard";
 import ShopStrip from "../../components/ShopStrip";
 import { useFeed } from "../../hooks/useFeed";
+import ContentActionsSheet, { type ContentActionsTarget } from "../../components/ContentActionsSheet";
 import { isFeedPost, isFeedProduct } from "../../types/feed";
 import { getMyNiches } from "../../services/sections/niches";
 import { getUserProfile } from "../../services/sections/profile";
@@ -49,6 +50,13 @@ const MAIN_TABS = [
 
 type TabId = "for_you" | "discover" | "trending" | "following" | string;
 
+// Hoisted so FlatList doesn't see a new element/object/function identity on
+// every render of the screen.
+const LIST_TOP_SPACER = <View className="h-4" />;
+const LIST_CONTENT_STYLE = { paddingBottom: 40 };
+const keyExtractor = (item: FeedItem) => item.id;
+const SIDE_DATA_TTL_MS = 60 * 1000;
+
 export default function FeedScreen() {
   const router = useRouter();
   const [selectedTab, setSelectedTab] = useState<TabId>("for_you");
@@ -61,7 +69,15 @@ export default function FeedScreen() {
 
   const { role, user, setRole } = useUser();
   const feedTab = selectedTab;
-  const { items, loading, loadingMore, hasNext, error, refresh, loadMore } = useFeed(feedTab);
+  const {
+    items,
+    initialLoading,
+    refreshing,
+    loadingMore,
+    error,
+    refresh,
+    loadMore,
+  } = useFeed(feedTab);
   const snapPoints = useMemo(() => ["30%"], []);
   const [menuIndex, setMenuIndex] = useState(-1);
 
@@ -77,6 +93,54 @@ export default function FeedScreen() {
   const [chatRoomOpen, setChatRoomOpen] = useState(false);
   const [selectedBuyerId, setSelectedBuyerId] = useState<string>("");
   const [productForChat, setProductForChat] = useState<FeedProduct | null>(null);
+
+  // Save / share / report / block. The sheet lives here rather than in the
+  // card so only one is ever mounted, and so blocking can drop the blocked
+  // author's items from the list immediately.
+  const [actionsTarget, setActionsTarget] = useState<ContentActionsTarget | null>(null);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [hiddenAuthorIds, setHiddenAuthorIds] = useState<Set<string>>(new Set());
+
+  const openPostActions = useCallback((post: FeedPost) => {
+    setActionsTarget({
+      type: "post",
+      id: post.id,
+      title: post.caption?.trim() ? post.caption.trim().slice(0, 60) : "This post",
+      authorId: post.user?.id,
+      authorName: post.user?.username,
+      isOwn: !!user?.user_id && post.user?.id === user.user_id,
+      shareUrl: `markt://post/${post.id}`,
+    });
+  }, [user?.user_id]);
+
+  const openProductActions = useCallback((product: FeedProduct) => {
+    setActionsTarget({
+      type: "product",
+      id: product.id,
+      title: product.name,
+      authorId: product.seller?.user?.id,
+      authorName: product.seller?.shop_name ?? product.seller?.user?.username,
+      isOwn: !!user?.user_id && product.seller?.user?.id === user.user_id,
+      shareUrl: `markt://product/${product.id}`,
+    });
+  }, [user?.user_id]);
+
+  const handleSavedChange = useCallback((next: boolean) => {
+    const id = actionsTarget?.id;
+    if (!id) return;
+    setSavedIds((prev) => {
+      const copy = new Set(prev);
+      if (next) copy.add(id);
+      else copy.delete(id);
+      return copy;
+    });
+  }, [actionsTarget?.id]);
+
+  // The server filters blocked authors out of the next feed response; this
+  // removes them from what's already on screen so the block reads as instant.
+  const handleBlocked = useCallback((userId: string) => {
+    setHiddenAuthorIds((prev) => new Set(prev).add(userId));
+  }, []);
 
   // Shop strip collapse on scroll: hide after a sustained scroll down, show only
   // after a sustained scroll back up. Distance is accumulated per-direction so a
@@ -98,7 +162,7 @@ export default function FeedScreen() {
     }).start();
   }, [stripCollapsed]);
 
-  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+  const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const y = Math.max(0, e.nativeEvent.contentOffset.y);
     const dy = y - lastScrollY.current;
     lastScrollY.current = y;
@@ -123,9 +187,9 @@ export default function FeedScreen() {
         setStripCollapsed(false);
       }
     }
-  };
+  }, [stripCollapsed]);
 
-  const openProductChat = (product: FeedProduct) => {
+  const openProductChat = useCallback((product: FeedProduct) => {
     const sellerUserId = product.seller?.user?.id;
     if (isOwnProductListing(user?.user_id, sellerUserId)) {
       show({
@@ -137,7 +201,7 @@ export default function FeedScreen() {
     }
     setProductForChat(product);
     productChatSheetRef.current?.expand();
-  };
+  }, [user?.user_id, show]);
 
   const openMenu = () => setMenuIndex(0);
   const closeMenu = () => setMenuIndex(-1);
@@ -206,16 +270,22 @@ export default function FeedScreen() {
     }
   }, []);
 
+  // Home is the tab users bounce back to constantly. Refetching the niche
+  // chips and profile on literally every focus meant two requests per return
+  // trip for data that changes rarely; a short TTL keeps them fresh without
+  // the churn. fetchMyNiches is still called directly after creating a niche.
+  const sideDataFetchedAt = useRef(0);
   useFocusEffect(
     useCallback(() => {
+      if (Date.now() - sideDataFetchedAt.current < SIDE_DATA_TTL_MS) return;
+      sideDataFetchedAt.current = Date.now();
       fetchMyNiches();
       getUserProfile().then(setProfile).catch(() => setProfile(null));
     }, [fetchMyNiches])
   );
 
-  useEffect(() => {
-    refresh();
-  }, [selectedTab]);
+  // The tab-change fetch lives in useFeed now — it knows whether the tab's
+  // cache is warm. Refetching from here defeated that cache on every mount.
 
   useEffect(() => {
     if (!error) return;
@@ -224,7 +294,10 @@ export default function FeedScreen() {
   }, [error]);
 
   // Header: shop strip + tabs (search lives in nav Search tab only to avoid duplicate)
-  const header = (
+  // Memoized because it sits outside the list and would otherwise rebuild the
+  // whole tab strip on every scroll-threshold crossing.
+  const header = useMemo(
+    () => (
     <>
       <Animated.View
         style={{
@@ -329,19 +402,42 @@ export default function FeedScreen() {
         </View>
       )}
     </>
+    ),
+    [stripHeight, isDark, selectedTab, myNiches, role, loadedStartCards, router]
   );
 
-  const renderItem = ({ item }: { item: FeedItem }) => {
-    if (isFeedPost(item)) return <FeedPostCard post={item} />;
-    if (isFeedProduct(item))
-      return (
-        <FeedProductCard
-          product={item}
-          onMessageSeller={openProductChat}
-        />
-      );
-    return null;
-  };
+  // loadMore already no-ops when there is no next page or a request is in
+  // flight, so this stays stable instead of churning with hasNext.
+  const handleEndReached = useCallback(() => {
+    loadMore();
+  }, [loadMore]);
+
+  const visibleItems = useMemo(() => {
+    if (hiddenAuthorIds.size === 0) return items;
+    return items.filter((item) => {
+      const authorId = isFeedPost(item)
+        ? item.user?.id
+        : item.seller?.user?.id;
+      return !authorId || !hiddenAuthorIds.has(authorId);
+    });
+  }, [items, hiddenAuthorIds]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: FeedItem }) => {
+      if (isFeedPost(item))
+        return <FeedPostCard post={item} onOpenActions={openPostActions} />;
+      if (isFeedProduct(item))
+        return (
+          <FeedProductCard
+            product={item}
+            onMessageSeller={openProductChat}
+            onOpenActions={openProductActions}
+          />
+        );
+      return null;
+    },
+    [openProductChat, openPostActions, openProductActions]
+  );
 
 
   return (
@@ -349,16 +445,23 @@ export default function FeedScreen() {
       {header}
       <FlatList
         className={isDark ? "bg-[#1a1c1d]" : "bg-white"}
-        data={items}
-        keyExtractor={(item) => item.id}
+        data={visibleItems}
+        keyExtractor={keyExtractor}
         renderItem={renderItem}
         onScroll={handleScroll}
         scrollEventThrottle={16}
-        onEndReached={() => hasNext && loadMore()}
+        onEndReached={handleEndReached}
         onEndReachedThreshold={0.5}
-        refreshing={loading}
+        refreshing={refreshing}
         onRefresh={refresh}
-        ListHeaderComponent={<View className="h-4" />}
+        // Feed rows are tall (a full-bleed square image each), so a small
+        // window keeps far fewer mounted cells and offscreen images alive.
+        removeClippedSubviews
+        initialNumToRender={4}
+        maxToRenderPerBatch={4}
+        windowSize={7}
+        updateCellsBatchingPeriod={50}
+        ListHeaderComponent={LIST_TOP_SPACER}
         ListFooterComponent={
           loadingMore ? (
             <View className="py-2 items-center">
@@ -368,7 +471,11 @@ export default function FeedScreen() {
           ) : <View className="h-10" />
         }
         ListEmptyComponent={
-          !loading ? (
+          initialLoading ? (
+            <View className="py-20 items-center">
+              <ActivityIndicator size="large" color="#E94C2A" />
+            </View>
+          ) : (
             <View className="items-center justify-center py-12 px-8">
               <View className={`w-24 h-24 rounded items-center justify-center mb-8 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
                 <Search size={40} color={isDark ? "#f0f1f2" : "#A1A1AA"} strokeWidth={1} />
@@ -391,9 +498,9 @@ export default function FeedScreen() {
                 <Text className="text-white font-bold text-sm tracking-widest uppercase">Begin Creating</Text>
               </TouchableOpacity>
             </View>
-          ) : null
+          )
         }
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={LIST_CONTENT_STYLE}
       />
 
       <BottomSheet
@@ -477,6 +584,14 @@ export default function FeedScreen() {
           onCreated={fetchMyNiches}
         />
       )}
+
+      <ContentActionsSheet
+        target={actionsTarget}
+        saved={!!actionsTarget && savedIds.has(actionsTarget.id)}
+        onClose={() => setActionsTarget(null)}
+        onSavedChange={handleSavedChange}
+        onBlocked={handleBlocked}
+      />
 
       {/* FAB — bottom right, opens create menu */}
       <TouchableOpacity
