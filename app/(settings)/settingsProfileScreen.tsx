@@ -15,6 +15,7 @@ import {
   Palette,
   ShieldCheck,
   ShieldOff,
+  Trash2,
   Trophy,
   UserCog,
   Wallet,
@@ -369,6 +370,19 @@ export default function SettingsProfileScreen() {
             title="About Markt"
             subtitle="Read product, policy, and platform information."
             onPress={() => router.push("/support/about" as any)}
+            last
+            dark={isDark}
+          />
+        </SettingsSection>
+
+        {/* Apple App Store 5.1.1(v): account deletion has to be reachable from
+            inside the app, not only from a website. */}
+        <SettingsSection title="Danger Zone" dark={isDark}>
+          <SettingsRow
+            icon={Trash2}
+            title="Delete account"
+            subtitle="Permanently delete your account and personal data."
+            onPress={() => router.push("/(settings)/deleteAccountScreen" as any)}
             last
             dark={isDark}
           />
