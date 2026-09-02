@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import {
   ArrowRight,
   Bell,
+  Bookmark,
   Globe,
   HelpCircle,
   Info,
@@ -13,6 +14,7 @@ import {
   LogOut,
   Palette,
   ShieldCheck,
+  ShieldOff,
   Trophy,
   UserCog,
   Wallet,
@@ -285,6 +287,20 @@ export default function SettingsProfileScreen() {
             title="Wallet"
             subtitle="View your balance, fund it, and withdraw to your bank."
             onPress={() => router.push("/wallet" as any)}
+            dark={isDark}
+          />
+          <SettingsRow
+            icon={Bookmark}
+            title="Saved"
+            subtitle="Posts and products you kept for later."
+            onPress={() => router.push("/saved" as any)}
+            dark={isDark}
+          />
+          <SettingsRow
+            icon={ShieldOff}
+            title="Blocked accounts"
+            subtitle="See who you've blocked and undo it."
+            onPress={() => router.push("/(settings)/blockedAccountsScreen" as any)}
             dark={isDark}
           />
           <SettingsRow
