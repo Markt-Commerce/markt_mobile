@@ -71,6 +71,11 @@ function FeedPostCard({ post, onLike }: Props) {
     router.push(`/postDetails/${post.id}`);
   }, [router, post.id]);
 
+  const handleOpenAuthor = useCallback(() => {
+    if (!post.user?.id) return;
+    router.push(`/profile/${post.user.id}`);
+  }, [router, post.user?.id]);
+
   const handleLike = useCallback(async () => {
     if (isLiking) return;
     setIsLiking(true);
@@ -101,8 +106,18 @@ function FeedPostCard({ post, onLike }: Props) {
     <Link href={`/postDetails/${post.id}`} asChild>
       <TouchableOpacity activeOpacity={0.85} className="px-4 pt-4">
         <View className={`rounded-card border p-4 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-          {/* Header: avatar, username, niche */}
-          <View className="flex-row items-center mb-3">
+          {/* Header: avatar, username, niche.
+              Now an actual link. This card's docstring has always claimed the
+              header went to a profile, but there was nowhere to go: shopDetails
+              takes a numeric seller id, post authors can be buyers, and
+              /users/<id>/public was a stub until recently. */}
+          <Pressable
+            onPress={handleOpenAuthor}
+            disabled={!post.user?.id}
+            className="flex-row items-center mb-3"
+            accessibilityRole="link"
+            accessibilityLabel={`View ${post.user?.username ?? "author"}'s profile`}
+          >
             <Avatar
               uri={post.user?.profile_picture}
               name={post.user?.username}
@@ -135,7 +150,7 @@ function FeedPostCard({ post, onLike }: Props) {
                 </Text>
               )}
             </View>
-          </View>
+          </Pressable>
 
           {/* Body: caption */}
           {post.caption ? (
