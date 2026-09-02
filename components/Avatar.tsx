@@ -4,7 +4,8 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, Platform } from "react-native";
+import { View, Text, Platform } from "react-native";
+import { Image } from "expo-image";
 
 function getInitials(name: string | null | undefined, fallback = "?"): string {
   if (!name || typeof name !== "string") return fallback;
@@ -35,7 +36,7 @@ interface AvatarProps {
   className?: string;
 }
 
-export default function Avatar({ uri, name, size = 40, className = "" }: AvatarProps) {
+function Avatar({ uri, name, size = 40, className = "" }: AvatarProps) {
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
@@ -59,7 +60,9 @@ export default function Avatar({ uri, name, size = 40, className = "" }: AvatarP
         <Image
           source={{ uri }}
           style={{ width: size, height: size }}
-          resizeMode="cover"
+          contentFit="cover"
+          recyclingKey={uri}
+          cachePolicy="memory-disk"
           onError={() => setImageError(true)}
         />
       ) : (
@@ -79,3 +82,7 @@ export default function Avatar({ uri, name, size = 40, className = "" }: AvatarP
     </View>
   );
 }
+
+// All props are primitives, so the default shallow compare is exactly right —
+// and Avatar renders once per feed row, chat bubble and list item.
+export default React.memo(Avatar);
