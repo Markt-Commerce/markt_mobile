@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { Clock } from "lucide-react-native";
+import { MessageSquare } from "lucide-react-native";
 import { BuyerRequest } from "../models/feed";
 import { router } from "expo-router";
 import { useTheme } from "./themeProvider";
@@ -59,42 +59,27 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
       // three competing outlines per row and 32px of width given away for
       // nothing. The row now runs edge to edge and a single hairline separates
       // one request from the next.
-      className={`px-4 py-4 border-b ${
+      className={`px-4 py-3 border-b ${
         isDark ? "bg-[#1a1c1d] border-[#2f3132]" : "bg-white border-border-light"
       }`}
     >
       {/* Who, and how the request stands */}
-      <View className="flex-row items-center mb-3">
+      <View className="flex-row items-center mb-2">
         <Avatar
           uri={req.user?.profile_picture_url}
           name={req.user?.username}
-          size={36}
+          size={28}
         />
-        <View className="flex-1 ml-3">
+        <View className="flex-1 ml-2.5">
           <Text
-            className={`font-semibold text-[15px] ${
-              isDark ? "text-[#f0f1f2]" : "text-black"
-            }`}
+            className={`text-[14px] ${isDark ? "text-[#c6c5cf]" : "text-[#52525B]"}`}
             numberOfLines={1}
           >
-            {req.user?.username || "Unknown buyer"}
+            <Text className={`font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              {req.user?.username || "Unknown buyer"}
+            </Text>
+            {deadline ? `  ·  ${deadline}` : ""}
           </Text>
-          {deadline ? (
-            <View className="flex-row items-center mt-0.5">
-              <Clock
-                size={11}
-                color={isDark ? "#8f9195" : "#A1A1AA"}
-                strokeWidth={2}
-              />
-              <Text
-                className={`text-[12px] ml-1 ${
-                  isDark ? "text-[#8f9195]" : "text-tertiary"
-                }`}
-              >
-                {deadline}
-              </Text>
-            </View>
-          ) : null}
         </View>
 
         {/* Tint only, no outline. Colour already carries the meaning; the
@@ -120,17 +105,17 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
 
       {/* What they want */}
       <Text
-        className={`font-bold text-[17px] leading-[23px] ${
+        className={`font-bold text-[16px] leading-[21px] ${
           isDark ? "text-[#f0f1f2]" : "text-black"
         }`}
-        numberOfLines={2}
+        numberOfLines={1}
       >
         {req.title || "Untitled request"}
       </Text>
       {req.description ? (
         <Text
-          className={`text-[14px] leading-[20px] mt-1 ${
-            isDark ? "text-[#c6c5cf]" : "text-tertiary"
+          className={`text-[13px] leading-[18px] mt-0.5 ${
+            isDark ? "text-[#8f9195]" : "text-tertiary"
           }`}
           numberOfLines={2}
         >
@@ -140,19 +125,17 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
 
       {/* Budget and the action. No border-t: the gap does that job, and the
           budget is what a seller actually scans for, so it leads. */}
-      <View className="flex-row items-end justify-between mt-3">
-        <View>
+      <View className="flex-row items-center justify-between mt-2.5">
+        <View className="flex-row items-baseline">
           <Text
-            className={`text-[10px] font-bold uppercase tracking-[1.5px] ${
+            className={`text-[10px] font-bold uppercase tracking-[1.2px] mr-1.5 ${
               isDark ? "text-[#8f9195]" : "text-tertiary"
             }`}
           >
             Budget
           </Text>
           <Text
-            className={`text-[20px] font-bold mt-0.5 ${
-              isDark ? "text-[#f0f1f2]" : "text-black"
-            }`}
+            className={`text-[16px] font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
           >
             ₦{(req.budget ?? 0).toLocaleString()}
           </Text>
@@ -160,13 +143,22 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
 
         {!isOwnRequest && onMessagePress ? (
           <TouchableOpacity
-            className="px-5 h-11 bg-primary rounded-lg items-center justify-center"
+            className={`flex-row items-center px-4 h-9 rounded-lg justify-center ${
+              isDark ? "bg-[#f0f1f2]" : "bg-black"
+            }`}
             onPress={onMessagePress}
             activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel={`Message ${req.user?.username || "buyer"} about this request`}
           >
-            <Text className="text-white text-[13px] font-bold tracking-[0.5px]">
+            <MessageSquare
+              size={14}
+              color={isDark ? "#1a1c1d" : "#FFFFFF"}
+              strokeWidth={2.2}
+            />
+            <Text
+              className={`text-[13px] font-semibold ml-1.5 ${isDark ? "text-[#1a1c1d]" : "text-white"}`}
+            >
               Message
             </Text>
           </TouchableOpacity>
