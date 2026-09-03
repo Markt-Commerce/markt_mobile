@@ -1,7 +1,7 @@
 /**
  * ShopStrip — Instagram story–style horizontal shop strip
  *
- * Circular avatars + shop name, verified ring, "Discover more" tile.
+ * Rounded-square shop marks + shop name, verified ring, "Discover more" tile.
  */
 
 import React, { useEffect, useState } from "react";
@@ -13,7 +13,7 @@ import type { ShopLite } from "../services/sections/shops";
 import Avatar from "./Avatar";
 import { useTheme } from "./themeProvider";
 
-const AVATAR_SIZE = 64;
+const AVATAR_SIZE = 48;
 
 export default function ShopStrip() {
   const [shops, setShops] = useState<ShopLite[]>([]);
@@ -41,19 +41,19 @@ export default function ShopStrip() {
 
   if (loading) {
     return (
-      <View className={`py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+      <View className={`py-3 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, gap: 20 }}
+          contentContainerStyle={{ paddingHorizontal: 16, gap: 14 }}
         >
           {[1, 2, 3, 4].map((i) => (
-            <View key={i} className="items-center" style={{ width: AVATAR_SIZE + 24 }}>
+            <View key={i} className="items-center" style={{ width: AVATAR_SIZE + 14 }}>
               <View
-                className={`rounded-full ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
-                style={{ width: AVATAR_SIZE, height: AVATAR_SIZE }}
+                className={isDark ? "bg-[#2f3132]" : "bg-bg-muted"}
+                style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 12 }}
               />
-              <View className={`mt-2 h-3 w-16 rounded ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`} />
+              <View className={`mt-1.5 h-2.5 w-12 rounded ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`} />
             </View>
           ))}
         </ScrollView>
@@ -65,7 +65,7 @@ export default function ShopStrip() {
     return (
       <TouchableOpacity
         onPress={() => router.push("/discoverShops")}
-        className={`mx-4 my-4 py-3 rounded-xl flex-row items-center justify-center gap-2 ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
+        className={`mx-4 my-3 py-2.5 rounded-xl flex-row items-center justify-center gap-2 ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
         accessibilityRole="button"
         accessibilityLabel="Discover shops"
       >
@@ -76,11 +76,11 @@ export default function ShopStrip() {
   }
 
   return (
-    <View className={`py-4 border-b flex-row items-center ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+    <View className={`py-3 border-b flex-row items-center ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 20, paddingRight: 12 }}
+        contentContainerStyle={{ paddingHorizontal: 16, gap: 14, paddingRight: 10 }}
         style={{ flex: 1 }}
       >
         {shops.slice(0, 12).map((shop) => {
@@ -92,15 +92,16 @@ export default function ShopStrip() {
               key={shop.id}
               onPress={() => router.push(`/shopDetails/${shop.id}`)}
               className="items-center"
-              style={{ minWidth: AVATAR_SIZE + 24, minHeight: AVATAR_SIZE + 36 }}
+              style={{ minWidth: AVATAR_SIZE + 14, minHeight: AVATAR_SIZE + 24 }}
               accessibilityRole="button"
               accessibilityLabel={`View ${label}`}
             >
               <View
-                className="items-center justify-center rounded-full overflow-hidden"
+                className="items-center justify-center overflow-hidden"
                 style={{
                   width: AVATAR_SIZE,
                   height: AVATAR_SIZE,
+                  borderRadius: 12,
                   borderWidth: isVerified ? 2.5 : 0,
                   borderColor: "#e26136",
                 }}
@@ -109,12 +110,13 @@ export default function ShopStrip() {
                   uri={shop.user?.profile_picture}
                   name={label}
                   size={isVerified ? AVATAR_SIZE - 5 : AVATAR_SIZE}
+                  shape="rounded"
                 />
               </View>
               <Text
-                className={`mt-2 text-xs font-medium text-center ${isDark ? "text-[#f0f1f2]" : "text-text-primary"}`}
+                className={`mt-1.5 text-[11px] font-medium text-center ${isDark ? "text-[#f0f1f2]" : "text-text-primary"}`}
                 numberOfLines={1}
-                style={{ maxWidth: AVATAR_SIZE + 16 }}
+                style={{ maxWidth: AVATAR_SIZE + 14 }}
               >
                 {label}
               </Text>
@@ -125,7 +127,7 @@ export default function ShopStrip() {
 
       <TouchableOpacity
         onPress={() => router.push("/discoverShops")}
-        className={`flex-row items-center gap-1.5 px-3 py-2 mr-4 rounded-full ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
+        className={`flex-row items-center gap-1 px-2.5 py-2 mr-3 rounded-full ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
         accessibilityRole="button"
         accessibilityLabel="Discover more shops"
       >

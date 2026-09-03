@@ -34,9 +34,11 @@ interface AvatarProps {
   name?: string | null;
   size?: number;
   className?: string;
+  /** People are circular by default; shop discovery tiles use a soft square. */
+  shape?: "circle" | "rounded";
 }
 
-function Avatar({ uri, name, size = 40, className = "" }: AvatarProps) {
+function Avatar({ uri, name, size = 40, className = "", shape = "circle" }: AvatarProps) {
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
@@ -49,10 +51,11 @@ function Avatar({ uri, name, size = 40, className = "" }: AvatarProps) {
 
   return (
     <View
-      className={`${className} rounded-full overflow-hidden flex items-center justify-center`}
+      className={`${className} overflow-hidden flex items-center justify-center`}
       style={{
         width: size,
         height: size,
+        borderRadius: shape === "circle" ? size / 2 : Math.min(12, size * 0.25),
         backgroundColor: hasValidUri ? "#f4f1f0" : bgColor,
       }}
     >

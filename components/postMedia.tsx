@@ -20,6 +20,7 @@ import {
 import { Image } from "expo-image";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { Play, X } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -296,6 +297,7 @@ export function MediaViewerModal({
 }) {
   const [index, setIndex] = useState(initialIndex);
   const listRef = useRef<FlatList<MediaItem>>(null);
+  const insets = useSafeAreaInsets();
 
   return (
     <Modal
@@ -337,7 +339,7 @@ export function MediaViewerModal({
             <ViewerPage item={item} onClose={onClose} active={i === index} />
           )}
         />
-        <View style={styles.viewerTopBar}>
+        <View style={[styles.viewerTopBar, { height: insets.top + 56, paddingTop: insets.top }]}>
           <Pressable
             onPress={onClose}
             hitSlop={12}

@@ -108,6 +108,10 @@ export interface CreatePostRequest {
   like_count: number;
   /** true if current user liked this post — use for orange filled heart (API_CONTRACT_FEED_AND_FOLLOW) */
   liked_by_me?: boolean;
+  views_count?: number;
+  view_count?: number;
+  views?: number;
+  is_saved?: boolean;
   comment_count: number;
   categories: string;
   created_at: string;
@@ -164,4 +168,3 @@ export interface CommentCreatedResponse {
   created_at: string;
   user: User;
 }
-

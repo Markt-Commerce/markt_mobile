@@ -68,6 +68,12 @@ export interface FeedPost {
   comments_count: number;
   /** true if current user liked this post — use for orange filled heart (API_CONTRACT_FEED_AND_FOLLOW §1.1). Fallback to likes_count > 0 if absent. */
   liked_by_me?: boolean;
+  /** Present only when the feed endpoint exposes view analytics. */
+  views_count?: number;
+  view_count?: number;
+  /** Compatibility alias used by some post endpoints. */
+  views?: number;
+  is_saved?: boolean;
   created_at: string;
   score?: number;
   niche: FeedPostNiche | null;
