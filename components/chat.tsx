@@ -128,6 +128,29 @@ function getReactionIcon(type: string) {
   return reactionIcons[type] ?? Smile;
 }
 
+/**
+ * Whether two messages belong to the same visual run.
+ *
+ * Same sender, same minute. A burst of five messages then renders as one block
+ * with a single avatar and a single timestamp, instead of five avatars and five
+ * timestamps stacked down the screen -- which is most of what made the thread
+ * feel sparse and repetitive.
+ */
+function isSameGroup(a?: ChatMessage, b?: ChatMessage) {
+  if (!a || !b) return false;
+  if (String(a.sender_id) !== String(b.sender_id)) return false;
+  const ta = new Date(a.created_at);
+  const tb = new Date(b.created_at);
+  if (isNaN(ta.getTime()) || isNaN(tb.getTime())) return false;
+  return (
+    ta.getFullYear() === tb.getFullYear() &&
+    ta.getMonth() === tb.getMonth() &&
+    ta.getDate() === tb.getDate() &&
+    ta.getHours() === tb.getHours() &&
+    ta.getMinutes() === tb.getMinutes()
+  );
+}
+
 function formatTime(iso: string) {
   const d = new Date(iso);
   const now = new Date();
@@ -943,25 +966,54 @@ export default function ChatScreen({
     }
   }
 
-  function renderMessage({ item }: { item: ChatMessage }) {
+  function renderMessage({ item, index }: { item: ChatMessage; index: number }) {
     const isMe = item.sender_id === myId || String(item.sender_id) === myId;
     const avatar = getMessageAvatarProps(item, isMe, avatarCtx);
 
+    // Runs of messages from one person in the same minute render as a single
+    // block: the avatar sits beside the last bubble (so it lines up with where
+    // the run ends, as Messenger and Instagram do) and only that bubble carries
+    // a timestamp. Everything above it gets a spacer of the same width so the
+    // bubbles stay on one edge.
+    const prev = sortedMessages[index - 1];
+    const next = sortedMessages[index + 1];
+    const continuesPrev = isSameGroup(prev, item);
+    const continuesNext = isSameGroup(item, next);
+    const isGroupEnd = !continuesNext;
+    // Reactions still need the gap above them even mid-run.
+    const hasReactions = getReactionSummaries(item).length > 0;
+
+    // Bubbles were `rounded` -- a 4px radius, so nearly square. A proper radius
+    // with the adjoining corners tightened makes a run read as one connected
+    // block, and the tail corner squares off at the end of the run.
+    const bubbleShape = [
+      "rounded-2xl",
+      isMe
+        ? `${continuesPrev ? "rounded-tr-md" : ""} ${continuesNext ? "rounded-br-md" : "rounded-br-sm"}`
+        : `${continuesPrev ? "rounded-tl-md" : ""} ${continuesNext ? "rounded-bl-md" : "rounded-bl-sm"}`,
+    ].join(" ");
+
     return (
       <View
-        className={`flex-row px-4 py-1.5 ${isMe ? "justify-end" : "justify-start"}`}
+        className={`flex-row px-3 ${continuesPrev ? "pt-0.5" : "pt-2.5"} ${
+          isGroupEnd ? "pb-0.5" : "pb-0"
+        } ${isMe ? "justify-end" : "justify-start"}`}
       >
-        {!isMe && (
-          <View className="mr-2 mt-1">
-            <Avatar
-              key={`peer-${item.id}-${avatar.uri ?? "init"}`}
-              uri={avatar.uri}
-              name={avatar.name}
-              size={32}
-            />
-          </View>
-        )}
-        <View className={`max-w-[80%] ${isMe ? "items-end" : "items-start"}`}>
+        {!isMe &&
+          (isGroupEnd ? (
+            <View className="mr-2">
+              <Avatar
+                key={`peer-${item.id}-${avatar.uri ?? "init"}`}
+                uri={avatar.uri}
+                name={avatar.name}
+                size={30}
+              />
+            </View>
+          ) : (
+            // Keeps the bubbles in a run flush with the one that has the avatar.
+            <View className="mr-2" style={{ width: 30 }} />
+          ))}
+        <View className={`max-w-[86%] ${isMe ? "items-end" : "items-start"}`}>
           {item.message_type === "text" &&
             (() => {
               const sharedRequest = item.message_data?.request as
@@ -976,7 +1028,7 @@ export default function ChatScreen({
               ) {
                 return (
                   <View
-                    className={`px-4 py-3 rounded min-w-[200px] ${isMe ? "rounded-br bg-primary" : isDark ? "rounded-bl bg-dark-surface border border-dark-border" : "rounded-bl bg-white border border-border"}`}
+                    className={`px-4 py-3 min-w-[200px] ${bubbleShape} ${isMe ? "bg-primary" : isDark ? "bg-dark-surface border border-dark-border" : "bg-white border border-border"}`}
                   >
                     <Text
                       className={`text-xs font-medium uppercase tracking-wide ${isMe ? "text-white/80" : isDark ? "text-dark-muted" : "text-tertiary"}`}
@@ -1027,7 +1079,7 @@ export default function ChatScreen({
               }
               return (
                 <View
-                  className={`px-4 py-3 rounded ${isMe ? "rounded-br bg-primary" : isDark ? "rounded-bl bg-dark-surface border border-dark-border" : "rounded-bl bg-white border border-border"}`}
+                  className={`px-4 py-2.5 ${bubbleShape} ${isMe ? "bg-primary" : isDark ? "bg-dark-surface border border-dark-border" : "bg-white border border-border"}`}
                 >
                   <Text
                     className={`text-base ${isMe ? "text-white" : isDark ? "text-dark-text" : "text-black"}`}
@@ -1137,7 +1189,7 @@ export default function ChatScreen({
                 <View className="gap-2">
                   {caption ? (
                     <View
-                      className={`px-4 py-3 rounded ${isMe ? "rounded-br bg-primary" : isDark ? "rounded-bl bg-dark-surface border border-dark-border" : "rounded-bl bg-white border border-border"}`}
+                      className={`px-4 py-2.5 ${bubbleShape} ${isMe ? "bg-primary" : isDark ? "bg-dark-surface border border-dark-border" : "bg-white border border-border"}`}
                     >
                       <Text
                         className={`text-base ${isMe ? "text-white" : isDark ? "text-dark-text" : "text-black"}`}
@@ -1235,10 +1287,18 @@ export default function ChatScreen({
             </View>
           )}
 
-          <View className="flex-row items-center mt-1.5 gap-2 flex-wrap">
-            <Text className="text-tertiary text-[11px]">
-              {formatTime(item.created_at)}
-            </Text>
+          <View
+            className={`flex-row items-center gap-2 flex-wrap ${
+              isGroupEnd || hasReactions ? "mt-1" : ""
+            }`}
+          >
+            {/* One timestamp per run, not one per message. A burst of five
+                messages used to stack five identical times down the screen. */}
+            {isGroupEnd ? (
+              <Text className="text-tertiary text-[11px]">
+                {formatTime(item.created_at)}
+              </Text>
+            ) : null}
             {!isNaN(Number(item.id)) && Number(item.id) > 0 && (
               <>
                 {getReactionSummaries(item).map((r) => (
@@ -1327,16 +1387,10 @@ export default function ChatScreen({
             <Text className="text-tertiary text-[10px] mt-0.5">Pending…</Text>
           )}
         </View>
-        {isMe && (
-          <View className="ml-2 mt-1">
-            <Avatar
-              key={`me-${item.id}-${avatar.uri ?? "init"}`}
-              uri={avatar.uri}
-              name={avatar.name ?? user?.email}
-              size={32}
-            />
-          </View>
-        )}
+        {/* No avatar on your own messages. This is a 1:1 thread -- alignment
+            and colour already say who sent it -- and the avatar cost 40px of
+            width on every outgoing line. Neither WhatsApp nor Instagram shows
+            one here. */}
       </View>
     );
   }
@@ -1434,7 +1488,7 @@ export default function ChatScreen({
       style={{ paddingBottom: inputBottomPad }}
     >
       <View
-        className={`flex-1 flex-row items-center rounded pl-4 pr-1 py-1.5 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+        className={`flex-1 flex-row items-center rounded-3xl pl-4 pr-1 py-1.5 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
       >
         <InputComponent
           value={input}
@@ -1460,7 +1514,9 @@ export default function ChatScreen({
       <TouchableOpacity
         onPress={handleSendText}
         disabled={sending}
-        className="w-11 h-11 rounded bg-primary items-center justify-center"
+        className="w-11 h-11 rounded-full bg-primary items-center justify-center"
+        accessibilityRole="button"
+        accessibilityLabel="Send message"
       >
         <Send size={20} color="white" />
       </TouchableOpacity>
