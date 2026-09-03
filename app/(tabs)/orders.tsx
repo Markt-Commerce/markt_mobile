@@ -34,7 +34,11 @@ import { useToast } from "../../components/ToastProvider";
 import OrdersList from "../../components/orderList";
 import { useTheme } from "../../components/themeProvider";
 import { useShippingAddress } from "../../hooks/useShippingAddress";
-import { isShippingAddressUsable } from "../../utils/shippingAddress";
+import {
+  isShippingAddressUsable,
+  missingShippingFields,
+} from "../../utils/shippingAddress";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
 import ShippingAddressCard from "../../components/shippingAddressCard";
 
 type TabId = "cart" | "ongoing" | "completed";
@@ -107,11 +111,14 @@ function MyCartTab() {
   };
 
   const handleCheckout = async () => {
-    if (!isShippingAddressUsable(shipping.address)) {
+    const missing = missingShippingFields(shipping.address);
+    if (missing.length > 0) {
+      // Name the fields. "Add a shipping address" was unhelpful when an address
+      // was already filled in and only one field was blank.
       show({
         variant: "error",
-        title: "Shipping address required",
-        message: "Add a shipping address before checking out.",
+        title: "Shipping address incomplete",
+        message: `Add your ${missing.join(", ")} before checking out.`,
       });
       return;
     }
@@ -127,11 +134,17 @@ function MyCartTab() {
       });
       fetchCart();
       router.push(`/checkout/payment-method/${checkout.order_id}`);
-    } catch {
+    } catch (e) {
+      // Was a bare `catch {}` that discarded the error and always said "Please
+      // try again" -- advice that could never work when the cause was a
+      // rejected payload rather than a transient failure.
       show({
         variant: "error",
         title: "Checkout failed",
-        message: "Please try again.",
+        message: friendlyErrorMessage(
+          e,
+          "We couldn't create your order. Please check your details and try again."
+        ),
       });
     } finally {
       setProcessing(false);

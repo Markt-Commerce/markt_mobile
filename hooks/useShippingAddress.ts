@@ -51,7 +51,10 @@ export function useShippingAddress() {
           resolved.postal_code = reverse.postalCode ?? undefined;
         }
       } catch {
-        // Reverse geocoding is a nice-to-have — coordinates alone still satisfy checkout.
+        // Reverse geocoding is best-effort, but it is not optional: checkout
+        // requires recipient_name, street_address, city, state and country, so
+        // coordinates alone do NOT satisfy it. When the lookup fails the buyer
+        // has to fill the rest in by hand -- shippingAddressCard names which.
       }
       return resolved;
     } finally {
