@@ -16,6 +16,7 @@ import AppBar from "../../components/AppBar";
 import NavDrawer from "../../components/NavDrawer";
 import { useTheme } from "../../components/themeProvider";
 import { useUser } from "../../hooks/userContextProvider";
+import { useCart } from "../../hooks/cartContext";
 
 const TAB_BAR_CONTENT_HEIGHT = 52;
 const TAB_BAR_PADDING_TOP = 6;
@@ -29,6 +30,7 @@ const BRAND_PRIMARY = "#E94C2A";
 function TabsWithDrawer() {
   const { isOpen, closeDrawer } = useDrawer();
   const { profile } = useUser();
+  const { itemCount } = useCart();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const insets = useSafeAreaInsets();
@@ -109,6 +111,23 @@ function TabsWithDrawer() {
             name="orders"
             options={{
               title: "Orders",
+              // Cap the label rather than let a long number stretch the pill
+              // and shove the tab layout around. undefined (not 0) hides it.
+              tabBarBadge: itemCount > 0 ? (itemCount > 99 ? "99+" : itemCount) : undefined,
+              tabBarBadgeStyle: {
+                backgroundColor: BRAND_PRIMARY,
+                color: SURFACE_WHITE,
+                fontSize: 10,
+                fontWeight: "700",
+                minWidth: 18,
+                height: 18,
+                lineHeight: 14,
+                borderRadius: 9,
+              },
+              tabBarAccessibilityLabel:
+                itemCount > 0
+                  ? `Orders, ${itemCount} ${itemCount === 1 ? "item" : "items"} in cart`
+                  : "Orders",
               tabBarIcon: ({ color, focused }) => (
                 <ShoppingBag color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />
               ),
