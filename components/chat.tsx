@@ -196,12 +196,25 @@ export default function ChatScreen({
   const [myProfile, setMyProfile] = useState<ChatOtherUser | undefined>();
   /** Fullscreen image viewer for tapped chat images */
   const [viewerUri, setViewerUri] = useState<string | null>(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const didInitialScrollRef = useRef(false);
   const pendingScrollToBottomRef = useRef(false);
 
   const myId = user?.user_id?.toString() ?? "";
   const PER_PAGE = 30;
   const hasValidRoomId = Number.isFinite(roomId) && roomId > 0;
+
+  useEffect(() => {
+    if (embedInSheet) return;
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [embedInSheet]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1332,7 +1345,9 @@ export default function ChatScreen({
   const InputComponent = embedInSheet ? BottomSheetTextInput : TextInput;
   // Sheet mode: the footer sits flush with the screen bottom (bottomInset=0 in
   // QuickChatBottomSheet), so the safe-area gap is padded inside the bar itself.
-  const inputBottomPad = Math.max(insets.bottom, 8);
+  const inputBottomPad = embedInSheet || !keyboardVisible
+    ? Math.max(insets.bottom, 8)
+    : 8;
   // Sheet mode: the BottomSheetFooter overlays the list, so the list needs
   // bottom padding equal to the measured footer height to keep the newest
   // message visible just above the input bar.
@@ -1597,6 +1612,7 @@ export default function ChatScreen({
     isDark,
     mutedColor,
     textColor,
+    inputBottomPad,
   ]);
 
   if (embedInSheet) {

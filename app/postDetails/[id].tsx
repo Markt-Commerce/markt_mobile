@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import {View,Text,ScrollView,FlatList,ActivityIndicator,TouchableOpacity,TextInput,Image, KeyboardAvoidingView, Share} from "react-native";
-import {  ArrowLeft,  Heart,  MessageCircle,  Send,  Image as ImageIcon, X, SendHorizonal} from "lucide-react-native";
+import {View,Text,ScrollView,FlatList,ActivityIndicator,TouchableOpacity,TextInput,Image, KeyboardAvoidingView, Share, Keyboard, Platform} from "react-native";
+import { ArrowLeft, SendHorizonal } from "lucide-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { commentOnPost, getPostById, getPostComments, likePost } from "../../services/sections/post";
 import { CommentItem, CommentResponse, PostDetails } from "../../models/post";
 import { useToast } from "../../components/ToastProvider";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { parseDate } from "../../utils/parseDate";
 import { useUser } from "../../hooks/userContextProvider";
 import { getUserProfile } from "../../services/sections/profile";
@@ -19,6 +19,8 @@ import { formatNaira } from "../../utils/formatCurrency";
 import { resolveProductImageUri } from "../../utils/imageUri";
 import logger from "../../utils/logger";
 import { PostMediaGrid, mediaTypeOf, type MediaItem } from "../../components/postMedia";
+import PostActionBar from "../../components/PostActionBar";
+import { saveItem, unsaveItem } from "../../services/sections/saved";
 
 
 
@@ -54,12 +56,14 @@ export default function PostDetailsScreen() {
   const [likeCount, setLikeCount] = useState(0);
   const [likedByMe, setLikedByMe] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [newComment, setNewComment] = useState<string>("");
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true); // Control for infinite scroll
   const loadingCommentsRef = useRef(false);
+  const commentInputRef = useRef<TextInput>(null);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { show } = useToast();
@@ -69,6 +73,19 @@ export default function PostDetailsScreen() {
   const [addingToCart, setAddingToCart] = useState(false);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const insets = useSafeAreaInsets();
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSubscription = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSubscription = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const FetchPost = async (id: string) => {
     try {
@@ -76,6 +93,7 @@ export default function PostDetailsScreen() {
       setPost(res);
       setLikeCount(res.like_count ?? 0);
       setLikedByMe(res.liked_by_me ?? false);
+      setSaved(res.is_saved ?? false);
     } catch (error) {
       show({
         variant: "error",
@@ -112,6 +130,19 @@ export default function PostDetailsScreen() {
       });
     } catch {
       // User cancelled
+    }
+  };
+
+  const handleSave = async () => {
+    if (!post) return;
+    const previous = saved;
+    setSaved(!previous);
+    try {
+      if (previous) await unsaveItem("post", post.id);
+      else await saveItem("post", post.id);
+    } catch {
+      setSaved(previous);
+      show({ variant: "error", title: "Could not update saved posts", message: "Please try again." });
     }
   };
 
@@ -270,14 +301,11 @@ export default function PostDetailsScreen() {
         </Text>
       </View>
 
-      <View className={`flex flex-row gap-4 min-h-[72px] py-2 px-4 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
-        <Avatar uri={post.user?.profile_picture_url} name={post.user?.username} size={56} />
+      <View className={`flex flex-row gap-3 min-h-[64px] py-2 px-4 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+        <Avatar uri={post.user?.profile_picture_url} name={post.user?.username} size={48} />
         <View className="flex flex-col justify-center">
-          <Text className={`text-base font-medium leading-normal line-clamp-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className={`text-base font-bold leading-normal line-clamp-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
             {post.user.username}
-          </Text>
-          <Text className={`text-sm font-normal leading-normal line-clamp-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-            {parseDate(post.created_at)}
           </Text>
         </View>
       </View>
@@ -289,7 +317,7 @@ export default function PostDetailsScreen() {
 
       {/* Media — Instagram-style grid (max 5), tap any tile for fullscreen */}
       {postMedia.length > 0 && (
-        <View className={`flex w-full grow p-4 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+        <View className={`flex w-full grow px-4 pb-3 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
           <PostMediaGrid media={postMedia} />
         </View>
       )}
@@ -346,39 +374,23 @@ export default function PostDetailsScreen() {
       </TouchableOpacity>
       )}
 
-      {/* Social Actions — aligned with FeedPostCard: gap-6, min-h-[44px], orange heart when liked */}
-      <View className={`flex-row mt-3 pt-2 border-t px-4 gap-6 ${isDark ? "border-[#46464e]" : "border-border"}`}>
-        <TouchableOpacity
-          onPress={handleLike}
+      <View className={`mx-4 pt-2 border-t ${isDark ? "border-[#46464e]" : "border-border"}`}>
+        <Text className={`text-sm mb-1 ${isDark ? "text-[#aeb0b7]" : "text-text-secondary"}`}>
+          {parseDate(post.created_at)}
+        </Text>
+        <PostActionBar
+          likeCount={likeCount}
+          commentCount={post.comment_count}
+          views={post.views_count ?? post.view_count ?? post.views}
+          liked={likedByMe}
+          saved={saved}
           disabled={isLiking}
-          className="flex-row items-center gap-2 py-1 min-h-[44px]"
-          accessibilityRole="button"
-          accessibilityLabel={`${likeCount} likes`}
-        >
-          <Heart
-            size={18}
-            color={likedByMe ? "#E94C2A" : (isDark ? "#c6c5cf" : "#71717A")}
-            fill={likedByMe ? "#E94C2A" : "transparent"}
-          />
-          <Text className={`text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{likeCount}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          className="flex-row items-center gap-2 py-1 min-h-[44px]"
-          accessibilityRole="button"
-          accessibilityLabel={`${post.comment_count} comments`}
-        >
-          <MessageCircle size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
-          <Text className={`text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{post.comment_count}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleShare}
-          className="flex-row items-center gap-2 py-1 min-h-[44px]"
-          accessibilityRole="button"
-          accessibilityLabel="Share post"
-        >
-          <Send size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
-          <Text className={`text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Share</Text>
-        </TouchableOpacity>
+          isDark={isDark}
+          onLike={handleLike}
+          onComment={() => commentInputRef.current?.focus()}
+          onSave={handleSave}
+          onShare={handleShare}
+        />
       </View>
 
       {/* Comments Header */}
@@ -405,7 +417,11 @@ export default function PostDetailsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top"]}>
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={0}
+        style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}
+      >
         <View className="relative flex-1 flex-col justify-between" style={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}>
           <FlatList
           data={comments}
@@ -415,12 +431,14 @@ export default function PostDetailsScreen() {
           ListFooterComponent={renderListFooter}
           onEndReached={loadComments}
           onEndReachedThreshold={0.5}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
           // This is a common pattern to ensure the flatlist can scroll properly
           contentContainerStyle={{ flexGrow: 1 }}
         />
 
-          <SafeAreaView edges={["bottom"]}>
-            <View className={`px-4 py-3 border-t ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+          <View style={{ paddingBottom: keyboardVisible ? 0 : insets.bottom }}>
+            <View className={`px-4 py-2 border-t ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
               <View className="flex-row items-center gap-3">
                 <Avatar uri={myAvatarUri} name={myDisplayName} size={40} />
 
@@ -428,12 +446,15 @@ export default function PostDetailsScreen() {
               <View className={`flex-1 flex-row items-center rounded px-3 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
                 {/* Text Input */}
                 <TextInput
+                  ref={commentInputRef}
                   placeholder="Add a comment..."
                   placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
                   className={`flex-1 text-base font-normal py-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
                   value={newComment}
                   onChangeText={setNewComment}
                   multiline
+                  maxLength={1000}
+                  textAlignVertical="center"
                 />
 
                 {/* Right-side Icons */}
@@ -449,7 +470,7 @@ export default function PostDetailsScreen() {
               </View>
               </View>
             </View>
-          </SafeAreaView>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

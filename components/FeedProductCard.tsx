@@ -9,11 +9,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { View, Text, TouchableOpacity, Pressable } from "react-native";
 import { Link, useRouter } from "expo-router";
-import { ShoppingCart, MessageCircle, MoreHorizontal, UserPlus } from "lucide-react-native";
+import { Check, MessageCircle, MoreHorizontal, ShoppingCart, Tag } from "lucide-react-native";
 import type { FeedProduct } from "../types/feed";
 import { addToCart } from "../services/sections/cart";
 import { followSeller, unfollowSeller } from "../services/sections/users";
 import SkeletonImage from "./SkeletonImage";
+import Avatar from "./Avatar";
 import { useUser } from "../hooks/userContextProvider";
 import { useToast } from "./ToastProvider";
 import { useTheme } from "./themeProvider";
@@ -26,6 +27,17 @@ interface Props {
   onMessageSeller?: (product: FeedProduct) => void;
   /** Opens the save / share / report / block sheet. Omit to hide the "…". */
   onOpenActions?: (product: FeedProduct) => void;
+}
+
+function compactAge(value: string) {
+  const timestamp = new Date(value).getTime();
+  if (!Number.isFinite(timestamp)) return "";
+  const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+  if (seconds < 60) return "now";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d`;
+  return `${Math.floor(seconds / 604800)}w`;
 }
 
 function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
@@ -121,11 +133,64 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
   }, [followeeId, followLoading, isFollowing, show]);
 
   return (
-    <View className="px-4 pt-4">
-      <View className={`rounded-card overflow-hidden border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+    <View className={`flex-row px-4 py-3 border-b ${isDark ? "bg-[#1a1c1d] border-[#34363a]" : "bg-white border-border"}`}>
+      <Pressable
+        onPress={handleOpenShop}
+        disabled={!product.seller?.id}
+        className="mr-3 self-start"
+        accessibilityRole="link"
+        accessibilityLabel={`View ${product.seller?.shop_name ?? "seller"}'s shop`}
+      >
+        <Avatar
+          uri={product.seller?.user?.profile_picture}
+          name={product.seller?.shop_name ?? product.seller?.user?.username}
+          size={42}
+        />
+      </Pressable>
+
+      <View className="flex-1 min-w-0">
+        <View className="flex-row items-center min-h-[22px] mb-0.5">
+          <Pressable onPress={handleOpenShop} disabled={!product.seller?.id} className="flex-row items-center flex-shrink gap-1.5">
+            <Text className={`font-bold text-[15px] flex-shrink ${isDark ? "text-[#f0f1f2]" : "text-text-primary"}`} numberOfLines={1}>
+              {product.seller?.shop_name ?? product.seller?.user?.username ?? "Seller"}
+            </Text>
+            {sellerGamification && (
+              <TierBadge
+                tier={sellerGamification.tier.key}
+                stars={sellerGamification.tier.stars}
+                colorHex={sellerGamification.tier.color_hex}
+                size="sm"
+              />
+            )}
+          </Pressable>
+          <Text className={`text-[13px] ${isDark ? "text-[#aeb0b7]" : "text-text-secondary"}`}>
+            {` · ${compactAge(product.created_at)}${isFollowing ? " · following" : ""}`}
+          </Text>
+          {onOpenActions ? (
+            <Pressable
+              onPress={handleOpenActions}
+              hitSlop={10}
+              className="ml-auto w-8 h-8 -mr-1 -my-1 items-center justify-center"
+              accessibilityRole="button"
+              accessibilityLabel={`More options for ${product.name}`}
+            >
+              <MoreHorizontal size={20} color={isDark ? "#c6c5cf" : "#876d64"} />
+            </Pressable>
+          ) : null}
+        </View>
+
         <Link href={`/productDetails/${product.id}`} asChild>
           <Pressable>
-            <View className={`w-full aspect-square ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}>
+            <View className="flex-row items-start gap-2 mb-1.5">
+              <Tag size={17} color="#e26136" strokeWidth={2.2} />
+              <Text className={`flex-1 text-[16px] leading-5 font-semibold ${isDark ? "text-[#f0f1f2]" : "text-text-primary"}`} numberOfLines={2}>
+                {product.name}
+              </Text>
+            </View>
+            <View
+              className={`w-full aspect-square overflow-hidden border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-bg-muted border-border"}`}
+              style={{ borderRadius: 12 }}
+            >
               {imageUrl ? (
                 <SkeletonImage
                   source={{ uri: imageUrl }}
@@ -138,94 +203,40 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
                   <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-text-secondary"}`}>No image</Text>
                 </View>
               )}
-              {onOpenActions ? (
-                <Pressable
-                  onPress={handleOpenActions}
-                  hitSlop={10}
-                  className="absolute left-2 top-2 w-9 h-9 rounded-full bg-white/90 items-center justify-center"
-                  accessibilityRole="button"
-                  accessibilityLabel={`More options for ${product.name}`}
-                >
-                  <MoreHorizontal size={18} color="#3f3f46" />
-                </Pressable>
-              ) : null}
-              <View className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-1">
-                <Text className="text-xs font-semibold text-text-primary">
-                  ₦{product.price.toLocaleString()}
-                </Text>
-              </View>
-            </View>
-
-            <View className="px-4 pt-3 pb-3">
-              <Text
-                className={`text-sm font-semibold ${isDark ? "text-[#f0f1f2]" : "text-text-primary"}`}
-                numberOfLines={2}
-              >
-                {product.name}
-              </Text>
-
-              {(product.rating > 0 || product.reviews_count > 0) && (
-                <Text className={`text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-text-secondary"}`}>
-                  ★ {product.rating.toFixed(1)}
-                  {product.reviews_count > 0 && ` · ${product.reviews_count} reviews`}
-                </Text>
-              )}
-
-              <View className="flex-row items-center justify-between mt-2 gap-2">
-                <View className="flex-1 flex-row items-center gap-1.5">
-                  {/* Tapping the shop opened the product, same as anywhere
-                      else on the card. productDetails already routes shop
-                      taps to /shopDetails/<seller_id>; this matches it. */}
-                  <Pressable
-                    onPress={handleOpenShop}
-                    disabled={!product.seller?.id}
-                    className="flex-shrink"
-                    accessibilityRole="link"
-                    accessibilityLabel={`View ${product.seller?.shop_name ?? "seller"}'s shop`}
-                  >
-                    <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-text-secondary"}`} numberOfLines={1}>
-                      By {product.seller?.shop_name ?? "Seller"}
-                      {followerCount > 0 && ` · ${followerCount} follower${followerCount !== 1 ? "s" : ""}`}
-                    </Text>
-                  </Pressable>
-                  {sellerGamification && (
-                    <TierBadge
-                      tier={sellerGamification.tier.key}
-                      stars={sellerGamification.tier.stars}
-                      colorHex={sellerGamification.tier.color_hex}
-                      size="sm"
-                    />
-                  )}
-                  {topBadges.map((b) => (
-                    <BadgeChip key={b.slug} badge={b} size="xs" />
-                  ))}
-                </View>
-                {followeeId && !isOwnProduct && (
-                  <TouchableOpacity
-                    onPress={(e) => handleFollowToggle(e)}
-                    disabled={followLoading}
-                    activeOpacity={0.7}
-                    className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full min-h-[32px] justify-center ${isFollowing ? (isDark ? "bg-[#2f3132]" : "bg-bg-muted") : "bg-primary"}`}
-                    accessibilityRole="button"
-                    accessibilityLabel={isFollowing ? "Unfollow seller" : "Follow seller"}
-                  >
-                    <UserPlus size={14} color={isFollowing ? "#876d64" : "#fff"} />
-                    <Text className={`text-xs font-semibold ${isFollowing ? (isDark ? "text-[#f0f1f2]" : "text-text-primary") : "text-white"}`}>
-                      {followLoading ? "…" : isFollowing ? "Following" : "Follow"}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              <View className="mt-3 h-10 rounded-full bg-primary items-center justify-center">
-                <Text className="text-white font-semibold text-sm">View</Text>
+              <View className="absolute left-3 bottom-3 rounded-full bg-primary px-3 py-1.5">
+                <Text className="text-sm font-bold text-white">₦{product.price.toLocaleString()}</Text>
               </View>
             </View>
           </Pressable>
         </Link>
 
+        <View className="flex-row items-center mt-2 gap-1.5">
+          {(product.rating > 0 || product.reviews_count > 0) && (
+            <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-text-secondary"}`}>
+              ★ {product.rating.toFixed(1)}{product.reviews_count > 0 && ` · ${product.reviews_count} reviews`}
+            </Text>
+          )}
+          {topBadges.map((badge) => <BadgeChip key={badge.slug} badge={badge} size="xs" />)}
+          {followeeId && !isOwnProduct && !isFollowing && (
+            <TouchableOpacity
+              onPress={(event) => handleFollowToggle(event)}
+              disabled={followLoading}
+              className={`ml-auto px-3 h-8 rounded-full items-center justify-center ${isFollowing ? (isDark ? "bg-[#243b2a]" : "bg-[#edf7e9]") : "bg-primary"}`}
+              accessibilityRole="button"
+              accessibilityLabel={isFollowing ? "Unfollow seller" : "Follow seller"}
+            >
+              <View className="flex-row items-center gap-1">
+                {isFollowing && !followLoading ? <Check size={14} color="#2f7d32" strokeWidth={2.5} /> : null}
+                <Text className={`text-xs font-semibold ${isFollowing ? "text-[#2f7d32]" : "text-white"}`}>
+                  {followLoading ? "…" : isFollowing ? "Following" : "Follow"}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {isBuyer && (
-          <View className={`flex-row gap-2 px-4 pb-4 border-t pt-3 ${isDark ? "border-[#46464e]" : "border-border-light"}`}>
+          <View className={`flex-row gap-2 mt-2 pt-2 border-t ${isDark ? "border-[#46464e]" : "border-border-light"}`}>
             <TouchableOpacity
               onPress={handleAddToCart}
               disabled={adding}

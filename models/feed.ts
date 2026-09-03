@@ -12,7 +12,7 @@ export interface MediaVariant {
     url: string;
     id: number;
   }
-  
+
   export interface Media {
     original_url: string;
     social_post_url: string;
@@ -43,7 +43,7 @@ export interface MediaVariant {
     caption: string;
     exif_data: Record<string, string>;
   }
-  
+
   export interface Seller {
     id: number;
     profile_picture_url: string;
@@ -88,6 +88,10 @@ export interface MediaVariant {
     like_count: number;
     /** true if current user liked this post — use for orange filled heart (API_CONTRACT_FEED_AND_FOLLOW) */
     liked_by_me?: boolean;
+    views_count?: number;
+    view_count?: number;
+    views?: number;
+    is_saved?: boolean;
     status: string;
     categories: string;
     seller?: Seller;
@@ -133,4 +137,3 @@ export interface BuyerRequest {
     | { type: "post"; data: Post }
     | { type: "request"; data: BuyerRequest }
     | {type: "niche_discover"; data: any[]};
-  

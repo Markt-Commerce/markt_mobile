@@ -1,10 +1,10 @@
 import React from "react";
-import { View, Text, Image, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { BuyerRequest } from "../models/feed";
 import { router } from "expo-router";
 import { useTheme } from "./themeProvider";
 import { useUser } from "../hooks/userContextProvider";
-import { defaultProfilePicture } from "../models/defaults";
+import Avatar from "./Avatar";
 
 type Buyer = {
   profile_picture_url?: string;
@@ -41,19 +41,16 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
     <TouchableOpacity
       onPress={() => router.push(`/requestDetails/${req.id}`)}
       activeOpacity={0.85}
-      className="px-6 pt-6"
+      className="px-4 pt-4"
     >
       <View
-        className={`rounded border p-5 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+        className={`rounded-xl border p-4 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
       >
-        <View className="flex-row items-center justify-between mb-4">
+        <View className="flex-row items-center justify-between mb-3">
           <View className="flex-row items-center flex-1 pr-3">
-            <Image
-              source={{
-                uri: req.user?.profile_picture_url || defaultProfilePicture,
-              }}
-              className={`w-10 h-10 rounded-full mr-3 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
-            />
+            <View className="mr-3">
+              <Avatar uri={req.user?.profile_picture_url} name={req.user?.username} size={42} />
+            </View>
             <View>
               <Text
                 className={`font-bold text-base ${isDark ? "text-dark-text" : "text-black"}`}
@@ -94,14 +91,14 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
           {req.title || "Untitled request"}
         </Text>
         <Text
-          className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm mb-4 leading-6`}
+          className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm mb-3 leading-5`}
           numberOfLines={3}
         >
           {req.description || "No description provided."}
         </Text>
 
         <View
-          className={`flex-row items-center justify-between border-t pt-4 ${isDark ? "border-dark-border" : "border-border"}`}
+          className={`flex-row items-center justify-between border-t pt-3 ${isDark ? "border-dark-border" : "border-border"}`}
         >
           <View>
             <Text

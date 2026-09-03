@@ -26,6 +26,7 @@ import BottomSheet from "@gorhom/bottom-sheet";
 import { useUser } from "../../hooks/userContextProvider";
 import { useTheme } from "../../components/themeProvider";
 import { defaultProfilePicture } from "../../models/defaults";
+import Avatar from "../../components/Avatar";
 
 const { width } = Dimensions.get("window");
 
@@ -313,11 +314,10 @@ export default function BuyerRequestDetails() {
               isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"
             }`}
           >
-            <Image
-              source={{
-                uri: requestDetails.user?.profile_picture_url || defaultProfilePicture,
-              }}
-              className={`h-12 w-12 rounded-full ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+            <Avatar
+              uri={requestDetails.user?.profile_picture_url || defaultProfilePicture}
+              name={requestDetails.user?.username}
+              size={48}
             />
             <View className="ml-3 flex-1">
               <Text

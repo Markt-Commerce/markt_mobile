@@ -90,7 +90,7 @@ function TabsWithDrawer() {
             name="index"
             options={{
               title: "Home",
-              tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+              tabBarIcon: ({ color, focused }) => (
                 <Home color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />
               ),
             }}
@@ -99,7 +99,7 @@ function TabsWithDrawer() {
             name="search"
             options={{
               title: "Search",
-              tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+              tabBarIcon: ({ color, focused }) => (
                 <Search color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />
               ),
             }}
@@ -109,7 +109,7 @@ function TabsWithDrawer() {
             name="orders"
             options={{
               title: "Orders",
-              tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+              tabBarIcon: ({ color, focused }) => (
                 <ShoppingBag color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />
               ),
             }}
@@ -119,7 +119,7 @@ function TabsWithDrawer() {
             options={{
               title: "Messages",
               tabBarLabel: "Chat",
-              tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+              tabBarIcon: ({ color, focused }) => (
                 <MessageCircle color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />
               ),
             }}
@@ -129,7 +129,7 @@ function TabsWithDrawer() {
             options={{
               title: "Requests",
               tabBarLabel: "Requests",
-              tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+              tabBarIcon: ({ color, focused }) => (
                 <FileText color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />
               ),
             }}

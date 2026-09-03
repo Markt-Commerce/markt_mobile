@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Share, Heart, MessageCircle } from "lucide-react-native";
+import { ArrowLeft, Share } from "lucide-react-native";
 import { useLocalSearchParams } from "expo-router";
 import { getSellerProducts } from "../../services/sections/product";
 import {
@@ -25,48 +25,44 @@ import ProductDisplayComponent from "../../components/productDisplayComponent";
 import { Product } from "../../models/feed";
 import { defaultProfilePicture } from "../../models/defaults";
 import { useTheme } from "../../components/themeProvider";
-import { parseDate } from "../../utils/parseDate";
 import { useGamificationLookup } from "../../hooks/useGamificationLookup";
 import { useBadges } from "../../hooks/useBadges";
 import TierBadge from "../../components/gamification/TierBadge";
 import BadgeGrid from "../../components/gamification/BadgeGrid";
+import FeedPostCard from "../../components/FeedPostCard";
+import type { FeedPost } from "../../types/feed";
+import { saveItem, unsaveItem } from "../../services/sections/saved";
 
-function ShopPostCard({ post, isDark }: { post: ShopPost; isDark: boolean }) {
-  const firstImage = post.media?.find((m) => m.type === "image");
+function ShopPostCard({ post, shop }: { post: ShopPost; shop: ShopData }) {
+  const [saved, setSaved] = useState(false);
+  const feedPost: FeedPost = {
+    id: post.id,
+    type: "post",
+    caption: post.caption,
+    user: {
+      id: shop.user.id,
+      username: shop.shop_name || shop.user.username,
+      profile_picture: shop.user.profile_picture,
+    },
+    media: (post.media ?? []).map((item) => ({ url: item.url, type: item.type })),
+    likes_count: post.likes_count ?? 0,
+    comments_count: post.comments_count ?? 0,
+    created_at: post.created_at,
+    niche: null,
+  };
 
-  return (
-    <View
-      className={`mx-4 mb-4 rounded border overflow-hidden ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
-    >
-      {firstImage && (
-        <Image source={{ uri: firstImage.url }} className="w-full h-56" resizeMode="cover" />
-      )}
-      <View className="p-4">
-        {post.caption && (
-          <Text className={`${isDark ? "text-dark-text" : "text-black"} text-sm leading-5`}>
-            {post.caption}
-          </Text>
-        )}
-        <View className="flex-row items-center gap-4 mt-3">
-          <View className="flex-row items-center gap-1.5">
-            <Heart size={16} color={isDark ? "#c6c5cf" : "#71717A"} />
-            <Text className={`text-xs ${isDark ? "text-dark-muted" : "text-tertiary"}`}>
-              {post.likes_count ?? 0}
-            </Text>
-          </View>
-          <View className="flex-row items-center gap-1.5">
-            <MessageCircle size={16} color={isDark ? "#c6c5cf" : "#71717A"} />
-            <Text className={`text-xs ${isDark ? "text-dark-muted" : "text-tertiary"}`}>
-              {post.comments_count ?? 0}
-            </Text>
-          </View>
-          <Text className={`text-xs ml-auto ${isDark ? "text-dark-muted" : "text-tertiary"}`}>
-            {parseDate(post.created_at)}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
+  const toggleSaved = async () => {
+    const previous = saved;
+    setSaved(!previous);
+    try {
+      if (previous) await unsaveItem("post", post.id);
+      else await saveItem("post", post.id);
+    } catch {
+      setSaved(previous);
+    }
+  };
+
+  return <FeedPostCard post={feedPost} saved={saved} onToggleSaved={toggleSaved} />;
 }
 
 export default function Shop() {
@@ -395,7 +391,7 @@ export default function Shop() {
             </View>
           </>
         ) : (
-          <View className="px-2 pt-2">
+          <View className="pt-2">
             {(shop?.recent_posts ?? []).length === 0 ? (
               <View className="items-center justify-center py-16 px-6">
                 <Text className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm text-center`}>
@@ -404,7 +400,7 @@ export default function Shop() {
               </View>
             ) : (
               (shop?.recent_posts ?? []).map((post) => (
-                <ShopPostCard key={post.id} post={post} isDark={isDark} />
+                <ShopPostCard key={post.id} post={post} shop={shop!} />
               ))
             )}
           </View>

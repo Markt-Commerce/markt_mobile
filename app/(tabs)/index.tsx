@@ -37,6 +37,7 @@ import { getUserProfile } from "../../services/sections/profile";
 import type { Niches } from "../../models/niches";
 import type { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";
+import { saveItem, unsaveItem } from "../../services/sections/saved";
 
 // Early launch: only the main feed is live. Discover/Trending/Following are
 // hidden until their backend pipelines are ready — restore entries here to bring
@@ -52,7 +53,6 @@ type TabId = "for_you" | "discover" | "trending" | "following" | string;
 
 // Hoisted so FlatList doesn't see a new element/object/function identity on
 // every render of the screen.
-const LIST_TOP_SPACER = <View className="h-4" />;
 const LIST_CONTENT_STYLE = { paddingBottom: 40 };
 const keyExtractor = (item: FeedItem) => item.id;
 const SIDE_DATA_TTL_MS = 60 * 1000;
@@ -99,6 +99,7 @@ export default function FeedScreen() {
   // author's items from the list immediately.
   const [actionsTarget, setActionsTarget] = useState<ContentActionsTarget | null>(null);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [savedOverrides, setSavedOverrides] = useState<Record<string, boolean>>({});
   const [hiddenAuthorIds, setHiddenAuthorIds] = useState<Set<string>>(new Set());
 
   const openPostActions = useCallback((post: FeedPost) => {
@@ -128,13 +129,40 @@ export default function FeedScreen() {
   const handleSavedChange = useCallback((next: boolean) => {
     const id = actionsTarget?.id;
     if (!id) return;
+    if (actionsTarget?.type === "post") {
+      setSavedOverrides((prev) => ({ ...prev, [id]: next }));
+    }
     setSavedIds((prev) => {
       const copy = new Set(prev);
       if (next) copy.add(id);
       else copy.delete(id);
       return copy;
     });
-  }, [actionsTarget?.id]);
+  }, [actionsTarget?.id, actionsTarget?.type]);
+
+  const togglePostSaved = useCallback(async (post: FeedPost) => {
+    const wasSaved = savedOverrides[post.id] ?? post.is_saved ?? savedIds.has(post.id);
+    setSavedOverrides((prev) => ({ ...prev, [post.id]: !wasSaved }));
+    setSavedIds((prev) => {
+      const next = new Set(prev);
+      if (wasSaved) next.delete(post.id);
+      else next.add(post.id);
+      return next;
+    });
+    try {
+      if (wasSaved) await unsaveItem("post", post.id);
+      else await saveItem("post", post.id);
+    } catch {
+      setSavedOverrides((prev) => ({ ...prev, [post.id]: wasSaved }));
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        if (wasSaved) next.add(post.id);
+        else next.delete(post.id);
+        return next;
+      });
+      show({ variant: "error", title: "Could not update saved posts", message: "Please try again." });
+    }
+  }, [savedIds, savedOverrides, show]);
 
   // The server filters blocked authors out of the next feed response; this
   // removes them from what's already on screen so the block reads as instant.
@@ -304,7 +332,7 @@ export default function FeedScreen() {
           overflow: "hidden",
           maxHeight: stripHeight.interpolate({
             inputRange: [0, 1],
-            outputRange: [0, 130],
+            outputRange: [0, 92],
           }),
         }}
       >
@@ -315,19 +343,19 @@ export default function FeedScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 8, gap: 16 }}
+          contentContainerStyle={{ paddingHorizontal: 16, gap: 24 }}
         >
           {MAIN_TABS.map((t) => (
             <TouchableOpacity
               key={t.id}
               onPress={() => setSelectedTab(t.id)}
-              className="py-1 relative"
+              className="h-12 justify-center relative"
               accessibilityRole="tab"
               accessibilityState={{ selected: selectedTab === t.id }}
               accessibilityLabel={t.label}
             >
               <Text
-                className={`font-bold text-[13px] tracking-widest uppercase ${selectedTab === t.id ? "text-primary" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                className={`font-semibold text-[15px] ${selectedTab === t.id ? "text-primary" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
               >
                 {t.label}
               </Text>
@@ -335,10 +363,10 @@ export default function FeedScreen() {
                 <View
                   style={{
                     position: "absolute",
-                    bottom: -8,
+                    bottom: 0,
                     left: 0,
                     right: 0,
-                    height: 2,
+                    height: 3,
                     backgroundColor: "#E94C2A",
                   }}
                 />
@@ -349,13 +377,13 @@ export default function FeedScreen() {
             <TouchableOpacity
               key={n.id}
               onPress={() => setSelectedTab(n.id)}
-              className={`py-1 px-4 rounded relative ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+              className="h-12 justify-center relative"
               accessibilityRole="tab"
               accessibilityState={{ selected: selectedTab === n.id }}
               accessibilityLabel={n.name}
             >
               <Text
-                className={`font-bold text-[10px] tracking-widest uppercase ${selectedTab === n.id ? "text-primary" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                className={`font-semibold text-[14px] ${selectedTab === n.id ? "text-primary" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
                 numberOfLines={1}
                 style={{ maxWidth: 100 }}
               >
@@ -365,10 +393,10 @@ export default function FeedScreen() {
                 <View
                   style={{
                     position: "absolute",
-                    bottom: -5,
+                    bottom: 0,
                     left: 0,
                     right: 0,
-                    height: 2,
+                    height: 3,
                     backgroundColor: "#E94C2A",
                   }}
                 />
@@ -377,21 +405,21 @@ export default function FeedScreen() {
           ))}
           <TouchableOpacity
             onPress={() => router.push("/discoverNiches")}
-            className="py-1 px-3 flex-row items-center gap-2"
+            className="h-12 flex-row items-center gap-1.5"
             accessibilityRole="button"
             accessibilityLabel="Explore communities"
           >
             <Compass size={16} color="#E94C2A" strokeWidth={2} />
-            <Text className="font-bold text-[13px] tracking-widest uppercase text-primary">Explore</Text>
+            <Text className="font-semibold text-[14px] text-primary">Explore</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push("/markets")}
-            className="py-1 px-3 flex-row items-center gap-2"
+            className="h-12 flex-row items-center gap-1.5"
             accessibilityRole="button"
             accessibilityLabel="Browse markets"
           >
             <Store size={16} color="#E94C2A" strokeWidth={2} />
-            <Text className="font-bold text-[13px] tracking-widest uppercase text-primary">Markets</Text>
+            <Text className="font-semibold text-[14px] text-primary">Markets</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
@@ -425,7 +453,14 @@ export default function FeedScreen() {
   const renderItem = useCallback(
     ({ item }: { item: FeedItem }) => {
       if (isFeedPost(item))
-        return <FeedPostCard post={item} onOpenActions={openPostActions} />;
+        return (
+          <FeedPostCard
+            post={item}
+            onOpenActions={openPostActions}
+            saved={savedOverrides[item.id] ?? item.is_saved ?? savedIds.has(item.id)}
+            onToggleSaved={togglePostSaved}
+          />
+        );
       if (isFeedProduct(item))
         return (
           <FeedProductCard
@@ -436,7 +471,7 @@ export default function FeedScreen() {
         );
       return null;
     },
-    [openProductChat, openPostActions, openProductActions]
+    [openProductChat, openPostActions, openProductActions, savedIds, savedOverrides, togglePostSaved]
   );
 
 
@@ -461,7 +496,6 @@ export default function FeedScreen() {
         maxToRenderPerBatch={4}
         windowSize={7}
         updateCellsBatchingPeriod={50}
-        ListHeaderComponent={LIST_TOP_SPACER}
         ListFooterComponent={
           loadingMore ? (
             <View className="py-2 items-center">
@@ -587,7 +621,11 @@ export default function FeedScreen() {
 
       <ContentActionsSheet
         target={actionsTarget}
-        saved={!!actionsTarget && savedIds.has(actionsTarget.id)}
+        saved={!!actionsTarget && (
+          actionsTarget.type === "post"
+            ? (savedOverrides[actionsTarget.id] ?? savedIds.has(actionsTarget.id))
+            : savedIds.has(actionsTarget.id)
+        )}
         onClose={() => setActionsTarget(null)}
         onSavedChange={handleSavedChange}
         onBlocked={handleBlocked}
@@ -596,7 +634,7 @@ export default function FeedScreen() {
       {/* FAB — bottom right, opens create menu */}
       <TouchableOpacity
         onPress={toggleMenu}
-        className="absolute bottom-10 right-4 w-14 h-14 rounded bg-primary items-center justify-center shadow-lg"
+        className="absolute bottom-4 right-4 w-14 h-14 rounded-full bg-primary items-center justify-center shadow-lg"
         style={{
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 4 },
