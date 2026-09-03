@@ -44,5 +44,30 @@ export function parseWalletDeepLink(url: string): WalletDeepLinkResult | null {
 export function isWalletReturnUrl(url: string): boolean {
   if (!url) return false;
   if (url.startsWith("markt://wallet/")) return true;
+  if (isWalletCallbackUrl(url)) return true;
   return parseWalletDeepLink(url) != null;
+}
+
+/**
+ * The backend's own callback route, which Paystack redirects the browser to
+ * before *it* redirects on to markt://wallet/…
+ *
+ * Worth matching separately, because that intermediate hop is the fragile one:
+ * its host comes from the server's API_BASE_URL, and if that is unset or points
+ * at localhost the phone can't reach it. The customer has already paid at that
+ * point — the webhook credits the wallet regardless — but the browser lands on
+ * ERR_CONNECTION_REFUSED and it looks like the money vanished.
+ *
+ * Recognising the URL by its *path* lets the app stop before loading it and
+ * verify over the API instead, so a server misconfiguration can't strand
+ * someone who has already paid.
+ */
+export function isWalletCallbackUrl(url: string): boolean {
+  return !!url && url.includes("/wallet/topup/callback/");
+}
+
+/** The top-up id embedded in that callback path, if present. */
+export function topupIdFromCallbackUrl(url: string): string | undefined {
+  const match = url.match(/\/wallet\/topup\/callback\/([^/?#]+)/);
+  return match ? decodeURIComponent(match[1]) : undefined;
 }

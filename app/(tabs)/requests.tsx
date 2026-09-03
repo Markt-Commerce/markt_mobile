@@ -129,13 +129,16 @@ export default function RequestsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
-      <View className={`px-6 pt-5 pb-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+      {/* No border under the header: the first row already draws a hairline,
+          and two lines 4px apart read as a mistake. px-4 lines the title up
+          with the rows beneath it instead of sitting 8px further in. */}
+      <View className={`px-4 pt-4 pb-3 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
         <View className="flex-row items-center justify-between">
           <View className="flex-1 pr-4">
-            <Text className={`font-bold text-[28px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-              {isBuyer ? "My Requests" : "Buyer Requests"}
+            <Text className={`font-bold text-[26px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              {isBuyer ? "My requests" : "Buyer requests"}
             </Text>
-            <Text className={`text-sm mt-1 leading-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`text-[13px] mt-0.5 leading-[18px] ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
               {isBuyer
                 ? "Tell sellers what you need and let offers come to you."
                 : "Open requests from buyers looking for what you sell."}
@@ -145,9 +148,11 @@ export default function RequestsScreen() {
             <TouchableOpacity
               onPress={openCreateRequest}
               activeOpacity={0.85}
-              className={`w-14 h-14 rounded items-center justify-center border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+              accessibilityRole="button"
+              accessibilityLabel="Create a request"
+              className="w-12 h-12 rounded-full bg-primary items-center justify-center"
             >
-              <Plus size={24} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={2.2} />
+              <Plus size={22} color="#FFFFFF" strokeWidth={2.4} />
             </TouchableOpacity>
           )}
         </View>

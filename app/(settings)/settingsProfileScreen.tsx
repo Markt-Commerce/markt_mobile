@@ -32,6 +32,17 @@ import { updateGamificationPreferences } from "../../services/sections/gamificat
 
 const LANGUAGE_KEY = "app_lang_v1";
 
+/**
+ * Settings primitives.
+ *
+ * These used to be a `px-6` inset card with a `rounded border` wrapper and a
+ * `border-b` on every row -- a bordered box inside a bordered screen, so each
+ * row was outlined twice and 48px of width was given away on every line.
+ *
+ * Now: a tinted full-bleed band names the group, rows run edge to edge, and the
+ * hairline between them is inset to start where the label starts, so the eye
+ * reads a list instead of a stack of boxes.
+ */
 function SettingsSection({
   title,
   children,
@@ -42,14 +53,23 @@ function SettingsSection({
   dark?: boolean;
 }) {
   return (
-    <View className="px-6 mt-8">
-      <Text className={`font-bold text-[11px] tracking-[2px] uppercase mb-3 ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-        {title}
-      </Text>
-      <View className={`rounded overflow-hidden border ${dark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-        {children}
+    <View className="mt-2">
+      <View className={`px-4 py-2.5 ${dark ? "bg-[#141617]" : "bg-[#F4F4F5]"}`}>
+        <Text
+          className={`font-bold text-[13px] ${dark ? "text-[#c6c5cf]" : "text-[#52525B]"}`}
+        >
+          {title}
+        </Text>
       </View>
+      <View className={dark ? "bg-[#1a1c1d]" : "bg-white"}>{children}</View>
     </View>
+  );
+}
+
+/** The hairline between rows, inset so it lines up under the label. */
+function RowDivider({ dark }: { dark: boolean }) {
+  return (
+    <View className={`h-px ml-[52px] ${dark ? "bg-[#2f3132]" : "bg-[#EFEFF1]"}`} />
   );
 }
 
@@ -61,39 +81,62 @@ function SettingsRow({
   onPress,
   last = false,
   dark = false,
+  destructive = false,
 }: {
   icon: React.ElementType;
   title: string;
-  subtitle: string;
+  /** Only when it says something the label doesn't. Most rows don't need one. */
+  subtitle?: string;
   value?: string;
   onPress: () => void;
   last?: boolean;
   dark?: boolean;
+  destructive?: boolean;
 }) {
+  const labelColor = destructive
+    ? "text-[#DC2626]"
+    : dark
+      ? "text-[#f0f1f2]"
+      : "text-black";
+  const iconColor = destructive ? "#DC2626" : dark ? "#c6c5cf" : "#3F3F46";
+
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.8}
-      className={`flex-row items-center justify-between px-4 py-4 ${last ? "" : dark ? "border-b border-[#46464e]" : "border-b border-border"}`}
-    >
-      <View className="flex-row items-center gap-3 flex-1 pr-3">
-        <View className={`w-10 h-10 rounded items-center justify-center ${dark ? "bg-[#2f3132]" : "bg-surface"}`}>
-          <Icon size={18} color={dark ? "#f0f1f2" : "#000000"} strokeWidth={1.7} />
+    <>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.6}
+        accessibilityRole="button"
+        accessibilityLabel={value ? `${title}, ${value}` : title}
+        className="flex-row items-center px-4 min-h-[56px] py-3"
+      >
+        {/* No tinted tile behind the glyph -- it was a third surface competing
+            with the card and the row. */}
+        <Icon size={20} color={iconColor} strokeWidth={1.8} />
+        <View className="flex-1 ml-4 pr-3">
+          <Text className={`text-[16px] ${labelColor}`}>{title}</Text>
+          {subtitle ? (
+            <Text
+              className={`text-[13px] mt-0.5 leading-[18px] ${dark ? "text-[#8f9195]" : "text-tertiary"}`}
+            >
+              {subtitle}
+            </Text>
+          ) : null}
         </View>
-        <View className="flex-1">
-          <Text className={`font-bold text-[15px] ${dark ? "text-[#f0f1f2]" : "text-black"}`}>{title}</Text>
-          <Text className={`text-[13px] mt-1 ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{subtitle}</Text>
-        </View>
-      </View>
-      <View className="flex-row items-center gap-2">
         {value ? (
-          <Text className={`font-bold text-[11px] tracking-widest uppercase ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text
+            className={`text-[14px] mr-2 ${dark ? "text-[#8f9195]" : "text-tertiary"}`}
+          >
             {value}
           </Text>
         ) : null}
-        <ArrowRight size={18} color={dark ? "#c6c5cf" : "#71717A"} strokeWidth={1.7} />
-      </View>
-    </TouchableOpacity>
+        <ArrowRight
+          size={18}
+          color={dark ? "#6b6d71" : "#A1A1AA"}
+          strokeWidth={2}
+        />
+      </TouchableOpacity>
+      {last ? null : <RowDivider dark={dark} />}
+    </>
   );
 }
 
@@ -109,7 +152,7 @@ function SettingsSwitchRow({
 }: {
   icon: React.ElementType;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   value: boolean;
   onValueChange: (v: boolean) => void;
   disabled?: boolean;
@@ -117,26 +160,31 @@ function SettingsSwitchRow({
   dark?: boolean;
 }) {
   return (
-    <View
-      className={`flex-row items-center justify-between px-4 py-4 ${last ? "" : dark ? "border-b border-[#46464e]" : "border-b border-border"}`}
-    >
-      <View className="flex-row items-center gap-3 flex-1 pr-3">
-        <View className={`w-10 h-10 rounded items-center justify-center ${dark ? "bg-[#2f3132]" : "bg-surface"}`}>
-          <Icon size={18} color={dark ? "#f0f1f2" : "#000000"} strokeWidth={1.7} />
+    <>
+      <View className="flex-row items-center px-4 min-h-[56px] py-3">
+        <Icon size={20} color={dark ? "#c6c5cf" : "#3F3F46"} strokeWidth={1.8} />
+        <View className="flex-1 ml-4 pr-3">
+          <Text className={`text-[16px] ${dark ? "text-[#f0f1f2]" : "text-black"}`}>
+            {title}
+          </Text>
+          {subtitle ? (
+            <Text
+              className={`text-[13px] mt-0.5 leading-[18px] ${dark ? "text-[#8f9195]" : "text-tertiary"}`}
+            >
+              {subtitle}
+            </Text>
+          ) : null}
         </View>
-        <View className="flex-1">
-          <Text className={`font-bold text-[15px] ${dark ? "text-[#f0f1f2]" : "text-black"}`}>{title}</Text>
-          <Text className={`text-[13px] mt-1 ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{subtitle}</Text>
-        </View>
+        <Switch
+          value={value}
+          onValueChange={onValueChange}
+          disabled={disabled}
+          trackColor={{ false: dark ? "#46464e" : "#E4E4E7", true: "#E94C2A" }}
+          thumbColor="#FFFFFF"
+        />
       </View>
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        disabled={disabled}
-        trackColor={{ false: dark ? "#46464e" : "#E4E4E7", true: "#000000" }}
-        thumbColor={dark ? "#F0F1F2" : "#FFFFFF"}
-      />
-    </View>
+      {last ? null : <RowDivider dark={dark} />}
+    </>
   );
 }
 
@@ -226,44 +274,46 @@ export default function SettingsProfileScreen() {
       >
         <ScreenHeader title="Settings" onBack={() => router.back()} />
 
-        <View className="px-6 pt-6">
-          <View className={`rounded px-5 py-5 border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}>
-            <View className="flex-row items-center gap-4">
-              <Avatar
-                uri={profile?.profile_picture_url}
-                name={displayName}
-                size={64}
-                className="rounded"
-              />
-              <View className="flex-1">
-                <Text className={`font-bold text-[24px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
-                  {displayName}
-                </Text>
-                <Text className={`text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={1}>
-                  @{profile?.username ?? user?.email ?? "user"}
-                </Text>
-                <Text className={`font-bold text-[10px] tracking-[2px] uppercase mt-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                  {role} control center
-                </Text>
-              </View>
-            </View>
+        {/* Centered identity, no card. This was a bordered box holding three
+            more bordered chips -- four outlines stacked in one header. The
+            tinted band does the separating, so nothing needs an outline. */}
+        <View className={`items-center px-6 pt-4 pb-6 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+          <Avatar
+            uri={profile?.profile_picture_url}
+            name={displayName}
+            size={88}
+            className="rounded-full"
+          />
+          <Text
+            className={`font-bold text-[22px] tracking-tight mt-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+            numberOfLines={1}
+          >
+            {displayName}
+          </Text>
+          <Text
+            className={`text-[14px] mt-0.5 ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}
+            numberOfLines={1}
+          >
+            @{profile?.username ?? user?.email ?? "user"}
+          </Text>
 
-            <View className="flex-row flex-wrap gap-2 mt-4">
-              <View className={`px-3 py-2 rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-                <Text className={`font-bold text-[10px] tracking-[2px] uppercase ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                  {theme}
-                </Text>
-              </View>
-              <View className={`px-3 py-2 rounded border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-                <Text className={`font-bold text-[10px] tracking-[2px] uppercase ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                  {language}
-                </Text>
-              </View>
-              <View className="px-3 py-2 rounded bg-primary">
-                <Text className="font-bold text-[10px] tracking-[2px] uppercase text-white">
-                  {role}
-                </Text>
-              </View>
+          {/* Tint only. The role is the one that matters, so it keeps the
+              brand colour and the other two sit back. */}
+          <View className="flex-row flex-wrap justify-center gap-2 mt-4">
+            <View className="px-3 py-1.5 rounded-full bg-primary">
+              <Text className="font-bold text-[11px] uppercase tracking-wider text-white">
+                {role}
+              </Text>
+            </View>
+            <View className={`px-3 py-1.5 rounded-full ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}>
+              <Text className={`font-bold text-[11px] uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-[#52525B]"}`}>
+                {theme}
+              </Text>
+            </View>
+            <View className={`px-3 py-1.5 rounded-full ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}>
+              <Text className={`font-bold text-[11px] uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-[#52525B]"}`}>
+                {language}
+              </Text>
             </View>
           </View>
         </View>
@@ -272,42 +322,36 @@ export default function SettingsProfileScreen() {
           <SettingsRow
             icon={UserCog}
             title="Account Information"
-            subtitle="Edit your phone number, role details, and profile image."
             onPress={() => router.push("/(settings)/accountInfoScreen")}
             dark={isDark}
           />
           <SettingsRow
             icon={Lock}
             title="Password & Security"
-            subtitle="Update credentials and protect access to your account."
             onPress={() => router.push("/(settings)/changePasswordScreen")}
             dark={isDark}
           />
           <SettingsRow
             icon={Wallet}
             title="Wallet"
-            subtitle="View your balance, fund it, and withdraw to your bank."
             onPress={() => router.push("/wallet" as any)}
             dark={isDark}
           />
           <SettingsRow
             icon={Bookmark}
             title="Saved"
-            subtitle="Posts and products you kept for later."
             onPress={() => router.push("/saved" as any)}
             dark={isDark}
           />
           <SettingsRow
             icon={ShieldOff}
             title="Blocked accounts"
-            subtitle="See who you've blocked and undo it."
             onPress={() => router.push("/(settings)/blockedAccountsScreen" as any)}
             dark={isDark}
           />
           <SettingsRow
             icon={Bell}
             title="Notifications"
-            subtitle="Choose which alerts reach you across email, push, and SMS."
             onPress={() => router.push("/(settings)/notificationScreen")}
             last
             dark={isDark}
@@ -318,7 +362,6 @@ export default function SettingsProfileScreen() {
           <SettingsRow
             icon={Palette}
             title="Appearance"
-            subtitle="Switch the interface between light and dark presentation."
             value={resolvedTheme.toUpperCase()}
             onPress={handleThemeToggle}
             dark={isDark}
@@ -326,7 +369,6 @@ export default function SettingsProfileScreen() {
           <SettingsRow
             icon={Globe}
             title="Language"
-            subtitle="Set your preferred language for the app experience."
             value={language}
             onPress={handleLanguageToggle}
             dark={isDark}
@@ -347,28 +389,24 @@ export default function SettingsProfileScreen() {
           <SettingsRow
             icon={HelpCircle}
             title="Help Center"
-            subtitle="Find guidance for orders, accounts, and marketplace flows."
             onPress={() => router.push("/support/help" as any)}
             dark={isDark}
           />
           <SettingsRow
             icon={ShieldCheck}
             title="Privacy Policy"
-            subtitle="Review how your data is handled across Markt."
             onPress={() => router.push("/support/privacy" as any)}
             dark={isDark}
           />
           <SettingsRow
             icon={Lock}
             title="Terms of Use"
-            subtitle="Understand your rights and responsibilities on Markt."
             onPress={() => router.push("/support/terms" as any)}
             dark={isDark}
           />
           <SettingsRow
             icon={Info}
             title="About Markt"
-            subtitle="Read product, policy, and platform information."
             onPress={() => router.push("/support/about" as any)}
             last
             dark={isDark}
@@ -380,6 +418,7 @@ export default function SettingsProfileScreen() {
         <SettingsSection title="Danger Zone" dark={isDark}>
           <SettingsRow
             icon={Trash2}
+            destructive
             title="Delete account"
             subtitle="Permanently delete your account and personal data."
             onPress={() => router.push("/(settings)/deleteAccountScreen" as any)}
@@ -388,15 +427,17 @@ export default function SettingsProfileScreen() {
           />
         </SettingsSection>
 
-        <View className="px-6 pt-10">
+        <View className="px-4 pt-8">
           <TouchableOpacity
             onPress={handleLogout}
-            activeOpacity={0.85}
-            className="h-14 rounded bg-primary items-center justify-center flex-row gap-2"
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Sign out"
+            className={`h-13 py-3.5 rounded-xl items-center justify-center flex-row gap-2 ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}
           >
-            <LogOut size={18} color="#FFFFFF" strokeWidth={1.8} />
-            <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
-              Sign Out
+            <LogOut size={18} color={isDark ? "#f0f1f2" : "#3F3F46"} strokeWidth={1.9} />
+            <Text className={`font-semibold text-[15px] ${isDark ? "text-[#f0f1f2]" : "text-[#3F3F46]"}`}>
+              Sign out
             </Text>
           </TouchableOpacity>
         </View>
