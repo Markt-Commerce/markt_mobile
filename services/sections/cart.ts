@@ -12,6 +12,7 @@ import {
 } from "../../models/cart";
 import { ApiResponse } from "../../models/auth";
 import { setPendingCartCount } from "../notificationState";
+import { emitCartChanged } from "../../utils/cartEvents";
 
 // Get cart
 export async function getCart(): Promise<Cart> {
@@ -37,12 +38,14 @@ export async function clearCart(): Promise<void> {
   await request<void>(`${BASE_URL}/cart/`, {
     method: "DELETE",
   });
+  emitCartChanged();
 }
 
 export async function deleteCartItem(id:number) {
   await request<void>(`${BASE_URL}/cart/items/${id}`, {
     method: "DELETE",
   });
+  emitCartChanged();
 }
 
 export async function updateCartItem(id:number,data:{ quantity: number}): Promise<UpdateCartItemResponse> {
@@ -50,6 +53,7 @@ export async function updateCartItem(id:number,data:{ quantity: number}): Promis
     method: "PUT",
     body: JSON.stringify(data),
   });
+  emitCartChanged();
   return res.data!;
 }
 
@@ -59,6 +63,7 @@ export async function addToCart(data: AddToCartRequest): Promise<AddToCartRespon
     method: "POST",
     body: JSON.stringify(data),
   });
+  emitCartChanged();
   return res;
 }
 
@@ -76,5 +81,7 @@ export async function checkoutCart(data:CheckoutRequest): Promise<CheckoutRespon
     method: "POST",
     body: JSON.stringify(data),
   });
+  // Checkout empties the cart server-side, so the badge has to clear too.
+  emitCartChanged();
   return res;
 }
