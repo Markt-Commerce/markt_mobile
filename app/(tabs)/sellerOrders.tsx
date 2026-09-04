@@ -17,6 +17,12 @@ import {
   updateSellerOrderItem,
 } from "../../services/sections/orders";
 import { OrderItem, SellerOrderItem } from "../../models/orders";
+import {
+  nextStatuses,
+  STATUS_ACTION_LABEL,
+  type OrderItemStatus,
+} from "../../utils/orderTransitions";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
 import { Seller } from "../../models/search";
 import { useTheme } from "../../components/themeProvider";
 
@@ -75,15 +81,21 @@ export default function SellerOrders() {
    */
   const handleUpdateStatus = async (
     item: SellerOrderItem,
-    newStatus: OrderStatus
+    newStatus: OrderItemStatus
   ) => {
     try {
       await updateSellerOrderItem(item.id!, {
         status: newStatus,
       });
       setRefreshKey((k) => k + 1);
-    } catch {
-      Alert.alert("Error", "Failed to update order status");
+    } catch (e) {
+      // The server names both states on an illegal move ("Cannot transition
+      // from Status.PENDING to Status.SHIPPED"), which is more use than
+      // "Failed to update order status".
+      Alert.alert(
+        "Couldn't update order",
+        friendlyErrorMessage(e, "Failed to update order status.")
+      );
     }
   };
 
@@ -94,21 +106,19 @@ export default function SellerOrders() {
     Alert.alert(
       "Update Order Status",
       item.product?.name ?? "Order Item",
+      // Only what the item can legally become from where it is. The menu used
+      // to offer every action from every state, so "Mark Shipped" on a pending
+      // item was a guaranteed 422 -- the backend allows PENDING to move only to
+      // PROCESSING or CANCELLED. Mirrors OrderItem.VALID_STATUS_TRANSITIONS.
       [
-        {
-          text: "Mark Shipped",
-          onPress: () => handleUpdateStatus(item, "shipped"),
-        },
-        {
-          text: "Mark Delivered",
-          onPress: () => handleUpdateStatus(item, "delivered"),
-        },
-        {
-          text: "Cancel",
-          style: "destructive",
-          onPress: () => handleUpdateStatus(item, "canceled"),
-        },
-        { text: "Close", style: "cancel" },
+        ...nextStatuses(item.status).map((next) => ({
+          text: STATUS_ACTION_LABEL[next],
+          style: (next === "cancelled" ? "destructive" : "default") as
+            | "destructive"
+            | "default",
+          onPress: () => handleUpdateStatus(item, next),
+        })),
+        { text: "Close", style: "cancel" as const },
       ]
     );
   };

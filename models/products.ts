@@ -109,6 +109,11 @@ export interface Product {
     shop_slug: string;
     profile_picture_url: string;
     average_rating: number;
+    /** How many ratings average_rating is built from. Only populated since
+     *  markt_python #93 -- nothing wrote the column before that, so older
+     *  payloads omit it rather than reporting a real zero. */
+    total_raters?: number;
+    total_rating?: number;
     total_products: number;
     verification_status: string;
   }

@@ -55,6 +55,14 @@ type TabId = "for_you" | "discover" | "trending" | "following" | string;
 // every render of the screen.
 const LIST_CONTENT_STYLE = { paddingBottom: 40 };
 const keyExtractor = (item: FeedItem) => item.id;
+
+// Cards carry a bottom hairline but no bottom margin, so consecutive posts sat
+// flush against each other -- the next author's name landed immediately under
+// the previous card's action row and the two read as one block. A separator
+// (rather than a margin on the card) keeps the gap strictly between items, so
+// there's no dangling space after the last one.
+const FEED_ITEM_GAP = 10;
+const FeedItemSeparator = () => <View style={{ height: FEED_ITEM_GAP }} />;
 const SIDE_DATA_TTL_MS = 60 * 1000;
 
 export default function FeedScreen() {
@@ -483,6 +491,7 @@ export default function FeedScreen() {
         data={visibleItems}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
+        ItemSeparatorComponent={FeedItemSeparator}
         onScroll={handleScroll}
         scrollEventThrottle={16}
         onEndReached={handleEndReached}

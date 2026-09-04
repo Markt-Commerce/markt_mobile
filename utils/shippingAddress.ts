@@ -1,12 +1,51 @@
 import type { ShippingAddressPayload } from "../models/cart";
 import type { UserProfile } from "../models/profile";
 
-/** A shipping address is usable for checkout if it has a full postal address, or at least coordinates. */
+/**
+ * Fields POST /cart/checkout requires (app/orders/shipping.py:
+ * REQUIRED_SHIPPING_FIELDS). Keep this list in step with the server -- the two
+ * disagreeing is what produced "Checkout failed. Please try again." on a retry
+ * that could never succeed.
+ *
+ * postal_code is deliberately absent: Nigeria rarely uses postcodes and a
+ * reverse-geocoded pin usually has none, so the server stopped requiring it.
+ */
+const REQUIRED_SHIPPING_FIELDS = [
+  "recipient_name",
+  "street_address",
+  "city",
+  "state",
+  "country",
+] as const;
+
+const FIELD_LABELS: Record<string, string> = {
+  recipient_name: "recipient name",
+  street_address: "street address",
+  city: "city",
+  state: "state",
+  country: "country",
+};
+
+/** Which required fields are still blank. Empty array means checkout will pass. */
+export function missingShippingFields(
+  addr: ShippingAddressPayload | null | undefined
+): string[] {
+  if (!addr) return REQUIRED_SHIPPING_FIELDS.map((f) => FIELD_LABELS[f]);
+  return REQUIRED_SHIPPING_FIELDS.filter(
+    (f) => !String((addr as Record<string, unknown>)[f] ?? "").trim()
+  ).map((f) => FIELD_LABELS[f]);
+}
+
+/**
+ * Whether checkout will accept this address.
+ *
+ * This used to return true for coordinates alone, which the server has never
+ * accepted -- so the app enabled "Proceed to Checkout", the server answered 422,
+ * and the buyer was told to try again. Coordinates are still sent and still
+ * useful for delivery routing; they just aren't sufficient on their own.
+ */
 export function isShippingAddressUsable(addr: ShippingAddressPayload | null | undefined): boolean {
-  if (!addr) return false;
-  const hasFullAddress = !!(addr.street_address?.trim() && addr.city?.trim() && addr.country?.trim());
-  const hasCoords = typeof addr.latitude === "number" && typeof addr.longitude === "number";
-  return hasFullAddress || hasCoords;
+  return missingShippingFields(addr).length === 0;
 }
 
 /** Pulls a usable shipping address off the user's profile (buyer's saved shipping address, falling back to their general address). Returns null if neither has enough to ship to. */

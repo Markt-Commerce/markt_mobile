@@ -55,7 +55,11 @@ export interface OrderItem {
     options: Record<string, string>;
   };
   product?: {
+    /** Since markt_python's order-item product summary: an order item used to
+     *  carry only product_id, which is why order rows showed "No image". */
+    id?: string;
     name: string;
+    image_url?: string | null;
   };
 }
 
@@ -68,7 +72,9 @@ export interface SellerOrderItem {
   status: 'pending' | 'completed' | 'cancelled' | string;
   variant: string | null;
   product: {
+    id?: string;
     name: string;
+    image_url?: string | null;
   };
   order: {
     id: string;

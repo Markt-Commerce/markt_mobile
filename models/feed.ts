@@ -48,6 +48,11 @@ export interface MediaVariant {
     id: number;
     profile_picture_url: string;
     average_rating: number;
+    /** Number of ratings behind average_rating. Populated since
+     *  markt_python #93 -- nothing wrote it before, so treat older
+     *  payloads as absent rather than zero. */
+    total_raters?: number;
+    total_rating?: number;
     verification_status: string;
     total_products: number;
     shop_slug: string;

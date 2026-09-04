@@ -12,7 +12,11 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { useToast } from "../../components/ToastProvider";
 import { useTheme } from "../../components/themeProvider";
 import { useShippingAddress } from "../../hooks/useShippingAddress";
-import { isShippingAddressUsable } from "../../utils/shippingAddress";
+import {
+  isShippingAddressUsable,
+  missingShippingFields,
+} from "../../utils/shippingAddress";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
 import ShippingAddressCard from "../../components/shippingAddressCard";
 import logger from "../../utils/logger";
 
@@ -95,11 +99,14 @@ export default function CartScreen() {
   };
 
   const handleCheckout = async () => {
-    if (!isShippingAddressUsable(shipping.address)) {
+    const missing = missingShippingFields(shipping.address);
+    if (missing.length > 0) {
+      // Name the fields. "Add a shipping address" was unhelpful when an address
+      // was already filled in and only one field was blank.
       show({
         variant: "error",
-        title: "Shipping address required",
-        message: "Add a shipping address before checking out.",
+        title: "Shipping address incomplete",
+        message: `Add your ${missing.join(", ")} before checking out.`,
       });
       return;
     }
@@ -132,10 +139,16 @@ export default function CartScreen() {
       });
     } catch (err) {
       logger.error("Checkout failed:", err);
+      // The error was logged and then thrown away in favour of a fixed
+      // sentence, so a rejected payload and a dropped connection looked
+      // identical to the buyer -- and "try again" only helps for one of them.
       show({
         variant: "error",
         title: "Checkout failed",
-        message: "There was a problem during checkout. Please try again.",
+        message: friendlyErrorMessage(
+          err,
+          "We couldn't create your order. Please check your details and try again."
+        ),
       });
     } finally {
       setProcessing(false);

@@ -16,6 +16,8 @@ import { isOwnProductListing } from "../../utils/chatGuards";
 import { normalizeUri, resolveMediaUri } from "../../utils/imageUri";
 import Avatar from "../../components/Avatar";
 import { useTheme } from "../../components/themeProvider";
+import { StarRating } from "../../components/StarRating";
+import ProductReviews from "../../components/ProductReviews";
 import { runMessageSellerFlow } from "../../utils/messageSellerFlow";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import { MediaViewerModal } from "../../components/postMedia";
@@ -371,10 +373,32 @@ const addProductToCart = async (product:ProductDetail)=>{
             />
             <View>
               <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{product.seller.shop_name}</Text>
-              <Text className={`text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Average Rating: {product.seller.average_rating}</Text>
+              {/* Was `Average Rating: 0` as plain text -- unreadable at a
+                  glance, and it printed a raw 0 for every seller because
+                  nothing populated the column until markt_python #93. */}
+              {Number(product.seller?.average_rating) > 0 ? (
+                <View className="mt-1">
+                  <StarRating
+                    value={Number(product.seller.average_rating)}
+                    size={14}
+                    showValue
+                    count={Number(product.seller?.total_raters) || undefined}
+                    dark={isDark}
+                  />
+                </View>
+              ) : (
+                <Text className={`text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                  No ratings yet
+                </Text>
+              )}
             </View>
           </View>
-          <View className="flex-row justify-end pb-10">
+          <ProductReviews
+            productId={String(id)}
+            onChanged={() => fetchProduct(String(id))}
+          />
+
+          <View className="flex-row justify-end pb-10 pt-6">
             <Link href={`/shopDetails/${product.seller_id}`} asChild>
             <TouchableOpacity className="bg-primary h-12 rounded px-6 justify-center items-center">
               <Text className="text-white font-bold">View Shop</Text>

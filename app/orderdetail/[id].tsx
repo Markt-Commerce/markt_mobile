@@ -9,6 +9,7 @@ import { getProductById } from "../../services/sections/product";
 import { Order, OrderItem } from "../../models/orders";
 import type { ProductDetail } from "../../models/products";
 import { useTheme } from "../../components/themeProvider";
+import { formatStatus } from "../../utils/formatStatus";
 
 function formatOrderDate(dateString?: string): string {
   if (!dateString) return "";
@@ -131,7 +132,7 @@ export default function OrderDetail() {
           <Text
             className={`text-xl font-bold mt-2 capitalize ${isDark ? "text-dark-text" : "text-black"}`}
           >
-            {order.status}
+            {formatStatus(order.status)}
           </Text>
         </View>
 
@@ -306,7 +307,7 @@ function ItemRow({
               <Text className="text-xs text-tertiary mt-0.5">Variant #{item.variant_id}</Text>
             ) : null}
             <Text className="text-xs text-tertiary mt-1 capitalize">
-              Qty: {item.quantity} · {item.status}
+              Qty: {item.quantity} · {formatStatus(item.status)}
             </Text>
           </View>
         </View>

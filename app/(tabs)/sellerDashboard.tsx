@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSellerAnalyticsOverview, getSellerAnalyticsTimeseries } from '../../services/sections/analytics';
 import { getMyProducts } from '../../services/sections/product';
 import { getSellerOrders, updateSellerOrderItem } from '../../services/sections/orders';
+import { friendlyErrorMessage } from '../../utils/errorMessages';
 import { deleteProduct } from '../../services/sections/product';
 import { SellerAnalyticsOverview, SellerAnalyticsTimeseries } from '../../models/analytics';
 import { ProductResponse } from '../../models/products';
@@ -257,7 +258,9 @@ export default function SellerDashboard() {
       setSellerRecentOrders(prev => prev.map(it => it.id === item.id ? { ...it, status: 'processing' } : it));
       show({ variant: 'success', title: 'Order accepted', message: 'Order item marked as processing.' });
     } catch (err) {
-      show({ variant: 'error', title: 'Accept failed', message: 'Could not accept order.' });
+      // Surface what the server said -- on an illegal transition it names both
+      // states, which is more use than "Could not accept order."
+      show({ variant: 'error', title: 'Accept failed', message: friendlyErrorMessage(err, 'Could not accept order.') });
     }
   };
 
@@ -267,7 +270,9 @@ export default function SellerDashboard() {
       setSellerRecentOrders(prev => prev.map(it => it.id === item.id ? { ...it, status: 'cancelled' } : it));
       show({ variant: 'success', title: 'Order declined', message: 'Order item cancelled.' });
     } catch (err) {
-      show({ variant: 'error', title: 'Decline failed', message: 'Could not decline order.' });
+      // Surface what the server said -- on an illegal transition it names both
+      // states, which is more use than "Could not decline order."
+      show({ variant: 'error', title: 'Decline failed', message: friendlyErrorMessage(err, 'Could not decline order.') });
     }
   };
 
@@ -277,7 +282,7 @@ export default function SellerDashboard() {
       setSellerRecentOrders(prev => prev.map(it => it.id === item.id ? { ...it, status: newStatus } : it));
       show({ variant: 'success', title: 'Status updated', message: `Order item set to ${newStatus}.` });
     } catch (err) {
-      show({ variant: 'error', title: 'Update failed', message: 'Could not update order status.' });
+      show({ variant: 'error', title: 'Update failed', message: friendlyErrorMessage(err, 'Could not update order status.') });
     }
   };
 

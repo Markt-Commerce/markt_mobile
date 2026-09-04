@@ -24,24 +24,52 @@ import { saveItem, unsaveItem } from "../../services/sections/saved";
 
 
 
-// Helper component for comment rendering
-const SingleCommentComponent = React.memo(({ comment, isDark }: { comment: CommentItem, isDark: boolean }) => {
+/**
+ * Same rule as the chat thread: comments from one person within the same minute
+ * form a run, and only the first carries an avatar and a name. Someone posting
+ * three quick thoughts used to stack three avatars and three identical times.
+ */
+function sameCommentGroup(a?: CommentItem, b?: CommentItem) {
+  if (!a || !b) return false;
+  if (String(a.user?.id ?? "") !== String(b.user?.id ?? "")) return false;
+  if (!a.user?.id) return false;
+  const ta = new Date(a.created_at);
+  const tb = new Date(b.created_at);
+  if (isNaN(ta.getTime()) || isNaN(tb.getTime())) return false;
   return (
-    <View className="flex w-full flex-row items-start justify-start gap-3 p-4">
-      <Avatar
-        uri={comment.user?.profile_picture_url}
-        name={comment.user?.username}
-        size={40}
-      />
+    ta.getFullYear() === tb.getFullYear() &&
+    ta.getMonth() === tb.getMonth() &&
+    ta.getDate() === tb.getDate() &&
+    ta.getHours() === tb.getHours() &&
+    ta.getMinutes() === tb.getMinutes()
+  );
+}
+
+// Helper component for comment rendering
+const SingleCommentComponent = React.memo(({ comment, isDark, grouped = false }: { comment: CommentItem, isDark: boolean, grouped?: boolean }) => {
+  return (
+    <View className={`flex w-full flex-row items-start justify-start gap-3 px-4 ${grouped ? "pt-0.5 pb-1" : "pt-3 pb-1"}`}>
+      {grouped ? (
+        // Keeps the text aligned under the run's first comment.
+        <View style={{ width: 40 }} />
+      ) : (
+        <Avatar
+          uri={comment.user?.profile_picture_url}
+          name={comment.user?.username}
+          size={40}
+        />
+      )}
       <View className="flex h-full flex-1 flex-col items-start justify-start">
-        <View className="flex w-full flex-row items-start justify-start gap-x-3">
-          <Text className={`text-sm font-bold leading-normal tracking-[0.015em] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-            {comment.user.username}
-          </Text>
-          <Text className={`text-sm font-normal leading-normal ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-            {parseDate(comment.created_at)}
-          </Text>
-        </View>
+        {grouped ? null : (
+          <View className="flex w-full flex-row items-start justify-start gap-x-3">
+            <Text className={`text-sm font-bold leading-normal tracking-[0.015em] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              {comment.user.username}
+            </Text>
+            <Text className={`text-sm font-normal leading-normal ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              {parseDate(comment.created_at)}
+            </Text>
+          </View>
+        )}
         <Text className={`text-sm font-normal leading-normal ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
           {comment.content}
         </Text>
@@ -63,6 +91,8 @@ export default function PostDetailsScreen() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true); // Control for infinite scroll
   const loadingCommentsRef = useRef(false);
+  const postingCommentRef = useRef(false);
+  const [postingComment, setPostingComment] = useState(false);
   const commentInputRef = useRef<TextInput>(null);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -199,9 +229,17 @@ export default function PostDetailsScreen() {
   }, []);
 
   const createComment = async (comment: string, parentId?: number) => {
+    // The button had no busy state, so it could be tapped repeatedly and each
+    // tap posted another comment. Ref, not state: two taps can land before a
+    // state update flushes.
+    if (postingCommentRef.current) return;
+    const trimmed = comment.trim();
+    if (!trimmed) return;
+
+    postingCommentRef.current = true;
+    setPostingComment(true);
     try {
-      if (comment == "") return;
-      const newComment = await commentOnPost(id, comment, parentId);
+      const newComment = await commentOnPost(id, trimmed, parentId);
       setComments((prev) => [newComment, ...prev]);
       setNewComment("");
     } catch (error) {
@@ -210,6 +248,9 @@ export default function PostDetailsScreen() {
         title: "Error adding comment",
         message: "There was an issue adding your comment.",
       });
+    } finally {
+      postingCommentRef.current = false;
+      setPostingComment(false);
     }
   };
 
@@ -301,14 +342,23 @@ export default function PostDetailsScreen() {
         </Text>
       </View>
 
-      <View className={`flex flex-row gap-3 min-h-[64px] py-2 px-4 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+      {/* Tappable, as it is in the feed. The author here was static, so opening
+          a post was a dead end for finding the person who wrote it. */}
+      <TouchableOpacity
+        onPress={() => post.user?.id && router.push(`/profile/${post.user.id}`)}
+        disabled={!post.user?.id}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={`View ${post.user?.username ?? "author"}'s profile`}
+        className={`flex flex-row gap-3 min-h-[64px] py-2 px-4 items-center ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      >
         <Avatar uri={post.user?.profile_picture_url} name={post.user?.username} size={48} />
         <View className="flex flex-col justify-center">
           <Text className={`text-base font-bold leading-normal line-clamp-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
             {post.user.username}
           </Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* Caption */}
       <Text className={`text-base font-normal leading-normal pb-3 pt-1 px-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
@@ -400,8 +450,12 @@ export default function PostDetailsScreen() {
     </View>
   );
 
-  const renderCommentItem = ({ item }: { item: CommentItem }) => (
-    <SingleCommentComponent comment={item} isDark={isDark} />
+  const renderCommentItem = ({ item, index }: { item: CommentItem; index: number }) => (
+    <SingleCommentComponent
+      comment={item}
+      isDark={isDark}
+      grouped={sameCommentGroup(comments[index - 1], item)}
+    />
   );
 
   const renderListFooter = () => {
@@ -461,10 +515,18 @@ export default function PostDetailsScreen() {
                 <View className="flex-row items-center">
                   {/* Send button */}
                   <TouchableOpacity
-                    className="p-1.5"
+                    className={`p-1.5 ${postingComment || !newComment.trim() ? "opacity-40" : ""}`}
                     onPress={() => createComment(newComment)}
+                    disabled={postingComment || !newComment.trim()}
+                    accessibilityRole="button"
+                    accessibilityLabel="Post comment"
+                    accessibilityState={{ busy: postingComment, disabled: postingComment || !newComment.trim() }}
                   >
-                    <SendHorizonal size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+                    {postingComment ? (
+                      <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
+                    ) : (
+                      <SendHorizonal size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>

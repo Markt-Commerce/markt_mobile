@@ -15,7 +15,12 @@ import { ArrowLeft } from "lucide-react-native";
 import { useTheme } from "../../components/themeProvider";
 import { useToast } from "../../components/ToastProvider";
 import { verifyWalletTopUp } from "../../services/sections/wallet";
-import { isWalletReturnUrl, parseWalletDeepLink } from "../../utils/walletDeepLink";
+import {
+  isWalletReturnUrl,
+  isWalletCallbackUrl,
+  parseWalletDeepLink,
+  topupIdFromCallbackUrl,
+} from "../../utils/walletDeepLink";
 
 export default function WalletTopUpScreen() {
   const router = useRouter();
@@ -82,11 +87,23 @@ export default function WalletTopUpScreen() {
   const handleReturnUrl = useCallback(
     (url: string) => {
       if (!isWalletReturnUrl(url)) return false;
+
+      // Stop at the backend's callback hop rather than letting the WebView try
+      // to load it. That URL's host comes from the server's API_BASE_URL, and
+      // when that is wrong the phone can't reach it -- the customer has already
+      // paid (the webhook credits them either way) but they'd see
+      // ERR_CONNECTION_REFUSED and think it failed. finish() verifies over the
+      // API, which doesn't care what API_BASE_URL says.
+      if (isWalletCallbackUrl(url)) {
+        finish("success", topupIdFromCallbackUrl(url) ?? (topup_id as string));
+        return true;
+      }
+
       const parsed = parseWalletDeepLink(url);
       finish(parsed?.status ?? "failed", parsed?.topupId);
       return true;
     },
-    [finish]
+    [finish, topup_id]
   );
 
   if (verifying) {

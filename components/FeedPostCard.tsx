@@ -194,7 +194,13 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
 
           {/* Media — grid of up to 5 images/videos, tap opens fullscreen */}
           {mediaItems.length > 0 && (
-            <View className="mb-1 overflow-hidden" style={{ borderRadius: 12 }}>
+            // mt-2 only when there's no caption: the caption's own mb-2 is what
+            // separated the header from the media, so an image-only post had
+            // its first image jammed against the author's name.
+            <View
+              className={`mb-1 overflow-hidden ${post.caption ? "" : "mt-2"}`}
+              style={{ borderRadius: 12 }}
+            >
               <PostMediaGrid media={mediaItems} />
             </View>
           )}
