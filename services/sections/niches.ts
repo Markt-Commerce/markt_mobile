@@ -7,6 +7,7 @@ import {
   NichePostsResponse,
   NichesListParams,
   NicheCanPostResponse,
+  UpdateNicheRequest,
 } from "../../models/niches";
 import { CreatePostRequest } from "../../models/post";
 
@@ -34,6 +35,15 @@ export async function getNiches(params: NichesListParams = {}): Promise<NichesRe
 export async function getNicheById(id: string): Promise<Niches> {
   const res = await request<Niches>(`${BASE_URL}/socials/niches/${id}`, { method: "GET" });
   return res;
+}
+
+/** PUT /socials/niches/<id> — owner-only community settings update. */
+export async function updateNiche(id: string, data: UpdateNicheRequest): Promise<Niches> {
+  return request<Niches>(`${BASE_URL}/socials/niches/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 /**

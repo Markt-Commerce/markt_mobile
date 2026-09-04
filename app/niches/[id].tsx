@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Plus, Users } from "lucide-react-native";
+import { ArrowLeft, Plus, Users, Settings } from "lucide-react-native";
 import { getNichePosts, joinNiche, leaveNiche, getMyNiches, getNicheById, canPostInNiche } from "../../services/sections/niches";
 import { NichePost, Niches } from "../../models/niches";
 import { useToast } from "../../components/ToastProvider";
@@ -33,6 +33,7 @@ export default function NicheDetailScreen() {
   const [niche, setNiche] = useState<Niches | null>(null);
   const [loading, setLoading] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
   const [canPost, setCanPost] = useState(false);
   const [page, setPage] = useState(1);
@@ -104,6 +105,7 @@ export default function NicheDetailScreen() {
       
       if (userNiche) {
         setIsJoined(true);
+        setIsOwner(userNiche.role === "owner");
         
         // Check if user is banned (assuming banned status is indicated by a property)
         // You may need to adjust this based on actual API response structure
@@ -119,6 +121,7 @@ export default function NicheDetailScreen() {
         }
       } else {
         setIsJoined(false);
+        setIsOwner(false);
         setIsBanned(false);
       }
     } catch (err) {
@@ -236,6 +239,17 @@ export default function NicheDetailScreen() {
             >
               <ArrowLeft size={20} color="#FFFFFF" />
             </TouchableOpacity>
+            {isOwner && (
+              <TouchableOpacity
+                onPress={() => router.push({ pathname: "/niches/settings", params: { id } })}
+                accessibilityRole="button"
+                accessibilityLabel="Community settings"
+                className="absolute right-4 top-3 w-9 h-9 rounded-full items-center justify-center"
+                style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+              >
+                <Settings size={18} color="#FFFFFF" strokeWidth={2} />
+              </TouchableOpacity>
+            )}
           </View>
 
           <View className="px-4 pt-3 pb-4">

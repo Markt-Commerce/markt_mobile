@@ -123,6 +123,8 @@ export interface CreateNicheRequest {
   settings?: CommunitySettings;
 }
 
+export type UpdateNicheRequest = Partial<CreateNicheRequest>;
+
 export interface NichesListParams {
   search?: string;
   category_ids?: number[];
@@ -135,4 +137,3 @@ export interface NichesListParams {
   page?: number;
   per_page?: number;
 }
-
