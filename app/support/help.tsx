@@ -202,7 +202,7 @@ export default function HelpCenterScreen() {
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }}
-      edges={["left", "right", "bottom"]}
+      edges={["top", "left", "right", "bottom"]}
     >
       <ScrollView
         contentContainerStyle={{ paddingBottom: 40 }}

@@ -30,6 +30,7 @@ const BRAND_PRIMARY = "#E94C2A";
 function TabsWithDrawer() {
   const { isOpen, closeDrawer } = useDrawer();
   const { profile } = useUser();
+  const role = profile?.current_role;
   const { itemCount } = useCart();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
@@ -126,7 +127,9 @@ function TabsWithDrawer() {
               },
               tabBarAccessibilityLabel:
                 itemCount > 0
-                  ? `Orders, ${itemCount} ${itemCount === 1 ? "item" : "items"} in cart`
+                  ? role === "seller"
+                    ? `Orders, ${itemCount} ${itemCount === 1 ? "order needs" : "orders need"} your attention`
+                    : `Orders, ${itemCount} ${itemCount === 1 ? "item" : "items"} in cart`
                   : "Orders",
               tabBarIcon: ({ color, focused }) => (
                 <ShoppingBag color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />

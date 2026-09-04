@@ -78,43 +78,53 @@ export default function LeaderboardScreen() {
       style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}
       edges={["top", "bottom"]}
     >
-      <View
-        className={`flex-row items-center px-4 py-3 border-b ${
-          isDark ? "border-[#46464e]" : "border-border"
-        }`}
-      >
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+      <View className="flex-row items-center px-4 h-12">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <ArrowLeft size={22} color={isDark ? "#f0f1f2" : "#000000"} />
         </TouchableOpacity>
         <Text
-          className={`text-lg font-bold ml-2 ${
-            isDark ? "text-[#f0f1f2]" : "text-black"
-          }`}
+          className={`text-[17px] font-bold ml-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
         >
           Leaderboard
         </Text>
       </View>
 
       {/* Controls */}
-      <View className="px-6 pt-4">
+      <View className="px-5 pt-1">
         <LeaderboardScopeTabs scope={scope} onChange={setScope} />
         <PeriodToggle />
       </View>
 
-      {/* Sticky your-rank */}
+      {/* Your standing, with the rank as the number that leads. It was a flat
+          orange bar with two same-weight strings pushed to opposite edges, so
+          nothing read first. */}
       {yourRank && (
-        <View className="px-6 pt-4">
-          <View
-            className="rounded p-4 flex-row items-center justify-between"
-            style={{ backgroundColor: "#E94C2A" }}
-          >
-            <Text className="text-white font-bold text-sm">
-              Your rank · #{yourRank.rank}
-              <Text className=""> of {yourRank.out_of.toLocaleString()}</Text>
-            </Text>
-            <Text className="text-white font-bold text-sm">
-              {yourRank.points.toLocaleString()} pts
-            </Text>
+        <View className="px-5 pt-4">
+          <View className="rounded-2xl px-4 py-3.5 flex-row items-center bg-primary">
+            <View>
+              <Text className="text-white/75 text-[11px] font-bold uppercase tracking-[1.5px]">
+                Your rank
+              </Text>
+              <View className="flex-row items-baseline mt-0.5">
+                <Text className="text-white text-[26px] font-bold">
+                  #{yourRank.rank}
+                </Text>
+                <Text className="text-white/75 text-[13px] ml-1.5">
+                  of {yourRank.out_of.toLocaleString()}
+                </Text>
+              </View>
+            </View>
+            <View className="ml-auto items-end">
+              <Text className="text-white text-[18px] font-bold">
+                {yourRank.points.toLocaleString()}
+              </Text>
+              <Text className="text-white/75 text-[11px]">pts</Text>
+            </View>
           </View>
         </View>
       )}
