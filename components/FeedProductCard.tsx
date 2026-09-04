@@ -9,10 +9,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { View, Text, TouchableOpacity, Pressable } from "react-native";
 import { Link, useRouter } from "expo-router";
-import { Check, MessageCircle, MoreHorizontal, ShoppingCart, Tag } from "lucide-react-native";
+import { MessageCircle, MoreHorizontal, ShoppingCart, Tag } from "lucide-react-native";
 import type { FeedProduct } from "../types/feed";
 import { addToCart } from "../services/sections/cart";
-import { followSeller, unfollowSeller } from "../services/sections/users";
 import SkeletonImage from "./SkeletonImage";
 import Avatar from "./Avatar";
 import { useUser } from "../hooks/userContextProvider";
@@ -47,7 +46,6 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
   const { show } = useToast();
   const [adding, setAdding] = useState(false);
   const [isFollowing, setIsFollowing] = useState(product.seller?.is_followed ?? false);
-  const [followLoading, setFollowLoading] = useState(false);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
 
@@ -109,28 +107,6 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
     if (!product.seller?.id) return;
     router.push(`/shopDetails/${product.seller.id}`);
   }, [router, product.seller?.id]);
-
-  const handleFollowToggle = useCallback(async (e: { stopPropagation?: () => void }) => {
-    e?.stopPropagation?.();
-    if (!followeeId || followLoading) return;
-    setFollowLoading(true);
-    const prev = isFollowing;
-    setIsFollowing(!isFollowing);
-    try {
-      if (isFollowing) {
-        await unfollowSeller(followeeId);
-        show({ variant: "success", title: "Unfollowed", message: "You unfollowed this seller." });
-      } else {
-        await followSeller(followeeId);
-        show({ variant: "success", title: "Following", message: "You are now following this seller." });
-      }
-    } catch {
-      setIsFollowing(prev);
-      show({ variant: "error", title: "Error", message: isFollowing ? "Could not unfollow." : "Could not follow." });
-    } finally {
-      setFollowLoading(false);
-    }
-  }, [followeeId, followLoading, isFollowing, show]);
 
   return (
     <View className={`flex-row px-4 py-3 border-b ${isDark ? "bg-[#1a1c1d] border-[#34363a]" : "bg-white border-border"}`}>
@@ -217,22 +193,11 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
             </Text>
           )}
           {topBadges.map((badge) => <BadgeChip key={badge.slug} badge={badge} size="xs" />)}
-          {followeeId && !isOwnProduct && !isFollowing && (
-            <TouchableOpacity
-              onPress={(event) => handleFollowToggle(event)}
-              disabled={followLoading}
-              className={`ml-auto px-3 h-8 rounded-full items-center justify-center ${isFollowing ? (isDark ? "bg-[#243b2a]" : "bg-[#edf7e9]") : "bg-primary"}`}
-              accessibilityRole="button"
-              accessibilityLabel={isFollowing ? "Unfollow seller" : "Follow seller"}
-            >
-              <View className="flex-row items-center gap-1">
-                {isFollowing && !followLoading ? <Check size={14} color="#2f7d32" strokeWidth={2.5} /> : null}
-                <Text className={`text-xs font-semibold ${isFollowing ? "text-[#2f7d32]" : "text-white"}`}>
-                  {followLoading ? "…" : isFollowing ? "Following" : "Follow"}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          )}
+          {/* No Follow button. It occupied a full row on every card from a
+              seller you hadn't followed, competing with Add to cart and Chat --
+              the two things the card exists for. Following is an action you
+              take on someone's profile, which is a tap away from the name
+              above; the header already reads "· following" when you do. */}
         </View>
 
         {isBuyer && (

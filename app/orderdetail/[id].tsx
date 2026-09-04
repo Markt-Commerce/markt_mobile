@@ -131,7 +131,7 @@ export default function OrderDetail() {
         {/* Buyer */}
         {order.buyer?.buyername ? (
           <View
-            className={`rounded-2xl p-4 mb-3 flex-row items-center gap-3 ${isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]"}`}
+            className={`mb-5 pt-5 border-t flex-row items-center gap-3 ${isDark ? "border-[#2f3132]" : "border-border-light"}`}
           >
             <User size={18} color={mutedColor} />
             <View>
@@ -148,7 +148,7 @@ export default function OrderDetail() {
         {/* Shipping Address */}
         {shippingAddressLine ? (
           <View
-            className={`rounded-2xl p-4 mb-3 ${isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]"}`}
+            className={`mb-5 pt-5 border-t ${isDark ? "border-[#2f3132]" : "border-border-light"}`}
           >
             <View className="flex-row items-center gap-2">
               <MapPin size={16} color={mutedColor} />
@@ -170,7 +170,7 @@ export default function OrderDetail() {
         {/* Payment & Notes */}
         {(order.payment_method || order.customer_note) ? (
           <View
-            className={`rounded-2xl p-4 mb-3 ${isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]"}`}
+            className={`mb-5 pt-5 border-t ${isDark ? "border-[#2f3132]" : "border-border-light"}`}
           >
             {order.payment_method ? (
               <View className="flex-row items-center gap-2 mb-3">
@@ -193,7 +193,7 @@ export default function OrderDetail() {
 
         {/* Items */}
         <View
-          className={`rounded-2xl p-4 mb-3 ${isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]"}`}
+          className={`mb-5 pt-5 border-t ${isDark ? "border-[#2f3132]" : "border-border-light"}`}
         >
           <Text
             className={`font-bold text-lg mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
@@ -217,7 +217,7 @@ export default function OrderDetail() {
 
         {/* Pricing */}
         <View
-          className={`rounded-2xl p-4 mb-6 ${isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]"}`}
+          className={`mb-6 pt-5 border-t ${isDark ? "border-[#2f3132]" : "border-border-light"}`}
         >
           <Text
             className={`font-bold text-lg mb-4 ${isDark ? "text-dark-text" : "text-black"}`}

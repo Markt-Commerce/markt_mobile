@@ -188,7 +188,7 @@ function MyCartTab() {
       contentContainerStyle={{ paddingBottom: 24 }}
     >
       <View className="px-4">
-        <View className={`rounded border overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+        <View className={isDark ? "bg-[#1a1c1d]" : "bg-white"}>
           {cart.items.map((item, idx) => {
             const image = item.product?.images?.[0]?.media?.original_url ?? "";
             const name = item.product?.name ?? "Product";
@@ -304,8 +304,8 @@ function BuyerOrdersTabs({
   );
 
   return (
-    <View className="flex-1 px-4 pt-2">
-      <View className={`flex-1 rounded border overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+    <View className="flex-1">
+      <View className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
         <OrdersList
           key={activeTab}
           fetchOrders={fetchOrders}
@@ -325,8 +325,8 @@ function SellerOrdersTab({ isDark }: { isDark: boolean }) {
   }, []);
 
   return (
-    <View className="flex-1 px-4 pt-2">
-      <View className={`flex-1 rounded border overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+    <View className="flex-1">
+      <View className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
         <OrdersList
           fetchOrders={fetchOrders}
           isSeller
