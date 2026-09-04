@@ -25,6 +25,7 @@ import ProductDisplayComponent from "../../components/productDisplayComponent";
 import { Product } from "../../models/feed";
 import { defaultProfilePicture } from "../../models/defaults";
 import { useTheme } from "../../components/themeProvider";
+import VerifiedBadge, { isVerifiedSeller } from "../../components/VerifiedBadge";
 import { useGamificationLookup } from "../../hooks/useGamificationLookup";
 import { useBadges } from "../../hooks/useBadges";
 import TierBadge from "../../components/gamification/TierBadge";
@@ -205,15 +206,12 @@ export default function Shop() {
                 >
                   {shop?.average_rating || 0}
                 </Text>
-                <View
-                  className={`px-2 py-0.5 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
-                >
-                  <Text
-                    className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-[10px] font-bold uppercase tracking-wider`}
-                  >
-                    {shop?.verification_status || "Unverified"}
-                  </Text>
-                </View>
+                {/* Only shown when actually verified. This printed the raw
+                    status, so an unverified shop displayed "pending" inside
+                    something shaped like a badge. */}
+                {isVerifiedSeller(shop?.verification_status) ? (
+                  <VerifiedBadge label="Verified seller" />
+                ) : null}
               </View>
             </View>
           </View>

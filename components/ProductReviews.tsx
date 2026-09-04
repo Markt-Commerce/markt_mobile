@@ -15,6 +15,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, TextInput, ActivityIndicator } from "react-native";
 import { ThumbsUp, Pencil, Trash2, X } from "lucide-react-native";
 import Avatar from "./Avatar";
+import VerifiedBadge from "./VerifiedBadge";
 import { StarRating, StarRatingInput } from "./StarRating";
 import { useTheme } from "./themeProvider";
 import { useToast } from "./ToastProvider";
@@ -286,10 +287,8 @@ export default function ProductReviews({ productId, onChanged }: Props) {
                       {isMine ? "You" : r.user?.username || "Buyer"}
                     </Text>
                     {r.is_verified ? (
-                      <View className="ml-2 px-1.5 py-0.5 rounded bg-primary-muted">
-                        <Text className="text-primary text-[10px] font-bold uppercase tracking-wide">
-                          Verified
-                        </Text>
+                      <View className="ml-2">
+                        <VerifiedBadge kind="purchase" />
                       </View>
                     ) : null}
                   </View>

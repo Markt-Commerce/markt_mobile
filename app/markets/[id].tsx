@@ -26,6 +26,7 @@ import Avatar from "../../components/Avatar";
 import ProductDisplayComponent from "../../components/productDisplayComponent";
 import PostDisplayComponent from "../../components/PostDisplayComponent";
 import { useTheme } from "../../components/themeProvider";
+import VerifiedBadge, { isVerifiedSeller } from "../../components/VerifiedBadge";
 
 type Tab = "sellers" | "products" | "posts";
 
@@ -72,17 +73,7 @@ function SellerRow({
           </Text>
         )}
       </View>
-      {seller.verification_status === "verified" && (
-        <View
-          className={`px-2 py-0.5 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
-        >
-          <Text
-            className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-medium text-[10px] uppercase tracking-wider`}
-          >
-            Verified
-          </Text>
-        </View>
-      )}
+      {isVerifiedSeller(seller.verification_status) ? <VerifiedBadge /> : null}
     </TouchableOpacity>
   );
 }

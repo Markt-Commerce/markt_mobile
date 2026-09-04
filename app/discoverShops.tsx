@@ -13,13 +13,14 @@ import {
   ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Search, ArrowLeft } from "lucide-react-native";
+import { ArrowLeft, ArrowUpDown, Search } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { debounce } from "lodash";
 import { getShops, getShopCategories } from "../services/sections/shops";
 import type { ShopLite, ShopCategory } from "../services/sections/shops";
 import Avatar from "../components/Avatar";
 import { useTheme } from "../components/themeProvider";
+import VerifiedBadge, { isVerifiedSeller } from "../components/VerifiedBadge";
 
 function dedupeById<T extends { id: string | number }>(items: T[]): T[] {
   const seen = new Set<string | number>();
@@ -66,17 +67,7 @@ function ShopRow({
           </Text>
         )}
       </View>
-      {shop.verification_status === "verified" && (
-        <View
-          className={`px-2 py-0.5 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
-        >
-          <Text
-            className={`${isDark ? "text-dark-muted" : "text-tertiary"} font-medium text-[10px] uppercase tracking-wider`}
-          >
-            Verified
-          </Text>
-        </View>
-      )}
+      {isVerifiedSeller(shop.verification_status) ? <VerifiedBadge /> : null}
     </TouchableOpacity>
   );
 }
@@ -194,77 +185,119 @@ export default function DiscoverShopsScreen() {
         />
       </View>
 
-      {/* Categories Chips */}
-      {categories.length > 0 && (
-        <View className="mt-2">
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{
-              paddingHorizontal: 24,
-              paddingVertical: 12,
-              gap: 12,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => setSelectedCategory(null)}
-              className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === null ? "bg-primary" : isDark ? "bg-dark-elevated" : "bg-surface"}`}
-            >
-              <Text
-                className={`font-semibold text-sm ${selectedCategory === null ? "text-white" : isDark ? "text-dark-muted" : "text-tertiary"}`}
-              >
-                All
-              </Text>
-            </TouchableOpacity>
-            {categories.map((c) => (
-              <TouchableOpacity
-                key={c.id}
-                onPress={() => setSelectedCategory(c.slug)}
-                className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === c.slug ? "bg-primary" : isDark ? "bg-dark-elevated" : "bg-surface"}`}
-              >
-                <Text
-                  className={`font-semibold text-sm ${selectedCategory === c.slug ? "text-white" : isDark ? "text-dark-muted" : "text-tertiary"}`}
-                >
-                  {c.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+      {/* One filter row, not two. Categories and sort were separate stacked
+          rails at 40pt and 32pt with their own padding — together they ate a
+          third of the screen before a single shop appeared, and the two chip
+          shapes (filled vs outlined) made them look like unrelated controls.
+          Sort now leads the same rail, marked by its icon. */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingVertical: 10,
+          gap: 8,
+          alignItems: "center",
+        }}
+      >
+        <View className="flex-row items-center pr-0.5">
+          <ArrowUpDown size={13} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
         </View>
-      )}
-
-      {/* Sort Chips */}
-      <View className="mb-2">
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingHorizontal: 24,
-            paddingVertical: 8,
-            gap: 12,
-          }}
-        >
-          {(["rating", "followers", "recent", "name"] as const).map((s) => (
+        {(["rating", "followers", "recent", "name"] as const).map((srt) => {
+          const active = sortBy === srt;
+          const label =
+            srt === "rating"
+              ? "Top rated"
+              : srt === "followers"
+                ? "Popular"
+                : srt === "recent"
+                  ? "Recent"
+                  : "A–Z";
+          return (
             <TouchableOpacity
-              key={s}
-              onPress={() => setSortBy(s)}
-              className={`py-1.5 px-3 min-h-[32px] justify-center rounded border ${sortBy === s ? "bg-primary border-primary" : isDark ? "bg-transparent border-dark-border-strong" : "bg-transparent border-border"}`}
+              key={srt}
+              onPress={() => setSortBy(srt)}
+              activeOpacity={0.8}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              className={`px-3.5 h-8 rounded-full items-center justify-center ${
+                active
+                  ? isDark
+                    ? "bg-[#f0f1f2]"
+                    : "bg-black"
+                  : isDark
+                    ? "bg-[#2f3132]"
+                    : "bg-[#F4F4F5]"
+              }`}
             >
               <Text
-                className={`font-medium text-xs ${sortBy === s ? "text-white" : isDark ? "text-dark-muted" : "text-tertiary"}`}
+                className={`text-[13px] font-semibold ${
+                  active
+                    ? isDark
+                      ? "text-black"
+                      : "text-white"
+                    : isDark
+                      ? "text-[#c6c5cf]"
+                      : "text-[#52525B]"
+                }`}
               >
-                {s === "rating"
-                  ? "Top rated"
-                  : s === "followers"
-                    ? "Popular"
-                    : s === "recent"
-                      ? "Recent"
-                      : "A–Z"}
+                {label}
               </Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+          );
+        })}
+
+        {categories.length > 0 ? (
+          <View className={`w-px h-5 mx-1 ${isDark ? "bg-[#46464e]" : "bg-[#E4E4E7]"}`} />
+        ) : null}
+
+        {categories.length > 0 ? (
+          <TouchableOpacity
+            onPress={() => setSelectedCategory(null)}
+            activeOpacity={0.8}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: selectedCategory === null }}
+            className={`px-3.5 h-8 rounded-full items-center justify-center ${
+              selectedCategory === null ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"
+            }`}
+          >
+            <Text
+              className={`text-[13px] font-semibold ${
+                selectedCategory === null
+                  ? "text-white"
+                  : isDark
+                    ? "text-[#c6c5cf]"
+                    : "text-[#52525B]"
+              }`}
+            >
+              All
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+        {categories.map((c) => {
+          const active = selectedCategory === c.slug;
+          return (
+            <TouchableOpacity
+              key={c.id}
+              onPress={() => setSelectedCategory(c.slug)}
+              activeOpacity={0.8}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              className={`px-3.5 h-8 rounded-full items-center justify-center ${
+                active ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"
+              }`}
+            >
+              <Text
+                className={`text-[13px] font-semibold ${
+                  active ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-[#52525B]"
+                }`}
+              >
+                {c.name}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
 
       {loading ? (
         <View className="flex-1 justify-center items-center py-16">
