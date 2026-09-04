@@ -69,6 +69,15 @@ export interface Niches {
   member_count: number;
   post_count: number;
 
+  /** Community imagery. Added in markt_python feat/niche-media-and-filters —
+   *  before that a niche had no avatar at all and every card rendered as an
+   *  initial on a coloured square. */
+  image_url?: string | null;
+  banner_url?: string | null;
+  /** Resolved for the requesting user in one batched query, so a list can show
+   *  Join vs Joined without a call per card. */
+  is_member?: boolean;
+
   categories: Category[];
   tags: string[];
   rules: string[];
@@ -118,6 +127,11 @@ export interface NichesListParams {
   search?: string;
   category_ids?: number[];
   visibility?: NicheVisibility | string;
+  /** Ordering was hardcoded server-side, so the biggest communities were the
+   *  only ones anyone saw. */
+  sort?: "trending" | "newest" | "members" | "name";
+  /** Serves the "your communities" and "discover" tabs off one endpoint. */
+  membership?: "joined" | "not_joined";
   page?: number;
   per_page?: number;
 }

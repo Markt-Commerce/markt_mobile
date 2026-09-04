@@ -21,8 +21,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
-import { ArrowDownLeft, ArrowUpRight, Plus, Wallet } from "lucide-react-native";
-import ScreenHeader from "../../components/ScreenHeader";
+import { ArrowDownLeft, ArrowLeft, ArrowUpRight, Plus, Wallet } from "lucide-react-native";
+import { SettingsSection } from "../../components/SettingsList";
 import { useTheme } from "../../components/themeProvider";
 import { useToast } from "../../components/ToastProvider";
 import { formatNaira } from "../../utils/formatCurrency";
@@ -277,89 +277,96 @@ export default function WalletScreen() {
   const inputClass = `h-14 rounded border px-4 text-[15px] mb-4 ${isDark ? "bg-[#1a1c1d] border-[#46464e] text-[#f0f1f2]" : "bg-white border-border text-black"}`;
   const placeholderColor = isDark ? "#6b6b73" : "#A1A1AA";
 
+  // A wallet should feel like a wallet, not another settings list. The balance
+  // sits on a coloured ground that runs to the top of the screen, the way
+  // banking apps do it, and the list of activity reads underneath as an
+  // ordinary grouped section -- same language as Settings and Profile.
   const header = useMemo(
     () => (
-      <View className="px-6 pt-6 pb-2">
-        <View
-          className={`rounded p-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
-        >
-          <View className="flex-row items-center gap-2 mb-2">
-            <Wallet size={16} color={isDark ? "#c6c5cf" : "#71717A"} strokeWidth={1.8} />
-            <Text
-              className={`font-bold text-[11px] tracking-[2px] uppercase ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+      <>
+        <View className="bg-primary px-5 pb-7">
+          <View className="flex-row items-center justify-between h-12">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
             >
-              Available balance
-            </Text>
+              <ArrowLeft size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text className="text-white text-[17px] font-bold">Wallet</Text>
+            <TouchableOpacity
+              onPress={() => setTopUpOpen(true)}
+              className="flex-row items-center"
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="button"
+              accessibilityLabel="Add money to wallet"
+            >
+              <Plus size={18} color="#FFFFFF" strokeWidth={2.4} />
+              <Text className="text-white text-[14px] font-semibold ml-1">Add</Text>
+            </TouchableOpacity>
           </View>
-          {balance == null ? (
-            <ActivityIndicator size="small" color="#E94C2A" />
-          ) : (
-            <Text className={`text-4xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-              {formatNaira(balance)}
-            </Text>
-          )}
-          <Text className={`text-[12px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-            {currency}
-          </Text>
-        </View>
 
-        <View className="flex-row gap-3 mt-4">
-          <TouchableOpacity
-            onPress={() => setTopUpOpen(true)}
-            activeOpacity={0.85}
-            className="flex-1 h-14 rounded bg-primary items-center justify-center flex-row gap-2"
-            accessibilityRole="button"
-            accessibilityLabel="Fund wallet"
-          >
-            <Plus size={18} color="#FFFFFF" strokeWidth={2} />
-            <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
-              Fund
+          <View className="items-center mt-6">
+            <Text className="text-white/70 text-[13px] font-medium">
+              Available balance · {currency}
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setWithdrawOpen(true)}
-            disabled={!canWithdraw}
-            activeOpacity={0.85}
-            className={`flex-1 h-14 rounded items-center justify-center flex-row gap-2 border ${isDark ? "border-[#46464e]" : "border-border"} ${canWithdraw ? "" : "opacity-50"}`}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: !canWithdraw }}
-            accessibilityLabel="Withdraw to bank account"
-          >
-            <ArrowUpRight
-              size={18}
-              color={isDark ? "#f0f1f2" : "#000000"}
-              strokeWidth={2}
-            />
-            <Text
-              className={`font-bold text-xs tracking-[2px] uppercase ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+            {balance == null ? (
+              <ActivityIndicator size="small" color="#FFFFFF" className="mt-3" />
+            ) : (
+              <Text className="text-white text-[38px] font-bold mt-1.5">
+                {formatNaira(balance)}
+              </Text>
+            )}
+          </View>
+
+          <View className="flex-row gap-3 mt-6">
+            <TouchableOpacity
+              onPress={() => setTopUpOpen(true)}
+              activeOpacity={0.85}
+              className="flex-1 h-12 rounded-xl bg-white items-center justify-center flex-row"
+              accessibilityRole="button"
+              accessibilityLabel="Fund wallet"
             >
-              Withdraw
-            </Text>
-          </TouchableOpacity>
+              <Plus size={17} color="#E94C2A" strokeWidth={2.4} />
+              <Text className="text-primary font-bold text-[14px] ml-1.5">Fund</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setWithdrawOpen(true)}
+              disabled={!canWithdraw}
+              activeOpacity={0.85}
+              className={`flex-1 h-12 rounded-xl items-center justify-center flex-row bg-white/20 ${
+                canWithdraw ? "" : "opacity-50"
+              }`}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !canWithdraw }}
+              accessibilityLabel="Withdraw to bank account"
+            >
+              <ArrowUpRight size={17} color="#FFFFFF" strokeWidth={2.4} />
+              <Text className="text-white font-bold text-[14px] ml-1.5">Withdraw</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <Text
-          className={`font-bold text-[11px] tracking-[2px] uppercase mt-8 mb-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
-        >
-          Transactions
-        </Text>
-      </View>
+        <SettingsSection title="Activity" dark={isDark} />
+      </>
     ),
-    [balance, currency, isDark, canWithdraw]
+    [balance, currency, isDark, canWithdraw, router]
   );
 
   return (
     <SafeAreaView
-      className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
-      edges={["top", "left", "right", "bottom"]}
+      className="flex-1 bg-primary"
+      edges={["top", "left", "right"]}
     >
-      <ScreenHeader title="Wallet" onBack={() => router.back()} />
 
       <FlatList
         data={transactions}
         keyExtractor={(tx) => String(tx.id)}
         renderItem={({ item }) => <TransactionRow tx={item} isDark={isDark} />}
         ListHeaderComponent={header}
+        className={isDark ? "bg-[#1a1c1d]" : "bg-white"}
+        contentContainerStyle={{ paddingBottom: 32 }}
         refreshing={refreshing}
         onRefresh={() => load({ refresh: true })}
         onEndReached={loadMore}

@@ -12,16 +12,18 @@ import { CreatePostRequest } from "../../models/post";
 
 /**
  * GET /socials/niches — discover communities (NICHES_API §1.1).
- * Supports search, category filter, visibility.
+ * Supports search, category filter, visibility, sort and membership.
  */
 export async function getNiches(params: NichesListParams = {}): Promise<NichesResponse> {
-  const { search, category_ids, visibility, page = 1, per_page = 20 } = params;
+  const { search, category_ids, visibility, sort, membership, page = 1, per_page = 20 } = params;
   const q = new URLSearchParams();
   q.set("page", String(page));
   q.set("per_page", String(per_page));
   if (search?.trim()) q.set("search", search.trim());
   if (category_ids?.length) q.set("category_ids", category_ids.join(","));
   if (visibility) q.set("visibility", visibility);
+  if (sort) q.set("sort", sort);
+  if (membership) q.set("membership", membership);
   const res = await request<NichesResponse>(`${BASE_URL}/socials/niches?${q}`, { method: "GET" });
   return res;
 }
