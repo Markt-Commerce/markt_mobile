@@ -122,24 +122,16 @@ export default function OrderDetail() {
           </View>
         </View>
 
-        {/* Status */}
-        <View
-          className={`rounded border p-6 mb-6 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
-        >
-          <Text className="text-xs font-bold uppercase tracking-wider text-tertiary">
-            Status
-          </Text>
-          <Text
-            className={`text-xl font-bold mt-2 capitalize ${isDark ? "text-dark-text" : "text-black"}`}
-          >
-            {formatStatus(order.status)}
-          </Text>
-        </View>
+        {/* Where the order is, as a journey rather than a word in a box.
+            Chowdeck's checkout does this with a segmented bar; the same idea
+            applies better here, where there are four steps and the buyer's real
+            question is "what happens next". */}
+        <OrderProgress status={order.status} isDark={isDark} />
 
         {/* Buyer */}
         {order.buyer?.buyername ? (
           <View
-            className={`rounded border p-6 mb-6 flex-row items-center gap-3 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+            className={`rounded-2xl p-4 mb-3 flex-row items-center gap-3 ${isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]"}`}
           >
             <User size={18} color={mutedColor} />
             <View>
@@ -156,7 +148,7 @@ export default function OrderDetail() {
         {/* Shipping Address */}
         {shippingAddressLine ? (
           <View
-            className={`rounded border p-6 mb-6 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+            className={`rounded-2xl p-4 mb-3 ${isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]"}`}
           >
             <View className="flex-row items-center gap-2">
               <MapPin size={16} color={mutedColor} />
@@ -178,7 +170,7 @@ export default function OrderDetail() {
         {/* Payment & Notes */}
         {(order.payment_method || order.customer_note) ? (
           <View
-            className={`rounded border p-6 mb-6 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+            className={`rounded-2xl p-4 mb-3 ${isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]"}`}
           >
             {order.payment_method ? (
               <View className="flex-row items-center gap-2 mb-3">
@@ -201,7 +193,7 @@ export default function OrderDetail() {
 
         {/* Items */}
         <View
-          className={`rounded border p-6 mb-6 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+          className={`rounded-2xl p-4 mb-3 ${isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]"}`}
         >
           <Text
             className={`font-bold text-lg mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
@@ -225,7 +217,7 @@ export default function OrderDetail() {
 
         {/* Pricing */}
         <View
-          className={`rounded border p-6 mb-10 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+          className={`rounded-2xl p-4 mb-6 ${isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]"}`}
         >
           <Text
             className={`font-bold text-lg mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
@@ -245,29 +237,118 @@ export default function OrderDetail() {
           <Row label="Total" value={order.total} bold isDark={isDark} />
         </View>
 
-        <View className="flex pb-10 gap-3">
+        <View className="flex pb-10 gap-2.5">
           {order.status === "pending_payment" ? (
             <TouchableOpacity
-              className="bg-primary h-12 rounded justify-center items-center"
+              className="bg-primary h-12 rounded-xl justify-center items-center"
               onPress={() => router.push(`/checkout/payment-method/${order.id}`)}
+              accessibilityRole="button"
+              accessibilityLabel="Pay for this order"
             >
-              <Text className="text-white font-bold text-base">
-                Pay now
-              </Text>
+              <Text className="text-white font-bold text-[15px]">Pay now</Text>
             </TouchableOpacity>
-          ) : null}
-          <TouchableOpacity
-            className="bg-primary h-12 rounded justify-center items-center relative"
-            onPress={() => router.push(`/orders/${id}/track`)}
-          >
-            <Text className="text-white font-bold text-base">
-              Track Order
-            </Text>
-            <ArrowRight size={20} color="#fff" className="absolute right-6" />
-          </TouchableOpacity>
+          ) : (
+            // Only once there's something to track. On an unpaid order this
+            // led to a tracking screen with nothing in it.
+            <TouchableOpacity
+              className="bg-primary h-12 rounded-xl justify-center items-center flex-row"
+              onPress={() => router.push(`/orders/${id}/track`)}
+              accessibilityRole="button"
+              accessibilityLabel="Track this order"
+            >
+              <Text className="text-white font-bold text-[15px] mr-1.5">
+                Track order
+              </Text>
+              <ArrowRight size={18} color="#fff" strokeWidth={2.2} />
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/**
+ * The order's journey as a segmented bar.
+ *
+ * Four steps, filled up to where the order currently is. A buyer opening this
+ * screen is asking "where is my thing and what happens next" — the answer was a
+ * single word in a bordered box, which told them the state but not the shape of
+ * it.
+ *
+ * Cancelled and refunded orders don't get a progress bar: there is no journey
+ * left to show, and drawing a half-finished one would suggest otherwise.
+ */
+const PROGRESS_STEPS = ["Paid", "Processing", "Shipped", "Delivered"] as const;
+
+const STATUS_STEP: Record<string, number> = {
+  pending_payment: 0,
+  pending: 0,
+  processing: 2,
+  ready_for_delivery: 2,
+  shipped: 3,
+  delivered: 4,
+};
+
+function OrderProgress({ status, isDark }: { status?: string; isDark: boolean }) {
+  const key = String(status ?? "").toLowerCase();
+  const terminal = ["cancelled", "refunded", "returned", "failed"].includes(key);
+  const reached = STATUS_STEP[key] ?? 1;
+
+  if (terminal) {
+    return (
+      <View className={`rounded-2xl p-4 mb-3 ${isDark ? "bg-[#3A1E1E]" : "bg-[#FDECEC]"}`}>
+        <Text className="text-[#C42B2B] text-[11px] font-bold uppercase tracking-[1.5px]">
+          Status
+        </Text>
+        <Text className="text-[#C42B2B] text-[20px] font-bold mt-1">
+          {formatStatus(status)}
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View className={`rounded-2xl p-4 mb-3 ${isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]"}`}>
+      <Text
+        className={`text-[11px] font-bold uppercase tracking-[1.5px] ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}
+      >
+        Status
+      </Text>
+      <Text
+        className={`text-[20px] font-bold mt-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+      >
+        {formatStatus(status)}
+      </Text>
+
+      <View className="flex-row gap-1.5 mt-3">
+        {PROGRESS_STEPS.map((step, i) => (
+          <View key={step} className="flex-1">
+            <View
+              className="h-1.5 rounded-full"
+              style={{
+                backgroundColor:
+                  i < reached ? "#E94C2A" : isDark ? "#46464e" : "#E4E4E7",
+              }}
+            />
+            <Text
+              className={`text-[10px] mt-1.5 ${
+                i < reached
+                  ? isDark
+                    ? "text-[#f0f1f2]"
+                    : "text-black"
+                  : isDark
+                    ? "text-[#6b6d71]"
+                    : "text-[#A1A1AA]"
+              }`}
+              numberOfLines={1}
+            >
+              {step}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </View>
   );
 }
 

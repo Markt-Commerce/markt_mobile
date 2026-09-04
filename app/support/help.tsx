@@ -1,113 +1,178 @@
-import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Animated } from "react-native";
+/**
+ * Help centre.
+ *
+ * The previous version described an app that doesn't exist: live video selling,
+ * broadcasting to followers, on-stream checkout, Apple Pay and Google Pay, a
+ * waitlist. None of it is in the codebase — payment is card, bank transfer,
+ * mobile money and the Markt wallet, and there is no live video anywhere.
+ *
+ * A support page that promises features we don't have is worse than no support
+ * page: it generates the exact tickets it exists to prevent, and it costs
+ * trust at the moment someone is already stuck. Every answer below was checked
+ * against the actual behaviour — escrow and the settlement hold, POD-confirmed
+ * delivery, purchase-gated reviews, the returns endpoints, role switching.
+ */
+import React, { useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  Linking,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ChevronDown, ChevronUp, Mail } from "lucide-react-native";
+import { ChevronDown, Mail, Search } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
 import { useTheme } from "../../components/themeProvider";
+import { SettingsSection } from "../../components/SettingsList";
 
-const faqCategories = [
+const SUPPORT_EMAIL = "support@marktcommerce.com";
+
+type Faq = { q: string; a: string };
+type Group = { id: string; name: string; items: Faq[] };
+
+const GROUPS: Group[] = [
   {
-    id: "general",
-    name: "General",
+    id: "orders",
+    name: "Orders & delivery",
     items: [
       {
-        question: "What makes Markt different from other marketplaces?",
-        answer: "Unlike traditional platforms that focus solely on the transaction, Markt is built on social interaction. We prioritize the relationship between buyers and sellers, using live video, social feeds, and direct messaging to make online shopping feel more human and trustworthy."
+        q: "When is my money actually taken?",
+        a: "At checkout. It is then held rather than paid straight to the seller — the seller only receives it after the item is delivered and a short settlement window has passed. If the order is cancelled before that, the money comes back to you.",
       },
       {
-        question: "Is Markt free to use?",
-        answer: "Yes, downloading the app and browsing is completely free for everyone. We only charge a small transaction fee when a sale is successfully completed."
+        q: "Who confirms that an order was delivered?",
+        a: "You or the delivery partner, using the delivery code on the order. A seller cannot mark their own order delivered, because confirming delivery is what releases their payment.",
       },
       {
-        question: "Where is Markt available?",
-        answer: "Currently, we are focusing on our primary launch markets. You can check app store availability in your region or sign up for our waitlist to be notified when we expand to your area."
-      }
-    ]
+        q: "What do the order statuses mean?",
+        a: "Awaiting payment — the order exists but hasn't been paid for. Processing — the seller has accepted it and is preparing it. Shipped — it's on the way. Delivered — you or the delivery partner confirmed it arrived.",
+      },
+      {
+        q: "A seller declined my order. What happens?",
+        a: "The item is cancelled and you're refunded. You don't need to chase it.",
+      },
+      {
+        q: "Can I return something?",
+        a: "Yes. Open the order and request a return. The seller reviews it and either approves or declines, and you'll be notified either way.",
+      },
+    ],
   },
   {
-    id: "buying",
-    name: "For Buyers",
+    id: "paying",
+    name: "Paying",
     items: [
       {
-        question: "How do I know I can trust a seller?",
-        answer: "Trust is central to Markt. You can view a seller's full history, see their interactions in live sessions, and see who else follows them. Additionally, our buyer protection ensures your funds are held securely until the item is delivered as described."
+        q: "How can I pay?",
+        a: "Card or bank transfer through Paystack, or your Markt wallet balance. Card and transfer both complete on Paystack's secure page — we never see your card details.",
       },
       {
-        question: "What payment methods do you accept?",
-        answer: "We support all major credit cards, Apple Pay, and Google Pay through our secure, native checkout system."
+        q: "What is the Markt wallet for?",
+        a: "Somewhere to keep a balance so checkout is one tap, and where refunds land. You can move money out to your bank whenever you like.",
       },
       {
-        question: "Can I return an item?",
-        answer: "Yes. Every seller on Markt follows our standardized return policy, though some individual storefronts may offer even more flexible terms. You can initiate a return directly through the 'Orders' section of the app."
-      }
-    ]
+        q: "I paid but the app showed an error. Did it go through?",
+        a: "Check your wallet or the order — payment is confirmed by Paystack directly to us, so it can complete even if the screen you were on failed to load. If the order still shows as awaiting payment after a few minutes, contact us.",
+      },
+      {
+        q: "How long do withdrawals take?",
+        a: "They're sent to your bank as soon as they're approved. Arrival depends on your bank, and is usually the same day.",
+      },
+    ],
   },
   {
     id: "selling",
-    name: "For Sellers",
+    name: "Selling",
     items: [
       {
-        question: "How do I start selling on Markt?",
-        answer: "Simply download the app, create a profile, and apply for a seller account. Once verified, you can start listing products and hosting live sessions immediately."
+        q: "How do I start selling?",
+        a: "Create a seller account from your profile — you can hold both a buyer and a seller account on the same login and switch between them at any time. Once you have one, you can list products.",
       },
       {
-        question: "What is live selling and how does it work?",
-        answer: "Live selling allows you to broadcast video to your followers in real-time. You can showcase products, answer questions live, and viewers can purchase items instantly through an on-screen checkout button without leaving the stream."
+        q: "Why can't I see an order a buyer just placed?",
+        a: "Orders appear in your queue once they're paid for. Before that there's nothing to commit stock against.",
       },
       {
-        question: "What are the selling fees?",
-        answer: "We keep our fee structure simple: a flat percentage per successful transaction. There are no monthly subscription fees or listing costs to get started."
-      }
-    ]
+        q: "How do I fulfil an order?",
+        a: "Open it from Orders, accept it, and mark it shipped when it's on its way. Delivery itself is confirmed by the buyer or the delivery partner.",
+      },
+      {
+        q: "When do I get paid?",
+        a: "After the item is delivered and the settlement window has passed. It then lands in your Markt wallet, and you can withdraw it to your bank.",
+      },
+    ],
   },
   {
-    id: "security",
-    name: "Security & Trust",
+    id: "community",
+    name: "Community & safety",
     items: [
       {
-        question: "How is my data protected?",
-        answer: "We use industry-standard encryption for all data and never share your personal information with third parties without your explicit consent."
+        q: "Who can leave a review?",
+        a: "Only someone who bought the item and received it. That's why every review carries a verified mark — there is no way to post one without a delivered order behind it.",
       },
       {
-        question: "What happens if my order doesn't arrive?",
-        answer: "Our 'Markt Guarantee' covers all purchases. If an item isn't shipped or doesn't arrive, we provide a full refund through our integrated dispute resolution system."
+        q: "Someone is behaving badly. What can I do?",
+        a: "Use the … menu on any post or product to report it, or block the person. Blocking hides everything of theirs from your feed immediately, and they aren't told.",
       },
       {
-        question: "How do you verify sellers?",
-        answer: "All sellers undergo a verification process that includes identity checks and, for certain categories, business documentation to ensure a safe environment for all users."
-      }
-    ]
-  }
+        q: "What are communities?",
+        a: "Groups around a shared interest, where members post and find each other. You can browse them, join the ones you like, and leave whenever.",
+      },
+      {
+        q: "How do I delete my account?",
+        a: "Settings → Delete account. It's permanent. If you have money in your wallet or orders in flight, settle those first — we'll tell you if anything is blocking it.",
+      },
+    ],
+  },
 ];
 
-function AccordionItem({ question, answer, isDark }: { question: string; answer: string; isDark: boolean }) {
-  const [expanded, setExpanded] = useState(false);
-
+function Accordion({
+  item,
+  isDark,
+  open,
+  onToggle,
+}: {
+  item: Faq;
+  isDark: boolean;
+  open: boolean;
+  onToggle: () => void;
+}) {
   return (
-    <View className={`border-b ${isDark ? "border-[#46464e]" : "border-border"}`}>
+    <>
       <TouchableOpacity
-        onPress={() => setExpanded(!expanded)}
-        className="flex-row items-center justify-between py-4"
-        activeOpacity={0.7}
+        onPress={onToggle}
+        activeOpacity={0.6}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={item.q}
+        className="px-4 py-4 flex-row items-start"
       >
-        <Text className={`flex-1 font-bold text-[15px] pr-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-          {question}
+        <Text
+          className={`flex-1 text-[15px] leading-[21px] pr-3 ${
+            isDark ? "text-[#f0f1f2]" : "text-black"
+          }`}
+        >
+          {item.q}
         </Text>
-        {expanded ? (
-          <ChevronUp size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
-        ) : (
-          <ChevronDown size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
-        )}
+        <View style={{ transform: [{ rotate: open ? "180deg" : "0deg" }], marginTop: 2 }}>
+          <ChevronDown size={18} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+        </View>
       </TouchableOpacity>
-      {expanded && (
-        <View className="pb-4">
-          <Text className={`text-sm leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-            {answer}
+      {open ? (
+        <View className="px-4 pb-4 -mt-1">
+          <Text
+            className={`text-[14px] leading-[21px] ${
+              isDark ? "text-[#c6c5cf]" : "text-[#52525B]"
+            }`}
+          >
+            {item.a}
           </Text>
         </View>
-      )}
-    </View>
+      ) : null}
+      <View className={`h-px ml-4 ${isDark ? "bg-[#2f3132]" : "bg-[#EFEFF1]"}`} />
+    </>
   );
 }
 
@@ -115,86 +180,104 @@ export default function HelpCenterScreen() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const [activeCategory, setActiveCategory] = useState(faqCategories[0].id);
+  const [query, setQuery] = useState("");
+  const [openKey, setOpenKey] = useState<string | null>(null);
 
-  const currentCategory = faqCategories.find((c) => c.id === activeCategory) || faqCategories[0];
+  // Searching questions *and* answers: people describe their problem in the
+  // words of the answer ("refund", "delivery code") as often as the question.
+  const groups = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return GROUPS;
+    return GROUPS.map((g) => ({
+      ...g,
+      items: g.items.filter(
+        (i) => i.q.toLowerCase().includes(q) || i.a.toLowerCase().includes(q)
+      ),
+    })).filter((g) => g.items.length > 0);
+  }, [query]);
+
+  const strong = isDark ? "text-[#f0f1f2]" : "text-black";
+  const muted = isDark ? "text-[#8f9195]" : "text-tertiary";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top", "bottom"]}>
-      <ScreenHeader title="Help Center" onBack={() => router.back()} />
-      
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="px-6 pt-8">
-          <Text className={`font-bold text-[11px] tracking-[2px] uppercase mb-2 ${isDark ? "text-primary" : "text-primary"}`}>
-            Support Center
-          </Text>
-          <Text className={`text-4xl font-bold tracking-tighter ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-            Common Questions
-          </Text>
-          <Text className={`text-base mt-4 leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-            Everything you need to know about getting started, buying, and selling on Markt.
-          </Text>
-        </View>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }}
+      edges={["top", "left", "right", "bottom"]}
+    >
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <ScreenHeader title="Help" onBack={() => router.back()} />
 
-        {/* Category Tabs */}
-        <View className="mt-8">
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 24, gap: 12 }}
+        <View className="px-4 pt-2 pb-4">
+          <Text className={`text-[26px] font-bold tracking-tight ${strong}`}>
+            How can we help?
+          </Text>
+          <View
+            className={`flex-row items-center h-11 px-3 rounded-xl mt-3 ${
+              isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"
+            }`}
           >
-            {faqCategories.map((cat) => (
-              <TouchableOpacity
-                key={cat.id}
-                onPress={() => setActiveCategory(cat.id)}
-                className={`px-6 py-3 rounded border ${
-                  activeCategory === cat.id
-                    ? (isDark ? "bg-[#f0f1f2] border-[#f0f1f2]" : "bg-black border-black")
-                    : (isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border")
-                }`}
-              >
-                <Text
-                  className={`font-bold text-xs uppercase tracking-widest ${
-                    activeCategory === cat.id
-                      ? (isDark ? "text-black" : "text-white")
-                      : (isDark ? "text-[#c6c5cf]" : "text-tertiary")
-                  }`}
-                >
-                  {cat.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* FAQ Items */}
-        <View className="px-6 mt-8">
-          <View className={`rounded p-6 border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-            {currentCategory.items.map((item, idx) => (
-              <AccordionItem key={idx} question={item.question} answer={item.answer} isDark={isDark} />
-            ))}
+            <Search size={17} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search help"
+              placeholderTextColor={isDark ? "#8f9195" : "#A1A1AA"}
+              className={`flex-1 ml-2 text-[15px] ${strong}`}
+              returnKeyType="search"
+              accessibilityLabel="Search help topics"
+            />
           </View>
         </View>
 
-        {/* Contact Support CTA */}
-        <View className="px-6 mt-12 mb-12">
-          <View className={`rounded p-8 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-            <Text className={`font-bold text-lg ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-              Still need help?
+        {groups.length === 0 ? (
+          <View className="px-8 py-12 items-center">
+            <Text className={`text-[15px] font-semibold ${strong}`}>
+              Nothing matches “{query.trim()}”
             </Text>
-            <Text className={`text-sm mt-2 leading-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-              Our support team is available 24/7 to assist you with any inquiries.
+            <Text className={`text-[13px] mt-1 text-center ${muted}`}>
+              Try a different word, or email us below and a person will answer.
             </Text>
-            <TouchableOpacity
-              className="mt-6 h-14 rounded bg-primary flex-row items-center justify-center gap-3"
-              activeOpacity={0.85}
-            >
-              <Mail size={20} color="white" strokeWidth={2} />
-              <Text className="text-white font-bold text-xs uppercase tracking-[2px]">
-                Contact Support
-              </Text>
-            </TouchableOpacity>
           </View>
+        ) : (
+          groups.map((g) => (
+            <SettingsSection key={g.id} title={g.name} dark={isDark}>
+              {g.items.map((item, idx) => {
+                const key = `${g.id}:${idx}`;
+                return (
+                  <Accordion
+                    key={key}
+                    item={item}
+                    isDark={isDark}
+                    open={openKey === key}
+                    onToggle={() => setOpenKey(openKey === key ? null : key)}
+                  />
+                );
+              })}
+            </SettingsSection>
+          ))
+        )}
+
+        <View className="px-4 pt-8">
+          <Text className={`text-[15px] font-semibold ${strong}`}>Still stuck?</Text>
+          <Text className={`text-[14px] mt-1 leading-[20px] ${muted}`}>
+            Email us with your order number and we'll pick it up.
+          </Text>
+          <TouchableOpacity
+            onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={`Email support at ${SUPPORT_EMAIL}`}
+            className="mt-4 h-12 rounded-xl bg-primary items-center justify-center flex-row"
+          >
+            <Mail size={17} color="#FFFFFF" strokeWidth={2.2} />
+            <Text className="text-white font-semibold text-[15px] ml-2">
+              Email support
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>

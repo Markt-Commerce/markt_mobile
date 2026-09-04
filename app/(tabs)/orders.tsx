@@ -330,8 +330,11 @@ function SellerOrdersTab({ isDark }: { isDark: boolean }) {
         <OrdersList
           fetchOrders={fetchOrders}
           isSeller
+          // The seller's own screen, not /orderdetail — that one is the
+          // buyer's view and offered a seller "Pay now" and "Track Order" on
+          // a sale they were meant to fulfil.
           pressed={(item: SellerOrderItem) => {
-            if (item.order_id) router.push(`/orderdetail/${item.order_id}` as any);
+            if (item.id) router.push(`/sellerOrder/${item.id}` as any);
           }}
         />
       </View>

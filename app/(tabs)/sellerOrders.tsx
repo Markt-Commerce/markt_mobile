@@ -112,7 +112,7 @@ export default function SellerOrders() {
       // PROCESSING or CANCELLED. Mirrors OrderItem.VALID_STATUS_TRANSITIONS.
       [
         ...nextStatuses(item.status).map((next) => ({
-          text: STATUS_ACTION_LABEL[next],
+          text: STATUS_ACTION_LABEL[next] ?? next,
           style: (next === "cancelled" ? "destructive" : "default") as
             | "destructive"
             | "default",

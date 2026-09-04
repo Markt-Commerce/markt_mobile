@@ -12,7 +12,7 @@ import {
 } from "../../models/cart";
 import { ApiResponse } from "../../models/auth";
 import { setPendingCartCount } from "../notificationState";
-import { emitCartChanged } from "../../utils/cartEvents";
+import { emitBadgeChanged } from "../../utils/badgeEvents";
 
 // Get cart
 export async function getCart(): Promise<Cart> {
@@ -38,14 +38,14 @@ export async function clearCart(): Promise<void> {
   await request<void>(`${BASE_URL}/cart/`, {
     method: "DELETE",
   });
-  emitCartChanged();
+  emitBadgeChanged();
 }
 
 export async function deleteCartItem(id:number) {
   await request<void>(`${BASE_URL}/cart/items/${id}`, {
     method: "DELETE",
   });
-  emitCartChanged();
+  emitBadgeChanged();
 }
 
 export async function updateCartItem(id:number,data:{ quantity: number}): Promise<UpdateCartItemResponse> {
@@ -53,7 +53,7 @@ export async function updateCartItem(id:number,data:{ quantity: number}): Promis
     method: "PUT",
     body: JSON.stringify(data),
   });
-  emitCartChanged();
+  emitBadgeChanged();
   return res.data!;
 }
 
@@ -63,7 +63,7 @@ export async function addToCart(data: AddToCartRequest): Promise<AddToCartRespon
     method: "POST",
     body: JSON.stringify(data),
   });
-  emitCartChanged();
+  emitBadgeChanged();
   return res;
 }
 
@@ -82,6 +82,6 @@ export async function checkoutCart(data:CheckoutRequest): Promise<CheckoutRespon
     body: JSON.stringify(data),
   });
   // Checkout empties the cart server-side, so the badge has to clear too.
-  emitCartChanged();
+  emitBadgeChanged();
   return res;
 }

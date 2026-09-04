@@ -1,351 +1,439 @@
 /**
- * Discover Communities — Search and browse niche communities (NICHES_API §2.2)
+ * Communities.
  *
- * GET /socials/niches with search, optional category filter.
- * Cards: name, description, member_count, post_count, visibility badge.
- * Join → POST /socials/niches/<id>/join; tap → niche detail.
+ * Modelled on X's Communities: a Home tab for the ones you're in and an Explore
+ * tab for the ones you aren't, a rail of your communities across the top, and
+ * rows carried by the community's own avatar rather than a coloured initial.
+ *
+ * Two things had to exist on the server first (markt_python
+ * feat/niche-media-and-filters): niches had no imagery at all, and the list was
+ * hardcoded to member_count desc with no way to ask "am I in this one" — so a
+ * card couldn't show Join vs Joined without a request each.
  */
-
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
   FlatList,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
   ScrollView,
+  TextInput,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
   RefreshControl,
 } from "react-native";
-import { useRouter } from "expo-router";
-import { Search, ArrowLeft } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { debounce } from "lodash";
-import { getNiches, joinNiche, getMyNiches } from "../services/sections/niches";
-import { getAllCategories } from "../services/sections/categories";
-import type { Niches } from "../models/niches";
-import type { Category } from "../models/categories";
-import { useToast } from "../components/ToastProvider";
+import { useRouter } from "expo-router";
+import { ArrowLeft, Search, Users, Plus, ArrowUpDown } from "lucide-react-native";
 import { useTheme } from "../components/themeProvider";
+import { useToast } from "../components/ToastProvider";
+import { getNiches, joinNiche, leaveNiche } from "../services/sections/niches";
+import type { Niches, NichesListParams } from "../models/niches";
 import { friendlyErrorMessage } from "../utils/errorMessages";
 
-function dedupeById<T extends { id: string | number }>(items: T[]): T[] {
-  const seen = new Set<string | number>();
-  return items.filter((item) => {
-    if (seen.has(item.id)) return false;
-    seen.add(item.id);
-    return true;
-  });
+type Tab = "home" | "explore";
+type Sort = NonNullable<NichesListParams["sort"]>;
+
+const SORTS: { key: Sort; label: string }[] = [
+  { key: "trending", label: "Trending" },
+  { key: "newest", label: "Newest" },
+  { key: "members", label: "Members" },
+  { key: "name", label: "A–Z" },
+];
+
+function compactCount(n?: number) {
+  const v = n ?? 0;
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
+  return String(v);
 }
 
-function NicheCard({
+/** The community's face, or its initials on a tinted tile if it has none. */
+function CommunityAvatar({
   niche,
-  onPress,
-  onJoin,
-  joining,
-  joined,
+  size,
   isDark,
 }: {
   niche: Niches;
-  onPress: () => void;
-  onJoin: () => void;
-  joining: boolean;
-  joined: boolean;
+  size: number;
   isDark: boolean;
 }) {
-  const visibilityLabel =
-    niche.visibility === "public"
-      ? "Public"
-      : niche.visibility === "private"
-        ? "Private"
-        : niche.visibility === "restricted"
-          ? "Restricted"
-          : (niche.visibility as string) ?? "Public";
-
+  const radius = Math.round(size * 0.28);
+  if (niche.image_url) {
+    return (
+      <Image
+        source={{ uri: niche.image_url }}
+        style={{ width: size, height: size, borderRadius: radius }}
+      />
+    );
+  }
+  const initials = (niche.name ?? "?")
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
   return (
-    <View className={`mx-4 mb-4 rounded overflow-hidden border flex-row p-4 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-      <TouchableOpacity onPress={onPress} activeOpacity={0.9} className="flex-1 flex-row">
-        <View className={`w-14 h-14 rounded justify-center items-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-          <Text className={`text-2xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{(niche.name ?? "").charAt(0).toUpperCase() || "?"}</Text>
-        </View>
-        <View className="flex-1 ml-4">
-          <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
-            {niche.name ?? "Unnamed"}
-          </Text>
-          <Text className={`text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={2}>
-            {niche.description ?? ""}
-          </Text>
-          <View className="flex-row gap-3 mt-3 flex-wrap items-center">
-            <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-              {niche.member_count ?? 0} members · {niche.post_count ?? 0} posts
-            </Text>
-            <View className={`px-2 py-0.5 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-              <Text className={`font-medium text-[10px] uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{visibilityLabel}</Text>
-            </View>
-          </View>
-        </View>
-      </TouchableOpacity>
-      {joined ? (
-        <TouchableOpacity
-          onPress={onPress}
-          className={`self-center ml-3 px-4 py-2 rounded border min-h-[36px] justify-center ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
-          accessibilityRole="button"
-          accessibilityLabel="Already joined — open community"
-        >
-          <Text className={`font-semibold text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-            Joined
-          </Text>
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity
-          onPress={onJoin}
-          disabled={joining}
-          className="self-center ml-3 px-5 py-2 rounded bg-primary min-h-[36px] justify-center"
-          accessibilityRole="button"
-          accessibilityLabel="Join community"
-        >
-          {joining ? (
-            <ActivityIndicator size="small" color="white" />
-          ) : (
-            <Text className="text-white font-semibold text-sm">Join</Text>
-          )}
-        </TouchableOpacity>
-      )}
+    <View
+      style={{ width: size, height: size, borderRadius: radius }}
+      className={`items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}
+    >
+      <Text
+        style={{ fontSize: size * 0.36 }}
+        className={`font-bold ${isDark ? "text-[#c6c5cf]" : "text-[#52525B]"}`}
+      >
+        {initials}
+      </Text>
     </View>
   );
 }
 
-export default function DiscoverNichesScreen() {
+export default function CommunitiesScreen() {
   const router = useRouter();
-  const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const [niches, setNiches] = useState<Niches[]>([]);
+  const { show } = useToast();
+
+  const [tab, setTab] = useState<Tab>("home");
+  const [sort, setSort] = useState<Sort>("trending");
+  const [query, setQuery] = useState("");
+  const [items, setItems] = useState<Niches[]>([]);
+  const [mine, setMine] = useState<Niches[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasNext, setHasNext] = useState(true);
-  const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [joiningId, setJoiningId] = useState<string | null>(null);
-  // The niches list response carries no membership info, so cross-reference
-  // GET /socials/my-niches to mark communities the user already joined.
-  const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set());
+  // Per-community, so one slow join doesn't freeze every button on screen.
+  const [busy, setBusy] = useState<Record<string, boolean>>({});
 
-  const loadJoined = useCallback(async () => {
+  const load = useCallback(async () => {
     try {
-      const ids = new Set<string>();
-      let p = 1;
-      // Memberships are few; page through defensively with a hard cap.
-      while (p <= 10) {
-        const res = await getMyNiches(p, 50);
-        (res.items ?? []).forEach((m) => {
-          if (m.is_active === false) return;
-          const id = m.niche_id ?? m.niche?.id;
-          if (id) ids.add(String(id));
-        });
-        const totalPages = res.pagination?.total_pages ?? 1;
-        if (p >= totalPages) break;
-        p += 1;
-      }
-      setJoinedIds(ids);
+      const [list, joined] = await Promise.all([
+        getNiches({
+          membership: tab === "home" ? "joined" : "not_joined",
+          sort,
+          search: query.trim() || undefined,
+          per_page: 30,
+        }),
+        // The rail always shows what you're in, whichever tab you're on.
+        getNiches({ membership: "joined", per_page: 20 }),
+      ]);
+      setItems(list.items ?? []);
+      setMine(joined.items ?? []);
     } catch {
-      /* non-fatal — cards just show Join */
+      setItems([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  }, []);
+  }, [tab, sort, query]);
 
   useEffect(() => {
-    loadJoined();
-  }, [loadJoined]);
+    setLoading(true);
+    const t = setTimeout(load, query ? 250 : 0); // debounce typing only
+    return () => clearTimeout(t);
+  }, [load, query]);
 
-  // Ref guard, not state — onEndReached can fire more than once before a state
-  // update flushes, letting two calls fetch the same page and append duplicate
-  // ids (causing the FlatList "same key" error).
-  const fetchingRef = useRef(false);
-
-  const fetchNiches = useCallback(
-    async (p: number, append: boolean) => {
-      if (fetchingRef.current) return;
-      fetchingRef.current = true;
-      if (append) setLoadingMore(true);
-      else if (p === 1) setLoading(true);
-      try {
-        const res = await getNiches({
-          page: p,
-          per_page: 20,
-          search: search?.trim() || undefined,
-          category_ids: selectedCategory ? [selectedCategory] : undefined,
-          visibility: undefined,
-        });
-        const list = res.items ?? [];
-        if (append) {
-          setNiches((prev) => dedupeById([...prev, ...list]));
-        } else {
-          setNiches(dedupeById(list));
-        }
-        const totalPages = res.pagination?.total_pages ?? 1;
-        setHasNext(p < totalPages);
-        setPage(p);
-      } catch {
-        if (!append) setNiches([]);
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
-        fetchingRef.current = false;
-      }
-    },
-    [search, selectedCategory]
-  );
-
-  const debouncedFetch = useCallback(
-    debounce((p: number) => fetchNiches(p, false), 350),
-    [fetchNiches]
-  );
-
-  useEffect(() => {
-    fetchNiches(1, false);
-  }, [selectedCategory]);
-
-  useEffect(() => {
-    if (search !== undefined) debouncedFetch(1);
-  }, [search]);
-
-  useEffect(() => {
-    getAllCategories()
-      .then((cats) => setCategories(cats ?? []))
-      .catch(() => {});
-  }, []);
-
-  const loadMore = () => {
-    if (!loadingMore && hasNext) fetchNiches(page + 1, true);
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await Promise.all([fetchNiches(1, false), loadJoined()]);
-    setRefreshing(false);
-  };
-
-  const handleJoin = async (nicheId: string) => {
-    setJoiningId(nicheId);
+  const toggleMembership = async (niche: Niches) => {
+    const joining = !niche.is_member;
+    setBusy((b) => ({ ...b, [niche.id]: true }));
+    // Optimistic: the button is the whole interaction, so it has to move now.
+    setItems((list) =>
+      list.map((n) => (n.id === niche.id ? { ...n, is_member: joining } : n))
+    );
     try {
-      await joinNiche(nicheId);
-      setJoinedIds((prev) => new Set(prev).add(String(nicheId)));
-      show({ variant: "success", title: "Joined!", message: "You are now a member of this community." });
-      await fetchNiches(1, false);
+      if (joining) await joinNiche(niche.id);
+      else await leaveNiche(niche.id);
+      await load();
     } catch (e) {
+      setItems((list) =>
+        list.map((n) => (n.id === niche.id ? { ...n, is_member: !joining } : n))
+      );
       show({
         variant: "error",
-        title: "Could not join",
-        message: friendlyErrorMessage(e, "Could not join this community. Please try again."),
+        title: joining ? "Couldn't join" : "Couldn't leave",
+        message: friendlyErrorMessage(e, "Please try again."),
       });
     } finally {
-      setJoiningId(null);
+      setBusy((b) => ({ ...b, [niche.id]: false }));
     }
   };
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top"]}>
-      <View className={`flex-row items-center px-6 py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="p-1 -ml-1"
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <ArrowLeft size={24} color={isDark ? "#f0f1f2" : "#000000"} />
-        </TouchableOpacity>
-        <Text className={`flex-1 text-xl font-bold text-center pr-8 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-          Discover Communities
-        </Text>
-      </View>
+  const strong = isDark ? "text-[#f0f1f2]" : "text-black";
+  const muted = isDark ? "text-[#8f9195]" : "text-tertiary";
+  const hairline = isDark ? "border-[#2f3132]" : "border-border-light";
 
-      <View className={`px-4 py-3 flex-row items-center rounded mx-6 mt-4 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-        <Search size={20} color={isDark ? "#c6c5cf" : "#71717A"} />
-        <TextInput
-          className={`ml-3 flex-1 text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
-          placeholder="Search communities..."
-          placeholderTextColor={isDark ? "#c6c5cf" : "#71717A"}
-          value={search}
-          onChangeText={setSearch}
-        />
-      </View>
-
-      {categories.length > 0 && (
-        <View className="pb-1 mb-2 mt-2">
+  const header = useMemo(
+    () => (
+      <View>
+        {/* Your communities, as a rail — the shortcut back into a place you
+            already belong to, which is what X puts at the top. */}
+        {mine.length > 0 ? (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 12, gap: 12 }}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 12 }}
           >
-            <TouchableOpacity
-              onPress={() => setSelectedCategory(null)}
-              className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === null ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-surface"}`}
-            >
-              <Text
-                className={`font-semibold text-sm ${selectedCategory === null ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
-              >
-                All
-              </Text>
-            </TouchableOpacity>
-            {categories.map((c) => (
+            {mine.map((n) => (
               <TouchableOpacity
-                key={c.id}
-                onPress={() => setSelectedCategory(c.id)}
-                className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === c.id ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                key={n.id}
+                onPress={() => router.push(`/niches/${n.id}` as any)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${n.name}`}
+                style={{ width: 108 }}
+                className={`rounded-2xl border p-3 items-center ${hairline} ${
+                  isDark ? "bg-[#1a1c1d]" : "bg-white"
+                }`}
               >
+                <CommunityAvatar niche={n} size={52} isDark={isDark} />
                 <Text
-                  className={`font-semibold text-sm ${selectedCategory === c.id ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                  className={`text-[12px] font-semibold mt-2 text-center ${strong}`}
+                  numberOfLines={1}
                 >
-                  {c.name}
+                  {n.name}
                 </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
-        </View>
-      )}
+        ) : null}
 
-      {loading ? (
-        <View className="flex-1 justify-center items-center py-16">
-          <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
-          <Text className={`text-sm mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading communities…</Text>
-        </View>
-      ) : niches.length === 0 ? (
-        <View className="flex-1 justify-center items-center px-6 py-16">
-          <Text className={`font-semibold text-lg text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>No communities found</Text>
-          <Text className={`text-sm mt-2 text-center ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-            Try a different search or filter.
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={niches}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <NicheCard
-              niche={item}
-              onPress={() => router.push(`/niches/${item.id}`)}
-              onJoin={() => handleJoin(item.id)}
-              joining={joiningId === item.id}
-              joined={joinedIds.has(String(item.id))}
-              isDark={isDark}
+        <View className="px-4 pb-3">
+          <View
+            className={`flex-row items-center h-11 px-3 rounded-xl ${
+              isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"
+            }`}
+          >
+            <Search size={17} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search communities"
+              placeholderTextColor={isDark ? "#8f9195" : "#A1A1AA"}
+              className={`flex-1 ml-2 text-[15px] ${strong}`}
+              returnKeyType="search"
+              accessibilityLabel="Search communities"
             />
-          )}
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.5}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "#f0f1f2" : "#000000"} />}
-          ListFooterComponent={
-            loadingMore ? (
-              <View className="py-6 items-center">
-                <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
-              </View>
-            ) : null
-          }
-          contentContainerStyle={{ paddingBottom: 24 }}
-        />
-      )}
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 8, paddingTop: 12 }}
+          >
+            <View className="flex-row items-center pr-1">
+              <ArrowUpDown size={13} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+            </View>
+            {SORTS.map((s) => {
+              const active = sort === s.key;
+              return (
+                <TouchableOpacity
+                  key={s.key}
+                  onPress={() => setSort(s.key)}
+                  activeOpacity={0.8}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: active }}
+                  className={`px-3.5 h-8 rounded-full items-center justify-center ${
+                    active
+                      ? isDark
+                        ? "bg-[#f0f1f2]"
+                        : "bg-black"
+                      : isDark
+                        ? "bg-[#2f3132]"
+                        : "bg-[#F4F4F5]"
+                  }`}
+                >
+                  <Text
+                    className={`text-[13px] font-semibold ${
+                      active
+                        ? isDark
+                          ? "text-black"
+                          : "text-white"
+                        : isDark
+                          ? "text-[#c6c5cf]"
+                          : "text-[#52525B]"
+                    }`}
+                  >
+                    {s.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </View>
+    ),
+    [mine, query, sort, isDark, strong, hairline, router]
+  );
+
+  const renderRow = ({ item }: { item: Niches }) => {
+    const working = !!busy[item.id];
+    const joined = !!item.is_member;
+    return (
+      <TouchableOpacity
+        onPress={() => router.push(`/niches/${item.id}` as any)}
+        activeOpacity={0.6}
+        accessibilityRole="button"
+        accessibilityLabel={`${item.name}, ${compactCount(item.member_count)} members`}
+        className={`flex-row items-center px-4 py-3.5 border-b ${hairline}`}
+      >
+        <CommunityAvatar niche={item} size={48} isDark={isDark} />
+        <View className="flex-1 ml-3 pr-3">
+          <Text className={`text-[15px] font-bold ${strong}`} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <View className="flex-row items-center mt-0.5">
+            <Users size={12} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+            <Text className={`text-[12px] ml-1 ${muted}`}>
+              {compactCount(item.member_count)} members
+            </Text>
+          </View>
+          {item.description ? (
+            <Text className={`text-[13px] leading-[18px] mt-1 ${muted}`} numberOfLines={2}>
+              {item.description}
+            </Text>
+          ) : null}
+        </View>
+
+        <TouchableOpacity
+          onPress={() => toggleMembership(item)}
+          disabled={working}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={joined ? `Leave ${item.name}` : `Join ${item.name}`}
+          accessibilityState={{ busy: working }}
+          className={`px-4 h-9 rounded-full items-center justify-center ${
+            working ? "opacity-60" : ""
+          } ${
+            joined
+              ? isDark
+                ? "bg-[#2f3132]"
+                : "bg-[#F4F4F5]"
+              : isDark
+                ? "bg-[#f0f1f2]"
+                : "bg-black"
+          }`}
+        >
+          <Text
+            className={`text-[13px] font-bold ${
+              joined
+                ? isDark
+                  ? "text-[#c6c5cf]"
+                  : "text-[#52525B]"
+                : isDark
+                  ? "text-black"
+                  : "text-white"
+            }`}
+          >
+            {joined ? "Joined" : "Join"}
+          </Text>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    );
+  };
+
+  return (
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }}
+      edges={["top", "left", "right"]}
+    >
+      <View className="flex-row items-center px-4 h-12">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <ArrowLeft size={22} color={isDark ? "#f0f1f2" : "#000000"} />
+        </TouchableOpacity>
+        <Text className={`flex-1 text-center text-[17px] font-bold ${strong}`}>
+          Communities
+        </Text>
+        <TouchableOpacity
+          onPress={() => router.push("/niches/create" as any)}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityRole="button"
+          accessibilityLabel="Create a community"
+        >
+          <Plus size={22} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={2.2} />
+        </TouchableOpacity>
+      </View>
+
+      <View className={`flex-row border-b ${hairline}`}>
+        {(["home", "explore"] as const).map((t) => {
+          const active = tab === t;
+          return (
+            <TouchableOpacity
+              key={t}
+              onPress={() => setTab(t)}
+              activeOpacity={0.7}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              className="flex-1 items-center py-3"
+            >
+              <Text
+                className={`text-[15px] ${active ? `font-bold ${strong}` : `font-medium ${muted}`}`}
+              >
+                {t === "home" ? "Home" : "Explore"}
+              </Text>
+              <View
+                className={`h-[3px] w-14 rounded-full mt-2 ${active ? "bg-primary" : "bg-transparent"}`}
+              />
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      <FlatList
+        data={items}
+        keyExtractor={(n) => n.id}
+        renderItem={renderRow}
+        ListHeaderComponent={header}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              load();
+            }}
+            tintColor={isDark ? "#f0f1f2" : "#000000"}
+          />
+        }
+        contentContainerStyle={{ paddingBottom: 32, flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        ListEmptyComponent={
+          loading ? (
+            <View className="py-16 items-center">
+              <ActivityIndicator color={isDark ? "#f0f1f2" : "#000000"} />
+            </View>
+          ) : (
+            <View className="px-8 py-16 items-center">
+              <Text className={`text-[16px] font-semibold text-center ${strong}`}>
+                {query.trim()
+                  ? "Nothing matches that"
+                  : tab === "home"
+                    ? "You haven't joined any communities"
+                    : "No communities to show"}
+              </Text>
+              <Text className={`text-[14px] mt-1.5 text-center leading-[20px] ${muted}`}>
+                {query.trim()
+                  ? "Try a different word."
+                  : tab === "home"
+                    ? "Find one in Explore and join it — you'll see its posts in your feed."
+                    : "Check back soon, or start one yourself."}
+              </Text>
+              {!query.trim() && tab === "home" ? (
+                <TouchableOpacity
+                  onPress={() => setTab("explore")}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  className="mt-5 px-5 h-11 rounded-xl bg-primary items-center justify-center"
+                >
+                  <Text className="text-white font-semibold text-[15px]">Explore</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          )
+        }
+      />
     </SafeAreaView>
   );
 }

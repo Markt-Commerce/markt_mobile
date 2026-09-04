@@ -1,8 +1,8 @@
 /**
- * A one-line pub/sub so the cart service can tell the cart badge that the cart
- * changed.
+ * A one-line pub/sub so a service can tell the Orders tab badge that whatever
+ * it counts has changed.
  *
- * The alternative was calling refreshCart() at every mutation site — there are
+ * The alternative was calling a refresh at every mutation site — there are
  * eight today, spread across the feed, product details, chat and the cart
  * screen itself. That only stays correct until someone adds a ninth and forgets.
  * Emitting from the service means every caller is covered, including future
@@ -15,16 +15,19 @@ type Listener = () => void;
 
 const listeners = new Set<Listener>();
 
-/** Subscribe to cart changes. Returns the unsubscribe function. */
-export function onCartChanged(listener: Listener): () => void {
+/** Subscribe to badge-affecting changes. Returns the unsubscribe function. */
+export function onBadgeChanged(listener: Listener): () => void {
   listeners.add(listener);
   return () => {
     listeners.delete(listener);
   };
 }
 
-/** Called by the cart service after any mutation. */
-export function emitCartChanged(): void {
+/**
+ * Called after any mutation that changes what the badge counts: cart writes for
+ * a buyer, order-status writes for a seller.
+ */
+export function emitBadgeChanged(): void {
   listeners.forEach((listener) => {
     try {
       listener();

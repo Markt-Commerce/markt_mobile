@@ -5,6 +5,7 @@ import {
   getDiscoverFeed,
   getTrendingFeed,
   getFollowingFeed,
+  getJoinedNichesFeed,
   getNicheFeed,
 } from "../services/sections/feedApi";
 import { friendlyErrorMessage } from "../utils/errorMessages";
@@ -32,6 +33,7 @@ const MAIN_TABS = {
   discover: getDiscoverFeed,
   trending: getTrendingFeed,
   following: getFollowingFeed,
+  joined_niches: getJoinedNichesFeed,
 } as const;
 
 interface CacheEntry {
@@ -73,7 +75,8 @@ export function useFeed(tab: keyof typeof MAIN_TABS | string) {
         ? (MAIN_TABS[tab as keyof typeof MAIN_TABS] as typeof getForYouFeed)({
             page,
             per_page: PER_PAGE,
-            force_refresh: forceRefresh && tab === "for_you",
+            force_refresh:
+              forceRefresh && (tab === "for_you" || tab === "joined_niches"),
           })
         : getNicheFeed(tab, { page, per_page: PER_PAGE }),
     [tab]

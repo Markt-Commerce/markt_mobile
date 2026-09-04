@@ -1,4 +1,5 @@
 import { request, BASE_URL } from "../api";
+import { emitBadgeChanged } from "../../utils/badgeEvents";
 import { Order, OrderItem, CreateOrderPayload, PayOrderPayload, UpdateOrderItemPayload, Pagination, SellerOrderItem, OrderTracking, DeliveryWaitChoiceResponse, OrderCancelResponse, PodCode } from "../../models/orders";
 
 // Get buyer orders
@@ -95,11 +96,27 @@ export async function getBuyerOrders(page = 1, per_page = 10): Promise<Order[]> 
     return res;
   }
 
+  /**
+   * GET /orders/seller/pending-count — just the number, for the Orders tab
+   * badge. Separate from /seller/stats on purpose: a badge is polled far more
+   * often than a dashboard and shouldn't pay for a SUM over every item the
+   * seller has ever sold. 24 bytes against 81.
+   */
+  export async function getSellerPendingCount(): Promise<{ needs_action: number }> {
+    return request<{ needs_action: number }>(
+      `${BASE_URL}/orders/seller/pending-count`,
+      { method: "GET" }
+    );
+  }
+
   // Update seller order item status
   export async function updateSellerOrderItem(order_item_id: number, data: UpdateOrderItemPayload): Promise<OrderItem> {
     const res = await request<OrderItem>(`${BASE_URL}/orders/seller/items/${order_item_id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
     });
+    // Accepting or declining changes how many orders need the seller's
+    // attention, which is what their Orders badge counts.
+    emitBadgeChanged();
     return res;
   }

@@ -3,12 +3,27 @@ import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'expo-router';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, Dimensions, Animated, Easing, FlatList, RefreshControl } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { Search, ArrowBigDown as CaretDown, AlertTriangle } from 'lucide-react-native';
+import { Search, ArrowBigDown as CaretDown, AlertTriangle, ChevronRight } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSellerAnalyticsOverview, getSellerAnalyticsTimeseries } from '../../services/sections/analytics';
 import { getMyProducts } from '../../services/sections/product';
 import { getSellerOrders, updateSellerOrderItem } from '../../services/sections/orders';
 import { friendlyErrorMessage } from '../../utils/errorMessages';
+import { formatStatus, statusTone } from '../../utils/formatStatus';
+
+/** Tone -> [light, dark] classes, matching the order list. */
+const STATUS_BG: Record<string, [string, string]> = {
+  positive: ['bg-[#E7F6EC]', 'bg-[#1E3A28]'],
+  attention: ['bg-[#FEF3E2]', 'bg-[#3A2E18]'],
+  negative: ['bg-[#FDECEC]', 'bg-[#3A1E1E]'],
+  neutral: ['bg-[#F4F4F5]', 'bg-[#2f3132]'],
+};
+const STATUS_FG: Record<string, [string, string]> = {
+  positive: ['text-[#0F7B3F]', 'text-[#7BD9A2]'],
+  attention: ['text-[#A15C00]', 'text-[#F0B667]'],
+  negative: ['text-[#C42B2B]', 'text-[#F09A9A]'],
+  neutral: ['text-[#52525B]', 'text-[#c6c5cf]'],
+};
 import { deleteProduct } from '../../services/sections/product';
 import { SellerAnalyticsOverview, SellerAnalyticsTimeseries } from '../../models/analytics';
 import { ProductResponse } from '../../models/products';
@@ -288,7 +303,13 @@ export default function SellerDashboard() {
 
   // Render helpers
   const renderOrderItem = ({ item }: { item: SellerOrderItem }) => (
-    <View className={`px-4 py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+    <TouchableOpacity
+      onPress={() => router.push(`/sellerOrder/${item.id}` as any)}
+      activeOpacity={0.6}
+      accessibilityRole="button"
+      accessibilityLabel={`${item.product?.name ?? "Order"}, ${formatStatus(item.status)}. Open to manage.`}
+      className={`px-4 py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+    >
       <View className="flex-row justify-between items-start">
         <View style={{ flex: 1 }}>
           <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.product?.name}</Text>
@@ -303,35 +324,24 @@ export default function SellerDashboard() {
           </View>
         </View>
 
-        <View className="items-end ml-3">
-          {item.status === 'pending' ? (
-            <>
-              <TouchableOpacity onPress={() => handleAcceptOrder(item)} className="bg-primary rounded px-4 py-2 mb-2">
-                <Text className="text-white font-bold text-xs">Accept</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeclineOrder(item)} className={`rounded px-4 py-2 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-                <Text className={`font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Decline</Text>
-              </TouchableOpacity>
-            </>
-          ) : item.status === 'processing' ? (
-            <>
-              <TouchableOpacity onPress={() => handleUpdateOrderStatus(item, 'shipped')} className="bg-primary rounded px-4 py-2 mb-2">
-                <Text className="text-white font-bold text-xs">Mark Shipped</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeclineOrder(item)} className={`rounded px-4 py-2 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-                <Text className={`font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Cancel</Text>
-              </TouchableOpacity>
-            </>
-          ) : item.status === 'shipped' ? (
-            <TouchableOpacity onPress={() => handleUpdateOrderStatus(item, 'delivered')} className="bg-primary rounded px-4 py-2">
-              <Text className="text-white font-bold text-xs">Mark Delivered</Text>
-            </TouchableOpacity>
-          ) : (
-            <Text className={`font-bold text-sm capitalize ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.status}</Text>
-          )}
+        {/* Status, not inline actions. Accept/Decline lived here as buttons,
+            which meant a seller could decline — and therefore refund a buyer —
+            with one tap and no confirmation, and the same order offered
+            different actions depending on which screen you found it on.
+            Actions now live on the seller order screen, reached by tapping the
+            row, so there is one place a seller acts on an order. "Mark
+            Delivered" is gone entirely: delivery is confirmed by the buyer or
+            the rider through the POD flow, and the server refuses it here. */}
+        <View className="items-end ml-3 justify-center">
+          <View className={`px-2.5 py-1 rounded-full ${STATUS_BG[statusTone(item.status)][isDark ? 1 : 0]}`}>
+            <Text className={`text-[12px] font-semibold ${STATUS_FG[statusTone(item.status)][isDark ? 1 : 0]}`}>
+              {formatStatus(item.status)}
+            </Text>
+          </View>
+          <ChevronRight size={18} color={isDark ? "#6b6d71" : "#A1A1AA"} strokeWidth={2} />
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   const renderProductItem = ({ item }: { item: any }) => (
@@ -381,35 +391,59 @@ export default function SellerDashboard() {
         {/* Period label */}
         <Text className={`text-xs px-6 -mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{periodLabel}</Text>
 
-        {/* Metrics cards — Revenue first, visual hierarchy, empty states */}
-        <View className="flex-row flex-wrap gap-4 p-6">
-          <View className={`min-w-[160px] flex-1 rounded p-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`} style={{ borderLeftWidth: 4, borderLeftColor: isDark ? '#f0f1f2' : '#000000' }}>
-            <Text className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Revenue</Text>
-            <Text className={`text-2xl font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-              {formatCurrency(analyticsOverview?.revenue_30d)}
+        {/* Revenue leads on its own, then the supporting numbers in a row.
+            This was four equal bordered boxes with p-6 inside each, and a stray
+            4px black bar down the left of one of them — so nothing led, and the
+            accent read as a rendering artefact rather than emphasis. */}
+        <View className="px-5 pt-4">
+          <Text className={`text-[11px] font-bold uppercase tracking-[1.5px] ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
+            Revenue
+          </Text>
+          <Text className={`text-[34px] font-bold mt-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+            {formatCurrency(analyticsOverview?.revenue_30d)}
+          </Text>
+          <View className="flex-row items-center mt-1">
+            <Text className={`text-[13px] ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
+              {periodLabel}
             </Text>
-            {(analyticsOverview?.revenue_30d ?? 0) === 0 && (
-              <Text className={`text-[10px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No sales yet. Share your products to get started.</Text>
-            )}
+            {trendPct !== null && (analyticsOverview?.revenue_30d ?? 0) > 0 ? (
+              <Text
+                className={`text-[13px] font-semibold ml-2 ${trendPct >= 0 ? "text-success" : "text-error"}`}
+              >
+                {trendPct >= 0 ? "+" : ""}
+                {trendPct.toFixed(0)}%
+              </Text>
+            ) : null}
           </View>
-          <View className={`min-w-[158px] flex-1 rounded p-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Orders</Text>
-            <Text className={`text-2xl font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{analyticsOverview?.orders_30d ?? 0}</Text>
-            {(analyticsOverview?.orders_30d ?? 0) === 0 && (
-              <Text className={`text-[10px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No orders yet.</Text>
-            )}
-          </View>
-          <View className={`min-w-[158px] flex-1 rounded p-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Product Views</Text>
-            <Text className={`text-2xl font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{analyticsOverview?.views_30d ?? 0}</Text>
-            {(analyticsOverview?.views_30d ?? 0) === 0 && (
-              <Text className={`text-[10px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No product views yet.</Text>
-            )}
-          </View>
-          <View className={`min-w-[158px] flex-1 rounded p-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Conversion Rate</Text>
-            <Text className={`text-2xl font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{(analyticsOverview?.conversion_30d ?? 0)}%</Text>
-          </View>
+          {(analyticsOverview?.revenue_30d ?? 0) === 0 ? (
+            <Text className={`text-[13px] mt-1.5 ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
+              No sales yet — share a product to get started.
+            </Text>
+          ) : null}
+        </View>
+
+        <View
+          className={`flex-row mx-5 mt-5 rounded-2xl ${isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]"}`}
+        >
+          {[
+            { label: "Orders", value: String(analyticsOverview?.orders_30d ?? 0) },
+            { label: "Views", value: String(analyticsOverview?.views_30d ?? 0) },
+            { label: "Conversion", value: `${analyticsOverview?.conversion_30d ?? 0}%` },
+          ].map((stat, i) => (
+            <View
+              key={stat.label}
+              className={`flex-1 py-4 items-center ${i > 0 ? "border-l" : ""} ${
+                isDark ? "border-[#46464e]" : "border-[#E4E4E7]"
+              }`}
+            >
+              <Text className={`text-[20px] font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                {stat.value}
+              </Text>
+              <Text className={`text-[12px] mt-0.5 ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
+                {stat.label}
+              </Text>
+            </View>
+          ))}
         </View>
 
         {/* Start cards (onboarding) — SELLER_DASHBOARD_API_AND_MOBILE_GUIDE §2.4 */}
@@ -463,16 +497,9 @@ export default function SellerDashboard() {
         {/* Sales trends card */}
         <View className="px-6 py-6">
           <View className={`rounded border p-6 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Sales Trends</Text>
-            <Text className={`text-[32px] font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatCurrency(analyticsOverview?.revenue_30d ?? 0)}</Text>
-            <View className="flex-row gap-2 items-center mt-2">
-              <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{periodLabel}</Text>
-              {trendPct !== null && (
-                <Text className={`text-sm font-bold ${trendPct >= 0 ? "text-success" : "text-error"}`}>
-                  {trendPct >= 0 ? "+" : ""}{trendPct.toFixed(0)}%
-                </Text>
-              )}
-            </View>
+            {/* The figure and trend now lead the screen; repeating them here
+                just made the same number appear twice. */}
+            <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Sales trends</Text>
             <View className="py-6">
               <LineChart
                 data={(analyticsTimeseries && analyticsTimeseries.series && analyticsTimeseries.series.length > 0) ? {
@@ -524,13 +551,29 @@ export default function SellerDashboard() {
           {error ? <Text className="text-error text-sm mt-3 px-1">{error}</Text> : null}
         </View>
 
-        {/* Low Stock Alerts (pulsing red-accent) */}
-        <View className="px-6 pt-10">
-          <Text className={`text-xl font-bold px-1 pb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Low Stock Alerts</Text>
+        {/* Low stock */}
+        <View className="px-5 pt-8">
+          <Text className={`text-[17px] font-bold pb-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Stock</Text>
 
-          <View className={`rounded border overflow-hidden ${isDark ? "bg-[#2f3132] border-[#ba1a1a]" : "bg-error-bg border-error"}`}>
+          {/* The container only turns red when something is actually wrong.
+              "No low stock items" is good news, and it was being rendered as a
+              red-bordered pink alert box — the one state that should reassure
+              looked like the one state that shouldn't. */}
+          <View
+            className={`rounded-xl overflow-hidden ${
+              sellerInventory.filter((item) => (item.stock ?? 0) < 5).length === 0
+                ? isDark
+                  ? "bg-[#2f3132]"
+                  : "bg-[#F7F7F8]"
+                : isDark
+                  ? "bg-[#2f3132] border border-[#ba1a1a]"
+                  : "bg-error-bg border border-error"
+            }`}
+          >
             {sellerInventory.filter((item) => (item.stock ?? 0) < 5).length === 0 ? (
-              <Text className={`text-sm px-6 py-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No low stock items</Text>
+              <Text className={`text-[14px] px-4 py-4 ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
+                Everything's in stock.
+              </Text>
             ) : (
               sellerInventory.filter((item) => (item.stock ?? 0) < 5).map((a, idx, arr) => (
                 <View

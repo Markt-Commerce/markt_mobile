@@ -19,65 +19,12 @@ import { useUser } from "../../hooks/userContextProvider";
 import { useToast } from "../../components/ToastProvider";
 import { switchUserRole } from "../../services/sections/auth";
 import { useTheme } from "../../components/themeProvider";
+import {
+  SettingsSection as Section,
+  SettingsRow as Row,
+} from "../../components/SettingsList";
 import { useGamificationContext } from "../../hooks/gamificationContext";
 import GamificationStrip from "../../components/gamification/GamificationStrip";
-
-function Section({
-  title,
-  children,
-  isDark,
-}: {
-  title: string;
-  children: React.ReactNode;
-  isDark: boolean;
-}) {
-  return (
-    <View className="px-6 mt-8">
-      <Text className={`font-bold text-[11px] tracking-[2px] uppercase mb-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-        {title}
-      </Text>
-      <View className={`border rounded overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-        {children}
-      </View>
-    </View>
-  );
-}
-
-function Row({
-  icon: Icon,
-  title,
-  subtitle,
-  onPress,
-  last = false,
-  isDark,
-}: {
-  icon: React.ElementType;
-  title: string;
-  subtitle: string;
-  onPress: () => void;
-  last?: boolean;
-  isDark: boolean;
-}) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.8}
-      className={`flex-row items-center justify-between px-4 py-4 ${last ? "" : isDark ? "border-b border-[#46464e]" : "border-b border-border"}`}
-    >
-      <View className="flex-row items-center gap-3 flex-1 pr-3">
-        <View className={`w-10 h-10 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-          <Icon size={18} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.7} />
-        </View>
-        <View className="flex-1">
-          <Text className={`font-bold text-[15px] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{title}</Text>
-          <Text className={`text-[13px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{subtitle}</Text>
-        </View>
-      </View>
-      <ArrowRight size={18} color={isDark ? "#c6c5cf" : "#71717A"} strokeWidth={1.7} />
-    </TouchableOpacity>
-  );
-}
-
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -169,76 +116,76 @@ export default function ProfileScreen() {
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
-        <View className="px-6 pt-8">
-          <Text className={`font-bold text-[28px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-            Profile
+        {/* Same identity treatment as Settings: centred, no card. It was a
+            bordered box wrapping a bordered avatar and two stacked buttons, on
+            a screen whose rows are now full-bleed. */}
+        <View className={`items-center px-6 pt-6 pb-6 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+          <Avatar
+            uri={profile?.profile_picture_url}
+            name={displayName}
+            size={88}
+            className="rounded-full"
+          />
+          <Text
+            className={`font-bold text-[22px] tracking-tight mt-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+            numberOfLines={1}
+          >
+            {displayName}
           </Text>
-          <Text className={`text-base mt-2 leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-            Manage your identity, understand your active role, and jump into account tasks.
+          <Text
+            className={`text-[14px] mt-0.5 ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}
+            numberOfLines={1}
+          >
+            @{profile?.username ?? "user"}
           </Text>
-        </View>
 
-        <View className="px-6 pt-8">
-          <View className={`border rounded px-5 py-5 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-            <View className="flex-row items-center gap-4">
-              <Avatar
-                uri={profile?.profile_picture_url}
-                name={displayName}
-                size={64}
-                className="rounded"
-              />
-              <View className="flex-1">
-                <Text className={`font-bold text-[24px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
-                  {displayName}
-                </Text>
-                <Text className={`text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={1}>
-                  @{profile?.username ?? "user"}
-                </Text>
-                <Text className={`font-bold text-[10px] tracking-[2px] uppercase mt-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                  {role} account active
-                </Text>
-              </View>
+          <View className="flex-row flex-wrap justify-center gap-2 mt-4">
+            <View className="px-3 py-1.5 rounded-full bg-primary">
+              <Text className="font-bold text-[11px] uppercase tracking-wider text-white">
+                {role}
+              </Text>
             </View>
+          </View>
 
-            <View className="gap-3 mt-5">
-              <TouchableOpacity
-                onPress={() => router.push("/(settings)/accountInfoScreen")}
-                activeOpacity={0.85}
-                className="w-full h-12 rounded bg-primary items-center justify-center"
+          <View className="flex-row gap-2.5 mt-5 w-full">
+            <TouchableOpacity
+              onPress={() => router.push("/(settings)/accountInfoScreen")}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile"
+              className={`flex-1 h-11 rounded-xl items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}
+            >
+              <Text className={`font-semibold text-[14px] ${isDark ? "text-[#f0f1f2]" : "text-[#3F3F46]"}`}>
+                Edit profile
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleSwitchRole}
+              activeOpacity={0.85}
+              disabled={switchingRole}
+              accessibilityRole="button"
+              accessibilityState={{ busy: switchingRole }}
+              className={`flex-1 h-11 rounded-xl items-center justify-center flex-row ${
+                isDark ? "bg-[#f0f1f2]" : "bg-black"
+              } ${switchingRole ? "opacity-60" : ""}`}
+            >
+              <ArrowRightLeft size={15} color={isDark ? "#1a1c1d" : "#FFFFFF"} strokeWidth={2.2} />
+              <Text
+                className={`font-semibold text-[14px] ml-1.5 ${isDark ? "text-[#1a1c1d]" : "text-white"}`}
+                numberOfLines={1}
               >
-                <Text
-                  className="text-white font-bold text-[11px] tracking-[2px] uppercase"
-                  numberOfLines={1}
-                >
-                  Edit Profile
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleSwitchRole}
-                activeOpacity={0.85}
-                disabled={switchingRole}
-                className={`w-full h-12 rounded items-center justify-center flex-row gap-2 ${
-                  isDark ? "bg-[#f0f1f2]" : "bg-black"
-                } ${switchingRole ? "opacity-60" : ""}`}
-              >
-                <ArrowRightLeft size={16} color={isDark ? "#1a1c1d" : "#FFFFFF"} strokeWidth={2} />
-                <Text
-                  className={`font-bold text-[11px] tracking-[2px] uppercase ${isDark ? "text-[#1a1c1d]" : "text-white"}`}
-                  numberOfLines={1}
-                >
-                  {switchingRole
-                    ? "Switching…"
-                    : dualRole
-                      ? `Use ${role === "buyer" ? "Seller" : "Buyer"} Mode`
-                      : `Create ${role === "buyer" ? "Seller" : "Buyer"}`}
-                </Text>
-              </TouchableOpacity>
-            </View>
+                {switchingRole
+                  ? "Switching…"
+                  : dualRole
+                    ? `${role === "buyer" ? "Seller" : "Buyer"} mode`
+                    : `Create ${role === "buyer" ? "seller" : "buyer"}`}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
         {gamification && (
-          <View className="px-6 pt-8">
+          <View className="px-4 pb-2">
             <GamificationStrip
               profile={gamification}
               badges={gamificationBadges}
@@ -248,7 +195,7 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        <Section title="Role Overview" isDark={isDark}>
+        <Section title="Role Overview" dark={isDark}>
           <Row
             icon={CircleUserRound}
             title="Buyer Identity"
@@ -260,7 +207,7 @@ export default function ProfileScreen() {
             onPress={() => {
               void handleRoleRowPress("buyer");
             }}
-            isDark={isDark}
+            dark={isDark}
           />
           <Row
             icon={Briefcase}
@@ -274,39 +221,35 @@ export default function ProfileScreen() {
               void handleRoleRowPress("seller");
             }}
             last
-            isDark={isDark}
+            dark={isDark}
           />
         </Section>
 
-        <Section title="Account Navigation" isDark={isDark}>
+        <Section title="Account Navigation" dark={isDark}>
           <Row
             icon={Trophy}
             title="Rewards & Badges"
-            subtitle="Your points, tier progress, badges, and the leaderboard."
             onPress={() => router.push("/gamification" as any)}
-            isDark={isDark}
+            dark={isDark}
           />
           <Row
             icon={Settings}
             title="Settings"
-            subtitle="Appearance, notifications, security, and support controls."
             onPress={() => router.push("/(settings)/settingsProfileScreen")}
-            isDark={isDark}
+            dark={isDark}
           />
           <Row
             icon={LayoutGrid}
             title="My Niches"
-            subtitle="Review the communities you run or participate in."
             onPress={() => router.push("/myniches" as any)}
-            isDark={isDark}
+            dark={isDark}
           />
           <Row
             icon={ShieldCheck}
             title="Help & Policies"
-            subtitle="Read support guidance, privacy information, and platform details."
             onPress={() => router.push("/support/help" as any)}
             last
-            isDark={isDark}
+            dark={isDark}
           />
         </Section>
       </ScrollView>
