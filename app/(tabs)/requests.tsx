@@ -39,26 +39,35 @@ function EmptyRequestsState({
   isDark: boolean;
 }) {
   return (
+    // Matches the cart's empty state, which was already right: a bare glyph,
+    // the headline, one line of copy, one button. This had a bordered grey
+    // square holding a bordered white square holding the icon -- two containers
+    // around a single 28px picture -- and shouted its action in tracked
+    // uppercase while the cart next door said "Start shopping" like a person.
     <View className="flex-1 items-center justify-center px-8 py-16">
-      <View className={`w-24 h-24 rounded items-center justify-center mb-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-        <View className={`w-16 h-16 rounded items-center justify-center border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-          <FileText size={28} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.8} />
-        </View>
-      </View>
-      <Text className={`text-2xl font-bold text-center tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+      <FileText
+        size={44}
+        color={isDark ? "#8f9195" : "#000000"}
+        strokeWidth={1.5}
+      />
+      <Text
+        className={`text-[22px] font-bold text-center mt-5 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+      >
         {title}
       </Text>
-      <Text className={`text-base text-center mt-3 leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+      <Text
+        className={`text-[15px] text-center mt-2 leading-[21px] ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}
+      >
         {description}
       </Text>
       <TouchableOpacity
         onPress={onAction}
         activeOpacity={0.85}
-        className="mt-8 h-12 px-7 rounded bg-primary items-center justify-center"
+        accessibilityRole="button"
+        accessibilityLabel={actionLabel}
+        className="mt-6 h-12 px-7 rounded-xl bg-primary items-center justify-center"
       >
-        <Text className="text-white font-bold text-[11px] tracking-[2px] uppercase">
-          {actionLabel}
-        </Text>
+        <Text className="text-white font-semibold text-[15px]">{actionLabel}</Text>
       </TouchableOpacity>
     </View>
   );

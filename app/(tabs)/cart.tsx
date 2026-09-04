@@ -180,8 +180,8 @@ export default function CartScreen() {
           contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "#f0f1f2" : "#000000"} />}
         >
-          <View className={`w-24 h-24 rounded items-center justify-center mb-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-            <ShoppingCart size={40} color={isDark ? "#c6c5cf" : "#A1A1AA"} strokeWidth={1} />
+          <View className="mb-5">
+            <ShoppingCart size={44} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={1.5} />
           </View>
           <Text className={`text-2xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Your cart is empty</Text>
           <Text className={`mt-2 text-base text-center leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>

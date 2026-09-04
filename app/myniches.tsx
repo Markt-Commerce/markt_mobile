@@ -174,8 +174,8 @@ export default function MyNichesScreen() {
         ListEmptyComponent={
           !feedLoading ? (
             <View className="items-center justify-center py-20 px-8">
-              <View className={`w-24 h-24 rounded items-center justify-center mb-6 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-                <Compass size={40} color={isDark ? "#c6c5cf" : "#71717A"} strokeWidth={1.5} />
+              <View className="mb-5">
+                <Compass size={44} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={1.5} />
               </View>
               <Text className={`font-bold text-xl text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                 {niches.length === 0 ? "No niches yet" : "No posts yet"}

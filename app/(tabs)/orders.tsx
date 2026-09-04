@@ -162,8 +162,8 @@ function MyCartTab() {
   if (!cart || !cart.items?.length) {
     return (
         <View className="flex-1 items-center justify-center px-6 py-16" >
-          <View className={`w-24 h-24 rounded items-center justify-center mb-4 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-            <ShoppingCart size={36} color={isDark ? "#f0f1f2" : "#000000"} />
+          <View className="mb-5">
+            <ShoppingCart size={44} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={1.5} />
           </View>
         <Text className={`text-xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Your cart is empty</Text>
         <Text className={`mt-2 text-sm text-center ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>

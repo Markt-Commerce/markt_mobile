@@ -187,8 +187,8 @@ export default function MessagesScreen() {
         />
       ) : (
         <View className={`flex-1 items-center justify-center px-8 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
-          <View className={`w-24 h-24 rounded items-center justify-center mb-6 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-            <MessageCircle size={36} color={isDark ? "#f0f1f2" : "#000000"} />
+          <View className="mb-5">
+            <MessageCircle size={44} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={1.5} />
           </View>
           <Text className={`text-xl font-bold text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
             {search.trim() ? "No matches" : "No messages yet"}

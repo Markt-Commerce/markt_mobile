@@ -520,8 +520,8 @@ export default function FeedScreen() {
             </View>
           ) : (
             <View className="items-center justify-center py-12 px-8">
-              <View className={`w-24 h-24 rounded items-center justify-center mb-8 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-                <Search size={40} color={isDark ? "#f0f1f2" : "#A1A1AA"} strokeWidth={1} />
+              <View className="mb-6">
+                <Search size={44} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={1.5} />
               </View>
               <Text className={`font-bold text-2xl text-center leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
                 {selectedTab === "following" ? "Expand your\ncommunity" : "The gallery is\nempty for now"}

@@ -296,9 +296,9 @@ export default function SearchPage() {
       {nothingFound && view === "all" ? (
         <View className="flex-1 justify-center items-center px-12">
           <View
-            className={`w-24 h-24 rounded items-center justify-center mb-8 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+            className="mb-6"
           >
-            <Search size={40} color={mutedIconColor} strokeWidth={1} />
+            <Search size={44} color={mutedIconColor} strokeWidth={1.5} />
           </View>
           <Text
             className={`font-bold text-xl text-center leading-tight ${headingColor}`}
