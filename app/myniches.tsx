@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect, useRef } from "react";
-import { View, Text, FlatList, Pressable, ActivityIndicator, RefreshControl, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, FlatList, Pressable, ActivityIndicator, RefreshControl, TouchableOpacity, ScrollView, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Plus, Compass, ArrowLeft } from "lucide-react-native";
@@ -83,9 +83,13 @@ export default function MyNichesScreen() {
           <View>
             {/* Niche Icon/Image */}
             <View className={`h-20 justify-center items-center ${isDark ? "bg-[#2f3132]" : "bg-[#f5f3f2]"}`}>
-              <Text className={`text-3xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                {(item.name ?? "").charAt(0).toUpperCase() || "?"}
-              </Text>
+              {item.image_url ? (
+                <Image source={{ uri: item.image_url }} className="w-full h-full" resizeMode="cover" />
+              ) : (
+                <Text className={`text-3xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                  {(item.name ?? "").charAt(0).toUpperCase() || "?"}
+                </Text>
+              )}
             </View>
 
             {/* Content */}

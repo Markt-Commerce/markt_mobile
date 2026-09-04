@@ -21,6 +21,7 @@ export default function NicheSettingsScreen() {
   const [niche, setNiche] = useState<Niches | null>(null);
   const [ownerChecked, setOwnerChecked] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingField, setUploadingField] = useState<"image_id" | "banner_id" | null>(null);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -90,6 +91,7 @@ export default function NicheSettingsScreen() {
     if (result.canceled) return;
     try {
       setSaving(true);
+      setUploadingField(field);
       const uploaded = await attemptMultipleUpload([{ uri: result.assets[0].uri, fileName: "community.jpg", type: "image/jpeg" } as any]);
       const mediaId = uploaded[0]?.media?.id;
       if (!mediaId) throw new Error("Image upload failed");
@@ -100,6 +102,7 @@ export default function NicheSettingsScreen() {
       show({ variant: "error", title: "Image upload failed", message: friendlyErrorMessage(error, "Could not update the community image.") });
     } finally {
       setSaving(false);
+      setUploadingField(null);
     }
   };
 
@@ -124,13 +127,13 @@ export default function NicheSettingsScreen() {
         </SettingsSection>
 
         <SettingsSection title="Images" dark={isDark}>
-          <TouchableOpacity onPress={() => changeImage("image_id")} className="flex-row items-center px-4 py-3 min-h-[72px]">
+          <TouchableOpacity disabled={saving} onPress={() => changeImage("image_id")} className={`flex-row items-center px-4 py-3 min-h-[72px] ${saving ? "opacity-60" : ""}`}>
             {niche.image_url ? <Image source={{ uri: niche.image_url }} className="w-12 h-12 rounded-xl" /> : <Camera size={22} color={isDark ? "#c6c5cf" : "#3F3F46"} />}
-            <View className="flex-1 ml-4"><Text className={`text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Community profile picture</Text><Text className={`text-[13px] mt-0.5 ${muted}`}>Shown beside the community name</Text></View><ImageIcon size={18} color={isDark ? "#8f9195" : "#A1A1AA"} />
+            <View className="flex-1 ml-4"><Text className={`text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Community profile picture</Text><Text className={`text-[13px] mt-0.5 ${muted}`}>{uploadingField === "image_id" ? "Uploading…" : "Shown beside the community name"}</Text></View>{uploadingField === "image_id" ? <ActivityIndicator size="small" /> : <ImageIcon size={18} color={isDark ? "#8f9195" : "#A1A1AA"} />}
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => changeImage("banner_id")} className="flex-row items-center px-4 py-3 min-h-[72px] border-t border-[#EFEFF1]">
+          <TouchableOpacity disabled={saving} onPress={() => changeImage("banner_id")} className={`flex-row items-center px-4 py-3 min-h-[72px] border-t border-[#EFEFF1] ${saving ? "opacity-60" : ""}`}>
             {niche.banner_url ? <Image source={{ uri: niche.banner_url }} className="w-12 h-12 rounded-xl" /> : <ImageIcon size={22} color={isDark ? "#c6c5cf" : "#3F3F46"} />}
-            <View className="flex-1 ml-4"><Text className={`text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Community banner</Text><Text className={`text-[13px] mt-0.5 ${muted}`}>Shown at the top of the community</Text></View><ImageIcon size={18} color={isDark ? "#8f9195" : "#A1A1AA"} />
+            <View className="flex-1 ml-4"><Text className={`text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Community banner</Text><Text className={`text-[13px] mt-0.5 ${muted}`}>{uploadingField === "banner_id" ? "Uploading…" : "Shown at the top of the community"}</Text></View>{uploadingField === "banner_id" ? <ActivityIndicator size="small" /> : <ImageIcon size={18} color={isDark ? "#8f9195" : "#A1A1AA"} />}
           </TouchableOpacity>
         </SettingsSection>
 
