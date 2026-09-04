@@ -19,6 +19,7 @@ import PaymentDeepLinkHandler from "../components/PaymentDeepLinkHandler";
 import NotificationsBootstrap from "../components/NotificationsBootstrap";
 import { GamificationProvider } from "../hooks/gamificationContext";
 import { CartProvider } from "../hooks/cartContext";
+import { NotificationsProvider } from "../hooks/notificationsContext";
 
 // Single app-wide query client. Created once at module scope so it survives
 // re-renders and Fast Refresh. Powers the tanstack-query hooks (useAuth,
@@ -48,11 +49,13 @@ export default function RootLayout() {
             <GestureHandlerRootView style={{ flex: 1 }}>
               <UserProvider>
                 <NotificationsBootstrap />
-                <CartProvider>
-                  <RegisterProvider value={{ regData, setRegData }}>
-                    <AppStack />
-                  </RegisterProvider>
-                </CartProvider>
+                <NotificationsProvider>
+                  <CartProvider>
+                    <RegisterProvider value={{ regData, setRegData }}>
+                      <AppStack />
+                    </RegisterProvider>
+                  </CartProvider>
+                </NotificationsProvider>
               </UserProvider>
             </GestureHandlerRootView>
           </ToastProvider>

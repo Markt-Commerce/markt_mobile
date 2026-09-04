@@ -1,22 +1,29 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, Image, ScrollView, RefreshControl } from "react-native";
+import React, { useCallback, useState } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  ArrowLeft,
-  Truck,
   Package,
-  User,
-  Dot,
-  PlusSquare,
-  Search,
-  Home,
-  LucideIcon,
-  Bell,
-  Check,
+  Truck,
+  CreditCard,
+  Star,
+  Megaphone,
+  Clipboard,
   MessageSquare,
-  Tag,
+  User,
+  AlertTriangle,
+  Bell,
+  CheckCheck,
+  RotateCw,
 } from "lucide-react-native";
-import { TouchableOpacity } from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
+import ScreenHeader from "../components/ScreenHeader";
 import { NotificationItem } from "../models/notifications";
 import {
   getNotifications,
@@ -27,51 +34,131 @@ import {
   rejectSubstitution,
 } from "../services/sections/fulfilment";
 import { submitDeliveryWaitChoice } from "../services/sections/orders";
-import { useRouter } from "expo-router";
 import { useTheme } from "../components/themeProvider";
 import { useToast } from "../components/ToastProvider";
+import { useNotificationsBadge } from "../hooks/notificationsContext";
+import { resolveNotificationRoute } from "../utils/notificationDeepLink";
+import { formatTimeAgo } from "../utils/formatTimeAgo";
+import { friendlyErrorMessage } from "../utils/errorMessages";
 
 type DecisionState = "pending" | "resolved" | "error";
 
-// ---- Small presentational helpers ----
-const IconBubble = ({
-  Cmp,
-  isDark,
-}: {
-  Cmp?: React.ComponentType<any>;
-  isDark: boolean;
-}) => (
-  <View
-    className={`w-12 h-12 rounded items-center justify-center ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
-  >
-    {Cmp ? (
-      <Cmp size={20} color={isDark ? "#f5f5f5" : "#000000"} strokeWidth={1.5} />
-    ) : (
-      <Bell
-        size={20}
-        color={isDark ? "#f5f5f5" : "#000000"}
-        strokeWidth={1.5}
-      />
-    )}
-  </View>
-);
+// Keyed on the backend's NotificationType enum (app/notifications/models.py in
+// markt_python) -- a type with no entry here falls back to the generic Bell.
+const ICON_BY_TYPE: Record<string, React.ComponentType<any>> = {
+  order_update: Package,
+  order_placed: Package,
+  order_cancelled: Package,
+  cart_item_added: Package,
+  shipment_update: Truck,
+  delivery_failed: Truck,
+  payment_success: CreditCard,
+  payment_failed: CreditCard,
+  refund_issued: CreditCard,
+  product_review: Star,
+  review_upvote: Star,
+  promotional: Megaphone,
+  request_offer: Clipboard,
+  offer_accepted: Clipboard,
+  offer_rejected: Clipboard,
+  offer_withdrawn: Clipboard,
+  request_closed: Clipboard,
+  request_status_change: Clipboard,
+  request_expired: Clipboard,
+  new_request_match: Clipboard,
+  fulfilment_request: Clipboard,
+  post_like: MessageSquare,
+  post_comment: MessageSquare,
+  niche_invitation: MessageSquare,
+  niche_post_approved: MessageSquare,
+  niche_post_rejected: MessageSquare,
+  new_follower: User,
+  substitution_approval_required: AlertTriangle,
+  thin_volume_delivery_choice: AlertTriangle,
+  item_unfulfilled: AlertTriangle,
+  system_alert: AlertTriangle,
+  moderation_action: AlertTriangle,
+};
 
 export default function NotificationsScreen() {
   const router = useRouter();
-  const [items, setItems] = useState<NotificationItem[]>();
+  const [items, setItems] = useState<NotificationItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [tab, setTab] = useState<"all" | "orders" | "messages" | "promos">(
-    "all",
-  );
+  const [error, setError] = useState<string | null>(null);
   // Tracks in-progress/resolved state for the two notification types that
   // carry a pending buyer decision (9.1 ASK approval, 10.3 thin-volume
   // wait-vs-pay) -- surfaced in-app here rather than relying on the push
-  // tap alone, since deep-linking by notification type isn't wired yet
-  // (see NotificationsBootstrap.tsx).
+  // tap alone.
   const [decisionState, setDecisionState] = useState<Record<number, DecisionState>>({});
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const { show } = useToast();
+  const { bumpUnread } = useNotificationsBadge();
+
+  const ink = isDark ? "text-[#f0f1f2]" : "text-black";
+  const muted = isDark ? "text-[#c6c5cf]" : "text-tertiary";
+  const rule = isDark ? "border-[#46464e]" : "border-border";
+  const iconColor = isDark ? "#f0f1f2" : "#000000";
+
+  const load = useCallback(async (opts: { refresh?: boolean } = {}) => {
+    if (opts.refresh) setRefreshing(true);
+    setError(null);
+    try {
+      const notifs = await getNotifications(1, 20);
+      setItems(notifs.items);
+    } catch (e) {
+      if ((e as { status?: number })?.status !== 401) {
+        setError(friendlyErrorMessage(e, "We couldn't load your notifications."));
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
+
+  const onOpen = (n: NotificationItem) => {
+    if (!n.is_read) {
+      setItems((prev) =>
+        prev.map((item) => (item.id === n.id ? { ...item, is_read: true } : item)),
+      );
+      bumpUnread(-1);
+      markAllAsRead({ notification_ids: [n.id] }).catch(() => {
+        // Best-effort -- not worth fighting the optimistic UI over a single
+        // missed read receipt; the next full fetch will reconcile it.
+      });
+    }
+    const route = resolveNotificationRoute(n);
+    if (route) router.push(route as any);
+  };
+
+  const markAllRead = async () => {
+    const unreadIds = items.filter((n) => !n.is_read).map((n) => n.id);
+    if (unreadIds.length === 0) return;
+    setItems((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    bumpUnread(-unreadIds.length);
+    try {
+      await markAllAsRead({ notification_ids: unreadIds });
+    } catch (e) {
+      bumpUnread(unreadIds.length);
+      setItems((prev) =>
+        prev.map((n) => (unreadIds.includes(n.id) ? { ...n, is_read: false } : n)),
+      );
+      show({
+        variant: "error",
+        title: "Couldn't mark all as read",
+        message: friendlyErrorMessage(e),
+      });
+    }
+  };
+
+  const hasUnread = items.some((n) => !n.is_read);
 
   const handleSubstitutionDecision = async (n: NotificationItem, approve: boolean) => {
     setDecisionState((prev) => ({ ...prev, [n.id]: "pending" }));
@@ -115,69 +202,6 @@ export default function NotificationsScreen() {
     }
   };
 
-  useEffect(() => {
-    const getpresentNotifs = async () => {
-      try {
-        const notifs = await getNotifications(20);
-        setItems(notifs.items);
-      } catch {
-        setItems([]);
-      }
-    };
-    getpresentNotifs();
-  }, []);
-
-  // ... filtered logic
-  const filtered = useMemo(() => {
-    if (tab === "all") return items;
-    if (tab === "orders") return items?.filter((n) => n.type === "icon");
-    if (tab === "messages")
-      return items?.filter((n) => n.type === "avatar" || n.type === "icon");
-    return items?.filter((n) => n.type === "icon"); // promos
-  }, [items, tab]);
-
-  const today = filtered?.slice(0, 3);
-  const yesterday = filtered?.slice(3);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    try {
-      const notifs = await getNotifications(20);
-      setItems(notifs.items);
-    } catch {
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  const markAllRead = () => {
-    setItems((prev) => prev?.map((n) => ({ ...n, is_read: true })));
-  };
-
-  const TabPill = ({
-    label,
-    active,
-    onPress,
-  }: {
-    label: string;
-    active?: boolean;
-    onPress: () => void;
-  }) => (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.85}
-      className={`px-4 py-2 rounded ${
-        active ? "bg-primary" : isDark ? "bg-dark-elevated" : "bg-surface"
-      }`}
-    >
-      <Text
-        className={`text-xs font-bold ${active ? "text-white" : "text-tertiary"}`}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-
   const DecisionButton = ({
     label,
     onPress,
@@ -190,52 +214,51 @@ export default function NotificationsScreen() {
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.8}
-      className={`flex-1 h-9 rounded items-center justify-center ${primary ? "bg-primary" : isDark ? "bg-dark-elevated" : "bg-surface"}`}
+      className={`flex-1 h-9 rounded items-center justify-center ${primary ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-surface"}`}
       accessibilityRole="button"
       accessibilityLabel={label}
     >
-      <Text
-        className={`text-xs font-bold ${primary ? "text-white" : isDark ? "text-dark-text" : "text-black"}`}
-      >
-        {label}
-      </Text>
+      <Text className={`text-xs font-bold ${primary ? "text-white" : ink}`}>{label}</Text>
     </TouchableOpacity>
   );
 
-  const Row = ({ n }: { n: NotificationItem }) => {
+  const renderItem = ({ item: n }: { item: NotificationItem }) => {
     const state = decisionState[n.id];
+    const Icon = ICON_BY_TYPE[n.type] ?? Bell;
     const needsSubstitutionDecision = n.type === "substitution_approval_required";
     const needsWaitChoice = n.type === "thin_volume_delivery_choice";
     const needsEscalationChoice = n.type === "item_unfulfilled";
 
     return (
-      <View className="flex-row items-start gap-4 px-5 py-5">
-        <IconBubble isDark={isDark} />
+      <TouchableOpacity
+        onPress={() => onOpen(n)}
+        activeOpacity={0.7}
+        className={`flex-row items-start gap-4 px-6 py-4 border-b ${rule}`}
+        accessibilityRole="button"
+        accessibilityLabel={n.title || n.message}
+      >
+        <View
+          className={`w-10 h-10 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+        >
+          <Icon size={18} color={iconColor} strokeWidth={1.6} />
+        </View>
 
         <View className="flex-1">
-          <Text
-            className={`font-bold text-sm ${isDark ? "text-dark-text" : "text-black"}`}
-          >
-            {n.title}
-          </Text>
-          <Text
-            className={`text-sm mt-1 leading-5 ${n.is_read ? (isDark ? "text-dark-muted" : "text-tertiary") : isDark ? "text-dark-text font-medium" : "text-black font-medium"}`}
-            numberOfLines={3}
-          >
+          <View className="flex-row items-center gap-2">
+            <Text className={`flex-1 text-[15px] font-semibold ${ink}`} numberOfLines={1}>
+              {n.title}
+            </Text>
+            {!n.is_read && <View className="w-2 h-2 rounded-full bg-primary" />}
+          </View>
+          <Text className={`text-[13px] mt-1 leading-5 ${muted}`} numberOfLines={3}>
             {n.message}
           </Text>
-          <Text
-            className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-[10px] mt-1.5`}
-          >
-            {n.created_at}
-          </Text>
+          <Text className={`text-[11px] mt-1.5 ${muted}`}>{formatTimeAgo(n.created_at)}</Text>
 
           {(needsSubstitutionDecision || needsWaitChoice) && state !== "resolved" && (
             <View className="flex-row gap-2 mt-3">
               {state === "pending" ? (
-                <Text className={`text-xs ${isDark ? "text-dark-muted" : "text-tertiary"}`}>
-                  Submitting…
-                </Text>
+                <Text className={`text-xs ${muted}`}>Submitting…</Text>
               ) : needsSubstitutionDecision ? (
                 <>
                   <DecisionButton
@@ -255,10 +278,7 @@ export default function NotificationsScreen() {
                     primary
                     onPress={() => handleWaitChoice(n, "wait")}
                   />
-                  <DecisionButton
-                    label="Pay now"
-                    onPress={() => handleWaitChoice(n, "pay_now")}
-                  />
+                  <DecisionButton label="Pay now" onPress={() => handleWaitChoice(n, "pay_now")} />
                 </>
               )}
             </View>
@@ -277,128 +297,80 @@ export default function NotificationsScreen() {
             </View>
           )}
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}>
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-6 py-8">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className={`h-10 w-10 rounded border items-center justify-center ${isDark ? "bg-dark-surface border-dark-border" : "bg-surface border-border"}`}
-          activeOpacity={0.8}
-        >
-          <ArrowLeft
-            size={20}
-            color={isDark ? "#f5f5f5" : "#000000"}
-            strokeWidth={1.5}
-          />
-        </TouchableOpacity>
-        <Text
-          className={`flex-1 text-center text-lg font-bold tracking-widest uppercase pr-10 ${isDark ? "text-dark-text" : "text-black"}`}
-        >
-          Alerts
-        </Text>
-      </View>
-
-      {/* Tabs + mark-all */}
-      <View className="px-6 mb-8">
-        <View className="flex-row items-center justify-between gap-4">
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            className="flex-1"
-          >
-            <View className="flex-row gap-3">
-              <TabPill
-                label="ALL"
-                active={tab === "all"}
-                onPress={() => setTab("all")}
-              />
-              <TabPill
-                label="ORDERS"
-                active={tab === "orders"}
-                onPress={() => setTab("orders")}
-              />
-              <TabPill
-                label="MESSAGES"
-                active={tab === "messages"}
-                onPress={() => setTab("messages")}
-              />
-            </View>
-          </ScrollView>
+    <SafeAreaView
+      className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      edges={["top", "left", "right", "bottom"]}
+    >
+      <ScreenHeader
+        title="Alerts"
+        onBack={() => router.back()}
+        right={
           <TouchableOpacity
             onPress={markAllRead}
-            className="h-10 px-4 rounded bg-primary items-center justify-center"
-            activeOpacity={0.85}
+            disabled={!hasUnread}
+            className="w-10 h-10 items-center justify-center"
+            accessibilityRole="button"
+            accessibilityLabel="Mark all as read"
+            accessibilityState={{ disabled: !hasUnread }}
           >
-            <Text className="text-[10px] font-bold text-white tracking-widest uppercase">
-              Clear all
-            </Text>
+            <CheckCheck size={20} color={hasUnread ? iconColor : isDark ? "#46464e" : "#D4D4D8"} strokeWidth={1.75} />
+          </TouchableOpacity>
+        }
+      />
+
+      {loading ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#E94C2A" />
+        </View>
+      ) : error ? (
+        <View className="flex-1 items-center justify-center px-10">
+          <Text className={`text-[15px] text-center leading-6 ${ink}`}>{error}</Text>
+          <TouchableOpacity
+            onPress={() => {
+              setLoading(true);
+              load();
+            }}
+            className="mt-6 h-12 px-8 rounded bg-primary items-center justify-center flex-row gap-2"
+            accessibilityRole="button"
+            accessibilityLabel="Try again"
+          >
+            <RotateCw size={16} color="#FFFFFF" />
+            <Text className="text-white font-bold text-xs tracking-[2px] uppercase">Try again</Text>
           </TouchableOpacity>
         </View>
-      </View>
-
-      {/* Lists */}
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 40 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={isDark ? "#f5f5f5" : "#000000"}
-          />
-        }
-      >
-        <View className="px-6">
-          <View
-            className={`rounded border overflow-hidden ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
-          >
-            <Text className="px-6 pt-6 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-tertiary">
-              Recents
-            </Text>
-            {today?.length ? (
-              today.map((n, i) => (
-                <View
-                  key={n.id}
-                  className={`${i !== today.length - 1 ? (isDark ? "border-b border-dark-border" : "border-b border-border") : ""}`}
-                >
-                  <Row n={n} />
-                </View>
-              ))
-            ) : (
-              <View className="px-6 pb-10 pt-4">
-                <Text
-                  className={`${isDark ? "text-dark-muted" : "text-surface-dim"} font-bold text-xs tracking-widest uppercase italic`}
-                >
-                  No Activity
-                </Text>
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(n) => String(n.id)}
+          renderItem={renderItem}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => load({ refresh: true })}
+              tintColor="#E94C2A"
+            />
+          }
+          ListEmptyComponent={
+            <View className="items-center justify-center px-10 pt-24">
+              <View
+                className={`w-20 h-20 rounded-full items-center justify-center mb-6 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+              >
+                <Bell size={30} color={isDark ? "#c6c5cf" : "#A1A1AA"} strokeWidth={1.6} />
               </View>
-            )}
-          </View>
-
-          {yesterday?.length ? (
-            <View
-              className={`rounded border overflow-hidden mt-8 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
-            >
-              <Text className="px-6 pt-6 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-tertiary">
-                Previous
+              <Text className={`text-xl font-bold text-center ${ink}`}>You're all caught up</Text>
+              <Text className={`text-[15px] mt-2 text-center leading-6 ${muted}`}>
+                New alerts about orders, messages and more will show up here.
               </Text>
-              {yesterday.map((n, i) => (
-                <View
-                  key={n.id}
-                  className={`${i !== yesterday.length - 1 ? (isDark ? "border-b border-dark-border" : "border-b border-border") : ""}`}
-                >
-                  <Row n={n} />
-                </View>
-              ))}
             </View>
-          ) : null}
-        </View>
-      </ScrollView>
+          }
+          contentContainerStyle={items.length === 0 ? { flexGrow: 1 } : { paddingBottom: 24 }}
+        />
+      )}
     </SafeAreaView>
   );
 }
