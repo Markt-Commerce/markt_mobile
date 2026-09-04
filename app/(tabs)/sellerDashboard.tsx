@@ -3,12 +3,27 @@ import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'expo-router';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, Dimensions, Animated, Easing, FlatList, RefreshControl } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { Search, ArrowBigDown as CaretDown, AlertTriangle } from 'lucide-react-native';
+import { Search, ArrowBigDown as CaretDown, AlertTriangle, ChevronRight } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSellerAnalyticsOverview, getSellerAnalyticsTimeseries } from '../../services/sections/analytics';
 import { getMyProducts } from '../../services/sections/product';
 import { getSellerOrders, updateSellerOrderItem } from '../../services/sections/orders';
 import { friendlyErrorMessage } from '../../utils/errorMessages';
+import { formatStatus, statusTone } from '../../utils/formatStatus';
+
+/** Tone -> [light, dark] classes, matching the order list. */
+const STATUS_BG: Record<string, [string, string]> = {
+  positive: ['bg-[#E7F6EC]', 'bg-[#1E3A28]'],
+  attention: ['bg-[#FEF3E2]', 'bg-[#3A2E18]'],
+  negative: ['bg-[#FDECEC]', 'bg-[#3A1E1E]'],
+  neutral: ['bg-[#F4F4F5]', 'bg-[#2f3132]'],
+};
+const STATUS_FG: Record<string, [string, string]> = {
+  positive: ['text-[#0F7B3F]', 'text-[#7BD9A2]'],
+  attention: ['text-[#A15C00]', 'text-[#F0B667]'],
+  negative: ['text-[#C42B2B]', 'text-[#F09A9A]'],
+  neutral: ['text-[#52525B]', 'text-[#c6c5cf]'],
+};
 import { deleteProduct } from '../../services/sections/product';
 import { SellerAnalyticsOverview, SellerAnalyticsTimeseries } from '../../models/analytics';
 import { ProductResponse } from '../../models/products';
@@ -288,7 +303,13 @@ export default function SellerDashboard() {
 
   // Render helpers
   const renderOrderItem = ({ item }: { item: SellerOrderItem }) => (
-    <View className={`px-4 py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+    <TouchableOpacity
+      onPress={() => router.push(`/sellerOrder/${item.id}` as any)}
+      activeOpacity={0.6}
+      accessibilityRole="button"
+      accessibilityLabel={`${item.product?.name ?? "Order"}, ${formatStatus(item.status)}. Open to manage.`}
+      className={`px-4 py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+    >
       <View className="flex-row justify-between items-start">
         <View style={{ flex: 1 }}>
           <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.product?.name}</Text>
@@ -303,35 +324,24 @@ export default function SellerDashboard() {
           </View>
         </View>
 
-        <View className="items-end ml-3">
-          {item.status === 'pending' ? (
-            <>
-              <TouchableOpacity onPress={() => handleAcceptOrder(item)} className="bg-primary rounded px-4 py-2 mb-2">
-                <Text className="text-white font-bold text-xs">Accept</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeclineOrder(item)} className={`rounded px-4 py-2 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-                <Text className={`font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Decline</Text>
-              </TouchableOpacity>
-            </>
-          ) : item.status === 'processing' ? (
-            <>
-              <TouchableOpacity onPress={() => handleUpdateOrderStatus(item, 'shipped')} className="bg-primary rounded px-4 py-2 mb-2">
-                <Text className="text-white font-bold text-xs">Mark Shipped</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeclineOrder(item)} className={`rounded px-4 py-2 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-                <Text className={`font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Cancel</Text>
-              </TouchableOpacity>
-            </>
-          ) : item.status === 'shipped' ? (
-            <TouchableOpacity onPress={() => handleUpdateOrderStatus(item, 'delivered')} className="bg-primary rounded px-4 py-2">
-              <Text className="text-white font-bold text-xs">Mark Delivered</Text>
-            </TouchableOpacity>
-          ) : (
-            <Text className={`font-bold text-sm capitalize ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.status}</Text>
-          )}
+        {/* Status, not inline actions. Accept/Decline lived here as buttons,
+            which meant a seller could decline — and therefore refund a buyer —
+            with one tap and no confirmation, and the same order offered
+            different actions depending on which screen you found it on.
+            Actions now live on the seller order screen, reached by tapping the
+            row, so there is one place a seller acts on an order. "Mark
+            Delivered" is gone entirely: delivery is confirmed by the buyer or
+            the rider through the POD flow, and the server refuses it here. */}
+        <View className="items-end ml-3 justify-center">
+          <View className={`px-2.5 py-1 rounded-full ${STATUS_BG[statusTone(item.status)][isDark ? 1 : 0]}`}>
+            <Text className={`text-[12px] font-semibold ${STATUS_FG[statusTone(item.status)][isDark ? 1 : 0]}`}>
+              {formatStatus(item.status)}
+            </Text>
+          </View>
+          <ChevronRight size={18} color={isDark ? "#6b6d71" : "#A1A1AA"} strokeWidth={2} />
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   const renderProductItem = ({ item }: { item: any }) => (

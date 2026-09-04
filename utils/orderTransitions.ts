@@ -18,10 +18,20 @@ export type OrderItemStatus =
   | "delivered"
   | "cancelled";
 
+/**
+ * What a *seller* may do, which is narrower than what the item may become.
+ *
+ * "delivered" is deliberately absent even though PROCESSING and SHIPPED can
+ * legally reach it: delivery is confirmed by the buyer or the rider through the
+ * POD/QR flow, and the seller endpoint refuses it (marking it sets delivered_at,
+ * which starts the settlement hold that pays the seller — self-declared delivery
+ * would let a seller release their own escrow). Offering it would be offering an
+ * action the server rejects.
+ */
 const TRANSITIONS: Record<string, OrderItemStatus[]> = {
   pending: ["processing", "cancelled"],
-  processing: ["shipped", "delivered", "cancelled"],
-  shipped: ["delivered"],
+  processing: ["shipped", "cancelled"],
+  shipped: [],
   delivered: [],
   cancelled: [],
 };
@@ -32,11 +42,11 @@ export function nextStatuses(current?: string | null): OrderItemStatus[] {
   return TRANSITIONS[key] ?? [];
 }
 
-/** What the seller taps to make it happen. */
-export const STATUS_ACTION_LABEL: Record<OrderItemStatus, string> = {
+/** What the seller taps to make it happen. Partial: only the statuses a seller
+ *  can actually set have an action label. */
+export const STATUS_ACTION_LABEL: Partial<Record<OrderItemStatus, string>> = {
   processing: "Accept order",
   shipped: "Mark shipped",
-  delivered: "Mark delivered",
   // "cancelled", with two Ls -- the menu used to send "canceled", which the
   // backend enum has never accepted.
   cancelled: "Cancel order",
