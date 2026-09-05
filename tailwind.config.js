@@ -34,6 +34,17 @@ module.exports = {
         error: "#ba1a1a",
         success: "#178b1f",
         "error-bg": "#ffdad6",
+
+        // Semantic tokens, generated from theme/tokens.ts — each resolves to a
+        // CSS variable that flips with the .dark class.
+        //
+        // Spread LAST on purpose. It shadows the flat legacy names above that
+        // share a key -- border, primary, text-primary, text-secondary,
+        // text-muted, success -- which means every existing use of those
+        // classes becomes theme-aware without touching a single component.
+        // That's the point: those names were already semantic, they just
+        // pointed at one fixed light-mode value.
+        ...require("./theme/colors.generated.js"),
       },
       spacing: {
         base: "8px",
