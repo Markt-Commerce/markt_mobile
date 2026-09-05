@@ -232,9 +232,7 @@ export default function DiscoverShopsScreen() {
                     ? isDark
                       ? "text-black"
                       : "text-white"
-                    : isDark
-                      ? "text-text-secondary"
-                      : "text-[#52525B]"
+                    : "text-text-secondary"
                 }`}
               >
                 {label}
@@ -261,9 +259,7 @@ export default function DiscoverShopsScreen() {
               className={`text-[13px] font-semibold ${
                 selectedCategory === null
                   ? "text-white"
-                  : isDark
-                    ? "text-text-secondary"
-                    : "text-[#52525B]"
+                  : "text-text-secondary"
               }`}
             >
               All

@@ -6,21 +6,7 @@ import { useTheme } from "./themeProvider";
 import { formatNaira } from "../utils/formatCurrency";
 import { formatStatus, statusTone } from "../utils/formatStatus";
 import { useTokens } from "../theme/useTokens";
-
-/** Tone -> [light, dark] class pairs. Colour carries the state so the row can
- *  be scanned without reading the word. */
-const TONE_BG: Record<string, [string, string]> = {
-  positive: ["bg-[#E7F6EC]", "bg-[#1E3A28]"],
-  attention: ["bg-[#FEF3E2]", "bg-[#3A2E18]"],
-  negative: ["bg-[#FDECEC]", "bg-[#3A1E1E]"],
-  neutral: ["bg-[#F4F4F5]", "bg-surface-sunken"],
-};
-const TONE_TEXT: Record<string, [string, string]> = {
-  positive: ["text-[#0F7B3F]", "text-[#7BD9A2]"],
-  attention: ["text-[#A15C00]", "text-[#F0B667]"],
-  negative: ["text-[#C42B2B]", "text-[#F09A9A]"],
-  neutral: ["text-[#52525B]", "text-text-secondary"],
-};
+import { TONE_BG, TONE_TEXT } from "../theme/tone";
 
 interface OrderCardProps {
   order: Order | OrderItem | SellerOrderItem | any;
@@ -126,8 +112,8 @@ export default function OrderCard({ order, isSeller }: OrderCardProps) {
               {priceText}
             </Text>
             {statusText ? (
-              <View className={`ml-2 px-2 py-0.5 rounded-full ${TONE_BG[statusTone(rawStatus)][isDark ? 1 : 0]}`}>
-                <Text className={`text-[11px] font-semibold ${TONE_TEXT[statusTone(rawStatus)][isDark ? 1 : 0]}`}>
+              <View className={`ml-2 px-2 py-0.5 rounded-full ${TONE_BG[statusTone(rawStatus)]}`}>
+                <Text className={`text-[11px] font-semibold ${TONE_TEXT[statusTone(rawStatus)]}`}>
                   {statusText}
                 </Text>
               </View>

@@ -399,7 +399,7 @@ export default function CartScreen() {
                       : "border-border"
                 }`}
               >
-                {reliabilityFeeOptedIn ? <Check size={16} color="#ffffff" /> : null}
+                {reliabilityFeeOptedIn ? <Check size={16} color={t.textOnPrimary} /> : null}
               </View>
             </TouchableOpacity>
 

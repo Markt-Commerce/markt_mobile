@@ -407,7 +407,7 @@ export default function BuyerRequestDetails() {
             activeOpacity={0.85}
             className="h-14 rounded bg-primary items-center justify-center flex-row gap-2"
           >
-            <MessageCircle size={18} color="#FFFFFF" strokeWidth={2} />
+            <MessageCircle size={18} color={t.textOnPrimary} strokeWidth={2} />
             <Text className="text-white font-bold text-[12px] tracking-[2px] uppercase">
               Message buyer
             </Text>

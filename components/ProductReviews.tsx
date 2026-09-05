@@ -248,7 +248,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
             }`}
           >
             {submitting ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={t.textOnPrimary} />
             ) : (
               <Text className="text-white font-bold text-[15px]">
                 {editingId ? "Save changes" : "Post review"}
@@ -322,7 +322,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
                       accessibilityRole="button"
                       accessibilityLabel="Delete your review"
                     >
-                      <Trash2 size={16} color="#DC2626" />
+                      <Trash2 size={16} color={t.dangerText} />
                     </TouchableOpacity>
                   </View>
                 ) : null}

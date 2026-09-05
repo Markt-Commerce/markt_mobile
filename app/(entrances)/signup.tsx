@@ -206,25 +206,25 @@ export default function SignupScreen() {
                 </View>
                 <View className="flex-row flex-wrap gap-x-4 gap-y-1 mt-2">
                   <View className="flex-row items-center gap-1">
-                    {strength.checks.length ? <Check size={12} color="#178b1f" /> : <Circle size={12} color={mutedIconColor} />}
+                    {strength.checks.length ? <Check size={12} color={t.successText} /> : <Circle size={12} color={mutedIconColor} />}
                     <Text className={`text-[11px] ${strength.checks.length ? "text-success" : "text-tertiary"}`}>
                       8+ chars
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-1">
-                    {strength.checks.digit ? <Check size={12} color="#178b1f" /> : <Circle size={12} color={mutedIconColor} />}
+                    {strength.checks.digit ? <Check size={12} color={t.successText} /> : <Circle size={12} color={mutedIconColor} />}
                     <Text className={`text-[11px] ${strength.checks.digit ? "text-success" : "text-tertiary"}`}>
                       1 digit
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-1">
-                    {strength.checks.lowercase ? <Check size={12} color="#178b1f" /> : <Circle size={12} color={mutedIconColor} />}
+                    {strength.checks.lowercase ? <Check size={12} color={t.successText} /> : <Circle size={12} color={mutedIconColor} />}
                     <Text className={`text-[11px] ${strength.checks.lowercase ? "text-success" : "text-tertiary"}`}>
                       1 lower
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-1">
-                    {strength.checks.uppercase ? <Check size={12} color="#178b1f" /> : <Circle size={12} color={mutedIconColor} />}
+                    {strength.checks.uppercase ? <Check size={12} color={t.successText} /> : <Circle size={12} color={mutedIconColor} />}
                     <Text className={`text-[11px] ${strength.checks.uppercase ? "text-success" : "text-tertiary"}`}>
                       1 upper
                     </Text>

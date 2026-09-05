@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 import { ArrowLeft, ChevronRight } from "lucide-react-native";
 
 import { useTheme } from "../../components/themeProvider";
-import { useTokens } from "../../theme/useTokens";
+import { useTokens, tokensFor } from "../../theme/useTokens";
 import { useUser } from "../../hooks/userContextProvider";
 import { useGamificationContext } from "../../hooks/gamificationContext";
 import { getPointsHistory, getLeaderboard } from "../../services/sections/gamification";
@@ -319,7 +319,7 @@ function SectionHeader({
       {actionLabel && onAction && (
         <TouchableOpacity onPress={onAction} className="flex-row items-center">
           <Text className="text-primary font-bold text-sm">{actionLabel}</Text>
-          <ChevronRight size={16} color="#E94C2A" />
+          <ChevronRight size={16} color={tokensFor(isDark).primaryText} />
         </TouchableOpacity>
       )}
     </View>

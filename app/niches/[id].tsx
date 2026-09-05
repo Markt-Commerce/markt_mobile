@@ -239,7 +239,7 @@ export default function NicheDetailScreen() {
               className="absolute left-4 top-3 w-9 h-9 rounded-full items-center justify-center"
               style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
             >
-              <ArrowLeft size={20} color="#FFFFFF" />
+              <ArrowLeft size={20} color={t.textOnPrimary} />
             </TouchableOpacity>
             {isOwner && (
               <TouchableOpacity
@@ -249,7 +249,7 @@ export default function NicheDetailScreen() {
                 className="absolute right-4 top-3 w-9 h-9 rounded-full items-center justify-center"
                 style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
               >
-                <Settings size={18} color="#FFFFFF" strokeWidth={2} />
+                <Settings size={18} color={t.textOnPrimary} strokeWidth={2} />
               </TouchableOpacity>
             )}
           </View>
@@ -283,7 +283,7 @@ export default function NicheDetailScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Create a post in this community"
                 >
-                  <Plus size={20} color="#fff" strokeWidth={2.4} />
+                  <Plus size={20} color={t.textOnPrimary} strokeWidth={2.4} />
                 </TouchableOpacity>
               )}
             </View>
@@ -327,9 +327,7 @@ export default function NicheDetailScreen() {
                 accessibilityLabel={isJoined ? "Leave this community" : "Join this community"}
                 className={`h-11 rounded-xl items-center justify-center mt-4 ${
                   isJoined
-                    ? isDark
-                      ? "bg-surface-sunken"
-                      : "bg-[#F4F4F5]"
+                    ? "bg-surface-sunken"
                     : "bg-primary"
                 }`}
               >
@@ -348,10 +346,10 @@ export default function NicheDetailScreen() {
         {/* Banned Message */}
         {isBanned && (
           <View className={`mx-4 mb-3 p-3 rounded-xl ${"bg-danger-muted"}`}>
-            <Text className="text-[#C42B2B] text-[14px] font-semibold">
+            <Text className="text-danger-text text-[14px] font-semibold">
               You've been removed from this community
             </Text>
-            <Text className="text-[#C42B2B] text-[13px] mt-0.5">
+            <Text className="text-danger-text text-[13px] mt-0.5">
               You can still read it, but you can't post.
             </Text>
           </View>

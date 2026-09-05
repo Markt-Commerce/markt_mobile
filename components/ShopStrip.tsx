@@ -105,7 +105,7 @@ export default function ShopStrip() {
                   height: AVATAR_SIZE,
                   borderRadius: 12,
                   borderWidth: isVerified ? 2.5 : 0,
-                  borderColor: "#e26136",
+                  borderColor: t.dangerText,
                 }}
               >
                 <Avatar

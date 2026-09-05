@@ -37,19 +37,7 @@ import {
   type OrderItemStatus,
 } from "../../utils/orderTransitions";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
-
-const TONE_BG: Record<string, [string, string]> = {
-  positive: ["bg-[#E7F6EC]", "bg-[#1E3A28]"],
-  attention: ["bg-[#FEF3E2]", "bg-[#3A2E18]"],
-  negative: ["bg-[#FDECEC]", "bg-[#3A1E1E]"],
-  neutral: ["bg-[#F4F4F5]", "bg-surface-sunken"],
-};
-const TONE_TEXT: Record<string, [string, string]> = {
-  positive: ["text-[#0F7B3F]", "text-[#7BD9A2]"],
-  attention: ["text-[#A15C00]", "text-[#F0B667]"],
-  negative: ["text-[#C42B2B]", "text-[#F09A9A]"],
-  neutral: ["text-[#52525B]", "text-text-secondary"],
-};
+import { TONE_BG, TONE_TEXT } from "../../theme/tone";
 
 export default function SellerOrderDetail() {
   const { itemId } = useLocalSearchParams<{ itemId: string }>();
@@ -199,9 +187,9 @@ export default function SellerOrderDetail() {
               Status
             </Text>
             <View className="flex-row items-center mt-2">
-              <View className={`px-2.5 py-1 rounded-full ${TONE_BG[tone][isDark ? 1 : 0]}`}>
+              <View className={`px-2.5 py-1 rounded-full ${TONE_BG[tone]}`}>
                 <Text
-                  className={`text-[13px] font-semibold ${TONE_TEXT[tone][isDark ? 1 : 0]}`}
+                  className={`text-[13px] font-semibold ${TONE_TEXT[tone]}`}
                 >
                   {formatStatus(item.status)}
                 </Text>
@@ -288,18 +276,16 @@ export default function SellerOrderDetail() {
                       working ? "opacity-60" : ""
                     } ${
                       destructive
-                        ? isDark
-                          ? "bg-[#3A1E1E]"
-                          : "bg-[#FDECEC]"
+                        ? "bg-danger-muted"
                         : "bg-primary"
                     }`}
                   >
                     {working ? (
-                      <ActivityIndicator color={destructive ? "#C42B2B" : "#FFFFFF"} />
+                      <ActivityIndicator color={destructive ? t.dangerText : t.textOnPrimary} />
                     ) : (
                       <Text
                         className={`text-[15px] font-bold ${
-                          destructive ? "text-[#C42B2B]" : "text-white"
+                          destructive ? "text-danger-text" : "text-white"
                         }`}
                       >
                         {STATUS_ACTION_LABEL[next] ?? next}

@@ -24,7 +24,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { ArrowDownLeft, ArrowLeft, ArrowUpRight, Plus, Wallet } from "lucide-react-native";
 import { SettingsSection } from "../../components/SettingsList";
 import { useTheme } from "../../components/themeProvider";
-import { useTokens } from "../../theme/useTokens";
+import { useTokens, tokensFor } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { formatNaira } from "../../utils/formatCurrency";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
@@ -69,9 +69,9 @@ function TransactionRow({
         className={`w-10 h-10 rounded items-center justify-center mr-3 bg-surface-sunken`}
       >
         {isCredit ? (
-          <ArrowDownLeft size={18} color="#178b1f" strokeWidth={1.8} />
+          <ArrowDownLeft size={18} color={tokensFor(isDark).successText} strokeWidth={1.8} />
         ) : (
-          <ArrowUpRight size={18} color="#E94C2A" strokeWidth={1.8} />
+          <ArrowUpRight size={18} color={tokensFor(isDark).primaryText} strokeWidth={1.8} />
         )}
       </View>
       <View className="flex-1 pr-3">
@@ -91,7 +91,7 @@ function TransactionRow({
       </View>
       <View className="items-end">
         <Text
-          className={`font-bold text-[15px] ${isCredit ? "text-[#178b1f]" : isDark ? "text-text-primary" : "text-black"}`}
+          className={`font-bold text-[15px] ${isCredit ? "text-success-text" : isDark ? "text-text-primary" : "text-black"}`}
         >
           {isCredit ? "+" : "−"}
           {formatNaira(tx.amount)}
@@ -294,7 +294,7 @@ export default function WalletScreen() {
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >
-              <ArrowLeft size={22} color="#FFFFFF" />
+              <ArrowLeft size={22} color={t.textOnPrimary} />
             </TouchableOpacity>
             <Text className="text-white text-[17px] font-bold">Wallet</Text>
             <TouchableOpacity
@@ -304,7 +304,7 @@ export default function WalletScreen() {
               accessibilityRole="button"
               accessibilityLabel="Add money to wallet"
             >
-              <Plus size={18} color="#FFFFFF" strokeWidth={2.4} />
+              <Plus size={18} color={t.textOnPrimary} strokeWidth={2.4} />
               <Text className="text-white text-[14px] font-semibold ml-1">Add</Text>
             </TouchableOpacity>
           </View>
@@ -314,7 +314,7 @@ export default function WalletScreen() {
               Available balance · {currency}
             </Text>
             {balance == null ? (
-              <ActivityIndicator size="small" color="#FFFFFF" className="mt-3" />
+              <ActivityIndicator size="small" color={t.textOnPrimary} className="mt-3" />
             ) : (
               <Text className="text-white text-[38px] font-bold mt-1.5">
                 {formatNaira(balance)}
@@ -330,7 +330,7 @@ export default function WalletScreen() {
               accessibilityRole="button"
               accessibilityLabel="Fund wallet"
             >
-              <Plus size={17} color="#E94C2A" strokeWidth={2.4} />
+              <Plus size={17} color={t.primaryText} strokeWidth={2.4} />
               <Text className="text-primary font-bold text-[14px] ml-1.5">Fund</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -344,7 +344,7 @@ export default function WalletScreen() {
               accessibilityState={{ disabled: !canWithdraw }}
               accessibilityLabel="Withdraw to bank account"
             >
-              <ArrowUpRight size={17} color="#FFFFFF" strokeWidth={2.4} />
+              <ArrowUpRight size={17} color={t.textOnPrimary} strokeWidth={2.4} />
               <Text className="text-white font-bold text-[14px] ml-1.5">Withdraw</Text>
             </TouchableOpacity>
           </View>
@@ -376,7 +376,7 @@ export default function WalletScreen() {
         ListFooterComponent={
           loadingMore ? (
             <View className="py-6 items-center">
-              <ActivityIndicator size="small" color="#E94C2A" />
+              <ActivityIndicator size="small" color={t.primaryText} />
             </View>
           ) : (
             <View className="h-10" />
@@ -385,7 +385,7 @@ export default function WalletScreen() {
         ListEmptyComponent={
           loading ? (
             <View className="py-12 items-center">
-              <ActivityIndicator size="small" color="#E94C2A" />
+              <ActivityIndicator size="small" color={t.primaryText} />
             </View>
           ) : (
             <View className="px-6 py-12 items-center">
@@ -448,7 +448,7 @@ export default function WalletScreen() {
                 accessibilityRole="button"
               >
                 {startingTopUp ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={t.textOnPrimary} />
                 ) : (
                   <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
                     Continue
@@ -534,7 +534,7 @@ export default function WalletScreen() {
                 accessibilityRole="button"
               >
                 {withdrawing ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={t.textOnPrimary} />
                 ) : (
                   <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
                     Withdraw

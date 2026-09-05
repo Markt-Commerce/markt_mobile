@@ -279,14 +279,14 @@ const addProductToCart = async (product:ProductDetail)=>{
                 className={`flex-1 rounded h-12 justify-center items-center border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
                 disabled={addedToCart || isOwnProduct}
                 style={{
-                  backgroundColor: addedToCart ? "#178b1f" : undefined,
+                  backgroundColor: addedToCart ? t.successText : undefined,
                   opacity: isOwnProduct ? 0.5 : 1,
                 }}
                 onPress={() => addProductToCart(product)}
               >
                 <Text
                   className="font-bold"
-                  style={{ color: addedToCart ? "#ffffff" : (t.textPrimary) }}
+                  style={{ color: addedToCart ? t.textOnPrimary : (t.textPrimary) }}
                 >
                   {!addedToCart ? "Add to Cart" : "Added"}
                 </Text>
@@ -298,7 +298,7 @@ const addProductToCart = async (product:ProductDetail)=>{
                   onPress={handleMessageSeller}
                 >
                   {messageSellerBusy ? (
-                    <ActivityIndicator color="#ffffff" />
+                    <ActivityIndicator color={t.textOnPrimary} />
                   ) : (
                     <Text className="text-white font-bold">Message Seller</Text>
                   )}

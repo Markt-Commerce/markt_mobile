@@ -154,7 +154,7 @@ export function SettingsSwitchRow({
           onValueChange={onValueChange}
           disabled={disabled}
           trackColor={{ false: t.border, true: t.primaryFill }}
-          thumbColor="#FFFFFF"
+          thumbColor={t.textOnPrimary}
         />
       </View>
       {last ? null : <RowDivider />}

@@ -189,7 +189,7 @@ export default function SavedScreen() {
         accessibilityRole="button"
         accessibilityLabel={`Remove ${item.title ?? "this item"} from saved`}
       >
-        <Bookmark size={20} color="#E94C2A" fill="#E94C2A" />
+        <Bookmark size={20} color={t.primaryText} fill={t.primaryText} />
       </Pressable>
     </Pressable>
   );
@@ -231,7 +231,7 @@ export default function SavedScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#E94C2A" />
+          <ActivityIndicator size="large" color={t.primaryText} />
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center px-10">
@@ -245,7 +245,7 @@ export default function SavedScreen() {
             accessibilityRole="button"
             accessibilityLabel="Try loading your saved items again"
           >
-            <RotateCw size={16} color="#FFFFFF" />
+            <RotateCw size={16} color={t.textOnPrimary} />
             <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
               Try again
             </Text>
@@ -260,7 +260,7 @@ export default function SavedScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => load({ refresh: true })}
-              tintColor="#E94C2A"
+              tintColor={t.primaryText}
             />
           }
           onEndReached={loadMore}
@@ -268,7 +268,7 @@ export default function SavedScreen() {
           ListFooterComponent={
             loadingMore ? (
               <View className="py-6 items-center">
-                <ActivityIndicator size="small" color="#E94C2A" />
+                <ActivityIndicator size="small" color={t.primaryText} />
               </View>
             ) : (
               <View className="h-8" />
@@ -294,7 +294,7 @@ export default function SavedScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Browse the feed"
               >
-                <Compass size={16} color="#FFFFFF" />
+                <Compass size={16} color={t.textOnPrimary} />
                 <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
                   Browse feed
                 </Text>

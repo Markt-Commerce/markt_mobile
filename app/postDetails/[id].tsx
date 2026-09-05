@@ -463,7 +463,7 @@ export default function PostDetailsScreen() {
     if (loading) {
       return (
         <View className="py-4">
-          <ActivityIndicator size="small" color="#71717A" />
+          <ActivityIndicator size="small" color={t.textMuted} />
         </View>
       );
     }

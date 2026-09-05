@@ -100,7 +100,7 @@ export default function CheckoutConfirm() {
             <View
               className={`flex-row gap-3 rounded border p-4 ${"bg-warning-muted border-warning/40"}`}
             >
-              <AlertTriangle size={18} color="#c17a1f" />
+              <AlertTriangle size={18} color={t.warningText} />
               <Text className={`flex-1 text-xs text-text-primary`}>
                 Your items come from {deliveryCount} different markets, so this order needs{" "}
                 {deliveryCount} separate deliveries. The shipping fee below covers all of them.
@@ -147,7 +147,7 @@ export default function CheckoutConfirm() {
           accessibilityRole="button"
         >
           {proceeding ? (
-            <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
+            <ActivityIndicator size="small" color={t.textOnPrimary} style={{ marginRight: 8 }} />
           ) : null}
           <Text className="text-white text-sm font-bold tracking-[0.015em]">
             {proceeding ? "Redirecting…" : "Pay now"}

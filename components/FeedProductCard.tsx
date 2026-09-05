@@ -163,7 +163,7 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
         <Link href={`/productDetails/${product.id}`} asChild>
           <Pressable>
             <View className="flex-row items-start gap-2 mb-1.5">
-              <Tag size={17} color="#e26136" strokeWidth={2.2} />
+              <Tag size={17} color={t.dangerText} strokeWidth={2.2} />
               <Text className={`flex-1 text-[16px] leading-5 font-semibold text-text-primary`} numberOfLines={2}>
                 {product.name}
               </Text>
@@ -215,7 +215,7 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
               accessibilityRole="button"
               accessibilityLabel={`Add ${product.name} to cart`}
             >
-              <ShoppingCart size={18} color="#876d64" />
+              <ShoppingCart size={18} color={t.textSecondary} />
               <Text className={`font-semibold text-sm text-text-primary`}>
                 {adding ? "Adding…" : "Add to cart"}
               </Text>
@@ -227,7 +227,7 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
                 accessibilityRole="button"
                 accessibilityLabel={`Message seller about ${product.name}`}
               >
-                <MessageCircle size={18} color="#876d64" />
+                <MessageCircle size={18} color={t.textSecondary} />
                 <Text className={`font-semibold text-sm text-text-primary`}>Chat</Text>
               </TouchableOpacity>
             )}

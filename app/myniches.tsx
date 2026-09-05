@@ -147,7 +147,7 @@ export default function MyNichesScreen() {
               accessibilityRole="button"
               accessibilityLabel="Create community"
             >
-              <Plus size={18} color="#fff" strokeWidth={2} />
+              <Plus size={18} color={t.textOnPrimary} strokeWidth={2} />
               <Text className="text-white font-bold text-sm">Create</Text>
             </TouchableOpacity>
           )}

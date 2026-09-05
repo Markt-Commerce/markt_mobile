@@ -261,7 +261,7 @@ export default function OrderDetail() {
               <Text className="text-white font-bold text-[15px] mr-1.5">
                 Track order
               </Text>
-              <ArrowRight size={18} color="#fff" strokeWidth={2.2} />
+              <ArrowRight size={18} color={t.textOnPrimary} strokeWidth={2.2} />
             </TouchableOpacity>
           )}
         </View>
@@ -300,10 +300,10 @@ function OrderProgress({ status, isDark }: { status?: string; isDark: boolean })
   if (terminal) {
     return (
       <View className={`rounded-2xl p-4 mb-3 ${"bg-danger-muted"}`}>
-        <Text className="text-[#C42B2B] text-[11px] font-bold uppercase tracking-[1.5px]">
+        <Text className="text-danger-text text-[11px] font-bold uppercase tracking-[1.5px]">
           Status
         </Text>
-        <Text className="text-[#C42B2B] text-[20px] font-bold mt-1">
+        <Text className="text-danger-text text-[20px] font-bold mt-1">
           {formatStatus(status)}
         </Text>
       </View>
@@ -330,7 +330,7 @@ function OrderProgress({ status, isDark }: { status?: string; isDark: boolean })
               className="h-1.5 rounded-full"
               style={{
                 backgroundColor:
-                  i < reached ? "#E94C2A" : tokensFor(isDark).borderStrong,
+                  i < reached ? tokensFor(isDark).primaryText : tokensFor(isDark).borderStrong,
               }}
             />
             <Text
@@ -339,9 +339,7 @@ function OrderProgress({ status, isDark }: { status?: string; isDark: boolean })
                   ? isDark
                     ? "text-text-primary"
                     : "text-black"
-                  : isDark
-                    ? "text-text-muted"
-                    : "text-[#A1A1AA]"
+                  : "text-text-muted"
               }`}
               numberOfLines={1}
             >

@@ -149,7 +149,10 @@ export default function MessagesScreen() {
                 <View className="flex-1 ml-4 min-w-0">
                   <View className="flex-row items-center justify-between mb-0.5">
                     <Text
-                      className={`font-bold text-base ${isDark ? (hasUnread ? "text-text-primary" : "text-text-primary") : (hasUnread ? "text-black" : "text-black")}`}
+                      // Both hasUnread branches were already identical on
+                      // develop; the name is always bold and unread is carried
+                      // by the timestamp, preview and badge below.
+                      className="font-bold text-base text-text-primary"
                       numberOfLines={1}
                     >
                       {item.other_user?.username ?? "Unknown"}

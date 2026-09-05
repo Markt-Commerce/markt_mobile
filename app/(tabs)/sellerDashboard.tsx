@@ -12,18 +12,7 @@ import { friendlyErrorMessage } from '../../utils/errorMessages';
 import { formatStatus, statusTone } from '../../utils/formatStatus';
 
 /** Tone -> [light, dark] classes, matching the order list. */
-const STATUS_BG: Record<string, [string, string]> = {
-  positive: ['bg-[#E7F6EC]', 'bg-[#1E3A28]'],
-  attention: ['bg-[#FEF3E2]', 'bg-[#3A2E18]'],
-  negative: ['bg-[#FDECEC]', 'bg-[#3A1E1E]'],
-  neutral: ['bg-[#F4F4F5]', 'bg-surface-sunken'],
-};
-const STATUS_FG: Record<string, [string, string]> = {
-  positive: ['text-[#0F7B3F]', 'text-[#7BD9A2]'],
-  attention: ['text-[#A15C00]', 'text-[#F0B667]'],
-  negative: ['text-[#C42B2B]', 'text-[#F09A9A]'],
-  neutral: ['text-[#52525B]', 'text-text-secondary'],
-};
+
 import { deleteProduct } from '../../services/sections/product';
 import { SellerAnalyticsOverview, SellerAnalyticsTimeseries } from '../../models/analytics';
 import { ProductResponse } from '../../models/products';
@@ -35,6 +24,7 @@ import BottomSheet from '@gorhom/bottom-sheet';
 import StartCards from '../../components/startCards';
 import { useTheme } from '../../components/themeProvider';
 import { useTokens } from '../../theme/useTokens';
+import { TONE_BG, TONE_TEXT } from "../../theme/tone";
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -335,8 +325,8 @@ export default function SellerDashboard() {
             Delivered" is gone entirely: delivery is confirmed by the buyer or
             the rider through the POD flow, and the server refuses it here. */}
         <View className="items-end ml-3 justify-center">
-          <View className={`px-2.5 py-1 rounded-full ${STATUS_BG[statusTone(item.status)][isDark ? 1 : 0]}`}>
-            <Text className={`text-[12px] font-semibold ${STATUS_FG[statusTone(item.status)][isDark ? 1 : 0]}`}>
+          <View className={`px-2.5 py-1 rounded-full ${TONE_BG[statusTone(item.status)]}`}>
+            <Text className={`text-[12px] font-semibold ${TONE_TEXT[statusTone(item.status)]}`}>
               {formatStatus(item.status)}
             </Text>
           </View>
@@ -564,11 +554,9 @@ export default function SellerDashboard() {
           <View
             className={`rounded-xl overflow-hidden ${
               sellerInventory.filter((item) => (item.stock ?? 0) < 5).length === 0
-                ? isDark
-                  ? "bg-surface-sunken"
-                  : "bg-[#F7F7F8]"
+                ? "bg-surface-sunken"
                 : isDark
-                  ? "bg-surface-sunken border border-[#ba1a1a]"
+                  ? "bg-surface-sunken border border-danger"
                   : "bg-error-bg border border-error"
             }`}
           >
@@ -580,7 +568,7 @@ export default function SellerDashboard() {
               sellerInventory.filter((item) => (item.stock ?? 0) < 5).map((a, idx, arr) => (
                 <View
                   key={a.id ?? a.name ?? idx}
-                  className={`flex-row items-stretch ${idx < arr.length - 1 ? (isDark ? 'border-b border-[#ba1a1a]/20' : 'border-b border-error/20') : ''}`}
+                  className={`flex-row items-stretch ${idx < arr.length - 1 ? (isDark ? 'border-b border-danger/20' : 'border-b border-error/20') : ''}`}
                 >
                   {/* Left accent bar  */}
                   <LeftAccentPulse />
@@ -589,7 +577,7 @@ export default function SellerDashboard() {
                   <View className="flex-1 flex-row items-center justify-between px-6 py-5">
                     <View className="flex-1 pr-4">
                       <View className="flex-row items-center gap-2">
-                        <AlertTriangle size={16} color="#ba1a1a" />
+                        <AlertTriangle size={16} color={t.dangerText} />
                         <Text className="text-error font-bold text-xs uppercase tracking-wider">Low stock</Text>
                       </View>
 
@@ -644,7 +632,7 @@ export default function SellerDashboard() {
                   <Text className={`font-bold text-sm capitalize ${(invFilter === 'active' || invFilter === 'inactive') ? "text-white" : (isDark ? "text-text-primary" : "text-black")}`}>
                     {invFilter === 'active' || invFilter === 'inactive' ? invFilter : 'Status'}
                   </Text>
-                  <CaretDown size={16} color={(invFilter === 'active' || invFilter === 'inactive') ? "#ffffff" : (t.textPrimary)} />
+                  <CaretDown size={16} color={(invFilter === 'active' || invFilter === 'inactive') ? t.textOnPrimary : (t.textPrimary)} />
                 </TouchableOpacity>
                 {statusMenuVisible && (
                   <View className={`absolute top-11 left-0 z-10 rounded border overflow-hidden min-w-[130px] ${isDark ? "bg-surface-sunken border-border-strong" : "bg-white border-border"}`}>

@@ -183,7 +183,7 @@ export default function RequestsScreen() {
               accessibilityLabel="Create a request"
               className="w-12 h-12 rounded-full bg-primary items-center justify-center"
             >
-              <Plus size={22} color="#FFFFFF" strokeWidth={2.4} />
+              <Plus size={22} color={t.textOnPrimary} strokeWidth={2.4} />
             </TouchableOpacity>
           )}
         </View>
@@ -227,9 +227,7 @@ export default function RequestsScreen() {
                       ? isDark
                         ? "text-black"
                         : "text-white"
-                      : isDark
-                        ? "text-text-secondary"
-                        : "text-[#52525B]"
+                      : "text-text-secondary"
                   }`}
                 >
                   {key}

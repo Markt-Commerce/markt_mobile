@@ -30,7 +30,7 @@ const ITEM_STATUS_LABEL: Record<string, string> = {
 
 function timelineIcon(status: string, isDark: boolean) {
   const color = tokensFor(isDark).textPrimary;
-  if (status === "cancelled") return <XCircle size={16} color="#e26136" />;
+  if (status === "cancelled") return <XCircle size={16} color={tokensFor(isDark).dangerText} />;
   if (status === "delivered") return <CheckCircle2 size={16} color={color} />;
   if (status === "shipped") return <Truck size={16} color={color} />;
   if (status === "paid") return <PackageCheck size={16} color={color} />;

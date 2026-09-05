@@ -60,23 +60,19 @@ export default function LeaderboardScreen() {
               onPress={() => setPeriod(o.id)}
               className={`px-4 py-2 rounded-full border ${
                 active
-                  ? isDark
-                    ? "bg-[#4a2d25] border-[#784637]"
-                    : "bg-[#fdf0eb] border-[#fdf0eb]"
+                  ? "bg-primary-muted border-primary/40"
                   : isDark
                   ? "bg-surface-sunken border-border-strong"
-                  : "bg-white border-[#e6e0dd]"
+                  : "bg-surface-raised border-border"
               }`}
             >
               <Text
                 className={`font-bold text-xs ${
                   active
-                    ? isDark
-                      ? "text-[#ffd5c7]"
-                      : "text-[#a63d22]"
+                    ? "text-primary-text"
                     : isDark
                     ? "text-text-secondary"
-                    : "text-[#3a302c]"
+                    : "text-text-primary"
                 }`}
               >
                 {o.label}

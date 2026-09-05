@@ -251,7 +251,7 @@ export default function StartCards({
                     <Text className="text-white font-semibold text-sm">
                       {card.ctaText || "Open"}
                     </Text>
-                    <ArrowRight size={16} color="#fff" style={{ marginLeft: 6 }} />
+                    <ArrowRight size={16} color={t.textOnPrimary} style={{ marginLeft: 6 }} />
                   </TouchableOpacity>
                 </View>
               </View>

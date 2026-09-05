@@ -132,7 +132,7 @@ export default function PublicProfileScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#E94C2A" />
+          <ActivityIndicator size="large" color={t.primaryText} />
         </View>
       ) : !profile ? (
         <View className="flex-1 items-center justify-center px-8">
@@ -147,7 +147,7 @@ export default function PublicProfileScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => load({ refresh: true })}
-              tintColor="#E94C2A"
+              tintColor={t.primaryText}
             />
           }
         >
@@ -181,7 +181,7 @@ export default function PublicProfileScreen() {
                 {following ? (
                   <UserMinus size={16} color={t.textPrimary} />
                 ) : (
-                  <UserPlus size={16} color="#FFFFFF" />
+                  <UserPlus size={16} color={t.textOnPrimary} />
                 )}
                 <Text
                   className={`font-bold text-xs tracking-[2px] uppercase ${following ? label : "text-white"}`}
@@ -212,7 +212,7 @@ export default function PublicProfileScreen() {
                 <View
                   className={`w-11 h-11 rounded items-center justify-center bg-surface-sunken`}
                 >
-                  <Store size={20} color="#E94C2A" strokeWidth={1.8} />
+                  <Store size={20} color={t.primaryText} strokeWidth={1.8} />
                 </View>
                 <View className="flex-1">
                   <Text className={`font-bold text-[15px] ${label}`} numberOfLines={1}>

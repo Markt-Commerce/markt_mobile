@@ -110,7 +110,7 @@ export default function MarketsScreen() {
               <View
                 className={`w-14 h-14 rounded-full items-center justify-center bg-media`}
               >
-                <Store size={22} color="#E94C2A" strokeWidth={2} />
+                <Store size={22} color={t.primaryText} strokeWidth={2} />
               </View>
               <View className="flex-1 ml-4">
                 <Text

@@ -37,14 +37,15 @@ export default function PostActionBar({
   // Reads the theme itself rather than taking `isDark` as an optional prop.
   // Optional meant a caller that forgot it silently rendered light-mode
   // colours on a dark page.
-  const muted = useTokens().textSecondary;
+  const t = useTokens();
+  const muted = t.textSecondary;
   const textClass = "text-text-secondary";
   const item = "h-10 min-w-10 px-1 flex-row items-center justify-center gap-1.5";
 
   return (
     <View className="flex-row items-center justify-between h-10 mt-1 -mx-1">
       <Pressable onPress={onLike} disabled={disabled} className={item} accessibilityRole="button" accessibilityLabel={`${likeCount} likes`}>
-        <Heart size={19} color={liked ? "#e26136" : muted} fill={liked ? "#e26136" : "transparent"} />
+        <Heart size={19} color={liked ? t.dangerText : muted} fill={liked ? t.dangerText : "transparent"} />
         {likeCount > 0 ? <Text className={`text-xs ${liked ? "text-primary" : textClass}`}>{compactNumber(likeCount)}</Text> : null}
       </Pressable>
       <Pressable onPress={onComment} className={item} accessibilityRole="button" accessibilityLabel={`${commentCount} comments`}>
@@ -58,7 +59,7 @@ export default function PostActionBar({
         </View>
       ) : null}
       <Pressable onPress={onSave} className={item} accessibilityRole="button" accessibilityLabel={saved ? "Remove from saved" : "Save post"}>
-        <Bookmark size={19} color={saved ? "#e26136" : muted} fill={saved ? "#e26136" : "transparent"} />
+        <Bookmark size={19} color={saved ? t.dangerText : muted} fill={saved ? t.dangerText : "transparent"} />
       </Pressable>
       <Pressable onPress={onShare} className={item} accessibilityRole="button" accessibilityLabel="Share post">
         <Send size={19} color={muted} />

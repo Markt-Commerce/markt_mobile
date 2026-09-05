@@ -91,7 +91,7 @@ export default function BadgeDetailScreen() {
 
           {badge.earned ? (
             <View className="flex-row items-center mt-2">
-              <CheckCircle2 size={16} color="#16a34a" />
+              <CheckCircle2 size={16} color={t.successText} />
               <Text className="text-success font-bold text-sm ml-1">
                 Earned{awardedDate ? ` · ${awardedDate}` : ""}
               </Text>

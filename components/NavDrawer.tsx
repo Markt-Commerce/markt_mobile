@@ -199,7 +199,7 @@ export default function NavDrawer({
           backgroundColor: t.surfacePage,
           zIndex: 999,
           transform: [{ translateX: slideAnim }],
-          shadowColor: "#000",
+          shadowColor: t.textPrimary,
           shadowOffset: { width: 4, height: 0 },
           shadowOpacity: 0.1,
           shadowRadius: 10,

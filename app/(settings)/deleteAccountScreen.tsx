@@ -130,7 +130,7 @@ export default function DeleteAccountScreen() {
       >
         <View className="px-6 pt-6">
           <View className="flex-row items-start gap-3 mb-6">
-            <AlertTriangle size={22} color="#E94C2A" strokeWidth={2} />
+            <AlertTriangle size={22} color={t.primaryText} strokeWidth={2} />
             <Text className={`flex-1 text-[15px] leading-6 ${label}`}>
               Deleting your account is permanent. It cannot be undone, and you
               will not be able to sign in again.
@@ -139,10 +139,10 @@ export default function DeleteAccountScreen() {
 
           {checking ? (
             <View className="py-10 items-center">
-              <ActivityIndicator size="small" color="#E94C2A" />
+              <ActivityIndicator size="small" color={t.primaryText} />
             </View>
           ) : blocked ? (
-            <View className="rounded border border-[#E94C2A] p-4 mb-6">
+            <View className="rounded border border-primary p-4 mb-6">
               <Text className="font-bold text-[11px] tracking-[2px] uppercase text-primary mb-3">
                 Resolve these first
               </Text>
@@ -229,12 +229,12 @@ export default function DeleteAccountScreen() {
             accessibilityLabel="Permanently delete my account"
           >
             {deleting ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={t.textOnPrimary} />
             ) : (
               <>
                 <Trash2
                   size={18}
-                  color={canSubmit ? "#FFFFFF" : t.textSecondary}
+                  color={canSubmit ? t.textOnPrimary : t.textSecondary}
                   strokeWidth={1.8}
                 />
                 <Text

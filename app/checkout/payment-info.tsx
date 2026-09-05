@@ -73,7 +73,7 @@ export default function PaymentInfo() {
           <Switch
             value={useLinkedPhone}
             onValueChange={setUseLinkedPhone}
-            trackColor={{ false: t.borderStrong, true: "#000000" }}
+            trackColor={{ false: t.borderStrong, true: t.textPrimary }}
             thumbColor={t.textPrimary}
           />
         </View>
@@ -97,7 +97,7 @@ export default function PaymentInfo() {
           <Switch
             value={useLinkedEmail}
             onValueChange={setUseLinkedEmail}
-            trackColor={{ false: t.borderStrong, true: "#000000" }}
+            trackColor={{ false: t.borderStrong, true: t.textPrimary }}
             thumbColor={t.textPrimary}
           />
         </View>

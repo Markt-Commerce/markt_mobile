@@ -76,6 +76,7 @@ export default function FeedScreen() {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const t = useTokens();
+  const tokens = t; // `t` is shadowed by the tab .map((t) => …) below
 
   const { role, user, setRole } = useUser();
   const feedTab = selectedTab;
@@ -377,7 +378,7 @@ export default function FeedScreen() {
                     left: 0,
                     right: 0,
                     height: 3,
-                    backgroundColor: "#E94C2A",
+                    backgroundColor: tokens.primaryText,
                   }}
                 />
               )}
@@ -407,7 +408,7 @@ export default function FeedScreen() {
                     left: 0,
                     right: 0,
                     height: 3,
-                    backgroundColor: "#E94C2A",
+                    backgroundColor: tokens.primaryText,
                   }}
                 />
               )}
@@ -419,7 +420,7 @@ export default function FeedScreen() {
             accessibilityRole="button"
             accessibilityLabel="Explore communities"
           >
-            <Compass size={16} color="#E94C2A" strokeWidth={2} />
+            <Compass size={16} color={t.primaryText} strokeWidth={2} />
             <Text className="font-semibold text-[14px] text-primary">Explore</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -428,7 +429,7 @@ export default function FeedScreen() {
             accessibilityRole="button"
             accessibilityLabel="Browse markets"
           >
-            <Store size={16} color="#E94C2A" strokeWidth={2} />
+            <Store size={16} color={t.primaryText} strokeWidth={2} />
             <Text className="font-semibold text-[14px] text-primary">Markets</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -510,7 +511,7 @@ export default function FeedScreen() {
         ListFooterComponent={
           loadingMore ? (
             <View className="py-2 items-center">
-              <ActivityIndicator size="small" color="#E94C2A" />
+              <ActivityIndicator size="small" color={t.primaryText} />
               <Text className={`font-bold text-[10px] tracking-widest uppercase mt-4 text-text-secondary`}>Discovering more content</Text>
             </View>
           ) : <View className="h-10" />
@@ -518,7 +519,7 @@ export default function FeedScreen() {
         ListEmptyComponent={
           initialLoading ? (
             <View className="py-20 items-center">
-              <ActivityIndicator size="large" color="#E94C2A" />
+              <ActivityIndicator size="large" color={t.primaryText} />
             </View>
           ) : (
             <View className="items-center justify-center py-12 px-8">
@@ -647,7 +648,7 @@ export default function FeedScreen() {
         onPress={toggleMenu}
         className="absolute bottom-4 right-4 w-14 h-14 rounded-full bg-primary items-center justify-center shadow-lg"
         style={{
-          shadowColor: "#000",
+          shadowColor: t.textPrimary,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.2,
           shadowRadius: 6,

@@ -94,11 +94,11 @@ export default function PaymentResult() {
         ) : (
           <>
             {isSuccess && verified ? (
-              <CheckCircle2 size={64} color="#178b1f" />
+              <CheckCircle2 size={64} color={t.successText} />
             ) : isSuccess ? (
-              <CheckCircle2 size={64} color="#eab308" />
+              <CheckCircle2 size={64} color={t.warningText} />
             ) : (
-              <XCircle size={64} color="#dc2626" />
+              <XCircle size={64} color={t.dangerText} />
             )}
 
             <Text

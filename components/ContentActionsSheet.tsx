@@ -298,7 +298,7 @@ export default function ContentActionsSheet({
             <Row
               icon={
                 saved ? (
-                  <BookmarkCheck size={20} color="#E94C2A" />
+                  <BookmarkCheck size={20} color={t.primaryText} />
                 ) : (
                   <Bookmark size={20} color={iconColor} />
                 )
@@ -315,7 +315,7 @@ export default function ContentActionsSheet({
               onPress={handleShare}
             />
             <Row
-              icon={<Flag size={20} color="#E94C2A" />}
+              icon={<Flag size={20} color={t.primaryText} />}
               label="Report"
               caption="Tell us what's wrong with this"
               onPress={() => setStep("reasons")}
@@ -324,7 +324,7 @@ export default function ContentActionsSheet({
             />
             {target.authorId && !target.isOwn ? (
               <Row
-                icon={<UserMinus size={20} color="#E94C2A" />}
+                icon={<UserMinus size={20} color={t.primaryText} />}
                 label={`Block ${target.authorName ?? "this person"}`}
                 caption="You'll stop seeing anything they post"
                 onPress={handleBlock}
@@ -350,7 +350,7 @@ export default function ContentActionsSheet({
                     <View
                       className={`w-5 h-5 rounded-full border-2 items-center justify-center ${reason === r.value ? "border-primary bg-primary" : isDark ? "border-border-strong" : "border-border"}`}
                     >
-                      {reason === r.value ? <Check size={12} color="#fff" /> : null}
+                      {reason === r.value ? <Check size={12} color={t.textOnPrimary} /> : null}
                     </View>
                   }
                   label={r.label}
@@ -399,7 +399,7 @@ export default function ContentActionsSheet({
                 accessibilityState={{ disabled: busy, busy }}
               >
                 {busy ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={t.textOnPrimary} />
                 ) : (
                   <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
                     Send report
@@ -413,7 +413,7 @@ export default function ContentActionsSheet({
         {step === "done" && (
           <View className="px-6 pt-6 items-center">
             <View className="w-14 h-14 rounded-full bg-primary items-center justify-center">
-              <Check size={26} color="#FFFFFF" />
+              <Check size={26} color={t.textOnPrimary} />
             </View>
             <Text className={`text-[19px] font-bold mt-4 text-center ${ink}`}>
               Thanks for telling us

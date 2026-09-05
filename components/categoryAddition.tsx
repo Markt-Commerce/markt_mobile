@@ -223,7 +223,7 @@ export const CategoryAddition = ({
                       `}
                     >
                       {isSelected ? (
-                        <Check size={16} color="#fff" />
+                        <Check size={16} color={t.textOnPrimary} />
                       ) : (
                         <View className="w-4 h-4 rounded mr-0" />
                       )}

@@ -164,7 +164,7 @@ export default function ProductPicker({
                       className={`p-2 rounded border ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-white border-border"}`}
                       accessibilityLabel={`Remove ${item.name}`}
                     >
-                      <Trash2 color="#ba1a1a" size={20} />
+                      <Trash2 color={t.dangerText} size={20} />
                     </TouchableOpacity>
                   )}
                 </TouchableOpacity>

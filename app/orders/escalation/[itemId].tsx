@@ -263,12 +263,12 @@ export default function ItemEscalationScreen() {
             >
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center gap-2">
-                  <XCircle size={16} color="#e26136" />
+                  <XCircle size={16} color={t.dangerText} />
                   <Text className={`font-semibold ${isDark ? "text-dark-text" : "text-black"}`}>
                     Cancel whole order
                   </Text>
                 </View>
-                <Text className="text-xs font-bold" style={{ color: "#e26136" }}>
+                <Text className="text-xs font-bold" style={{ color: t.dangerText }}>
                   {busyAction === "cancel" ? "Cancelling…" : "Cancel"}
                 </Text>
               </View>

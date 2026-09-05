@@ -228,7 +228,7 @@ const ShopInformationScreen = () => {
                   <Text className="text-xs text-error ">{usernameMessage}</Text>
                 ) : usernameStatus === "available" ? (
                   <View className="flex-row items-center gap-1">
-                    <Check size={12} color="#178b1f" />
+                    <Check size={12} color={t.successText} />
                     <Text className="text-xs text-success ">Handle is available</Text>
                   </View>
                 ) : usernameStatus === "checking" ? (

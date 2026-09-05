@@ -71,7 +71,7 @@ const Button = ({
       {...rest}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={variant === "outline" || variant === "secondary" || isDisabled ? (t.textPrimary) : "#ffffff"} />
+        <ActivityIndicator size="small" color={variant === "outline" || variant === "secondary" || isDisabled ? (t.textPrimary) : t.textOnPrimary} />
       ) : children != null ? (
         children
       ) : (

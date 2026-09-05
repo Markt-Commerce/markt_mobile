@@ -275,7 +275,7 @@ export default function HelpCenterScreen() {
             accessibilityLabel={`Email support at ${SUPPORT_EMAIL}`}
             className="mt-4 h-12 rounded-xl bg-primary items-center justify-center flex-row"
           >
-            <Mail size={17} color="#FFFFFF" strokeWidth={2.2} />
+            <Mail size={17} color={t.textOnPrimary} strokeWidth={2.2} />
             <Text className="text-white font-semibold text-[15px] ml-2">
               Email support
             </Text>

@@ -243,9 +243,7 @@ export default function CommunitiesScreen() {
                         ? isDark
                           ? "text-black"
                           : "text-white"
-                        : isDark
-                          ? "text-text-secondary"
-                          : "text-[#52525B]"
+                        : "text-text-secondary"
                     }`}
                   >
                     {s.label}
@@ -305,9 +303,7 @@ export default function CommunitiesScreen() {
           <Text
             className={`text-[13px] font-bold ${
               joined
-                ? isDark
-                  ? "text-text-secondary"
-                  : "text-[#52525B]"
+                ? "text-text-secondary"
                 : isDark
                   ? "text-black"
                   : "text-white"

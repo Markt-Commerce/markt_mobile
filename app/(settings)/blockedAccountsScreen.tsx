@@ -90,7 +90,7 @@ export default function BlockedAccountsScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#E94C2A" />
+          <ActivityIndicator size="large" color={t.primaryText} />
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center px-10">
@@ -104,7 +104,7 @@ export default function BlockedAccountsScreen() {
             accessibilityRole="button"
             accessibilityLabel="Try again"
           >
-            <RotateCw size={16} color="#FFFFFF" />
+            <RotateCw size={16} color={t.textOnPrimary} />
             <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
               Try again
             </Text>
@@ -118,7 +118,7 @@ export default function BlockedAccountsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => load({ refresh: true })}
-              tintColor="#E94C2A"
+              tintColor={t.primaryText}
             />
           }
           renderItem={({ item }) => (
@@ -136,7 +136,7 @@ export default function BlockedAccountsScreen() {
                 accessibilityState={{ disabled: busyId === item.user_id }}
               >
                 {busyId === item.user_id ? (
-                  <ActivityIndicator size="small" color="#E94C2A" />
+                  <ActivityIndicator size="small" color={t.primaryText} />
                 ) : (
                   <Text className={`font-bold text-[11px] tracking-[1.5px] uppercase ${ink}`}>
                     Unblock

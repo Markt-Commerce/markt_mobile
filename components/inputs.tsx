@@ -240,7 +240,7 @@ export function OTPInput({ value, onChange, error, digits = 6 }: OTPInputProps) 
                 value={digitArray[i]}
                 onChangeText={(text) => handleChange(text, i)}
                 onKeyPress={(e) => handleKeyPress(e, i)}
-                selectionColor="#FFFFFF"
+                selectionColor={t.textOnPrimary}
                 autoComplete="one-time-code"
               />
             </View>

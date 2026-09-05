@@ -237,7 +237,7 @@ export default function UserInfoScreen() {
                     <Text className="text-xs text-error ">{usernameMessage || "Username is already taken"}</Text>
                   ) : usernameStatus === "available" ? (
                     <View className="flex-row items-center gap-1">
-                      <Check size={12} color="#178b1f" strokeWidth={3} />
+                      <Check size={12} color={t.successText} strokeWidth={3} />
                       <Text className="text-xs text-success ">Username is available</Text>
                     </View>
                   ) : usernameStatus === "checking" ? (

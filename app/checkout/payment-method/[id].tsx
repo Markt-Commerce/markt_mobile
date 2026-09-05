@@ -277,7 +277,7 @@ export default function PaymentMethod() {
           className={`flex-row items-center justify-center h-12 rounded ${isProcessing ? "bg-primary/60" : "bg-primary"}`}
         >
           {isProcessing ? (
-            <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
+            <ActivityIndicator size="small" color={t.textOnPrimary} style={{ marginRight: 8 }} />
           ) : null}
           <Text className="text-white text-sm font-bold tracking-[0.015em]">
             {isProcessing ? "Processing…" : "Proceed"}

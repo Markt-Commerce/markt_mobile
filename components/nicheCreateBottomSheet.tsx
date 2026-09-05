@@ -146,7 +146,7 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
               />
             )}
           />
-          {formState.errors.name && <Text style={{ color: "#ba1a1a", marginBottom: 6 }}>{String(formState.errors.name.message)}</Text>}
+          {formState.errors.name && <Text style={{ color: t.dangerText, marginBottom: 6 }}>{String(formState.errors.name.message)}</Text>}
 
           <Text style={{ marginBottom: 6, color: t.textPrimary }}>Description</Text>
           <Controller
@@ -173,7 +173,7 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
               />
             )}
           />
-          {formState.errors.description && <Text style={{ color: "#ba1a1a", marginBottom: 6 }}>{String(formState.errors.description.message)}</Text>}
+          {formState.errors.description && <Text style={{ color: t.dangerText, marginBottom: 6 }}>{String(formState.errors.description.message)}</Text>}
 
           <Text style={{ marginBottom: 6, color: t.textPrimary }}>Visibility</Text>
           <Controller
@@ -223,7 +223,7 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
                 <Switch 
                   value={!!value} 
                   onValueChange={onChange} 
-                  trackColor={{ false: t.borderStrong, true: "#E94C2A" }}
+                  trackColor={{ false: t.borderStrong, true: t.primaryText }}
                   thumbColor={t.textPrimary}
                 />
               )}
@@ -241,7 +241,7 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
                 <Switch 
                   value={!!value} 
                   onValueChange={onChange} 
-                  trackColor={{ false: t.borderStrong, true: "#E94C2A" }}
+                  trackColor={{ false: t.borderStrong, true: t.primaryText }}
                   thumbColor={t.textPrimary}
                 />
               )}
