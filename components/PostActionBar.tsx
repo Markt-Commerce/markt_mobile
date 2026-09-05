@@ -1,6 +1,7 @@
 import React from "react";
 import { Pressable, Text, View } from "react-native";
 import { Bookmark, Eye, Heart, MessageCircle, Send } from "lucide-react-native";
+import { useTokens } from "../theme/useTokens";
 
 type Props = {
   likeCount: number;
@@ -9,7 +10,6 @@ type Props = {
   liked?: boolean;
   saved?: boolean;
   disabled?: boolean;
-  isDark?: boolean;
   onLike?: () => void;
   onComment?: () => void;
   onSave?: () => void;
@@ -29,14 +29,16 @@ export default function PostActionBar({
   liked = false,
   saved = false,
   disabled,
-  isDark,
   onLike,
   onComment,
   onSave,
   onShare,
 }: Props) {
-  const muted = isDark ? "#aeb0b7" : "#876d64";
-  const textClass = isDark ? "text-[#aeb0b7]" : "text-text-secondary";
+  // Reads the theme itself rather than taking `isDark` as an optional prop.
+  // Optional meant a caller that forgot it silently rendered light-mode
+  // colours on a dark page.
+  const muted = useTokens().textSecondary;
+  const textClass = "text-text-secondary";
   const item = "h-10 min-w-10 px-1 flex-row items-center justify-center gap-1.5";
 
   return (

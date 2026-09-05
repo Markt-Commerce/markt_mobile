@@ -299,7 +299,7 @@ function OrderProgress({ status, isDark }: { status?: string; isDark: boolean })
 
   if (terminal) {
     return (
-      <View className={`rounded-2xl p-4 mb-3 ${isDark ? "bg-[#3A1E1E]" : "bg-[#FDECEC]"}`}>
+      <View className={`rounded-2xl p-4 mb-3 ${"bg-danger-muted"}`}>
         <Text className="text-[#C42B2B] text-[11px] font-bold uppercase tracking-[1.5px]">
           Status
         </Text>
@@ -311,7 +311,7 @@ function OrderProgress({ status, isDark }: { status?: string; isDark: boolean })
   }
 
   return (
-    <View className={`rounded-2xl p-4 mb-3 ${isDark ? "bg-surface-sunken" : "bg-[#F7F7F8]"}`}>
+    <View className={`rounded-2xl p-4 mb-3 ${"bg-surface-sunken"}`}>
       <Text
         className={`text-[11px] font-bold uppercase tracking-[1.5px] text-text-muted`}
       >

@@ -81,10 +81,10 @@ export default function MyNichesScreen() {
         android_ripple={{ color: isDark ? "#ffffff11" : "#00000011" }}
         className="mr-3"
       >
-        <View className={`w-44 rounded-xl overflow-hidden border ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-[#e8e4e2]"}`}>
+        <View className={`w-44 rounded-xl overflow-hidden border ${"bg-surface-raised border-border"}`}>
           <View>
             {/* Niche Icon/Image */}
-            <View className={`h-20 justify-center items-center ${isDark ? "bg-surface-sunken" : "bg-[#f5f3f2]"}`}>
+            <View className={`h-20 justify-center items-center ${"bg-surface-sunken"}`}>
               {item.image_url ? (
                 <Image source={{ uri: item.image_url }} className="w-full h-full" resizeMode="cover" />
               ) : (
@@ -207,7 +207,7 @@ export default function MyNichesScreen() {
               ))}
               <TouchableOpacity
                 onPress={() => router.push("/discoverNiches")}
-                className={`w-28 h-20 rounded-xl border items-center justify-center mr-6 ${isDark ? "border-border-strong" : "border-[#e8e4e2]"}`}
+                className={`w-28 h-20 rounded-xl border items-center justify-center mr-6 ${"border-border-strong"}`}
               >
                 <Compass size={20} color={t.textSecondary} />
                 <Text className={`text-xs font-semibold mt-1 text-text-secondary`}>Explore</Text>

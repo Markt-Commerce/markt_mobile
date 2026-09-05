@@ -136,7 +136,7 @@ export default function OrderCard({ order, isSeller }: OrderCardProps) {
 
       {typeof progress === "number" && (
         <View className="items-center gap-2">
-          <View className={`w-[88px] h-1 rounded overflow-hidden ${isDark ? "bg-[#46464e]" : "bg-border"}`}>
+          <View className={`w-[88px] h-1 rounded overflow-hidden ${"bg-border"}`}>
             <View
               className="h-1 bg-primary"
               style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}

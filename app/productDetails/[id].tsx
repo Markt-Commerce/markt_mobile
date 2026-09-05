@@ -252,7 +252,7 @@ const addProductToCart = async (product:ProductDetail)=>{
                   <View
                     key={idx}
                     className={`h-2 rounded transition-all ${
-                      idx === currentImageIndex ? "bg-primary w-6" : (isDark ? "bg-[#46464e] w-2" : "bg-border w-2")
+                      idx === currentImageIndex ? "bg-primary w-6" : ("bg-border w-2")
                     }`}
                   />
                 ))}

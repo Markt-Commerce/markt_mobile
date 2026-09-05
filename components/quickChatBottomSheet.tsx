@@ -265,7 +265,7 @@ export default function QuickChatBottomSheet({
           style={[
             styles.header,
             {
-              borderBottomColor: isDark ? "#2a2a2e" : "#efe9e7",
+              borderBottomColor: t.surfaceSunken,
               backgroundColor: t.surfacePage,
             },
           ]}

@@ -19,6 +19,7 @@ import { useTheme } from "./themeProvider";
 import { useGamificationLookup } from "../hooks/useGamificationLookup";
 import TierBadge from "./gamification/TierBadge";
 import PostActionBar from "./PostActionBar";
+import { useTokens } from "../theme/useTokens";
 
 interface Props {
   post: FeedPost;
@@ -48,6 +49,7 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { profile: authorGamification } = useGamificationLookup(post.user?.id);
 
   // A refresh re-serves the same post id with server-side counts. Without this
@@ -165,7 +167,7 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
                 )}
               </Pressable>
               <Text
-                className={`text-[13px] flex-shrink ${isDark ? "text-[#aeb0b7]" : "text-text-secondary"}`}
+                className={`text-[13px] flex-shrink ${"text-text-secondary"}`}
                 numberOfLines={1}
               >
                 {post.niche ? ` · ${post.niche.name}` : ""}{` · ${compactAge(post.created_at)}`}
@@ -178,7 +180,7 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
                 accessibilityRole="button"
                 accessibilityLabel="More options for this post"
               >
-                <MoreHorizontal size={20} color={isDark ? "#c6c5cf" : "#876d64"} />
+                <MoreHorizontal size={20} color={t.textSecondary} />
               </Pressable>
             ) : null}
             </View>
@@ -212,7 +214,6 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
             liked={likedByMe}
             saved={saved ?? post.is_saved ?? false}
             disabled={isLiking}
-            isDark={isDark}
             onLike={handleLike}
             onComment={handleOpenComments}
             onSave={() => onToggleSaved?.(post)}

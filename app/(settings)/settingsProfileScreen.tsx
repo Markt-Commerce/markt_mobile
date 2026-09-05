@@ -34,6 +34,7 @@ import { useToast } from "../../components/ToastProvider";
 import { navigateToGuestHome } from "../../utils/authNavigation";
 import { useGamificationContext } from "../../hooks/gamificationContext";
 import { updateGamificationPreferences } from "../../services/sections/gamification";
+import { useTokens } from "../../theme/useTokens";
 
 const LANGUAGE_KEY = "app_lang_v1";
 
@@ -42,6 +43,7 @@ export default function SettingsProfileScreen() {
   const { user, role, setUser, profile } = useUser();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
   const [language, setLanguage] = useState("EN");
   const { profile: gamification, refresh: refreshGamification } = useGamificationContext();
@@ -284,8 +286,8 @@ export default function SettingsProfileScreen() {
             accessibilityLabel="Sign out"
             className={`h-13 py-3.5 rounded-xl items-center justify-center flex-row gap-2 bg-surface-sunken`}
           >
-            <LogOut size={18} color={isDark ? "#f0f1f2" : "#3F3F46"} strokeWidth={1.9} />
-            <Text className={`font-semibold text-[15px] ${isDark ? "text-text-primary" : "text-[#3F3F46]"}`}>
+            <LogOut size={18} color={t.textPrimary} strokeWidth={1.9} />
+            <Text className={`font-semibold text-[15px] ${"text-text-primary"}`}>
               Sign out
             </Text>
           </TouchableOpacity>

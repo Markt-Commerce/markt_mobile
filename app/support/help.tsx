@@ -165,14 +165,14 @@ function Accordion({
         <View className="px-4 pb-4 -mt-1">
           <Text
             className={`text-[14px] leading-[21px] ${
-              isDark ? "text-text-secondary" : "text-[#52525B]"
+              "text-text-secondary"
             }`}
           >
             {item.a}
           </Text>
         </View>
       ) : null}
-      <View className={`h-px ml-4 ${isDark ? "bg-surface-sunken" : "bg-[#EFEFF1]"}`} />
+      <View className={`h-px ml-4 ${"bg-surface-sunken"}`} />
     </>
   );
 }
@@ -219,7 +219,7 @@ export default function HelpCenterScreen() {
           </Text>
           <View
             className={`flex-row items-center h-11 px-3 rounded-xl mt-3 ${
-              isDark ? "bg-surface-sunken" : "bg-[#F4F4F5]"
+              "bg-surface-sunken"
             }`}
           >
             <Search size={17} color={t.textMuted} strokeWidth={2} />

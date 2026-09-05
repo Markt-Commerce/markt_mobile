@@ -119,13 +119,13 @@ export default function LeaderboardScreen() {
         <View className="px-3.5 pt-4">
           <View
             className={`rounded-2xl px-4 py-3.5 flex-row items-center border ${
-              isDark ? "bg-[#34231f] border-[#784637]" : "bg-[#fff1eb] border-[#f7bca9]"
+              "bg-primary-muted border-primary/40"
             }`}
           >
             <View>
               <Text
                 className={`text-[12px] font-medium uppercase tracking-[0.3px] ${
-                  isDark ? "text-[#ffd5c7]" : "text-[#9e3b22]"
+                  "text-primary-text"
                 }`}
               >
                 Your position
@@ -133,24 +133,24 @@ export default function LeaderboardScreen() {
               <View className="flex-row items-baseline mt-0.5">
                 <Text
                   className={`text-[28px] font-bold ${
-                    isDark ? "text-[#ffd5c7]" : "text-[#9e3b22]"
+                    "text-primary-text"
                   }`}
                 >
                   #{yourRank.rank}
                 </Text>
                 <Text
                   className={`text-[14px] ml-1.5 ${
-                    isDark ? "text-[#e2afa0]" : "text-[#a94a31]"
+                    "text-primary-text"
                   }`}
                 >
                   of {yourRank.out_of.toLocaleString()}
                 </Text>
                 <View
                   className={`ml-2 rounded-full px-2 py-0.5 ${
-                    isDark ? "bg-[#25413a]" : "bg-[#e4f5ef]"
+                    "bg-success-muted"
                   }`}
                 >
-                  <Text className={`text-[12px] ${isDark ? "text-[#b8e8d5]" : "text-[#18805d]"}`}>
+                  <Text className={`text-[12px] ${"text-success-text"}`}>
                     ↑ 1
                   </Text>
                 </View>
@@ -159,12 +159,12 @@ export default function LeaderboardScreen() {
             <View className="ml-auto items-end">
               <Text
                 className={`text-[14px] font-medium ${
-                  isDark ? "text-[#ffd5c7]" : "text-[#9e3b22]"
+                  "text-primary-text"
                 }`}
               >
                 {pointsToFirst.toLocaleString()} pts to #1
               </Text>
-              <Text className={`text-[14px] ${isDark ? "text-[#e2afa0]" : "text-[#a94a31]"}`}>
+              <Text className={`text-[14px] ${"text-primary-text"}`}>
                 Keep it going this week
               </Text>
             </View>

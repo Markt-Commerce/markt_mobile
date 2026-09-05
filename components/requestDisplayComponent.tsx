@@ -146,7 +146,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
         {!isOwnRequest && onMessagePress ? (
           <TouchableOpacity
             className={`flex-row items-center px-4 h-9 rounded-lg justify-center ${
-              isDark ? "bg-[#f0f1f2]" : "bg-black"
+              "bg-text-primary"
             }`}
             onPress={onMessagePress}
             activeOpacity={0.85}
@@ -159,7 +159,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
               strokeWidth={2.2}
             />
             <Text
-              className={`text-[13px] font-semibold ml-1.5 ${isDark ? "text-[#1a1c1d]" : "text-white"}`}
+              className={`text-[13px] font-semibold ml-1.5 ${"text-surface-page"}`}
             >
               Message
             </Text>

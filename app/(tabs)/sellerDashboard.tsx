@@ -425,7 +425,7 @@ export default function SellerDashboard() {
         </View>
 
         <View
-          className={`flex-row mx-5 mt-5 rounded-2xl ${isDark ? "bg-surface-sunken" : "bg-[#F7F7F8]"}`}
+          className={`flex-row mx-5 mt-5 rounded-2xl ${"bg-surface-sunken"}`}
         >
           {[
             { label: "Orders", value: String(analyticsOverview?.orders_30d ?? 0) },
@@ -435,7 +435,7 @@ export default function SellerDashboard() {
             <View
               key={stat.label}
               className={`flex-1 py-4 items-center ${i > 0 ? "border-l" : ""} ${
-                isDark ? "border-border-strong" : "border-[#E4E4E7]"
+                "border-border-strong"
               }`}
             >
               <Text className={`text-[20px] font-bold text-text-primary`}>
@@ -607,7 +607,7 @@ export default function SellerDashboard() {
                     </View>
 
                     {/* Badge */}
-                    <View className={`rounded px-3 py-1 border ${isDark ? "bg-surface-raised border-[#ba1a1a]" : "bg-white border-error"}`}>
+                    <View className={`rounded px-3 py-1 border ${"bg-surface-raised border-danger"}`}>
                       <Text className="text-error font-bold text-[10px] uppercase tracking-wider">Action needed</Text>
                     </View>
                   </View>
@@ -668,7 +668,7 @@ export default function SellerDashboard() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => { setInvFilter(invFilter === 'low' ? 'all' : 'low'); setStatusMenuVisible(false); }}
-                className={`h-10 items-center justify-center rounded px-5 border ${invFilter === 'low' ? "bg-error border-error" : (isDark ? "bg-[#ba1a1a]/10 border-[#ba1a1a]" : "bg-error-bg border-error")}`}
+                className={`h-10 items-center justify-center rounded px-5 border ${invFilter === 'low' ? "bg-error border-error" : ("bg-danger-muted border-danger")}`}
               >
                 <Text className={`font-bold text-sm ${invFilter === 'low' ? "text-white" : "text-error"}`}>Low</Text>
               </TouchableOpacity>

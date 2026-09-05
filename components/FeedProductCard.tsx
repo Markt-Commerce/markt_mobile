@@ -20,6 +20,7 @@ import { useTheme } from "./themeProvider";
 import { useGamificationLookup } from "../hooks/useGamificationLookup";
 import TierBadge from "./gamification/TierBadge";
 import BadgeChip from "./gamification/BadgeChip";
+import { useTokens } from "../theme/useTokens";
 
 interface Props {
   product: FeedProduct;
@@ -48,6 +49,7 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
   const [isFollowing, setIsFollowing] = useState(product.seller?.is_followed ?? false);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const followeeId = product.seller?.user?.id;
   const followerCount = product.seller?.follower_count ?? 0;
@@ -142,7 +144,7 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
               <BadgeChip key={badge.slug} badge={badge} size="xs" />
             ))}
           </Pressable>
-          <Text className={`text-[13px] ${isDark ? "text-[#aeb0b7]" : "text-text-secondary"}`}>
+          <Text className={`text-[13px] ${"text-text-secondary"}`}>
             {` · ${compactAge(product.created_at)}${isFollowing ? " · following" : ""}`}
           </Text>
           {onOpenActions ? (
@@ -153,7 +155,7 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
               accessibilityRole="button"
               accessibilityLabel={`More options for ${product.name}`}
             >
-              <MoreHorizontal size={20} color={isDark ? "#c6c5cf" : "#876d64"} />
+              <MoreHorizontal size={20} color={t.textSecondary} />
             </Pressable>
           ) : null}
         </View>

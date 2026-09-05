@@ -127,7 +127,7 @@ export default function SellerOrderDetail() {
   const bg = t.surfacePage;
   const strong = isDark ? "text-text-primary" : "text-black";
   const muted = isDark ? "text-text-muted" : "text-tertiary";
-  const card = isDark ? "bg-surface-sunken" : "bg-[#F7F7F8]";
+  const card = "bg-surface-sunken";
 
   if (loading) {
     return (
@@ -256,7 +256,7 @@ export default function SellerOrderDetail() {
                 accessibilityRole="button"
                 accessibilityLabel={`Message ${buyerName}`}
               >
-                <MessageSquare size={14} color={isDark ? "#c6c5cf" : "#3F3F46"} />
+                <MessageSquare size={14} color={t.textSecondary} />
                 <Text className={`text-[13px] font-semibold ml-1.5 ${strong}`}>
                   Message
                 </Text>

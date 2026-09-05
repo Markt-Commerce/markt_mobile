@@ -88,7 +88,7 @@ export default function AboutScreen() {
         </View>
 
         <View className="px-6 pb-12 items-center">
-          <Text className={`font-bold text-[10px] uppercase tracking-[4px] ${isDark ? "text-[#46464e]" : "text-surface-dim"}`}>
+          <Text className={`font-bold text-[10px] uppercase tracking-[4px] ${"text-text-muted"}`}>
             Markt Commerce © 2026
           </Text>
         </View>

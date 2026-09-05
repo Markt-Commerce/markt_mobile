@@ -95,7 +95,7 @@ export function AppStack() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: isDark ? "#0b0b0c" : "#ffffff" },
+        contentStyle: { backgroundColor: t.surfacePage },
       }}
     >
       <Stack.Protected guard={isLoggedIn}>

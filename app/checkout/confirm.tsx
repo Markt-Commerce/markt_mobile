@@ -98,7 +98,7 @@ export default function CheckoutConfirm() {
         {isMultiMarket ? (
           <View className="px-6 mt-2">
             <View
-              className={`flex-row gap-3 rounded border p-4 ${isDark ? "bg-[#2a1f16] border-[#5c3d1f]" : "bg-[#fff4e5] border-[#e8b876]"}`}
+              className={`flex-row gap-3 rounded border p-4 ${"bg-warning-muted border-warning/40"}`}
             >
               <AlertTriangle size={18} color="#c17a1f" />
               <Text className={`flex-1 text-xs text-text-primary`}>
@@ -126,7 +126,7 @@ export default function CheckoutConfirm() {
               />
             ) : null}
 
-            <View className={`h-[1px] my-4 ${isDark ? "bg-[#46464e]" : "bg-border"}`} />
+            <View className={`h-[1px] my-4 ${"bg-border"}`} />
             <Row label="Total charged today" value={formatMoney(amount)} />
 
             <Text className={`text-xs mt-4 text-text-secondary`}>

@@ -201,7 +201,7 @@ export default function CommunitiesScreen() {
         <View className="px-4 pb-3">
           <View
             className={`flex-row items-center h-11 px-3 rounded-xl ${
-              isDark ? "bg-surface-sunken" : "bg-[#F4F4F5]"
+              "bg-surface-sunken"
             }`}
           >
             <Search size={17} color={t.textMuted} strokeWidth={2} />

@@ -157,7 +157,7 @@ export default function ProfileScreen() {
               accessibilityLabel="Edit profile"
               className={`flex-1 h-11 rounded-xl items-center justify-center bg-surface-sunken`}
             >
-              <Text className={`font-semibold text-[14px] ${isDark ? "text-text-primary" : "text-[#3F3F46]"}`}>
+              <Text className={`font-semibold text-[14px] ${"text-text-primary"}`}>
                 Edit profile
               </Text>
             </TouchableOpacity>
@@ -168,12 +168,12 @@ export default function ProfileScreen() {
               accessibilityRole="button"
               accessibilityState={{ busy: switchingRole }}
               className={`flex-1 h-11 rounded-xl items-center justify-center flex-row ${
-                isDark ? "bg-[#f0f1f2]" : "bg-black"
+                "bg-text-primary"
               } ${switchingRole ? "opacity-60" : ""}`}
             >
               <ArrowRightLeft size={15} color={t.surfacePage} strokeWidth={2.2} />
               <Text
-                className={`font-semibold text-[14px] ml-1.5 ${isDark ? "text-[#1a1c1d]" : "text-white"}`}
+                className={`font-semibold text-[14px] ml-1.5 ${"text-surface-page"}`}
                 numberOfLines={1}
               >
                 {switchingRole

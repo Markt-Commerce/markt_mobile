@@ -68,7 +68,7 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
               placeholderTextColor={t.textSecondary}
               secureTextEntry={secureTextEntry}
               className={`w-full rounded ${sizeClass} px-4 text-base ${isDark ? "text-text-primary bg-surface-raised" : "text-secondary bg-background"} border ${
-                hasError ? "border-error" : isDark ? "border-border-strong focus:border-[#f0f1f2]" : "border-border focus:border-secondary"
+                hasError ? "border-error" : "border-border-strong focus:border-text-primary"
               }`}
               multiline={multiline}
               numberOfLines={numberOfLines}
@@ -115,7 +115,7 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
           <>
             <View
               className={`flex-row items-center rounded h-12 px-4 border bg-surface-raised ${
-                hasError ? "border-error" : isFocused ? (isDark ? "border-[#f0f1f2]" : "border-secondary") : isDark ? "border-border-strong" : "border-border"
+                hasError ? "border-error" : isFocused ? ("border-text-primary") : isDark ? "border-border-strong" : "border-border"
               }`}
             >
               <TextInput

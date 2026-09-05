@@ -278,7 +278,7 @@ function MyCartTab() {
             <Text className={`text-sm text-text-secondary`}>Discount</Text>
             <Text className={`text-sm text-text-primary`}>−{formatMoney(summary?.discount)}</Text>
           </View>
-          <View className={`h-px my-2 ${isDark ? "bg-[#46464e]" : "bg-border-light"}`} />
+          <View className={`h-px my-2 ${"bg-border"}`} />
           <View className="flex-row justify-between py-1.5">
             <Text className={`text-sm font-semibold text-text-primary`}>Total</Text>
             <Text className={`text-sm font-extrabold text-text-primary`}>{formatMoney(summary?.total)}</Text>

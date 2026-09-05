@@ -206,7 +206,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
       </View>
 
       {composing ? (
-        <View className={`rounded-xl p-4 mb-5 ${isDark ? "bg-surface-sunken" : "bg-[#F7F7F8]"}`}>
+        <View className={`rounded-xl p-4 mb-5 ${"bg-surface-sunken"}`}>
           <View className="flex-row items-center justify-between mb-3">
             <Text className={`font-semibold text-[15px] ${strong}`}>
               {editingId ? "Edit your review" : "How was it?"}
@@ -331,7 +331,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
               {r.title ? (
                 <Text className={`font-semibold text-[15px] mt-3 ${strong}`}>{r.title}</Text>
               ) : null}
-              <Text className={`text-[14px] leading-[20px] mt-2 ${isDark ? "text-text-secondary" : "text-[#3F3F46]"}`}>
+              <Text className={`text-[14px] leading-[20px] mt-2 ${"text-text-secondary"}`}>
                 {r.content}
               </Text>
 
@@ -342,9 +342,9 @@ export default function ProductReviews({ productId, onChanged }: Props) {
                   accessibilityRole="button"
                   accessibilityLabel={`Mark this review helpful. ${r.upvotes ?? 0} so far.`}
                   className="flex-row items-center mt-3 self-start px-3 h-9 rounded-full"
-                  style={{ backgroundColor: isDark ? "#2f3132" : "#F4F4F5" }}
+                  style={{ backgroundColor: t.surfaceSunken }}
                 >
-                  <ThumbsUp size={13} color={isDark ? "#c6c5cf" : "#52525B"} />
+                  <ThumbsUp size={13} color={t.textSecondary} />
                   <Text className={`text-[12px] ml-1.5 font-medium ${muted}`}>
                     Helpful{r.upvotes ? ` · ${r.upvotes}` : ""}
                   </Text>

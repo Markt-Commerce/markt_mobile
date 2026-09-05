@@ -427,7 +427,7 @@ export default function PostDetailsScreen() {
       )}
 
       <View className={`mx-4 pt-2 border-t border-border-strong`}>
-        <Text className={`text-sm mb-1 ${isDark ? "text-[#aeb0b7]" : "text-text-secondary"}`}>
+        <Text className={`text-sm mb-1 ${"text-text-secondary"}`}>
           {parseDate(post.created_at)}
         </Text>
         <PostActionBar
@@ -437,7 +437,6 @@ export default function PostDetailsScreen() {
           liked={likedByMe}
           saved={saved}
           disabled={isLiking}
-          isDark={isDark}
           onLike={handleLike}
           onComment={() => commentInputRef.current?.focus()}
           onSave={handleSave}

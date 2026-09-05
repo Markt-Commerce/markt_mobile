@@ -36,7 +36,7 @@ export default function BadgeChip({ badge, size = "sm", className = "" }: BadgeC
         borderRadius: d / 2,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: isDark ? "#2f3132" : "#F4F0EE",
+        backgroundColor: t.surfaceSunken,
         overflow: "hidden",
       }}
     >

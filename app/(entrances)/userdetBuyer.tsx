@@ -184,7 +184,7 @@ export default function UserInfoScreen() {
 
             {/* Progress hint */}
             <View className="flex-row gap-2 items-center justify-center mb-10 px-2">
-              <View className={`h-1.5 flex-1 rounded ${isDark ? "bg-[#f0f1f2]" : "bg-secondary"}`} />
+              <View className={`h-1.5 flex-1 rounded ${"bg-text-primary"}`} />
               <View className={`h-1.5 flex-1 rounded bg-surface-sunken`} />
               <View className={`h-1.5 flex-1 rounded bg-surface-sunken`} />
             </View>

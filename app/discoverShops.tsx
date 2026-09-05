@@ -250,7 +250,7 @@ export default function DiscoverShopsScreen() {
         })}
 
         {categories.length > 0 ? (
-          <View className={`w-px h-5 mx-1 ${isDark ? "bg-[#46464e]" : "bg-[#E4E4E7]"}`} />
+          <View className={`w-px h-5 mx-1 ${"bg-border"}`} />
         ) : null}
 
         {categories.length > 0 ? (
@@ -260,7 +260,7 @@ export default function DiscoverShopsScreen() {
             accessibilityRole="tab"
             accessibilityState={{ selected: selectedCategory === null }}
             className={`px-3.5 h-8 rounded-full items-center justify-center ${
-              selectedCategory === null ? "bg-primary" : isDark ? "bg-surface-sunken" : "bg-[#F4F4F5]"
+              selectedCategory === null ? "bg-primary" : "bg-surface-sunken"
             }`}
           >
             <Text
@@ -286,12 +286,12 @@ export default function DiscoverShopsScreen() {
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
               className={`px-3.5 h-8 rounded-full items-center justify-center ${
-                active ? "bg-primary" : isDark ? "bg-surface-sunken" : "bg-[#F4F4F5]"
+                active ? "bg-primary" : "bg-surface-sunken"
               }`}
             >
               <Text
                 className={`text-[13px] font-semibold ${
-                  active ? "text-white" : isDark ? "text-text-secondary" : "text-[#52525B]"
+                  active ? "text-white" : "text-text-secondary"
                 }`}
               >
                 {c.name}

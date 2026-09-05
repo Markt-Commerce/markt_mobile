@@ -4,6 +4,7 @@ import { Link } from "expo-router";
 import { ShoppingCart, MessageCircle } from "lucide-react-native";
 import { Product } from "../models/feed";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 
 type Props = {
   products: Product[];
@@ -18,7 +19,8 @@ const ProductDisplayComponent: React.FC<Props> = ({
 }) => {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const mutedIconColor = isDark ? "#c6c5cf" : "#876d64";
+  const t = useTokens();
+  const mutedIconColor = t.textSecondary;
 
   return (
     <View className="px-4 pt-4">

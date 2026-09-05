@@ -288,7 +288,7 @@ export default function ContentActionsSheet({
       enablePanDownToClose
       onClose={onClose}
       backdropComponent={renderBackdrop}
-      backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "#ffffff" }}
+      backgroundStyle={{ backgroundColor: t.surfaceRaised }}
       handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
     >
       <BottomSheetView className="flex-1">

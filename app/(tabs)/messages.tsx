@@ -142,7 +142,7 @@ export default function MessagesScreen() {
                   />
                   {hasUnread && (
                     <View
-                      className={`absolute right-0 bottom-0 w-3.5 h-3.5 rounded bg-primary border-2 ${isDark ? "border-[#1a1c1d]" : "border-white"}`}
+                      className={`absolute right-0 bottom-0 w-3.5 h-3.5 rounded bg-primary border-2 ${"border-surface-page"}`}
                     />
                   )}
                 </View>

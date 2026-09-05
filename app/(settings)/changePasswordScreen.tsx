@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { usePasswordResetConfirm } from '../../hooks/useAuth';
 import { useTheme } from '../../components/themeProvider';
 import { friendlyErrorMessage } from '../../utils/errorMessages';
+import { useTokens } from "../../theme/useTokens";
 
 export default function ChangePasswordScreen() {
   const [email, setEmail] = useState('');
@@ -16,6 +17,7 @@ export default function ChangePasswordScreen() {
   const nav = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const onSubmit = async () => {
     try {
@@ -54,7 +56,7 @@ export default function ChangePasswordScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
-              placeholderTextColor={isDark ? "#8f8f98" : "#5b5b64"}
+              placeholderTextColor={t.textMuted}
             />
 
             <Text className={`text-sm font-bold mb-2 text-text-primary`}>Reset Code</Text>
@@ -64,7 +66,7 @@ export default function ChangePasswordScreen() {
               className={`border p-3 rounded mb-4 ${isDark ? "border-border-strong bg-surface-sunken text-text-primary" : "border-border bg-surface text-black"}`}
               keyboardType="number-pad"
               autoCapitalize="none"
-              placeholderTextColor={isDark ? "#8f8f98" : "#5b5b64"}
+              placeholderTextColor={t.textMuted}
             />
 
             <Text className={`text-sm font-bold mb-2 text-text-primary`}>New Password</Text>
@@ -74,7 +76,7 @@ export default function ChangePasswordScreen() {
               className={`border p-3 rounded ${isDark ? "border-border-strong bg-surface-sunken text-text-primary" : "border-border bg-surface text-black"}`}
               secureTextEntry
               autoCapitalize="none"
-              placeholderTextColor={isDark ? "#8f8f98" : "#5b5b64"}
+              placeholderTextColor={t.textMuted}
             />
           </View>
 

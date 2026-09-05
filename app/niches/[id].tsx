@@ -303,7 +303,7 @@ export default function NicheDetailScreen() {
 
             {niche?.description ? (
               <Text
-                className={`text-[14px] leading-[20px] mt-2.5 ${isDark ? "text-text-secondary" : "text-[#3F3F46]"}`}
+                className={`text-[14px] leading-[20px] mt-2.5 ${"text-text-secondary"}`}
               >
                 {niche.description}
               </Text>
@@ -335,7 +335,7 @@ export default function NicheDetailScreen() {
               >
                 <Text
                   className={`font-bold text-[15px] ${
-                    isJoined ? (isDark ? "text-text-secondary" : "text-[#52525B]") : "text-white"
+                    isJoined ? ("text-text-secondary") : "text-white"
                   }`}
                 >
                   {isJoined ? "Joined" : "Join community"}
@@ -347,7 +347,7 @@ export default function NicheDetailScreen() {
 
         {/* Banned Message */}
         {isBanned && (
-          <View className={`mx-4 mb-3 p-3 rounded-xl ${isDark ? "bg-[#3A1E1E]" : "bg-[#FDECEC]"}`}>
+          <View className={`mx-4 mb-3 p-3 rounded-xl ${"bg-danger-muted"}`}>
             <Text className="text-[#C42B2B] text-[14px] font-semibold">
               You've been removed from this community
             </Text>
@@ -359,7 +359,7 @@ export default function NicheDetailScreen() {
 
         {/* Error state with retry */}
         {hasError && (
-          <View className={`mx-4 mt-4 p-3 border rounded items-center ${isDark ? "bg-[#ba1a1a]/10 border-[#ba1a1a]" : "bg-error-bg border-error"}`}>
+          <View className={`mx-4 mt-4 p-3 border rounded items-center ${"bg-danger-muted border-danger"}`}>
             <Text className="text-error text-sm font-semibold">Failed to load posts</Text>
             <TouchableOpacity onPress={handleRetry} className="mt-2 px-4 py-2 bg-primary rounded">
               <Text className="text-white text-sm font-semibold">Retry</Text>

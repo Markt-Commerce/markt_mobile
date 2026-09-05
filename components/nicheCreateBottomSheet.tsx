@@ -251,7 +251,7 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
           <Text style={{ marginBottom: 6, color: t.textPrimary }}>Categories</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 8 }}>
             {selectedCategories.map((c) => (
-              <View key={c.id} style={{ backgroundColor: isDark ? "#2f3132" : "#F4F4F5", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, marginRight: 8, marginBottom: 8, borderWidth: 1, borderColor: isDark ? "#46464e" : "transparent" }}>
+              <View key={c.id} style={{ backgroundColor: t.surfaceSunken, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, marginRight: 8, marginBottom: 8, borderWidth: 1, borderColor: isDark ? "#46464e" : "transparent" }}>
                 <Text style={{ color: t.textPrimary }}>{c.name}</Text>
               </View>
             ))}

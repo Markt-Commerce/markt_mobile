@@ -323,7 +323,7 @@ export default function CartScreen() {
               <Text className={`text-sm text-text-secondary`}>Discount</Text>
               <Text className={`text-sm font-bold text-text-primary`}>−{formatMoney(summary?.discount)}</Text>
             </View>
-            <View className={`h-[1px] my-4 ${isDark ? "bg-[#46464e]" : "bg-border"}`} />
+            <View className={`h-[1px] my-4 ${"bg-border"}`} />
             <View className="flex-row justify-between py-2">
               <Text className={`text-base font-bold text-text-primary`}>Total</Text>
               <Text className={`text-lg font-bold text-text-primary`}>{formatMoney(summary?.total)}</Text>
@@ -332,7 +332,7 @@ export default function CartScreen() {
               Service fee, and the reliability fee if you opt in, are shown at the next step.
             </Text>
 
-            <View className={`h-[1px] my-4 ${isDark ? "bg-[#46464e]" : "bg-border"}`} />
+            <View className={`h-[1px] my-4 ${"bg-border"}`} />
 
             {/* Fulfilment preference (6): how a substitution is handled if an item can't be fulfilled as ordered */}
             <Text className={`text-sm font-bold mb-2 text-text-primary`}>

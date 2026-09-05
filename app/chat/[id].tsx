@@ -4,10 +4,12 @@ import React from "react";
 import { useLocalSearchParams } from "expo-router";
 import ChatScreen from "../../components/chat";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 
 export default function Chat() {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const { id, username, profilePicture } = useLocalSearchParams<{
     id: string;
@@ -16,7 +18,7 @@ export default function Chat() {
   }>();
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: isDark ? "#0b0b0c" : "#FFFFFF" }}
+      style={{ flex: 1, backgroundColor: t.surfacePage }}
     >
       <ChatScreen
         route={{
