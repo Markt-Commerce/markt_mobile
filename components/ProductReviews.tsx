@@ -17,7 +17,6 @@ import { ThumbsUp, Pencil, Trash2, X } from "lucide-react-native";
 import Avatar from "./Avatar";
 import VerifiedBadge from "./VerifiedBadge";
 import { StarRating, StarRatingInput } from "./StarRating";
-import { useTheme } from "./themeProvider";
 import { useTokens } from "../theme/useTokens";
 import { useToast } from "./ToastProvider";
 import { useUser } from "../hooks/userContextProvider";
@@ -49,8 +48,6 @@ function relativeDate(iso?: string) {
 }
 
 export default function ProductReviews({ productId, onChanged }: Props) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const { show } = useToast();
   const { user } = useUser();
@@ -172,9 +169,9 @@ export default function ProductReviews({ productId, onChanged }: Props) {
     ? rated.reduce((sum, r) => sum + (r.rating ?? 0), 0) / rated.length
     : 0;
 
-  const border = isDark ? "border-border" : "border-border-light";
-  const muted = isDark ? "text-text-muted" : "text-tertiary";
-  const strong = isDark ? "text-text-primary" : "text-black";
+  const border = "border-border";
+  const muted = "text-text-muted";
+  const strong = "text-text-primary";
 
   return (
     <View className={`border-t ${border} pt-6`}>
@@ -206,7 +203,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
       </View>
 
       {composing ? (
-        <View className={`rounded-xl p-4 mb-5 ${"bg-surface-sunken"}`}>
+        <View className="rounded-xl p-4 mb-5 bg-surface-sunken">
           <View className="flex-row items-center justify-between mb-3">
             <Text className={`font-semibold text-[15px] ${strong}`}>
               {editingId ? "Edit your review" : "How was it?"}
@@ -231,7 +228,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
             multiline
             maxLength={1000}
             className={`mt-4 rounded-lg px-3 py-3 text-[15px] min-h-[88px] ${
-              isDark ? "bg-surface-raised text-text-primary" : "bg-white text-black"
+              "bg-surface-raised text-text-primary"
             }`}
             textAlignVertical="top"
             accessibilityLabel="Your review"
@@ -331,7 +328,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
               {r.title ? (
                 <Text className={`font-semibold text-[15px] mt-3 ${strong}`}>{r.title}</Text>
               ) : null}
-              <Text className={`text-[14px] leading-[20px] mt-2 ${"text-text-secondary"}`}>
+              <Text className="text-[14px] leading-[20px] mt-2 text-text-secondary">
                 {r.content}
               </Text>
 

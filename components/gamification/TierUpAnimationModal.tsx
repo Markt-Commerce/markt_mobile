@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Modal } from "react-native";
-import { useTheme } from "../themeProvider";
 import TierBadge from "./TierBadge";
 import type { TierChangedEvent } from "../../types/gamification";
 
@@ -20,21 +19,19 @@ export default function TierUpAnimationModal({
   event,
   onClose,
 }: TierUpAnimationModalProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
 
   return (
     <Modal visible={visible && !!event} transparent animationType="fade" onRequestClose={onClose}>
       <View className="flex-1 items-center justify-center px-8" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
         <View
           className={`w-full rounded-2xl items-center px-6 py-8 ${
-            isDark ? "bg-surface-raised" : "bg-white"
+            "bg-surface-raised"
           }`}
         >
           <Text className="text-3xl mb-2">🚀</Text>
           <Text
             className={`font-bold text-[10px] tracking-[3px] uppercase ${
-              isDark ? "text-text-secondary" : "text-tertiary"
+              "text-text-secondary"
             }`}
           >
             Level Up
@@ -48,14 +45,14 @@ export default function TierUpAnimationModal({
 
           <Text
             className={`font-bold text-xl text-center ${
-              isDark ? "text-text-primary" : "text-black"
+              "text-text-primary"
             }`}
           >
             You reached a new tier!
           </Text>
           <Text
             className={`text-sm text-center mt-2 ${
-              isDark ? "text-text-secondary" : "text-tertiary"
+              "text-text-secondary"
             }`}
           >
             Keep going to unlock the next one.

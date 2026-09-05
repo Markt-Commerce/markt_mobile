@@ -4,7 +4,6 @@ import { getNiches, joinNiche, leaveNiche } from "../services/sections/niches";
 import { Niches } from "../models/niches";
 import { useRouter } from "expo-router";
 import { useToast } from "./ToastProvider";
-import { useTheme } from "./themeProvider";
 import { useTokens } from "../theme/useTokens";
 import logger from "../utils/logger";
 
@@ -22,8 +21,6 @@ export default function DiscoverNiches() {
   const [joinedNiches, setJoinedNiches] = useState<Set<string>>(new Set());
   const router = useRouter();
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
 
   useEffect(() => {
@@ -72,8 +69,8 @@ export default function DiscoverNiches() {
   }
 
   return (
-    <View className={`my-4 border-y py-6 ${isDark ? "bg-surface-raised border-border-strong" : "bg-surface border-border"}`}>
-      <Text className={`px-4 pb-4 text-[20px] font-bold tracking-[-0.015em] text-text-primary`}>
+    <View className="my-4 border-y py-6 bg-surface-sunken border-border">
+      <Text className="px-4 pb-4 text-[20px] font-bold tracking-[-0.015em] text-text-primary">
         Discover Niches
       </Text>
 
@@ -84,7 +81,7 @@ export default function DiscoverNiches() {
       >
         {niches.length === 0 ? (
           <View className="items-center justify-center py-8">
-            <Text className={`text-sm text-text-secondary`}>No niches available</Text>
+            <Text className="text-sm text-text-secondary">No niches available</Text>
           </View>
         ) : (
           niches.map((niche) => {
@@ -97,14 +94,14 @@ export default function DiscoverNiches() {
                 <Pressable
                   onPress={() => router.push(`/niches/${niche.id}`)}
                   style={{ backgroundColor: nicheTileColor(niche.name) }}
-                  className={`h-20 w-20 overflow-hidden rounded border items-center justify-center border-border-strong`}
+                  className="h-20 w-20 overflow-hidden rounded border items-center justify-center border-border-strong"
                 >
                   <Text className="text-lg text-white font-bold text-center px-1">
                     {niche.name.slice(0, 2).toUpperCase()}
                   </Text>
                 </Pressable>
 
-                <Text className={`text-sm font-bold text-text-primary`} numberOfLines={1}>
+                <Text className="text-sm font-bold text-text-primary" numberOfLines={1}>
                   {niche.name}
                 </Text>
 
@@ -113,14 +110,14 @@ export default function DiscoverNiches() {
                   className={`w-full rounded px-4 py-1.5 border ${
                     isJoined
                       ? "bg-primary border-primary"
-                      : isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"
+                      : "bg-surface-sunken border-border"
                   }`}
                 >
                   <Text
                     className={`text-center text-[12px] font-bold ${
                       isJoined
                         ? "text-white"
-                        : isDark ? "text-text-primary" : "text-black"
+                        : "text-text-primary"
                     }`}
                   >
                     {isJoined ? "Following" : "Follow"}

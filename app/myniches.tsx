@@ -81,14 +81,14 @@ export default function MyNichesScreen() {
         android_ripple={{ color: isDark ? "#ffffff11" : "#00000011" }}
         className="mr-3"
       >
-        <View className={`w-44 rounded-xl overflow-hidden border ${"bg-surface-raised border-border"}`}>
+        <View className="w-44 rounded-xl overflow-hidden border bg-surface-raised border-border">
           <View>
             {/* Niche Icon/Image */}
-            <View className={`h-20 justify-center items-center ${"bg-surface-sunken"}`}>
+            <View className="h-20 justify-center items-center bg-surface-sunken">
               {item.image_url ? (
                 <Image source={{ uri: item.image_url }} className="w-full h-full" resizeMode="cover" />
               ) : (
-                <Text className={`text-3xl font-bold text-text-primary`}>
+                <Text className="text-3xl font-bold text-text-primary">
                   {(item.name ?? "").charAt(0).toUpperCase() || "?"}
                 </Text>
               )}
@@ -97,10 +97,10 @@ export default function MyNichesScreen() {
             {/* Content */}
             <View className="p-3">
               <View>
-                <Text className={`font-bold text-base text-text-primary`} numberOfLines={1}>
+                <Text className="font-bold text-base text-text-primary" numberOfLines={1}>
                   {item.name ?? "Unnamed"}
                 </Text>
-                <Text className={`text-[11px] mt-1 text-text-secondary`} numberOfLines={1}>
+                <Text className="text-[11px] mt-1 text-text-secondary" numberOfLines={1}>
                   {item.member_count} members · {item.post_count} posts
                 </Text>
               </View>
@@ -124,18 +124,18 @@ export default function MyNichesScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface-page" edges={["top"]}>
-      <View className={`px-6 pt-6 pb-5 border-b border-border-strong`}>
+      <View className="px-6 pt-6 pb-5 border-b border-border-strong">
         <View className="flex-row items-center justify-between">
           <View className="flex-1">
             <TouchableOpacity
               onPress={() => router.back()}
-              className={`h-10 w-10 rounded border items-center justify-center mb-4 ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
+              className="h-10 w-10 rounded border items-center justify-center mb-4 bg-surface-sunken border-border"
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <ArrowLeft size={20} color={t.textPrimary} />
             </TouchableOpacity>
-            <Text className={`text-2xl font-bold text-text-primary`}>My Niches</Text>
-            <Text className={`text-sm mt-1 text-text-secondary`}>
+            <Text className="text-2xl font-bold text-text-primary">My Niches</Text>
+            <Text className="text-sm mt-1 text-text-secondary">
               {niches.length} niche{niches.length !== 1 ? "s" : ""} joined
             </Text>
           </View>
@@ -179,10 +179,10 @@ export default function MyNichesScreen() {
               <View className="mb-5">
                 <Compass size={44} color={t.textMuted} strokeWidth={1.5} />
               </View>
-              <Text className={`font-bold text-xl text-center text-text-primary`}>
+              <Text className="font-bold text-xl text-center text-text-primary">
                 {niches.length === 0 ? "No niches yet" : "No posts yet"}
               </Text>
-              <Text className={`text-base mt-2 text-center leading-6 text-text-secondary`}>
+              <Text className="text-base mt-2 text-center leading-6 text-text-secondary">
                 {niches.length === 0
                   ? "Join or create a community to connect with others."
                   : "Posts from your communities will appear here."}
@@ -198,7 +198,7 @@ export default function MyNichesScreen() {
         }
         ListHeaderComponent={
           <View className="py-5 pl-6">
-            <Text className={`font-bold text-lg mb-3 text-text-primary`}>
+            <Text className="font-bold text-lg mb-3 text-text-primary">
               Your communities
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -207,10 +207,10 @@ export default function MyNichesScreen() {
               ))}
               <TouchableOpacity
                 onPress={() => router.push("/discoverNiches")}
-                className={`w-28 h-20 rounded-xl border items-center justify-center mr-6 ${"border-border-strong"}`}
+                className="w-28 h-20 rounded-xl border items-center justify-center mr-6 border-border-strong"
               >
                 <Compass size={20} color={t.textSecondary} />
-                <Text className={`text-xs font-semibold mt-1 text-text-secondary`}>Explore</Text>
+                <Text className="text-xs font-semibold mt-1 text-text-secondary">Explore</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>

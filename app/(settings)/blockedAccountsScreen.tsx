@@ -13,7 +13,6 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { ShieldOff, RotateCw } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
 import Avatar from "../../components/Avatar";
-import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
@@ -21,8 +20,6 @@ import { listBlockedUsers, unblockUser, type BlockedUser } from "../../services/
 
 export default function BlockedAccountsScreen() {
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const { show } = useToast();
 
@@ -32,9 +29,9 @@ export default function BlockedAccountsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const ink = isDark ? "text-text-primary" : "text-black";
-  const muted = isDark ? "text-text-secondary" : "text-tertiary";
-  const rule = isDark ? "border-border-strong" : "border-border";
+  const ink = "text-text-primary";
+  const muted = "text-text-secondary";
+  const rule = "border-border";
 
   const load = useCallback(async (opts: { refresh?: boolean } = {}) => {
     if (opts.refresh) setRefreshing(true);
@@ -83,7 +80,7 @@ export default function BlockedAccountsScreen() {
 
   return (
     <SafeAreaView
-      className={`flex-1 bg-surface-raised`}
+      className="flex-1 bg-surface-raised"
       edges={["top", "left", "right", "bottom"]}
     >
       <ScreenHeader title="Blocked accounts" onBack={() => router.back()} />
@@ -148,7 +145,7 @@ export default function BlockedAccountsScreen() {
           ListEmptyComponent={
             <View className="items-center justify-center px-10 pt-24">
               <View
-                className={`w-20 h-20 rounded-full items-center justify-center mb-6 bg-surface-sunken`}
+                className="w-20 h-20 rounded-full items-center justify-center mb-6 bg-surface-sunken"
               >
                 <ShieldOff size={30} color={t.textSecondary} strokeWidth={1.6} />
               </View>

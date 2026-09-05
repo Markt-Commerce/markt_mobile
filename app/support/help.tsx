@@ -152,7 +152,7 @@ function Accordion({
       >
         <Text
           className={`flex-1 text-[15px] leading-[21px] pr-3 ${
-            isDark ? "text-text-primary" : "text-black"
+            "text-text-primary"
           }`}
         >
           {item.q}
@@ -172,7 +172,7 @@ function Accordion({
           </Text>
         </View>
       ) : null}
-      <View className={`h-px ml-4 ${"bg-surface-sunken"}`} />
+      <View className="h-px ml-4 bg-surface-sunken" />
     </>
   );
 }
@@ -198,8 +198,8 @@ export default function HelpCenterScreen() {
     })).filter((g) => g.items.length > 0);
   }, [query]);
 
-  const strong = isDark ? "text-text-primary" : "text-black";
-  const muted = isDark ? "text-text-muted" : "text-tertiary";
+  const strong = "text-text-primary";
+  const muted = "text-text-muted";
 
   return (
     <SafeAreaView

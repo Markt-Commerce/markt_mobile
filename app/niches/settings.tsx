@@ -5,7 +5,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Camera, Image as ImageIcon, Save } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
 import { SettingsSection, SettingsSwitchRow } from "../../components/SettingsList";
-import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { getMyNiches, getNicheById, updateNiche } from "../../services/sections/niches";
@@ -16,9 +15,7 @@ import { friendlyErrorMessage } from "../../utils/errorMessages";
 export default function NicheSettingsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
   const { show } = useToast();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const [niche, setNiche] = useState<Niches | null>(null);
   const [ownerChecked, setOwnerChecked] = useState(false);
@@ -108,15 +105,15 @@ export default function NicheSettingsScreen() {
     }
   };
 
-  const inputClass = `rounded border px-4 py-3 text-base ${isDark ? "bg-surface-raised border-border-strong text-text-primary" : "bg-white border-border text-black"}`;
-  const muted = isDark ? "text-text-muted" : "text-tertiary";
+  const inputClass = `rounded border px-4 py-3 text-base bg-surface-raised border-border text-text-primary`;
+  const muted = "text-text-muted";
 
   if (!niche || !ownerChecked) {
-    return <View className={`flex-1 items-center justify-center bg-surface-raised`}><ActivityIndicator /></View>;
+    return <View className="flex-1 items-center justify-center bg-surface-raised"><ActivityIndicator /></View>;
   }
 
   return (
-    <View className={`flex-1 bg-surface-raised`}>
+    <View className="flex-1 bg-surface-raised">
       <ScreenHeader title="Community settings" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <SettingsSection title="Community identity">
@@ -131,16 +128,16 @@ export default function NicheSettingsScreen() {
         <SettingsSection title="Images">
           <TouchableOpacity disabled={saving} onPress={() => changeImage("image_id")} className={`flex-row items-center px-4 py-3 min-h-[72px] ${saving ? "opacity-60" : ""}`}>
             {niche.image_url ? <Image source={{ uri: niche.image_url }} className="w-12 h-12 rounded-xl" /> : <Camera size={22} color={t.textSecondary} />}
-            <View className="flex-1 ml-4"><Text className={`text-base text-text-primary`}>Community profile picture</Text><Text className={`text-[13px] mt-0.5 ${muted}`}>{uploadingField === "image_id" ? "Uploading…" : "Shown beside the community name"}</Text></View>{uploadingField === "image_id" ? <ActivityIndicator size="small" /> : <ImageIcon size={18} color={t.textMuted} />}
+            <View className="flex-1 ml-4"><Text className="text-base text-text-primary">Community profile picture</Text><Text className={`text-[13px] mt-0.5 ${muted}`}>{uploadingField === "image_id" ? "Uploading…" : "Shown beside the community name"}</Text></View>{uploadingField === "image_id" ? <ActivityIndicator size="small" /> : <ImageIcon size={18} color={t.textMuted} />}
           </TouchableOpacity>
           <TouchableOpacity disabled={saving} onPress={() => changeImage("banner_id")} className={`flex-row items-center px-4 py-3 min-h-[72px] border-t border-border ${saving ? "opacity-60" : ""}`}>
             {niche.banner_url ? <Image source={{ uri: niche.banner_url }} className="w-12 h-12 rounded-xl" /> : <ImageIcon size={22} color={t.textSecondary} />}
-            <View className="flex-1 ml-4"><Text className={`text-base text-text-primary`}>Community banner</Text><Text className={`text-[13px] mt-0.5 ${muted}`}>{uploadingField === "banner_id" ? "Uploading…" : "Shown at the top of the community"}</Text></View>{uploadingField === "banner_id" ? <ActivityIndicator size="small" /> : <ImageIcon size={18} color={t.textMuted} />}
+            <View className="flex-1 ml-4"><Text className="text-base text-text-primary">Community banner</Text><Text className={`text-[13px] mt-0.5 ${muted}`}>{uploadingField === "banner_id" ? "Uploading…" : "Shown at the top of the community"}</Text></View>{uploadingField === "banner_id" ? <ActivityIndicator size="small" /> : <ImageIcon size={18} color={t.textMuted} />}
           </TouchableOpacity>
         </SettingsSection>
 
         <SettingsSection title="Posting & privacy">
-          <View className="px-4 py-4"><Text className={`text-xs font-bold uppercase tracking-[2px] mb-3 ${muted}`}>Visibility</Text><View className="flex-row gap-2">{(["public", "private", "restricted"] as NicheVisibility[]).map((option) => <TouchableOpacity key={option} onPress={() => setVisibility(option)} className={`px-4 py-2 rounded-full border ${visibility === option ? "bg-primary border-primary" : isDark ? "border-border-strong" : "border-border"}`}><Text className={`text-sm capitalize ${visibility === option ? "text-white font-bold" : isDark ? "text-text-secondary" : "text-secondary"}`}>{option}</Text></TouchableOpacity>)}</View></View>
+          <View className="px-4 py-4"><Text className={`text-xs font-bold uppercase tracking-[2px] mb-3 ${muted}`}>Visibility</Text><View className="flex-row gap-2">{(["public", "private", "restricted"] as NicheVisibility[]).map((option) => <TouchableOpacity key={option} onPress={() => setVisibility(option)} className={`px-4 py-2 rounded-full border ${visibility === option ? "bg-primary border-primary" : "border-border"}`}><Text className={`text-sm capitalize ${visibility === option ? "text-white font-bold" : "text-text-secondary"}`}>{option}</Text></TouchableOpacity>)}</View></View>
           <SettingsSwitchRow icon={Camera} title="Allow buyer posts" value={allowBuyerPosts} onValueChange={setAllowBuyerPosts} />
           <SettingsSwitchRow icon={Camera} title="Allow seller posts" value={allowSellerPosts} onValueChange={setAllowSellerPosts} />
           <SettingsSwitchRow icon={Save} title="Approve posts before publishing" subtitle="Review new posts before members can see them." value={requireApproval} onValueChange={setRequireApproval} last />

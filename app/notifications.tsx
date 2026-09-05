@@ -43,7 +43,7 @@ const IconBubble = ({
   isDark: boolean;
 }) => (
   <View
-    className={`w-12 h-12 rounded items-center justify-center bg-media`}
+    className="w-12 h-12 rounded items-center justify-center bg-media"
   >
     {Cmp ? (
       <Cmp size={20} color={tokensFor(isDark).textPrimary} strokeWidth={1.5} />
@@ -169,7 +169,7 @@ export default function NotificationsScreen() {
       onPress={onPress}
       activeOpacity={0.85}
       className={`px-4 py-2 rounded ${
-        active ? "bg-primary" : isDark ? "bg-dark-elevated" : "bg-surface"
+        active ? "bg-primary" : "bg-surface-sunken"
       }`}
     >
       <Text
@@ -192,12 +192,12 @@ export default function NotificationsScreen() {
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.8}
-      className={`flex-1 h-9 rounded items-center justify-center ${primary ? "bg-primary" : isDark ? "bg-dark-elevated" : "bg-surface"}`}
+      className={`flex-1 h-9 rounded items-center justify-center ${primary ? "bg-primary" : "bg-surface-sunken"}`}
       accessibilityRole="button"
       accessibilityLabel={label}
     >
       <Text
-        className={`text-xs font-bold ${primary ? "text-white" : isDark ? "text-dark-text" : "text-black"}`}
+        className={`text-xs font-bold ${primary ? "text-white" : "text-text-primary"}`}
       >
         {label}
       </Text>
@@ -216,18 +216,18 @@ export default function NotificationsScreen() {
 
         <View className="flex-1">
           <Text
-            className={`font-bold text-sm ${isDark ? "text-dark-text" : "text-black"}`}
+            className="font-bold text-sm text-text-primary"
           >
             {n.title}
           </Text>
           <Text
-            className={`text-sm mt-1 leading-5 ${n.is_read ? (isDark ? "text-dark-muted" : "text-tertiary") : isDark ? "text-dark-text font-medium" : "text-black font-medium"}`}
+            className={`text-sm mt-1 leading-5 ${n.is_read ? ("text-text-secondary") : "text-text-primary font-medium"}`}
             numberOfLines={3}
           >
             {n.message}
           </Text>
           <Text
-            className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-[10px] mt-1.5`}
+            className="text-text-secondary text-[10px] mt-1.5"
           >
             {n.created_at}
           </Text>
@@ -235,7 +235,7 @@ export default function NotificationsScreen() {
           {(needsSubstitutionDecision || needsWaitChoice) && state !== "resolved" && (
             <View className="flex-row gap-2 mt-3">
               {state === "pending" ? (
-                <Text className={`text-xs ${isDark ? "text-dark-muted" : "text-tertiary"}`}>
+                <Text className="text-xs text-text-secondary">
                   Submitting…
                 </Text>
               ) : needsSubstitutionDecision ? (
@@ -284,12 +284,12 @@ export default function NotificationsScreen() {
   };
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-page">
       {/* Header */}
       <View className="flex-row items-center justify-between px-6 py-8">
         <TouchableOpacity
           onPress={() => router.back()}
-          className={`h-10 w-10 rounded border items-center justify-center ${isDark ? "bg-dark-surface border-dark-border" : "bg-surface border-border"}`}
+          className="h-10 w-10 rounded border items-center justify-center bg-surface-sunken border-border"
           activeOpacity={0.8}
         >
           <ArrowLeft
@@ -299,7 +299,7 @@ export default function NotificationsScreen() {
           />
         </TouchableOpacity>
         <Text
-          className={`flex-1 text-center text-lg font-bold tracking-widest uppercase pr-10 ${isDark ? "text-dark-text" : "text-black"}`}
+          className="flex-1 text-center text-lg font-bold tracking-widest uppercase pr-10 text-text-primary"
         >
           Alerts
         </Text>
@@ -357,7 +357,7 @@ export default function NotificationsScreen() {
       >
         <View className="px-6">
           <View
-            className={`rounded border overflow-hidden ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+            className="rounded border overflow-hidden bg-surface-raised border-border"
           >
             <Text className="px-6 pt-6 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-tertiary">
               Recents
@@ -366,7 +366,7 @@ export default function NotificationsScreen() {
               today.map((n, i) => (
                 <View
                   key={n.id}
-                  className={`${i !== today.length - 1 ? (isDark ? "border-b border-dark-border" : "border-b border-border") : ""}`}
+                  className={`${i !== today.length - 1 ? ("border-b border-border") : ""}`}
                 >
                   <Row n={n} />
                 </View>
@@ -374,7 +374,7 @@ export default function NotificationsScreen() {
             ) : (
               <View className="px-6 pb-10 pt-4">
                 <Text
-                  className={`${isDark ? "text-dark-muted" : "text-surface-dim"} font-bold text-xs tracking-widest uppercase italic`}
+                  className="text-text-secondary font-bold text-xs tracking-widest uppercase italic"
                 >
                   No Activity
                 </Text>
@@ -384,7 +384,7 @@ export default function NotificationsScreen() {
 
           {yesterday?.length ? (
             <View
-              className={`rounded border overflow-hidden mt-8 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+              className="rounded border overflow-hidden mt-8 bg-surface-raised border-border"
             >
               <Text className="px-6 pt-6 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-tertiary">
                 Previous
@@ -392,7 +392,7 @@ export default function NotificationsScreen() {
               {yesterday.map((n, i) => (
                 <View
                   key={n.id}
-                  className={`${i !== yesterday.length - 1 ? (isDark ? "border-b border-dark-border" : "border-b border-border") : ""}`}
+                  className={`${i !== yesterday.length - 1 ? ("border-b border-border") : ""}`}
                 >
                   <Row n={n} />
                 </View>

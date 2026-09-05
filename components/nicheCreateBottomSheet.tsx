@@ -18,7 +18,6 @@ import { Category } from "../models/categories";
 import CategoryAddition from "./categoryAddition";
 import { createNiche } from "../services/sections/niches";
 import { useToast } from "./ToastProvider";
-import { useTheme } from "./themeProvider";
 import { useTokens } from "../theme/useTokens";
 
 const schema = z.object({
@@ -42,8 +41,6 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
 
   const snapPoints = useMemo(() => ["50%", "80%"], []);
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
 
   const [categories, setCategories] = useState<Category[]>([]);

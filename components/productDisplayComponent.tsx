@@ -3,7 +3,6 @@ import { View, Text, ImageBackground, TouchableOpacity } from "react-native";
 import { Link } from "expo-router";
 import { ShoppingCart, MessageCircle } from "lucide-react-native";
 import { Product } from "../models/feed";
-import { useTheme } from "./themeProvider";
 import { useTokens } from "../theme/useTokens";
 
 type Props = {
@@ -17,8 +16,6 @@ const ProductDisplayComponent: React.FC<Props> = ({
   onAdd,
   onChat,
 }) => {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const mutedIconColor = t.textSecondary;
 
@@ -30,18 +27,18 @@ const ProductDisplayComponent: React.FC<Props> = ({
             <Link href={`/productDetails/${product.id}`} asChild>
               <TouchableOpacity activeOpacity={0.85}>
                 <View
-                  className={`rounded-card overflow-hidden border ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+                  className="rounded-card overflow-hidden border bg-surface-raised border-border"
                 >
                   <ImageBackground
                     source={{ uri: product.images?.[0]?.media?.original_url }}
-                    className={`w-full aspect-square ${isDark ? "bg-dark-elevated" : "bg-bg-muted"}`}
+                    className="w-full aspect-square bg-surface-sunken"
                     resizeMode="cover"
                   >
                     <View
-                      className={`absolute right-2 top-2 rounded-full px-2 py-1 ${isDark ? "bg-dark-surface/90" : "bg-white/90"}`}
+                      className="absolute right-2 top-2 rounded-full px-2 py-1 bg-surface-raised/90"
                     >
                       <Text
-                        className={`text-xs font-semibold ${isDark ? "text-dark-text" : "text-text-primary"}`}
+                        className="text-xs font-semibold text-text-primary"
                       >
                         {product.price}
                       </Text>
@@ -50,7 +47,7 @@ const ProductDisplayComponent: React.FC<Props> = ({
 
                   <View className="px-3 pt-2 pb-3">
                     <Text
-                      className={`text-sm font-semibold ${isDark ? "text-dark-text" : "text-text-primary"}`}
+                      className="text-sm font-semibold text-text-primary"
                       numberOfLines={1}
                     >
                       {product.name}
@@ -58,28 +55,28 @@ const ProductDisplayComponent: React.FC<Props> = ({
                     <View className="flex-row justify-between mt-2 gap-2">
                       <TouchableOpacity
                         onPress={() => onAdd?.(product)}
-                        className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full min-h-[36px] justify-center ${isDark ? "bg-dark-elevated" : "bg-bg-muted"}`}
+                        className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full min-h-[36px] justify-center bg-surface-sunken"
                         activeOpacity={0.7}
                         accessibilityRole="button"
                         accessibilityLabel={`Add ${product.name} to cart`}
                       >
                         <ShoppingCart size={16} color={mutedIconColor} />
                         <Text
-                          className={`text-xs font-medium ${isDark ? "text-dark-text" : "text-text-primary"}`}
+                          className="text-xs font-medium text-text-primary"
                         >
                           Add
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={() => onChat?.(product)}
-                        className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full min-h-[36px] justify-center ${isDark ? "bg-dark-elevated" : "bg-bg-muted"}`}
+                        className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full min-h-[36px] justify-center bg-surface-sunken"
                         activeOpacity={0.7}
                         accessibilityRole="button"
                         accessibilityLabel={`Message seller about ${product.name}`}
                       >
                         <MessageCircle size={16} color={mutedIconColor} />
                         <Text
-                          className={`text-xs font-medium ${isDark ? "text-dark-text" : "text-text-primary"}`}
+                          className="text-xs font-medium text-text-primary"
                         >
                           Chat
                         </Text>

@@ -63,15 +63,15 @@ const SingleCommentComponent = React.memo(({ comment, isDark, grouped = false }:
       <View className="flex h-full flex-1 flex-col items-start justify-start">
         {grouped ? null : (
           <View className="flex w-full flex-row items-start justify-start gap-x-3">
-            <Text className={`text-sm font-bold leading-normal tracking-[0.015em] text-text-primary`}>
+            <Text className="text-sm font-bold leading-normal tracking-[0.015em] text-text-primary">
               {comment.user.username}
             </Text>
-            <Text className={`text-sm font-normal leading-normal text-text-secondary`}>
+            <Text className="text-sm font-normal leading-normal text-text-secondary">
               {parseDate(comment.created_at)}
             </Text>
           </View>
         )}
-        <Text className={`text-sm font-normal leading-normal text-text-primary`}>
+        <Text className="text-sm font-normal leading-normal text-text-primary">
           {comment.content}
         </Text>
       </View>
@@ -332,14 +332,14 @@ export default function PostDetailsScreen() {
   const renderListHeader = () => (
     <View>
       {/* Header Bar */}
-      <View className={`flex items-center p-4 pb-2 flex-row bg-surface-raised`}>
+      <View className="flex items-center p-4 pb-2 flex-row bg-surface-raised">
         <TouchableOpacity
           className="flex size-12 shrink-0 items-center justify-center"
           onPress={() => router.back()}
         >
           <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>
-        <Text className={`text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12 text-text-primary`}>
+        <Text className="text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12 text-text-primary">
           Post
         </Text>
       </View>
@@ -352,24 +352,24 @@ export default function PostDetailsScreen() {
         activeOpacity={0.7}
         accessibilityRole="button"
         accessibilityLabel={`View ${post.user?.username ?? "author"}'s profile`}
-        className={`flex flex-row gap-3 min-h-[64px] py-2 px-4 items-center bg-surface-raised`}
+        className="flex flex-row gap-3 min-h-[64px] py-2 px-4 items-center bg-surface-raised"
       >
         <Avatar uri={post.user?.profile_picture_url} name={post.user?.username} size={48} />
         <View className="flex flex-col justify-center">
-          <Text className={`text-base font-bold leading-normal line-clamp-1 text-text-primary`}>
+          <Text className="text-base font-bold leading-normal line-clamp-1 text-text-primary">
             {post.user.username}
           </Text>
         </View>
       </TouchableOpacity>
 
       {/* Caption */}
-      <Text className={`text-base font-normal leading-normal pb-3 pt-1 px-4 text-text-primary`}>
+      <Text className="text-base font-normal leading-normal pb-3 pt-1 px-4 text-text-primary">
         {post.caption}
       </Text>
 
       {/* Media — Instagram-style grid (max 5), tap any tile for fullscreen */}
       {postMedia.length > 0 && (
-        <View className={`flex w-full grow px-4 pb-3 bg-surface-raised`}>
+        <View className="flex w-full grow px-4 pb-3 bg-surface-raised">
           <PostMediaGrid media={postMedia} />
         </View>
       )}
@@ -385,16 +385,16 @@ export default function PostDetailsScreen() {
         <View className="flex items-stretch justify-between gap-4 rounded flex-row">
           <View className="flex flex-[2_2_0px] flex-col gap-4">
             <View className="flex flex-col gap-1">
-              <Text className={`text-sm font-normal leading-normal text-text-secondary`}>
+              <Text className="text-sm font-normal leading-normal text-text-secondary">
                 Featured product
               </Text>
               <Text
                 numberOfLines={2}
-                className={`text-base font-bold leading-tight text-text-primary`}
+                className="text-base font-bold leading-tight text-text-primary"
               >
                 {sponsoredProduct.name}
               </Text>
-              <Text className={`text-sm font-normal leading-normal text-text-secondary`}>
+              <Text className="text-sm font-normal leading-normal text-text-secondary">
                 {formatNaira(sponsoredProduct.price)}
               </Text>
             </View>
@@ -408,7 +408,7 @@ export default function PostDetailsScreen() {
               {addingToCart ? (
                 <ActivityIndicator size="small" color={t.textPrimary} />
               ) : (
-                <Text className={`text-sm font-medium leading-normal truncate text-text-primary`}>
+                <Text className="text-sm font-medium leading-normal truncate text-text-primary">
                   Add to Cart
                 </Text>
               )}
@@ -420,14 +420,14 @@ export default function PostDetailsScreen() {
               className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded flex-1"
             />
           ) : (
-            <View className={`flex-1 aspect-video rounded bg-surface-sunken`} />
+            <View className="flex-1 aspect-video rounded bg-surface-sunken" />
           )}
         </View>
       </TouchableOpacity>
       )}
 
-      <View className={`mx-4 pt-2 border-t border-border-strong`}>
-        <Text className={`text-sm mb-1 ${"text-text-secondary"}`}>
+      <View className="mx-4 pt-2 border-t border-border-strong">
+        <Text className="text-sm mb-1 text-text-secondary">
           {parseDate(post.created_at)}
         </Text>
         <PostActionBar
@@ -445,7 +445,7 @@ export default function PostDetailsScreen() {
       </View>
 
       {/* Comments Header */}
-      <Text className={`text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4 text-text-primary`}>
+      <Text className="text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4 text-text-primary">
         Comments
       </Text>
     </View>
@@ -493,18 +493,18 @@ export default function PostDetailsScreen() {
         />
 
           <View style={{ paddingBottom: keyboardVisible ? 0 : insets.bottom }}>
-            <View className={`px-4 py-2 border-t ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
+            <View className="px-4 py-2 border-t bg-surface-raised border-border">
               <View className="flex-row items-center gap-3">
                 <Avatar uri={myAvatarUri} name={myDisplayName} size={40} />
 
               {/* Input + Icons */}
-              <View className={`flex-1 flex-row items-center rounded px-3 bg-surface-sunken`}>
+              <View className="flex-1 flex-row items-center rounded px-3 bg-surface-sunken">
                 {/* Text Input */}
                 <TextInput
                   ref={commentInputRef}
                   placeholder="Add a comment..."
                   placeholderTextColor={t.textSecondary}
-                  className={`flex-1 text-base font-normal py-2 text-text-primary`}
+                  className="flex-1 text-base font-normal py-2 text-text-primary"
                   value={newComment}
                   onChangeText={setNewComment}
                   multiline

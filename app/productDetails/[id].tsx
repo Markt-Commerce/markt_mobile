@@ -15,7 +15,6 @@ import { formatNaira } from "../../utils/formatCurrency";
 import { isOwnProductListing } from "../../utils/chatGuards";
 import { normalizeUri, resolveMediaUri } from "../../utils/imageUri";
 import Avatar from "../../components/Avatar";
-import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import { StarRating } from "../../components/StarRating";
 import ProductReviews from "../../components/ProductReviews";
@@ -45,8 +44,6 @@ export default function ProductDetails() {
   // ids (causing the FlatList "same key" error).
   const fetchingSimilarRef = useRef(false);
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
 
   const toggleDetail = (key: string) => {
@@ -196,7 +193,7 @@ const addProductToCart = async (product:ProductDetail)=>{
       ListHeaderComponent={
         <>
 
-        <View className={isDark ? "bg-surface-raised" : "bg-white"}>
+        <View className={"bg-surface-raised"}>
         {/* Header */}
         <View className="flex-row items-center justify-between p-4 pb-2">
           <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -209,7 +206,7 @@ const addProductToCart = async (product:ProductDetail)=>{
 
         {/* Image Carousel */}
         {product.images && product.images.length > 0 && (
-          <View className={isDark ? "bg-surface-sunken" : "bg-surface"}>
+          <View className={"bg-surface-sunken"}>
             <FlatList
               data={product.images}
               keyExtractor={(_, idx) => idx.toString()}
@@ -236,8 +233,8 @@ const addProductToCart = async (product:ProductDetail)=>{
                         />
                       </Pressable>
                     ) : (
-                      <View className={`h-80 w-full items-center justify-center bg-surface-sunken`}>
-                        <Text className={`text-sm text-text-secondary`}>No image</Text>
+                      <View className="h-80 w-full items-center justify-center bg-surface-sunken">
+                        <Text className="text-sm text-text-secondary">No image</Text>
                       </View>
                     )}
                   </View>
@@ -276,7 +273,7 @@ const addProductToCart = async (product:ProductDetail)=>{
         {role === "buyer" && (
             <View className="flex-row justify-center gap-4 px-6 py-4">
               <TouchableOpacity
-                className={`flex-1 rounded h-12 justify-center items-center border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
+                className="flex-1 rounded h-12 justify-center items-center border bg-surface-sunken border-border"
                 disabled={addedToCart || isOwnProduct}
                 style={{
                   backgroundColor: addedToCart ? t.successText : undefined,
@@ -304,8 +301,8 @@ const addProductToCart = async (product:ProductDetail)=>{
                   )}
                 </TouchableOpacity>
               ) : isOwnProduct ? (
-                <View className={`flex-1 rounded h-12 justify-center items-center px-2 bg-surface-sunken`}>
-                  <Text className={`text-xs text-center font-bold text-text-secondary`}>Your listing</Text>
+                <View className="flex-1 rounded h-12 justify-center items-center px-2 bg-surface-sunken">
+                  <Text className="text-xs text-center font-bold text-text-secondary">Your listing</Text>
                 </View>
               ) : null}
             </View>
@@ -314,39 +311,39 @@ const addProductToCart = async (product:ProductDetail)=>{
 
         {/* Product Info */}
         <View className="px-6">
-          <Text className={`text-2xl font-bold text-text-primary`}>{product.name}</Text>
-          <Text className={`text-base mt-1 text-text-secondary`}>sold by {product.seller.shop_name}</Text>
-          <Text className={`text-xl font-bold mt-3 text-text-primary`}>{formatNaira(product.price)}</Text>
+          <Text className="text-2xl font-bold text-text-primary">{product.name}</Text>
+          <Text className="text-base mt-1 text-text-secondary">sold by {product.seller.shop_name}</Text>
+          <Text className="text-xl font-bold mt-3 text-text-primary">{formatNaira(product.price)}</Text>
         </View>
 
         {/* Quantity Selection */}
         <View className="px-6 py-6">
-          <Text className={`font-bold text-sm mb-3 text-text-primary`}>Quantity</Text>
+          <Text className="font-bold text-sm mb-3 text-text-primary">Quantity</Text>
           <View className="flex-row items-center gap-4">
             <TouchableOpacity
               onPress={() => setQuantity((q) => Math.max(1, q - 1))}
-              className={`h-10 w-10 rounded justify-center items-center border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
+              className="h-10 w-10 rounded justify-center items-center border bg-surface-sunken border-border"
             >
-              <Text className={`text-xl font-bold text-text-primary`}>−</Text>
+              <Text className="text-xl font-bold text-text-primary">−</Text>
             </TouchableOpacity>
-            <Text className={`text-lg font-bold text-text-primary`}>{quantity}</Text>
+            <Text className="text-lg font-bold text-text-primary">{quantity}</Text>
             <TouchableOpacity
               onPress={() => product.stock && setQuantity((q) => Math.min(product.stock, q + 1))}
-              className={`h-10 w-10 rounded justify-center items-center border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
+              className="h-10 w-10 rounded justify-center items-center border bg-surface-sunken border-border"
             >
-              <Text className={`text-xl font-bold text-text-primary`}>+</Text>
+              <Text className="text-xl font-bold text-text-primary">+</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Collapsible Details */}
         <View className="mt-2">
-          <View className={`border-t px-6 border-border-strong`}>
+          <View className="border-t px-6 border-border-strong">
             <Pressable
               onPress={() => toggleDetail("details")}
               className="flex-row justify-between items-center py-5"
             >
-              <Text className={`font-bold text-sm text-text-primary`}>
+              <Text className="font-bold text-sm text-text-primary">
                 The Details
               </Text>
               <ArrowBigDown
@@ -356,7 +353,7 @@ const addProductToCart = async (product:ProductDetail)=>{
               />
             </Pressable>
             {openDetails.details && (
-              <Text className={`text-sm pb-5 leading-6 text-text-secondary`}>
+              <Text className="text-sm pb-5 leading-6 text-text-secondary">
                 {product.description}
               </Text>
             )}
@@ -365,7 +362,7 @@ const addProductToCart = async (product:ProductDetail)=>{
 
         {/* Seller Info */}
         <View className="px-6 pt-10">
-          <Text className={`text-xl font-bold text-text-primary`}>Seller Information</Text>
+          <Text className="text-xl font-bold text-text-primary">Seller Information</Text>
           <View className="flex-row items-center gap-4 py-6">
             <Avatar
               uri={normalizeUri(product.seller?.profile_picture_url) ?? undefined}
@@ -374,7 +371,7 @@ const addProductToCart = async (product:ProductDetail)=>{
               className="rounded"
             />
             <View>
-              <Text className={`font-bold text-base text-text-primary`}>{product.seller.shop_name}</Text>
+              <Text className="font-bold text-base text-text-primary">{product.seller.shop_name}</Text>
               {/* Was `Average Rating: 0` as plain text -- unreadable at a
                   glance, and it printed a raw 0 for every seller because
                   nothing populated the column until markt_python #93. */}
@@ -388,7 +385,7 @@ const addProductToCart = async (product:ProductDetail)=>{
                   />
                 </View>
               ) : (
-                <Text className={`text-sm mt-1 text-text-secondary`}>
+                <Text className="text-sm mt-1 text-text-secondary">
                   No ratings yet
                 </Text>
               )}
@@ -408,39 +405,39 @@ const addProductToCart = async (product:ProductDetail)=>{
           </View>
         </View>
 
-        <View className={`h-4 ${isDark ? "bg-surface-raised" : "bg-surface"}`} />
+        <View className="h-4 bg-surface-sunken" />
       </View>
 
           {/* Title before similar products */}
-          <Text className={`px-6 pt-10 pb-4 text-xl font-bold text-text-primary`}>
+          <Text className="px-6 pt-10 pb-4 text-xl font-bold text-text-primary">
             Other Similar Products
           </Text>
         </>
       }
       renderItem={({ item }) => (
         <View className="px-4 pt-4 w-[50%]">
-          <View className={`rounded overflow-hidden border ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
+          <View className="rounded overflow-hidden border bg-surface-raised border-border">
             <Link href={`/productDetails/${item.id}`} asChild>
               <TouchableOpacity activeOpacity={0.85}>
                 {resolveMediaUri(item.images?.[0]?.media) ? (
                   <ImageBackground
                     source={{ uri: resolveMediaUri(item.images?.[0]?.media)! }}
-                    className={`w-full aspect-square bg-surface-sunken`}
+                    className="w-full aspect-square bg-surface-sunken"
                     resizeMode="cover"
                   >
-                    <View className={`absolute right-3 top-3 rounded px-3 py-1 border ${isDark ? "bg-surface-raised/90 border-border-strong" : "bg-white/90 border-border"}`}>
-                      <Text className={`text-xs font-bold text-text-primary`}>
+                    <View className="absolute right-3 top-3 rounded px-3 py-1 border bg-surface-raised/90 border-border">
+                      <Text className="text-xs font-bold text-text-primary">
                         {formatNaira(item.price)}
                       </Text>
                     </View>
                   </ImageBackground>
                 ) : (
-                  <View className={`w-full aspect-square items-center justify-center bg-surface-sunken`}>
-                    <Text className={`text-sm text-text-secondary`}>No image</Text>
+                  <View className="w-full aspect-square items-center justify-center bg-surface-sunken">
+                    <Text className="text-sm text-text-secondary">No image</Text>
                   </View>
                 )}
                 <View className="px-4 pt-3 pb-4">
-                  <Text className={`text-sm font-bold text-text-primary`} numberOfLines={1}>
+                  <Text className="text-sm font-bold text-text-primary" numberOfLines={1}>
                     {item.name}
                   </Text>
                 </View>
@@ -457,17 +454,17 @@ const addProductToCart = async (product:ProductDetail)=>{
                       show({ variant: "error", title: "Could not add", message: "Please try again." });
                     }
                   }}
-                  className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded bg-surface-sunken`}
+                  className="flex-row items-center gap-1.5 px-3 py-1.5 rounded bg-surface-sunken"
                 >
                   <ShoppingCart size={14} color={t.textSecondary} />
-                  <Text className={`text-[11px] font-bold text-text-primary`}>Add</Text>
+                  <Text className="text-[11px] font-bold text-text-primary">Add</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => router.push(`/productDetails/${item.id}`)}
-                  className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded bg-surface-sunken`}
+                  className="flex-row items-center gap-1.5 px-3 py-1.5 rounded bg-surface-sunken"
                 >
                   <MessageCircle size={14} color={t.textSecondary} />
-                  <Text className={`text-[11px] font-bold text-text-primary`}>Chat</Text>
+                  <Text className="text-[11px] font-bold text-text-primary">Chat</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -490,8 +487,8 @@ const addProductToCart = async (product:ProductDetail)=>{
       ListEmptyComponent={
         !loading ? (
           <View className="items-center justify-center py-16">
-            <Text className={`font-semibold text-base text-text-primary`}>No items yet</Text>
-            <Text className={`text-sm mt-1 text-text-secondary`}>
+            <Text className="font-semibold text-base text-text-primary">No items yet</Text>
+            <Text className="text-sm mt-1 text-text-secondary">
               Pull up to load more or create something new.
             </Text>
           </View>

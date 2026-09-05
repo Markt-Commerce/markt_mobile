@@ -12,7 +12,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { WebView, type WebViewNavigation } from "react-native-webview";
 import { ArrowLeft } from "lucide-react-native";
-import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { verifyWalletTopUp } from "../../services/sections/wallet";
@@ -26,8 +25,6 @@ import {
 export default function WalletTopUpScreen() {
   const router = useRouter();
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
 
   const { authorization_url, topup_id } = useLocalSearchParams<{
@@ -111,10 +108,10 @@ export default function WalletTopUpScreen() {
   if (verifying) {
     return (
       <SafeAreaView
-        className={`flex-1 items-center justify-center bg-surface-raised`}
+        className="flex-1 items-center justify-center bg-surface-raised"
       >
         <ActivityIndicator size="large" color={t.textPrimary} />
-        <Text className={`mt-3 text-sm text-text-secondary`}>
+        <Text className="mt-3 text-sm text-text-secondary">
           Confirming top-up…
         </Text>
       </SafeAreaView>
@@ -124,10 +121,10 @@ export default function WalletTopUpScreen() {
   if (!authorization_url) {
     return (
       <SafeAreaView
-        className={`flex-1 items-center justify-center px-6 bg-surface-raised`}
+        className="flex-1 items-center justify-center px-6 bg-surface-raised"
       >
         <Text
-          className={`text-center font-semibold text-text-primary`}
+          className="text-center font-semibold text-text-primary"
         >
           Payment link unavailable
         </Text>
@@ -144,7 +141,7 @@ export default function WalletTopUpScreen() {
 
   return (
     <SafeAreaView
-      className={`flex-1 bg-surface-raised`}
+      className="flex-1 bg-surface-raised"
       edges={["top", "left", "right", "bottom"]}
     >
       <View className="flex-row items-center px-4 py-3">
@@ -157,7 +154,7 @@ export default function WalletTopUpScreen() {
           <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
-          className={`ml-3 text-base font-semibold text-text-primary`}
+          className="ml-3 text-base font-semibold text-text-primary"
         >
           Fund wallet
         </Text>

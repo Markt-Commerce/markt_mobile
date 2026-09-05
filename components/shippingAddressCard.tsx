@@ -41,21 +41,21 @@ export default function ShippingAddressCard({
   const showForm = !loading && (editing || !usable);
 
   const fieldClass = `rounded h-11 px-3 text-sm border ${
-    isDark ? "bg-surface-raised border-border-strong text-text-primary" : "bg-white border-border text-black"
+    "bg-surface-raised border-border text-text-primary"
   }`;
   const labelClass = `text-xs font-bold mb-1 text-text-secondary`;
   const placeholderColor = tokensFor(isDark).textMuted;
 
   return (
-    <View className={`rounded border p-4 mb-4 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
+    <View className="rounded border p-4 mb-4 bg-surface-raised border-border">
       <View className="flex-row items-center justify-between mb-2">
-        <Text className={`text-sm font-bold text-text-primary`}>
+        <Text className="text-sm font-bold text-text-primary">
           Shipping Address
         </Text>
         {!loading && usable && (
           <TouchableOpacity onPress={() => setEditing((e) => !e)} className="flex-row items-center gap-1">
             <Pencil size={14} color={tokensFor(isDark).textSecondary} />
-            <Text className={`text-xs font-bold text-text-secondary`}>
+            <Text className="text-xs font-bold text-text-secondary">
               {editing ? "Done" : "Edit"}
             </Text>
           </TouchableOpacity>
@@ -65,14 +65,14 @@ export default function ShippingAddressCard({
       {loading ? (
         <View className="flex-row items-center gap-2 py-2">
           <ActivityIndicator size="small" color={tokensFor(isDark).textPrimary} />
-          <Text className={`text-xs text-text-secondary`}>Resolving your address…</Text>
+          <Text className="text-xs text-text-secondary">Resolving your address…</Text>
         </View>
       ) : !showForm ? (
         <View className="flex-row items-start gap-2">
           <MapPin size={16} color={tokensFor(isDark).textSecondary} style={{ marginTop: 2 }} />
           <View className="flex-1">
-            <Text className={`text-sm text-text-primary`}>{formatSummary(address!)}</Text>
-            <Text className={`text-[10px] mt-1 uppercase tracking-wider text-text-secondary`}>
+            <Text className="text-sm text-text-primary">{formatSummary(address!)}</Text>
+            <Text className="text-[10px] mt-1 uppercase tracking-wider text-text-secondary">
               {source === "saved" ? "Saved address" : source === "geolocation" ? "Current location" : "Entered manually"}
             </Text>
           </View>
@@ -80,7 +80,7 @@ export default function ShippingAddressCard({
       ) : (
         <View className="gap-3">
           {!usable && (
-            <Text className={`text-xs text-text-secondary`}>
+            <Text className="text-xs text-text-secondary">
               We need a shipping address before you can check out.
             </Text>
           )}
@@ -88,14 +88,14 @@ export default function ShippingAddressCard({
           <TouchableOpacity
             onPress={() => useCurrentLocation()}
             disabled={locating}
-            className={`flex-row items-center justify-center gap-2 h-11 rounded border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
+            className="flex-row items-center justify-center gap-2 h-11 rounded border bg-surface-sunken border-border"
           >
             {locating ? (
               <ActivityIndicator size="small" color={tokensFor(isDark).textPrimary} />
             ) : (
               <MapPin size={16} color={tokensFor(isDark).textPrimary} />
             )}
-            <Text className={`text-xs font-bold uppercase tracking-wider text-text-primary`}>
+            <Text className="text-xs font-bold uppercase tracking-wider text-text-primary">
               Use current location
             </Text>
           </TouchableOpacity>

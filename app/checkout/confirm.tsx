@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from "rea
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, AlertTriangle } from "lucide-react-native";
-import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 
 /** 11.5: itemised fee breakdown, shown before the buyer is sent to
@@ -12,8 +11,6 @@ import { useTokens } from "../../theme/useTokens";
  * re-fetch here. */
 export default function CheckoutConfirm() {
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const [proceeding, setProceeding] = useState(false);
 
@@ -73,24 +70,24 @@ export default function CheckoutConfirm() {
 
   const Row = ({ label, value, muted }: { label: string; value: string; muted?: boolean }) => (
     <View className="flex-row justify-between py-2">
-      <Text className={`text-sm ${muted ? (isDark ? "text-text-secondary" : "text-tertiary") : isDark ? "text-text-primary" : "text-black"}`}>
+      <Text className={`text-sm ${muted ? ("text-text-secondary") : "text-text-primary"}`}>
         {label}
       </Text>
-      <Text className={`text-sm font-bold text-text-primary`}>{value}</Text>
+      <Text className="text-sm font-bold text-text-primary">{value}</Text>
     </View>
   );
 
   return (
     <SafeAreaView
-      className={`flex-1 justify-between bg-surface-raised`}
+      className="flex-1 justify-between bg-surface-raised"
       edges={["top", "left", "right", "bottom"]}
     >
       <ScrollView>
-        <View className={`flex-row items-center px-4 py-3 bg-surface-raised`}>
+        <View className="flex-row items-center px-4 py-3 bg-surface-raised">
           <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
             <ArrowLeft size={24} color={t.textPrimary} />
           </TouchableOpacity>
-          <Text className={`ml-3 text-lg font-bold text-text-primary`}>
+          <Text className="ml-3 text-lg font-bold text-text-primary">
             Confirm order
           </Text>
         </View>
@@ -98,10 +95,10 @@ export default function CheckoutConfirm() {
         {isMultiMarket ? (
           <View className="px-6 mt-2">
             <View
-              className={`flex-row gap-3 rounded border p-4 ${"bg-warning-muted border-warning/40"}`}
+              className="flex-row gap-3 rounded border p-4 bg-warning-muted border-warning/40"
             >
               <AlertTriangle size={18} color={t.warningText} />
-              <Text className={`flex-1 text-xs text-text-primary`}>
+              <Text className="flex-1 text-xs text-text-primary">
                 Your items come from {deliveryCount} different markets, so this order needs{" "}
                 {deliveryCount} separate deliveries. The shipping fee below covers all of them.
               </Text>
@@ -110,7 +107,7 @@ export default function CheckoutConfirm() {
         ) : null}
 
         <View className="px-6 mt-2">
-          <View className={`rounded border p-6 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
+          <View className="rounded border p-6 bg-surface-raised border-border">
             <Row label="Subtotal" value={formatMoney(subtotal)} muted />
             <Row
               label={isMultiMarket ? `Shipping fee (${deliveryCount} deliveries)` : "Shipping fee"}
@@ -126,10 +123,10 @@ export default function CheckoutConfirm() {
               />
             ) : null}
 
-            <View className={`h-[1px] my-4 ${"bg-border"}`} />
+            <View className="h-[1px] my-4 bg-border" />
             <Row label="Total charged today" value={formatMoney(amount)} />
 
-            <Text className={`text-xs mt-4 text-text-secondary`}>
+            <Text className="text-xs mt-4 text-text-secondary">
               {reliabilityOptedIn
                 ? `Max you could be charged (worst case, if a substitution happens): ${formatMoney(capture_ceiling)}.`
                 : `Max you could be charged (worst case, if a substitution happens): ${formatMoney(capture_ceiling)}. This excludes the reliability fee since you didn't opt in.`}
@@ -138,7 +135,7 @@ export default function CheckoutConfirm() {
         </View>
       </ScrollView>
 
-      <View className={`px-4 py-3 bg-surface-raised`}>
+      <View className="px-4 py-3 bg-surface-raised">
         <TouchableOpacity
           onPress={handlePayNow}
           disabled={proceeding || !payment_id}

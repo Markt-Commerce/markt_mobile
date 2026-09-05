@@ -43,11 +43,11 @@ function Stat({
 }) {
   return (
     <View className="items-center flex-1">
-      <Text className={`text-xl font-bold text-text-primary`}>
+      <Text className="text-xl font-bold text-text-primary">
         {value.toLocaleString()}
       </Text>
       <Text
-        className={`font-bold text-[10px] tracking-[1.5px] uppercase mt-1 text-text-secondary`}
+        className="font-bold text-[10px] tracking-[1.5px] uppercase mt-1 text-text-secondary"
       >
         {label}
       </Text>
@@ -119,13 +119,13 @@ export default function PublicProfileScreen() {
     }
   };
 
-  const label = isDark ? "text-text-primary" : "text-black";
-  const muted = isDark ? "text-text-secondary" : "text-tertiary";
-  const card = isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border";
+  const label = "text-text-primary";
+  const muted = "text-text-secondary";
+  const card = "bg-surface-raised border-border";
 
   return (
     <SafeAreaView
-      className={`flex-1 bg-surface-raised`}
+      className="flex-1 bg-surface-raised"
       edges={["top", "left", "right", "bottom"]}
     >
       <ScreenHeader title="Profile" onBack={() => router.back()} />
@@ -210,7 +210,7 @@ export default function PublicProfileScreen() {
             >
               <View className="flex-row items-center gap-3">
                 <View
-                  className={`w-11 h-11 rounded items-center justify-center bg-surface-sunken`}
+                  className="w-11 h-11 rounded items-center justify-center bg-surface-sunken"
                 >
                   <Store size={20} color={t.primaryText} strokeWidth={1.8} />
                 </View>

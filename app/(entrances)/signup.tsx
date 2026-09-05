@@ -22,7 +22,6 @@ import { useWatch } from "react-hook-form";
 import { getPasswordStrength } from "../../utils/passwordStrength";
 import Button from "../../components/button";
 import { Check, Circle } from "lucide-react-native";
-import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 
 // --- Validation schema ---
@@ -50,8 +49,6 @@ export default function SignupScreen() {
   const { setRole, role } = useUser();
   const { regData, setRegData } = useRegData();
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const iconColor = t.textPrimary;
   const mutedIconColor = t.textSecondary;
@@ -97,14 +94,14 @@ export default function SignupScreen() {
   };
 
   const RoleToggle = () => (
-    <View className={`flex-row items-center rounded p-1 bg-surface-sunken`}>
+    <View className="flex-row items-center rounded p-1 bg-surface-sunken">
       <TouchableOpacity
         onPress={() => setUserRole("buyer")}
         className={`flex-1 py-2.5 rounded items-center ${
           role === "buyer" ? "bg-primary shadow-sm" : "shadow-none"
         }`}
       >
-        <Text className={`font-bold text-sm ${role === "buyer" ? "text-white" : isDark ? "text-text-secondary" : "text-tertiary"}`}>
+        <Text className={`font-bold text-sm ${role === "buyer" ? "text-white" : "text-text-secondary"}`}>
           Buyer
         </Text>
       </TouchableOpacity>
@@ -114,7 +111,7 @@ export default function SignupScreen() {
           role === "seller" ? "bg-primary shadow-sm" : "shadow-none"
         }`}
       >
-        <Text className={`font-bold text-sm ${role === "seller" ? "text-white" : isDark ? "text-text-secondary" : "text-tertiary"}`}>
+        <Text className={`font-bold text-sm ${role === "seller" ? "text-white" : "text-text-secondary"}`}>
           Seller
         </Text>
       </TouchableOpacity>
@@ -122,7 +119,7 @@ export default function SignupScreen() {
   );
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-surface-sunken" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-raised">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -137,7 +134,7 @@ export default function SignupScreen() {
             <View className="flex-row items-center mb-8">
               <TouchableOpacity
                 onPress={() => router.back()}
-                className={`h-10 w-10 items-center justify-center rounded border ${isDark ? "bg-surface-raised border-border-strong" : "bg-surface border-border"}`}
+                className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <ArrowLeft size={20} color={iconColor} />
@@ -146,25 +143,25 @@ export default function SignupScreen() {
 
             {/* Title */}
             <View className="mb-8">
-              <Text className={`text-[32px] font-bold leading-tight text-text-primary`}>
+              <Text className="text-[32px] font-bold leading-tight text-text-primary">
                 Create{"\n"}account
               </Text>
-              <Text className={`text-base mt-2 text-text-secondary`}>
+              <Text className="text-base mt-2 text-text-secondary">
                 Join Markt to start shopping or selling.
               </Text>
             </View>
 
             {/* Panel */}
-            <View className={`rounded border px-5 py-8 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
+            <View className="rounded border px-5 py-8 bg-surface-raised border-border">
               {/* Role selection */}
               <View className="mb-8">
-                <Text className={`mb-3 text-sm font-bold ${isDark ? "text-text-primary" : "text-secondary"}`}>I want to be a</Text>
+                <Text className="mb-3 text-sm font-bold text-text-primary">I want to be a</Text>
                 <RoleToggle />
               </View>
 
               {/* Email */}
               <View className="mb-6">
-                <Text className={`mb-2 text-sm font-bold ${isDark ? "text-text-primary" : "text-secondary"}`}>Email Address</Text>
+                <Text className="mb-2 text-sm font-bold text-text-primary">Email Address</Text>
                 <Input
                   placeholder="you@example.com"
                   control={control}
@@ -177,7 +174,7 @@ export default function SignupScreen() {
 
               {/* Password */}
               <View className="mb-6">
-                <Text className={`mb-2 text-sm font-bold ${isDark ? "text-text-primary" : "text-secondary"}`}>Password</Text>
+                <Text className="mb-2 text-sm font-bold text-text-primary">Password</Text>
                 <PasswordInput
                   placeholder="Min. 8 characters"
                   control={control}
@@ -199,7 +196,7 @@ export default function SignupScreen() {
                               : strength.level <= 3
                                 ? "bg-secondary"
                                 : "bg-success"
-                          : isDark ? "bg-surface-sunken" : "bg-surface"
+                          : "bg-surface-sunken"
                       }`}
                     />
                   ))}
@@ -234,7 +231,7 @@ export default function SignupScreen() {
 
               {/* Confirm Password */}
               <View className="mb-8">
-                <Text className={`mb-2 text-sm font-bold ${isDark ? "text-text-primary" : "text-secondary"}`}>Confirm Password</Text>
+                <Text className="mb-2 text-sm font-bold text-text-primary">Confirm Password</Text>
                 <PasswordInput
                   placeholder="Repeat password"
                   control={control}
@@ -256,8 +253,8 @@ export default function SignupScreen() {
                 onPress={() => router.push("/login")}
                 className="mt-8 items-center"
               >
-                <Text className={`text-sm text-text-secondary`}>
-                  Already have an account? <Text className={`font-bold underline ${isDark ? "text-text-primary" : "text-secondary"}`}>Sign in</Text>
+                <Text className="text-sm text-text-secondary">
+                  Already have an account? <Text className="font-bold underline text-text-primary">Sign in</Text>
                 </Text>
               </TouchableOpacity>
             </View>

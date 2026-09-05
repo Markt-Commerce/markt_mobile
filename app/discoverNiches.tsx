@@ -77,11 +77,11 @@ function CommunityAvatar({
   return (
     <View
       style={{ width: size, height: size, borderRadius: radius }}
-      className={`items-center justify-center bg-surface-sunken`}
+      className="items-center justify-center bg-surface-sunken"
     >
       <Text
         style={{ fontSize: size * 0.36 }}
-        className={`font-bold text-text-secondary`}
+        className="font-bold text-text-secondary"
       >
         {initials}
       </Text>
@@ -159,9 +159,9 @@ export default function CommunitiesScreen() {
     }
   };
 
-  const strong = isDark ? "text-text-primary" : "text-black";
-  const muted = isDark ? "text-text-muted" : "text-tertiary";
-  const hairline = isDark ? "border-border" : "border-border-light";
+  const strong = "text-text-primary";
+  const muted = "text-text-muted";
+  const hairline = "border-border";
 
   const header = useMemo(
     () => (
@@ -183,7 +183,7 @@ export default function CommunitiesScreen() {
                 accessibilityLabel={`Open ${n.name}`}
                 style={{ width: 108 }}
                 className={`rounded-2xl border p-3 items-center ${hairline} ${
-                  isDark ? "bg-surface-raised" : "bg-white"
+                  "bg-surface-raised"
                 }`}
               >
                 <CommunityAvatar niche={n} size={52} isDark={isDark} />

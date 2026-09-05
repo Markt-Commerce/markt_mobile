@@ -46,7 +46,7 @@ function ShopRow({
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={`flex-row items-center px-6 py-4 border-b ${isDark ? "bg-dark-page border-dark-border" : "bg-white border-border"}`}
+      className="flex-row items-center px-6 py-4 border-b bg-surface-page border-border"
       activeOpacity={0.7}
       accessibilityRole="button"
       accessibilityLabel={`View ${label}`}
@@ -54,14 +54,14 @@ function ShopRow({
       <Avatar uri={shop.user?.profile_picture} name={label} size={56} />
       <View className="flex-1 ml-4">
         <Text
-          className={`font-bold text-base ${isDark ? "text-dark-text" : "text-black"}`}
+          className="font-bold text-base text-text-primary"
           numberOfLines={1}
         >
           {label}
         </Text>
         {shop.stats && (
           <Text
-            className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-xs mt-1`}
+            className="text-text-secondary text-xs mt-1"
           >
             {shop.stats.product_count} products · {shop.stats.follower_count}{" "}
             followers
@@ -153,11 +153,11 @@ export default function DiscoverShopsScreen() {
 
   return (
     <SafeAreaView
-      className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}
+      className="flex-1 bg-surface-page"
       edges={["top"]}
     >
       <View
-        className={`flex-row items-center px-6 py-4 border-b ${isDark ? "border-dark-border" : "border-border"}`}
+        className="flex-row items-center px-6 py-4 border-b border-border"
       >
         <TouchableOpacity
           onPress={() => router.back()}
@@ -168,18 +168,18 @@ export default function DiscoverShopsScreen() {
           <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
-          className={`flex-1 text-xl font-bold text-center pr-8 ${isDark ? "text-dark-text" : "text-black"}`}
+          className="flex-1 text-xl font-bold text-center pr-8 text-text-primary"
         >
           Discover Shops
         </Text>
       </View>
 
       <View
-        className={`px-4 py-3 flex-row items-center rounded mx-6 mt-4 ${isDark ? "bg-dark-surface" : "bg-surface"}`}
+        className="px-4 py-3 flex-row items-center rounded mx-6 mt-4 bg-surface-sunken"
       >
         <Search size={20} color={t.textSecondary} />
         <TextInput
-          className={`ml-3 flex-1 text-base ${isDark ? "text-dark-text" : "text-black"}`}
+          className="ml-3 flex-1 text-base text-text-primary"
           placeholder="Search shops..."
           placeholderTextColor={t.textSecondary}
           value={search}
@@ -242,7 +242,7 @@ export default function DiscoverShopsScreen() {
         })}
 
         {categories.length > 0 ? (
-          <View className={`w-px h-5 mx-1 ${"bg-border"}`} />
+          <View className="w-px h-5 mx-1 bg-border" />
         ) : null}
 
         {categories.length > 0 ? (
@@ -298,7 +298,7 @@ export default function DiscoverShopsScreen() {
             color={t.textPrimary}
           />
           <Text
-            className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm mt-2`}
+            className="text-text-secondary text-sm mt-2"
           >
             Loading shops...
           </Text>
@@ -306,12 +306,12 @@ export default function DiscoverShopsScreen() {
       ) : shops.length === 0 ? (
         <View className="flex-1 justify-center items-center px-6 py-16">
           <Text
-            className={`font-semibold text-lg text-center ${isDark ? "text-dark-text" : "text-black"}`}
+            className="font-semibold text-lg text-center text-text-primary"
           >
             No shops found
           </Text>
           <Text
-            className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm mt-2 text-center`}
+            className="text-text-secondary text-sm mt-2 text-center"
           >
             Try a different search or filter.
           </Text>

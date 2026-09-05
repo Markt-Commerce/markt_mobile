@@ -69,7 +69,7 @@ export default function GamificationScreen() {
     >
       <View
         className={`flex-row items-center px-4 py-3 border-b ${
-          isDark ? "border-border-strong" : "border-border"
+          "border-border"
         }`}
       >
         <TouchableOpacity onPress={() => router.back()} className="flex-row items-center">
@@ -77,7 +77,7 @@ export default function GamificationScreen() {
         </TouchableOpacity>
         <Text
           className={`text-lg font-bold ml-2 ${
-            isDark ? "text-text-primary" : "text-black"
+            "text-text-primary"
           }`}
         >
           Your Progress
@@ -98,7 +98,7 @@ export default function GamificationScreen() {
           <View className="items-center py-16 px-6">
             <Text
               className={`text-sm text-center ${
-                isDark ? "text-text-secondary" : "text-tertiary"
+                "text-text-secondary"
               }`}
             >
               {error}
@@ -120,7 +120,7 @@ export default function GamificationScreen() {
             <View className="px-6 pt-6">
               <View
                 className={`rounded border p-6 ${
-                  isDark ? "bg-surface-sunken border-border-strong" : "bg-white border-border"
+                  "bg-surface-raised border-border"
                 }`}
               >
                 <TierBadge
@@ -133,14 +133,14 @@ export default function GamificationScreen() {
                 />
                 <Text
                   className={`font-bold text-[40px] mt-4 ${
-                    isDark ? "text-text-primary" : "text-black"
+                    "text-text-primary"
                   }`}
                 >
                   {data.lifetime_points.toLocaleString()}
                 </Text>
                 <Text
                   className={`text-xs -mt-1 mb-4 ${
-                    isDark ? "text-text-secondary" : "text-tertiary"
+                    "text-text-secondary"
                   }`}
                 >
                   lifetime points
@@ -184,7 +184,7 @@ export default function GamificationScreen() {
               {recent.length === 0 ? (
                 <Text
                   className={`text-sm ${
-                    isDark ? "text-text-secondary" : "text-tertiary"
+                    "text-text-secondary"
                   }`}
                 >
                   No activity yet — earn points by buying, selling and posting.
@@ -194,12 +194,12 @@ export default function GamificationScreen() {
                   <View
                     key={r.id}
                     className={`flex-row items-center justify-between py-3 border-b ${
-                      isDark ? "border-border-strong" : "border-border"
+                      "border-border"
                     }`}
                   >
                     <Text
                       className={`text-sm ${
-                        isDark ? "text-text-primary" : "text-black"
+                        "text-text-primary"
                       }`}
                     >
                       {reasonLabel(r.reason)}
@@ -235,13 +235,13 @@ export default function GamificationScreen() {
             />
             <View
               className={`mx-6 rounded border overflow-hidden ${
-                isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"
+                "bg-surface-raised border-border"
               }`}
             >
               {preview.length === 0 ? (
                 <Text
                   className={`text-sm p-4 ${
-                    isDark ? "text-text-secondary" : "text-tertiary"
+                    "text-text-secondary"
                   }`}
                 >
                   Leaderboard is warming up.
@@ -275,19 +275,19 @@ function StatTile({
   return (
     <View
       className={`flex-1 rounded border p-4 ${
-        isDark ? "bg-surface-sunken border-border-strong" : "bg-white border-border"
+        "bg-surface-raised border-border"
       }`}
     >
       <Text
         className={`text-[10px] font-bold uppercase tracking-wider ${
-          isDark ? "text-text-secondary" : "text-tertiary"
+          "text-text-secondary"
         }`}
       >
         {label}
       </Text>
       <Text
         className={`text-lg font-bold mt-1 ${
-          isDark ? "text-text-primary" : "text-black"
+          "text-text-primary"
         }`}
       >
         {value}
@@ -311,7 +311,7 @@ function SectionHeader({
     <View className="flex-row items-center justify-between px-6 pt-8 pb-3">
       <Text
         className={`text-xl font-bold ${
-          isDark ? "text-text-primary" : "text-black"
+          "text-text-primary"
         }`}
       >
         {title}

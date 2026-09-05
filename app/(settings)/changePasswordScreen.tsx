@@ -5,7 +5,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import { useRouter } from 'expo-router';
 import { usePasswordResetConfirm } from '../../hooks/useAuth';
-import { useTheme } from '../../components/themeProvider';
 import { friendlyErrorMessage } from '../../utils/errorMessages';
 import { useTokens } from "../../theme/useTokens";
 
@@ -15,8 +14,6 @@ export default function ChangePasswordScreen() {
   const [newPassword, setNewPassword] = useState('');
   const reset = usePasswordResetConfirm();
   const nav = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
 
   const onSubmit = async () => {
@@ -39,41 +36,41 @@ export default function ChangePasswordScreen() {
   const canSubmit = !!email.trim() && !!code.trim() && !!newPassword.trim() && !isSubmitting;
 
   return (
-    <SafeAreaView className={`flex-1 bg-surface-raised`}>
-      <ScrollView className={isDark ? "bg-surface-raised" : "bg-white"} contentContainerStyle={{ paddingBottom: 32 }}>
+    <SafeAreaView className="flex-1 bg-surface-raised">
+      <ScrollView className={"bg-surface-raised"} contentContainerStyle={{ paddingBottom: 32 }}>
         <ScreenHeader title="Change Password" onBack={() => nav.back()} />
         <View className="px-6 pt-6">
-          <Text className={`text-sm leading-6 text-text-secondary`}>
+          <Text className="text-sm leading-6 text-text-secondary">
             Enter the email tied to your account, the reset code you received, and a new password.
           </Text>
 
-          <View className={`mt-6 border rounded p-4 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
-            <Text className={`text-sm font-bold mb-2 text-text-primary`}>Email</Text>
+          <View className="mt-6 border rounded p-4 bg-surface-raised border-border">
+            <Text className="text-sm font-bold mb-2 text-text-primary">Email</Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
-              className={`border p-3 rounded mb-4 ${isDark ? "border-border-strong bg-surface-sunken text-text-primary" : "border-border bg-surface text-black"}`}
+              className="border p-3 rounded mb-4 border-border bg-surface-sunken text-text-primary"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
               placeholderTextColor={t.textMuted}
             />
 
-            <Text className={`text-sm font-bold mb-2 text-text-primary`}>Reset Code</Text>
+            <Text className="text-sm font-bold mb-2 text-text-primary">Reset Code</Text>
             <TextInput
               value={code}
               onChangeText={setCode}
-              className={`border p-3 rounded mb-4 ${isDark ? "border-border-strong bg-surface-sunken text-text-primary" : "border-border bg-surface text-black"}`}
+              className="border p-3 rounded mb-4 border-border bg-surface-sunken text-text-primary"
               keyboardType="number-pad"
               autoCapitalize="none"
               placeholderTextColor={t.textMuted}
             />
 
-            <Text className={`text-sm font-bold mb-2 text-text-primary`}>New Password</Text>
+            <Text className="text-sm font-bold mb-2 text-text-primary">New Password</Text>
             <TextInput
               value={newPassword}
               onChangeText={setNewPassword}
-              className={`border p-3 rounded ${isDark ? "border-border-strong bg-surface-sunken text-text-primary" : "border-border bg-surface text-black"}`}
+              className="border p-3 rounded border-border bg-surface-sunken text-text-primary"
               secureTextEntry
               autoCapitalize="none"
               placeholderTextColor={t.textMuted}

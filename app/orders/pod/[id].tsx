@@ -19,14 +19,11 @@ import { ArrowLeft, KeyRound, Clock, Type as TypeIcon } from "lucide-react-nativ
 import QRCode from "react-native-qrcode-svg";
 import { getPodCode } from "../../../services/sections/orders";
 import { PodCode } from "../../../models/orders";
-import { useTheme } from "../../../components/themeProvider";
 import { useTokens } from "../../../theme/useTokens";
 
 export default function OrderPodCodeScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
 
   const [data, setData] = useState<PodCode | null>(null);
@@ -56,22 +53,22 @@ export default function OrderPodCodeScreen() {
     load();
   }, [load]);
 
-  const cardClass = `rounded border p-4 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`;
-  const labelClass = `text-sm ${isDark ? "text-dark-muted" : "text-tertiary"}`;
+  const cardClass = `rounded border p-4 bg-surface-raised border-border`;
+  const labelClass = `text-sm text-text-secondary`;
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-page">
       <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
         <TouchableOpacity
           onPress={() => router.back()}
-          className={`h-10 w-10 rounded items-center justify-center border ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+          className="h-10 w-10 rounded items-center justify-center border bg-surface-raised border-border"
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
           <ArrowLeft size={18} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
-          className={`flex-1 text-center text-lg font-bold -ml-10 ${isDark ? "text-dark-text" : "text-black"}`}
+          className="flex-1 text-center text-lg font-bold -ml-10 text-text-primary"
         >
           Delivery code
         </Text>
@@ -95,7 +92,7 @@ export default function OrderPodCodeScreen() {
           </View>
         ) : error || !data ? (
           <View className="flex-1 justify-center items-center py-16">
-            <Text className={`font-semibold text-lg text-center ${isDark ? "text-dark-text" : "text-black"}`}>
+            <Text className="font-semibold text-lg text-center text-text-primary">
               Could not load your code
             </Text>
             <Text className={`${labelClass} mt-2 text-center`}>Pull down to try again.</Text>
@@ -103,7 +100,7 @@ export default function OrderPodCodeScreen() {
         ) : !data.ready || !data.code ? (
           <View className="flex-1 justify-center items-center py-16">
             <Clock size={32} color={t.textSecondary} />
-            <Text className={`font-semibold text-lg text-center mt-4 ${isDark ? "text-dark-text" : "text-black"}`}>
+            <Text className="font-semibold text-lg text-center mt-4 text-text-primary">
               No code yet
             </Text>
             <Text className={`${labelClass} mt-2 text-center px-6`}>
@@ -122,7 +119,7 @@ export default function OrderPodCodeScreen() {
                   </Text>
                   <Text
                     selectable
-                    className={`mt-4 text-center font-bold text-2xl tracking-[0.15em] ${isDark ? "text-dark-text" : "text-black"}`}
+                    className="mt-4 text-center font-bold text-2xl tracking-[0.15em] text-text-primary"
                   >
                     {data.code}
                   </Text>
@@ -141,7 +138,7 @@ export default function OrderPodCodeScreen() {
               <TouchableOpacity
                 onPress={() => setShowAsText((prev) => !prev)}
                 activeOpacity={0.8}
-                className={`flex-row items-center gap-1.5 mt-5 h-9 px-4 rounded bg-media`}
+                className="flex-row items-center gap-1.5 mt-5 h-9 px-4 rounded bg-media"
                 accessibilityRole="button"
               >
                 {showAsText ? (
@@ -149,7 +146,7 @@ export default function OrderPodCodeScreen() {
                 ) : (
                   <TypeIcon size={14} color={t.textPrimary} />
                 )}
-                <Text className={`text-xs font-bold ${isDark ? "text-dark-text" : "text-black"}`}>
+                <Text className="text-xs font-bold text-text-primary">
                   {showAsText ? "Show QR instead" : "Show code instead"}
                 </Text>
               </TouchableOpacity>

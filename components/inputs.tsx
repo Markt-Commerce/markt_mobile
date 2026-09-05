@@ -51,7 +51,7 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
   return (
     <View className={`w-full ${label ? "mb-5" : ""}`}>
       {label ? (
-        <Text className={`mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary`}>
+        <Text className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary">
           {label}
         </Text>
       ) : null}
@@ -67,7 +67,7 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
               placeholder={placeholder}
               placeholderTextColor={t.textSecondary}
               secureTextEntry={secureTextEntry}
-              className={`w-full rounded ${sizeClass} px-4 text-base ${isDark ? "text-text-primary bg-surface-raised" : "text-secondary bg-background"} border ${
+              className={`w-full rounded ${sizeClass} px-4 text-base text-text-primary bg-surface-raised border ${
                 hasError ? "border-error" : "border-border-strong focus:border-text-primary"
               }`}
               multiline={multiline}
@@ -115,7 +115,7 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
           <>
             <View
               className={`flex-row items-center rounded h-12 px-4 border bg-surface-raised ${
-                hasError ? "border-error" : isFocused ? ("border-text-primary") : isDark ? "border-border-strong" : "border-border"
+                hasError ? "border-error" : isFocused ? ("border-text-primary") : "border-border"
               }`}
             >
               <TextInput
@@ -129,7 +129,7 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
                 placeholder={inputProps.placeholder}
                 placeholderTextColor={tokensFor(isDark).textSecondary}
                 secureTextEntry={!visible}
-                className={`flex-1 text-base ${isDark ? "text-text-primary" : "text-secondary"}`}
+                className="flex-1 text-base text-text-primary"
                 keyboardType={inputProps.keyboardType ?? "default"}
                 textContentType="password"
                 accessibilityLabel={inputProps.placeholder}

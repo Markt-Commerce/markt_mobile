@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { useTheme } from "../themeProvider";
 import type { LeaderboardScope } from "../../types/gamification";
 
 const TABS: { id: LeaderboardScope; label: string }[] = [
@@ -21,13 +20,11 @@ export default function LeaderboardScopeTabs({
   onChange,
   className = "",
 }: LeaderboardScopeTabsProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
 
   return (
     <View
       className={`flex-row rounded p-1 border ${
-        isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"
+        "bg-surface-sunken border-border"
       } ${className}`}
     >
       {TABS.map((t) => {
@@ -42,7 +39,7 @@ export default function LeaderboardScopeTabs({
           >
             <Text
               className={`font-bold text-xs ${
-                active ? "text-white" : isDark ? "text-text-secondary" : "text-tertiary"
+                active ? "text-white" : "text-text-secondary"
               }`}
             >
               {t.label}

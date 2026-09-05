@@ -42,7 +42,6 @@ export default function SettingsProfileScreen() {
   const router = useRouter();
   const { user, role, setUser, profile } = useUser();
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const { show } = useToast();
   const [language, setLanguage] = useState("EN");
@@ -117,9 +116,9 @@ export default function SettingsProfileScreen() {
   };
 
   return (
-    <SafeAreaView className={`flex-1 bg-surface-raised`} edges={["top", "left", "right", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-surface-raised" edges={["top", "left", "right", "bottom"]}>
       <ScrollView
-        className={isDark ? "flex-1 bg-surface-raised" : "flex-1 bg-white"}
+        className={"flex-1 bg-surface-raised"}
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
@@ -128,7 +127,7 @@ export default function SettingsProfileScreen() {
         {/* Centered identity, no card. This was a bordered box holding three
             more bordered chips -- four outlines stacked in one header. The
             tinted band does the separating, so nothing needs an outline. */}
-        <View className={`items-center px-6 pt-4 pb-6 bg-surface-raised`}>
+        <View className="items-center px-6 pt-4 pb-6 bg-surface-raised">
           <Avatar
             uri={profile?.profile_picture_url}
             name={displayName}
@@ -136,13 +135,13 @@ export default function SettingsProfileScreen() {
             className="rounded-full"
           />
           <Text
-            className={`font-bold text-[22px] tracking-tight mt-3 text-text-primary`}
+            className="font-bold text-[22px] tracking-tight mt-3 text-text-primary"
             numberOfLines={1}
           >
             {displayName}
           </Text>
           <Text
-            className={`text-[14px] mt-0.5 text-text-muted`}
+            className="text-[14px] mt-0.5 text-text-muted"
             numberOfLines={1}
           >
             @{profile?.username ?? user?.email ?? "user"}
@@ -156,13 +155,13 @@ export default function SettingsProfileScreen() {
                 {role}
               </Text>
             </View>
-            <View className={`px-3 py-1.5 rounded-full bg-surface-sunken`}>
-              <Text className={`font-bold text-[11px] uppercase tracking-wider text-text-secondary`}>
+            <View className="px-3 py-1.5 rounded-full bg-surface-sunken">
+              <Text className="font-bold text-[11px] uppercase tracking-wider text-text-secondary">
                 {theme}
               </Text>
             </View>
-            <View className={`px-3 py-1.5 rounded-full bg-surface-sunken`}>
-              <Text className={`font-bold text-[11px] uppercase tracking-wider text-text-secondary`}>
+            <View className="px-3 py-1.5 rounded-full bg-surface-sunken">
+              <Text className="font-bold text-[11px] uppercase tracking-wider text-text-secondary">
                 {language}
               </Text>
             </View>
@@ -270,10 +269,10 @@ export default function SettingsProfileScreen() {
             activeOpacity={0.7}
             accessibilityRole="button"
             accessibilityLabel="Sign out"
-            className={`h-13 py-3.5 rounded-xl items-center justify-center flex-row gap-2 bg-surface-sunken`}
+            className="h-13 py-3.5 rounded-xl items-center justify-center flex-row gap-2 bg-surface-sunken"
           >
             <LogOut size={18} color={t.textPrimary} strokeWidth={1.9} />
-            <Text className={`font-semibold text-[15px] ${"text-text-primary"}`}>
+            <Text className="font-semibold text-[15px] text-text-primary">
               Sign out
             </Text>
           </TouchableOpacity>

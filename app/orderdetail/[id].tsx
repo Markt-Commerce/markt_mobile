@@ -76,9 +76,9 @@ export default function OrderDetail() {
   if (loading) {
     return (
       <SafeAreaView
-        className={`flex-1 items-center justify-center ${isDark ? "bg-dark-page" : "bg-white"}`}
+        className="flex-1 items-center justify-center bg-surface-page"
       >
-        <Text className={isDark ? "text-dark-text" : "text-black"}>
+        <Text className={"text-text-primary"}>
           Loading order...
         </Text>
       </SafeAreaView>
@@ -88,9 +88,9 @@ export default function OrderDetail() {
   if (!order) {
     return (
       <SafeAreaView
-        className={`flex-1 items-center justify-center ${isDark ? "bg-dark-page" : "bg-white"}`}
+        className="flex-1 items-center justify-center bg-surface-page"
       >
-        <Text className={isDark ? "text-dark-text" : "text-black"}>
+        <Text className={"text-text-primary"}>
           Order not found
         </Text>
       </SafeAreaView>
@@ -102,19 +102,19 @@ export default function OrderDetail() {
   const orderDate = formatOrderDate(order.created_at);
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-page">
       <ScrollView className="px-6">
         {/* Header */}
         <View className="flex-row items-center py-6">
           <TouchableOpacity
             onPress={() => router.back()}
-            className={`mr-4 h-10 w-10 rounded border items-center justify-center ${isDark ? "bg-dark-surface border-dark-border" : "bg-surface border-border"}`}
+            className="mr-4 h-10 w-10 rounded border items-center justify-center bg-surface-sunken border-border"
           >
             <ArrowLeft size={20} color={iconColor} />
           </TouchableOpacity>
           <View className="flex-1">
             <Text
-              className={`text-xl font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+              className="text-xl font-bold text-text-primary"
             >
               Order #{order.order_number ?? order.id}
             </Text>
@@ -133,14 +133,14 @@ export default function OrderDetail() {
         {/* Buyer */}
         {order.buyer?.buyername ? (
           <View
-            className={`mb-5 pt-5 border-t flex-row items-center gap-3 border-border`}
+            className="mb-5 pt-5 border-t flex-row items-center gap-3 border-border"
           >
             <User size={18} color={mutedColor} />
             <View>
               <Text className="text-xs font-bold uppercase tracking-wider text-tertiary">
                 Buyer
               </Text>
-              <Text className={`text-base font-bold mt-1 ${isDark ? "text-dark-text" : "text-black"}`}>
+              <Text className="text-base font-bold mt-1 text-text-primary">
                 {order.buyer.buyername}
               </Text>
             </View>
@@ -150,7 +150,7 @@ export default function OrderDetail() {
         {/* Shipping Address */}
         {shippingAddressLine ? (
           <View
-            className={`mb-5 pt-5 border-t border-border`}
+            className="mb-5 pt-5 border-t border-border"
           >
             <View className="flex-row items-center gap-2">
               <MapPin size={16} color={mutedColor} />
@@ -159,11 +159,11 @@ export default function OrderDetail() {
               </Text>
             </View>
             {recipientName ? (
-              <Text className={`text-base font-bold mt-2 ${isDark ? "text-dark-text" : "text-black"}`}>
+              <Text className="text-base font-bold mt-2 text-text-primary">
                 {recipientName}
               </Text>
             ) : null}
-            <Text className={`text-sm mt-1 ${isDark ? "text-dark-text" : "text-black"}`}>
+            <Text className="text-sm mt-1 text-text-primary">
               {shippingAddressLine}
             </Text>
           </View>
@@ -172,12 +172,12 @@ export default function OrderDetail() {
         {/* Payment & Notes */}
         {(order.payment_method || order.customer_note) ? (
           <View
-            className={`mb-5 pt-5 border-t border-border`}
+            className="mb-5 pt-5 border-t border-border"
           >
             {order.payment_method ? (
               <View className="flex-row items-center gap-2 mb-3">
                 <CreditCard size={16} color={mutedColor} />
-                <Text className={`text-sm capitalize ${isDark ? "text-dark-text" : "text-black"}`}>
+                <Text className="text-sm capitalize text-text-primary">
                   {order.payment_method.replace(/_/g, " ")}
                 </Text>
               </View>
@@ -185,7 +185,7 @@ export default function OrderDetail() {
             {order.customer_note ? (
               <View className="flex-row items-start gap-2">
                 <FileText size={16} color={mutedColor} style={{ marginTop: 2 }} />
-                <Text className={`text-sm flex-1 ${isDark ? "text-dark-text" : "text-black"}`}>
+                <Text className="text-sm flex-1 text-text-primary">
                   {order.customer_note}
                 </Text>
               </View>
@@ -195,10 +195,10 @@ export default function OrderDetail() {
 
         {/* Items */}
         <View
-          className={`mb-5 pt-5 border-t border-border`}
+          className="mb-5 pt-5 border-t border-border"
         >
           <Text
-            className={`font-bold text-lg mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
+            className="font-bold text-lg mb-4 text-text-primary"
           >
             Items
           </Text>
@@ -219,10 +219,10 @@ export default function OrderDetail() {
 
         {/* Pricing */}
         <View
-          className={`mb-6 pt-5 border-t border-border`}
+          className="mb-6 pt-5 border-t border-border"
         >
           <Text
-            className={`font-bold text-lg mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
+            className="font-bold text-lg mb-4 text-text-primary"
           >
             Summary
           </Text>
@@ -233,7 +233,7 @@ export default function OrderDetail() {
           <Row label="Discount" value={order.discount} isDark={isDark} />
 
           <View
-            className={`h-px my-4 ${isDark ? "bg-dark-border" : "bg-border"}`}
+            className="h-px my-4 bg-border"
           />
 
           <Row label="Total" value={order.total} bold isDark={isDark} />
@@ -299,7 +299,7 @@ function OrderProgress({ status, isDark }: { status?: string; isDark: boolean })
 
   if (terminal) {
     return (
-      <View className={`rounded-2xl p-4 mb-3 ${"bg-danger-muted"}`}>
+      <View className="rounded-2xl p-4 mb-3 bg-danger-muted">
         <Text className="text-danger-text text-[11px] font-bold uppercase tracking-[1.5px]">
           Status
         </Text>
@@ -311,14 +311,14 @@ function OrderProgress({ status, isDark }: { status?: string; isDark: boolean })
   }
 
   return (
-    <View className={`rounded-2xl p-4 mb-3 ${"bg-surface-sunken"}`}>
+    <View className="rounded-2xl p-4 mb-3 bg-surface-sunken">
       <Text
-        className={`text-[11px] font-bold uppercase tracking-[1.5px] text-text-muted`}
+        className="text-[11px] font-bold uppercase tracking-[1.5px] text-text-muted"
       >
         Status
       </Text>
       <Text
-        className={`text-[20px] font-bold mt-1 text-text-primary`}
+        className="text-[20px] font-bold mt-1 text-text-primary"
       >
         {formatStatus(status)}
       </Text>
@@ -368,19 +368,19 @@ function ItemRow({
   const name = product?.name ?? item.product?.name ?? `Product ${item.product_id}`;
 
   return (
-    <View className={`pb-3 mb-3 ${isLast ? "" : `border-b ${isDark ? "border-dark-border" : "border-border"}`}`}>
+    <View className={`pb-3 mb-3 ${isLast ? "" : `border-b border-border`}`}>
       <View className="flex-row justify-between items-start">
         <View className="flex-row flex-1 pr-2 gap-3">
           {imageUrl ? (
-            <Image source={{ uri: imageUrl }} className={`w-12 h-12 rounded bg-media`} />
+            <Image source={{ uri: imageUrl }} className="w-12 h-12 rounded bg-media" />
           ) : (
-            <View className={`w-12 h-12 rounded items-center justify-center bg-media`}>
+            <View className="w-12 h-12 rounded items-center justify-center bg-media">
               <Package size={18} color={tokensFor(isDark).textSecondary} />
             </View>
           )}
           <View className="flex-1">
             <Text
-              className={`text-base font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+              className="text-base font-bold text-text-primary"
             >
               {name}
             </Text>
@@ -393,7 +393,7 @@ function ItemRow({
           </View>
         </View>
         <View className="items-end">
-          <Text className={`text-sm font-bold ${isDark ? "text-dark-text" : "text-black"}`}>
+          <Text className="text-sm font-bold text-text-primary">
             ₦{lineTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </Text>
           <Text className="text-xs text-tertiary mt-0.5">
@@ -419,12 +419,12 @@ function Row({
   return (
     <View className="flex-row justify-between py-2">
       <Text
-        className={`text-sm ${bold ? `font-bold ${isDark ? "text-dark-text" : "text-black"}` : "text-tertiary"}`}
+        className={`text-sm ${bold ? `font-bold text-text-primary` : "text-tertiary"}`}
       >
         {label}
       </Text>
       <Text
-        className={`text-sm ${bold ? "font-bold" : ""} ${isDark ? "text-dark-text" : "text-black"}`}
+        className={`text-sm ${bold ? "font-bold" : ""} text-text-primary`}
       >
         ₦{(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
       </Text>

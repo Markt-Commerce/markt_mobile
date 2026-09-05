@@ -33,7 +33,6 @@ import {
   Send,
   UserMinus,
 } from "lucide-react-native";
-import { useTheme } from "./themeProvider";
 import { useTokens } from "../theme/useTokens";
 import { useToast } from "./ToastProvider";
 import {
@@ -79,8 +78,6 @@ export default function ContentActionsSheet({
   onBlocked,
 }: Props) {
   const sheetRef = useRef<BottomSheet>(null);
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const { show } = useToast();
 
@@ -114,9 +111,9 @@ export default function ContentActionsSheet({
     []
   );
 
-  const ink = isDark ? "text-text-primary" : "text-black";
-  const muted = isDark ? "text-text-secondary" : "text-tertiary";
-  const rule = isDark ? "border-border-strong" : "border-border";
+  const ink = "text-text-primary";
+  const muted = "text-text-secondary";
+  const rule = "border-border";
   const iconColor = t.textPrimary;
 
   const reasons = useMemo(
@@ -348,7 +345,7 @@ export default function ContentActionsSheet({
                   key={r.value}
                   icon={
                     <View
-                      className={`w-5 h-5 rounded-full border-2 items-center justify-center ${reason === r.value ? "border-primary bg-primary" : isDark ? "border-border-strong" : "border-border"}`}
+                      className={`w-5 h-5 rounded-full border-2 items-center justify-center ${reason === r.value ? "border-primary bg-primary" : "border-border"}`}
                     >
                       {reason === r.value ? <Check size={12} color={t.textOnPrimary} /> : null}
                     </View>
@@ -386,7 +383,7 @@ export default function ContentActionsSheet({
                 maxLength={2000}
                 placeholder="What happened?"
                 placeholderTextColor={t.textMuted}
-                className={`min-h-[110px] rounded border px-4 py-3 text-[15px] ${isDark ? "bg-surface-raised border-border-strong text-text-primary" : "bg-white border-border text-black"}`}
+                className="min-h-[110px] rounded border px-4 py-3 text-[15px] bg-surface-raised border-border text-text-primary"
                 textAlignVertical="top"
                 accessibilityLabel="Add details about your report, optional"
               />

@@ -124,23 +124,23 @@ export default function ItemEscalationScreen() {
     }
   };
 
-  const cardClass = `rounded border p-4 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`;
-  const labelClass = `text-sm ${isDark ? "text-dark-muted" : "text-tertiary"}`;
-  const valueClass = `text-sm ${isDark ? "text-dark-text" : "text-black"}`;
+  const cardClass = `rounded border p-4 bg-surface-raised border-border`;
+  const labelClass = `text-sm text-text-secondary`;
+  const valueClass = `text-sm text-text-primary`;
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-page">
       <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
         <TouchableOpacity
           onPress={() => router.back()}
-          className={`h-10 w-10 rounded items-center justify-center border ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+          className="h-10 w-10 rounded items-center justify-center border bg-surface-raised border-border"
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
           <ArrowLeft size={18} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
-          className={`flex-1 text-center text-lg font-bold -ml-10 ${isDark ? "text-dark-text" : "text-black"}`}
+          className="flex-1 text-center text-lg font-bold -ml-10 text-text-primary"
         >
           Resolve item
         </Text>
@@ -153,7 +153,7 @@ export default function ItemEscalationScreen() {
         </View>
       ) : error || !data ? (
         <View className="flex-1 justify-center items-center px-6 py-16">
-          <Text className={`font-semibold text-lg text-center ${isDark ? "text-dark-text" : "text-black"}`}>
+          <Text className="font-semibold text-lg text-center text-text-primary">
             Could not load this item
           </Text>
           <Text className={`${labelClass} mt-2 text-center`}>Please try again later.</Text>
@@ -161,7 +161,7 @@ export default function ItemEscalationScreen() {
       ) : !data.escalated ? (
         <View className="flex-1 justify-center items-center px-6 py-16">
           <PackageX size={32} color={t.textSecondary} />
-          <Text className={`font-semibold text-lg text-center mt-4 ${isDark ? "text-dark-text" : "text-black"}`}>
+          <Text className="font-semibold text-lg text-center mt-4 text-text-primary">
             Nothing to resolve
           </Text>
           <Text className={`${labelClass} mt-2 text-center`}>
@@ -171,7 +171,7 @@ export default function ItemEscalationScreen() {
       ) : (
         <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 20 }}>
           <View className={cardClass}>
-            <Text className={`font-bold ${isDark ? "text-dark-text" : "text-black"}`}>
+            <Text className="font-bold text-text-primary">
               We couldn't find a replacement seller
             </Text>
             <Text className={`${labelClass} mt-1`}>
@@ -182,7 +182,7 @@ export default function ItemEscalationScreen() {
           {/* Choose a seller */}
           <View className="mt-4">
             <Text
-              className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-2 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+              className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2 text-text-secondary"
             >
               Choose a seller
             </Text>
@@ -234,7 +234,7 @@ export default function ItemEscalationScreen() {
           {/* Other options */}
           <View className="mt-6">
             <Text
-              className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-2 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+              className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2 text-text-secondary"
             >
               Other options
             </Text>
@@ -245,7 +245,7 @@ export default function ItemEscalationScreen() {
               className={`${cardClass} flex-row items-center justify-between mb-3`}
             >
               <View>
-                <Text className={`font-semibold ${isDark ? "text-dark-text" : "text-black"}`}>
+                <Text className="font-semibold text-text-primary">
                   Remove this item
                 </Text>
                 <Text className={labelClass}>Refunded, rest of the order is unaffected</Text>
@@ -264,7 +264,7 @@ export default function ItemEscalationScreen() {
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center gap-2">
                   <XCircle size={16} color={t.dangerText} />
-                  <Text className={`font-semibold ${isDark ? "text-dark-text" : "text-black"}`}>
+                  <Text className="font-semibold text-text-primary">
                     Cancel whole order
                   </Text>
                 </View>

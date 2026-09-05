@@ -24,7 +24,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Image as ImageIcon, MessageSquare } from "lucide-react-native";
 import Avatar from "../../components/Avatar";
-import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { getSellerOrders, updateSellerOrderItem } from "../../services/sections/orders";
@@ -42,8 +41,6 @@ import { TONE_BG, TONE_TEXT } from "../../theme/tone";
 export default function SellerOrderDetail() {
   const { itemId } = useLocalSearchParams<{ itemId: string }>();
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const { show } = useToast();
 
@@ -113,8 +110,8 @@ export default function SellerOrderDetail() {
   };
 
   const bg = t.surfacePage;
-  const strong = isDark ? "text-text-primary" : "text-black";
-  const muted = isDark ? "text-text-muted" : "text-tertiary";
+  const strong = "text-text-primary";
+  const muted = "text-text-muted";
   const card = "bg-surface-sunken";
 
   if (loading) {
@@ -206,7 +203,7 @@ export default function SellerOrderDetail() {
                 />
               ) : (
                 <View
-                  className={`w-16 h-16 rounded-lg items-center justify-center bg-surface-raised`}
+                  className="w-16 h-16 rounded-lg items-center justify-center bg-surface-raised"
                 >
                   <ImageIcon size={20} color={t.textMuted} />
                 </View>
@@ -240,7 +237,7 @@ export default function SellerOrderDetail() {
               </Text>
               <TouchableOpacity
                 onPress={() => router.push("/(tabs)/messages" as any)}
-                className={`flex-row items-center px-3 h-9 rounded-lg bg-surface-raised`}
+                className="flex-row items-center px-3 h-9 rounded-lg bg-surface-raised"
                 accessibilityRole="button"
                 accessibilityLabel={`Message ${buyerName}`}
               >

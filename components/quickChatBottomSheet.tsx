@@ -29,7 +29,6 @@ import { useToast } from "./ToastProvider";
 import { friendlyErrorMessage } from "../utils/errorMessages";
 import { useUser } from "../hooks/userContextProvider";
 import { isOwnProductListing } from "../utils/chatGuards";
-import { useTheme } from "./themeProvider";
 import { useTokens } from "../theme/useTokens";
 import { pickProfilePicture, type ChatOtherUser } from "../utils/chatAvatar";
 
@@ -64,8 +63,6 @@ export default function QuickChatBottomSheet({
   const snapPoints = useMemo(() => ["90%"], []);
   const { show } = useToast();
   const { user } = useUser();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const textColor = t.textPrimary;
   const currentUserId = user?.user_id?.toString() ?? "";
@@ -292,7 +289,7 @@ export default function QuickChatBottomSheet({
 
         {hasExistingThread && showChat && (
           <Text
-            className={`text-xs text-center py-2 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+            className="text-xs text-center py-2 text-text-secondary"
           >
             Continuing your conversation
           </Text>
@@ -304,7 +301,7 @@ export default function QuickChatBottomSheet({
             <View style={styles.centered}>
               <ActivityIndicator size="large" color={textColor} />
               <Text
-                className={`text-sm mt-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                className="text-sm mt-3 text-text-secondary"
               >
                 Opening chat…
               </Text>
@@ -314,7 +311,7 @@ export default function QuickChatBottomSheet({
           {!roomLoading && roomError && (
             <View style={styles.centered}>
               <Text
-                className={`font-semibold text-center px-6 ${isDark ? "text-dark-text" : "text-black"}`}
+                className="font-semibold text-center px-6 text-text-primary"
               >
                 {roomError}
               </Text>

@@ -17,7 +17,6 @@ import { getUserProfile } from '../../services/sections/profile';
 import { UserProfile } from '../../models/profile';
 import { attemptMultipleUpload } from '../../services/sections/media';
 import { isArray } from 'lodash';
-import { useTheme } from '../../components/themeProvider';
 import logger from '../../utils/logger';
 import { friendlyErrorMessage } from '../../utils/errorMessages';
 import { useTokens } from '../../theme/useTokens';
@@ -40,8 +39,6 @@ const GeneralSchema = z.object({
 
 export default function AccountInfoScreen() {
   const { user, role, profile: sharedProfile, setProfile: setSharedProfile } = useUser();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const [profileData, setProfileData] = useState<UserProfile | null>(sharedProfile);
   const { show } = useToast();
@@ -244,9 +241,9 @@ export default function AccountInfoScreen() {
   const isSellerDisabled = !isSellerValid || loading || imageLoading || !sellerHasChanges;
 
   return (
-    <SafeAreaView className={`flex-1 bg-surface-raised`} edges={["top", "left", "right", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-surface-raised" edges={["top", "left", "right", "bottom"]}>
       <ScrollView
-        className={isDark ? "flex-1 bg-surface-raised" : "flex-1 bg-white"}
+        className={"flex-1 bg-surface-raised"}
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
@@ -254,21 +251,21 @@ export default function AccountInfoScreen() {
 
         <View className="px-6 pt-6">
           <TouchableOpacity
-            className={`flex-row items-center gap-3 rounded p-4 border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
+            className="flex-row items-center gap-3 rounded p-4 border bg-surface-sunken border-border"
             onPress={changeImage}
             disabled={imageLoading}
             activeOpacity={0.85}
           >
             {currentProfilePic ? (
-              <Image source={{ uri: currentProfilePic }} className={`w-12 h-12 rounded-full border ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`} />
+              <Image source={{ uri: currentProfilePic }} className="w-12 h-12 rounded-full border bg-surface-raised border-border" />
             ) : (
-              <View className={`w-12 h-12 rounded-full items-center justify-center border ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
+              <View className="w-12 h-12 rounded-full items-center justify-center border bg-surface-raised border-border">
                 <Camera size={18} color={t.textPrimary} strokeWidth={1.7} />
               </View>
             )}
             <View className="flex-1">
-              <Text className={`font-bold text-[15px] text-text-primary`}>Profile photo</Text>
-              <Text className={`text-[13px] mt-1 text-text-secondary`}>
+              <Text className="font-bold text-[15px] text-text-primary">Profile photo</Text>
+              <Text className="text-[13px] mt-1 text-text-secondary">
                 {imageLoading ? "Uploading and saving…" : "Tap to choose a new profile image."}
               </Text>
             </View>
@@ -276,10 +273,10 @@ export default function AccountInfoScreen() {
           </TouchableOpacity>
 
           <View className="mt-8">
-            <Text className={`font-bold text-[11px] tracking-[2px] uppercase mb-3 text-text-secondary`}>
+            <Text className="font-bold text-[11px] tracking-[2px] uppercase mb-3 text-text-secondary">
               General
             </Text>
-            <View className={`rounded p-4 border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-white border-border"}`}>
+            <View className="rounded p-4 border bg-surface-raised border-border">
               <Input
                 placeholder="Phone Number"
                 control={generalControl}
@@ -304,10 +301,10 @@ export default function AccountInfoScreen() {
 
           {role === 'buyer' && (
             <View className="mt-8">
-              <Text className={`font-bold text-[11px] tracking-[2px] uppercase mb-3 text-text-secondary`}>
+              <Text className="font-bold text-[11px] tracking-[2px] uppercase mb-3 text-text-secondary">
                 Buyer information
               </Text>
-              <View className={`rounded p-4 border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-white border-border"}`}>
+              <View className="rounded p-4 border bg-surface-raised border-border">
                 <Input
                   placeholder="Buyer Name"
                   control={buyerControl}
@@ -332,10 +329,10 @@ export default function AccountInfoScreen() {
 
           {role === 'seller' && (
             <View className="mt-8">
-              <Text className={`font-bold text-[11px] tracking-[2px] uppercase mb-3 text-text-secondary`}>
+              <Text className="font-bold text-[11px] tracking-[2px] uppercase mb-3 text-text-secondary">
                 Seller information
               </Text>
-              <View className={`rounded p-4 border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-white border-border"}`}>
+              <View className="rounded p-4 border bg-surface-raised border-border">
                 <Input
                   placeholder="Shop Name"
                   control={sellerControl}

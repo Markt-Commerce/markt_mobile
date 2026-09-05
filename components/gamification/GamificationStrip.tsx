@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
-import { useTheme } from "../themeProvider";
 import TierBadge from "./TierBadge";
 import TierProgressBar from "./TierProgressBar";
 import BadgeCard from "./BadgeCard";
@@ -26,14 +25,12 @@ export default function GamificationStrip({
   onBadgePress,
   className = "",
 }: GamificationStripProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const preview = badges.filter((b) => b.earned).slice(0, 5);
 
   return (
     <View
       className={`border rounded px-5 py-5 ${
-        isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"
+        "bg-surface-sunken border-border"
       } ${className}`}
     >
       <TouchableOpacity onPress={onPress} activeOpacity={0.85}>
@@ -46,7 +43,7 @@ export default function GamificationStrip({
             size="lg"
             showName
           />
-          <Text className={`font-bold text-[24px] text-text-primary`}>
+          <Text className="font-bold text-[24px] text-text-primary">
             {profile.lifetime_points.toLocaleString()}
           </Text>
         </View>

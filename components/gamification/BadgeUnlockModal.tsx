@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, Image, TouchableOpacity, Modal } from "react-native";
 import { Award } from "lucide-react-native";
-import { useTheme } from "../themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import type { BadgeEarnedEvent } from "../../types/gamification";
 
@@ -20,8 +19,6 @@ export default function BadgeUnlockModal({
   badge,
   onClose,
 }: BadgeUnlockModalProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
 
   return (
@@ -29,13 +26,13 @@ export default function BadgeUnlockModal({
       <View className="flex-1 items-center justify-center px-8" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
         <View
           className={`w-full rounded-2xl items-center px-6 py-8 ${
-            isDark ? "bg-surface-raised" : "bg-white"
+            "bg-surface-raised"
           }`}
         >
           <Text className="text-3xl mb-2">🎉</Text>
           <Text
             className={`font-bold text-[10px] tracking-[3px] uppercase ${
-              isDark ? "text-text-secondary" : "text-tertiary"
+              "text-text-secondary"
             }`}
           >
             Badge Unlocked
@@ -43,7 +40,7 @@ export default function BadgeUnlockModal({
 
           <View
             className={`w-24 h-24 rounded-full items-center justify-center my-5 ${
-              isDark ? "bg-surface-sunken" : "bg-surface"
+              "bg-surface-sunken"
             }`}
           >
             {badge?.icon_url ? (
@@ -58,7 +55,7 @@ export default function BadgeUnlockModal({
 
           <Text
             className={`font-bold text-xl text-center ${
-              isDark ? "text-text-primary" : "text-black"
+              "text-text-primary"
             }`}
           >
             {badge?.name}
@@ -66,7 +63,7 @@ export default function BadgeUnlockModal({
           {!!badge?.description && (
             <Text
               className={`text-sm text-center mt-2 ${
-                isDark ? "text-text-secondary" : "text-tertiary"
+                "text-text-secondary"
               }`}
             >
               {badge.description}

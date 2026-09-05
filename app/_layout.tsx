@@ -73,7 +73,7 @@ export function AppStack() {
   if (isRestoringSession) {
     return (
       <View
-        className={`flex-1 items-center justify-center ${isDark ? "bg-dark-page" : "bg-white"}`}
+        className="flex-1 items-center justify-center bg-surface-page"
       >
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
         <ActivityIndicator
@@ -81,7 +81,7 @@ export function AppStack() {
           color={t.textPrimary}
         />
         <Text
-          className={`mt-3 text-sm ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+          className="mt-3 text-sm text-text-secondary"
         >
           Loading...
         </Text>

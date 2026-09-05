@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, Image, TouchableOpacity } from "react-native";
 import { Lock, Award } from "lucide-react-native";
-import { useTheme } from "../themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import type { Badge } from "../../types/gamification";
 
@@ -21,8 +20,6 @@ export default function BadgeCard({
   onPress,
   className = "",
 }: BadgeCardProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const pct = Math.max(0, Math.min(1, progress)) * 100;
 
@@ -33,13 +30,13 @@ export default function BadgeCard({
       accessibilityRole="button"
       accessibilityLabel={`${badge.name}${earned ? ", earned" : ", locked"}`}
       className={`rounded border p-3 items-center ${
-        isDark ? "bg-surface-sunken border-border-strong" : "bg-white border-border"
+        "bg-surface-raised border-border"
       } ${className}`}
       style={{ opacity: earned ? 1 : 0.55 }}
     >
       <View
         className={`w-14 h-14 rounded-full items-center justify-center mb-2 ${
-          isDark ? "bg-surface-raised" : "bg-surface"
+          "bg-surface-sunken"
         }`}
       >
         {badge.icon_url ? (
@@ -57,7 +54,7 @@ export default function BadgeCard({
       <Text
         numberOfLines={1}
         className={`font-bold text-xs text-center ${
-          isDark ? "text-text-primary" : "text-black"
+          "text-text-primary"
         }`}
       >
         {badge.name}
@@ -66,7 +63,7 @@ export default function BadgeCard({
       {!earned && progress > 0 && progress < 1 && (
         <View
           className={`h-1 w-full rounded overflow-hidden mt-2 ${
-            isDark ? "bg-surface-raised" : "bg-surface"
+            "bg-surface-sunken"
           }`}
         >
           <View className="h-1 bg-primary rounded" style={{ width: `${pct}%` }} />

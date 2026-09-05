@@ -2,7 +2,6 @@ import React from "react";
 import { View, Text, Image, TouchableOpacity } from "react-native";
 import { Image as ImageIcon } from "lucide-react-native";
 import { Order, OrderItem, SellerOrderItem } from "../models/orders";
-import { useTheme } from "./themeProvider";
 import { formatNaira } from "../utils/formatCurrency";
 import { formatStatus, statusTone } from "../utils/formatStatus";
 import { useTokens } from "../theme/useTokens";
@@ -26,8 +25,6 @@ function isOrderItem(o: any): o is OrderItem {
 }
 
 export default function OrderCard({ order, isSeller }: OrderCardProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
 
   // Safe extraction with fallbacks
@@ -81,34 +78,34 @@ export default function OrderCard({ order, isSeller }: OrderCardProps) {
 
   return (
     <View
-      className={`flex-row justify-between gap-4 px-4 py-3 border-b ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}
+      className="flex-row justify-between gap-4 px-4 py-3 border-b bg-surface-raised border-border"
     >
       <View className="flex-row gap-4 flex-1">
         {imageUri ? (
           <Image
             source={{ uri: imageUri }}
-            className={`w-14 h-14 rounded-lg bg-surface-sunken`}
+            className="w-14 h-14 rounded-lg bg-surface-sunken"
           />
         ) : (
           // A neutral tile, not the words "No image". Every row said that,
           // because imageUri was never assigned -- and even once it is, a
           // missing thumbnail is not worth a sentence.
-          <View className={`w-14 h-14 rounded-lg items-center justify-center bg-surface-sunken`}>
+          <View className="w-14 h-14 rounded-lg items-center justify-center bg-surface-sunken">
             <ImageIcon size={18} color={t.textMuted} strokeWidth={1.8} />
           </View>
         )}
 
         <View className="flex-1 justify-center">
-          <Text className={`text-base font-medium text-text-primary`}>
+          <Text className="text-base font-medium text-text-primary">
             {isSeller && isSellerOrderItem(order) ? `From: ${order.order?.buyer?.buyername ?? "Buyer"}` : title}
           </Text>
-          <Text className={`text-sm text-text-secondary`}>
+          <Text className="text-sm text-text-secondary">
             {isSeller && isSellerOrderItem(order)
               ? `Product: ${order.product?.name ?? title}`
               : subtitle}
           </Text>
           <View className="flex-row items-center mt-1">
-            <Text className={`text-sm font-semibold text-text-primary`}>
+            <Text className="text-sm font-semibold text-text-primary">
               {priceText}
             </Text>
             {statusText ? (
@@ -124,13 +121,13 @@ export default function OrderCard({ order, isSeller }: OrderCardProps) {
 
       {typeof progress === "number" && (
         <View className="items-center gap-2">
-          <View className={`w-[88px] h-1 rounded overflow-hidden ${"bg-border"}`}>
+          <View className="w-[88px] h-1 rounded overflow-hidden bg-border">
             <View
               className="h-1 bg-primary"
               style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
             />
           </View>
-          <Text className={`text-sm font-medium text-text-primary`}>{Math.round(progress)}%</Text>
+          <Text className="text-sm font-medium text-text-primary">{Math.round(progress)}%</Text>
         </View>
       )}
     </View>

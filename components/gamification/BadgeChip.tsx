@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Image } from "react-native";
 import { Award } from "lucide-react-native";
-import { useTheme } from "../themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import type { Badge } from "../../types/gamification";
 
@@ -21,8 +20,6 @@ export interface BadgeChipProps {
  * where BadgeCard's grid-tile size doesn't fit.
  */
 export default function BadgeChip({ badge, size = "sm", className = "" }: BadgeChipProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const d = DIAMETER[size];
 

@@ -25,7 +25,6 @@ import { useToast } from "../../components/ToastProvider";
 import * as ImagePicker from "expo-image-picker";
 import { useDebouncedCallback } from "../../hooks/useDebouncedCallback";
 import { useWatch } from "react-hook-form"; 
-import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 
@@ -42,8 +41,6 @@ const ShopInformationScreen = () => {
   const { regData, setRegData } = useRegData();
   const router = useRouter();
   const { show } = useToast(); // <-- toast API
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const iconColor = t.textPrimary;
   const mutedIconColor = t.textSecondary;
@@ -158,11 +155,11 @@ const ShopInformationScreen = () => {
   };
 
   const Label = ({ children }: { children: React.ReactNode }) => (
-    <Text className={`mb-2 text-sm font-bold ${isDark ? "text-text-primary" : "text-secondary"}`}>{children}</Text>
+    <Text className="mb-2 text-sm font-bold text-text-primary">{children}</Text>
   );
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-surface-sunken" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-raised">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
@@ -176,38 +173,38 @@ const ShopInformationScreen = () => {
           <TouchableOpacity
             onPress={() => router.back()}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            className={`h-10 w-10 items-center justify-center rounded border ${isDark ? "bg-surface-raised border-border-strong" : "bg-surface border-border"}`}
+            className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
           >
             <ArrowLeft size={20} color={iconColor} />
           </TouchableOpacity>
-          <Text className={`text-xl font-bold text-center flex-1 pr-10 text-text-primary`}>
+          <Text className="text-xl font-bold text-center flex-1 pr-10 text-text-primary">
             Shop setup
           </Text>
         </View>
 
         {/* Progress hint */}
         <View className="flex-row gap-2 items-center justify-center mb-10 px-8">
-          <View className={`h-1.5 flex-1 rounded ${"bg-text-primary"}`} />
-          <View className={`h-1.5 flex-1 rounded ${"bg-text-primary"}`} />
-          <View className={`h-1.5 flex-1 rounded bg-surface-sunken`} />
+          <View className="h-1.5 flex-1 rounded bg-text-primary" />
+          <View className="h-1.5 flex-1 rounded bg-text-primary" />
+          <View className="h-1.5 flex-1 rounded bg-surface-sunken" />
         </View>
 
         {/* Card */}
         <View className="mx-4">
-          <View className={`rounded border px-6 py-8 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
+          <View className="rounded border px-6 py-8 bg-surface-raised border-border">
             {/* Avatar placeholder with image picker */}
             <View className="items-center mb-10">
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={changeProfilePicture}
-                className={`h-24 w-24 rounded-full border-2 border-dashed items-center justify-center overflow-hidden ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
+                className="h-24 w-24 rounded-full border-2 border-dashed items-center justify-center overflow-hidden bg-surface-sunken border-border"
               >
                 {profilePictureUri ? (
                   <Image source={{ uri: profilePictureUri }} className="w-full h-full" />
                 ) : (
                   <View className="items-center">
                     <Camera size={32} color={mutedIconColor} />
-                    <Text className={`text-[10px] font-bold mt-1 text-center px-2 text-text-secondary`}>ADD SHOP LOGO</Text>
+                    <Text className="text-[10px] font-bold mt-1 text-center px-2 text-text-secondary">ADD SHOP LOGO</Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -251,11 +248,11 @@ const ShopInformationScreen = () => {
 
             {/* Categories */}
             <View className="mb-10">
-              <Text className={`mb-4 text-sm font-bold uppercase tracking-widest ${isDark ? "text-text-primary" : "text-secondary"}`}>Niches & Categories</Text>
+              <Text className="mb-4 text-sm font-bold uppercase tracking-widest text-text-primary">Niches & Categories</Text>
               <View className="flex-row flex-wrap gap-3">
                 {selectedCategories.map((cat) => (
-                  <View key={cat.id.toString()} className={`flex-row items-center rounded px-4 py-2 border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}>
-                    <Text className={`text-xs font-bold mr-2 ${isDark ? "text-text-primary" : "text-secondary"}`}>{cat.name}</Text>
+                  <View key={cat.id.toString()} className="flex-row items-center rounded px-4 py-2 border bg-surface-sunken border-border">
+                    <Text className="text-xs font-bold mr-2 text-text-primary">{cat.name}</Text>
                     <TouchableOpacity onPress={() => removeCategory(cat.id)}>
                       <X size={14} color={mutedIconColor} />
                     </TouchableOpacity>
@@ -263,13 +260,13 @@ const ShopInformationScreen = () => {
                 ))}
                 <TouchableOpacity
                   onPress={() => setModalVisible(true)}
-                  className={`border-2 border-dashed rounded px-4 py-2 justify-center items-center ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}
+                  className="border-2 border-dashed rounded px-4 py-2 justify-center items-center bg-surface-raised border-border"
                 >
-                  <Text className={`text-xs font-bold text-text-secondary`}>+ Add Categories</Text>
+                  <Text className="text-xs font-bold text-text-secondary">+ Add Categories</Text>
                 </TouchableOpacity>
               </View>
               {selectedCategories.length < 3 && (
-                <Text className={`text-[10px] mt-3 italic text-text-secondary`}>
+                <Text className="text-[10px] mt-3 italic text-text-secondary">
                   Tip: Add 3+ categories for better visibility.
                 </Text>
               )}

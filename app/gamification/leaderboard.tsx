@@ -99,7 +99,7 @@ export default function LeaderboardScreen() {
           <ArrowLeft size={22} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
-          className={`text-[17px] font-bold ml-3 text-text-primary`}
+          className="text-[17px] font-bold ml-3 text-text-primary"
         >
           Leaderboard
         </Text>
@@ -146,7 +146,7 @@ export default function LeaderboardScreen() {
                     "bg-success-muted"
                   }`}
                 >
-                  <Text className={`text-[12px] ${"text-success-text"}`}>
+                  <Text className="text-[12px] text-success-text">
                     ↑ 1
                   </Text>
                 </View>
@@ -160,7 +160,7 @@ export default function LeaderboardScreen() {
               >
                 {pointsToFirst.toLocaleString()} pts to #1
               </Text>
-              <Text className={`text-[14px] ${"text-primary-text"}`}>
+              <Text className="text-[14px] text-primary-text">
                 Keep it going this week
               </Text>
             </View>
@@ -192,7 +192,7 @@ export default function LeaderboardScreen() {
           ) : (
             <Text
               className={`text-center text-sm py-16 ${
-                isDark ? "text-text-secondary" : "text-tertiary"
+                "text-text-secondary"
               }`}
             >
               No one on this leaderboard yet.

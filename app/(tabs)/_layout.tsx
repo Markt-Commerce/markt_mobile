@@ -14,7 +14,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { DrawerProvider, useDrawer } from "../../hooks/drawerContext";
 import AppBar from "../../components/AppBar";
 import NavDrawer from "../../components/NavDrawer";
-import { useTheme } from "../../components/themeProvider";
 import { useUser } from "../../hooks/userContextProvider";
 import { useCart } from "../../hooks/cartContext";
 import { useTokens } from "../../theme/useTokens";
@@ -28,8 +27,6 @@ function TabsWithDrawer() {
   const { profile } = useUser();
   const role = profile?.current_role;
   const { itemCount } = useCart();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const insets = useSafeAreaInsets();
   const tabBarBottomInset = Math.max(insets.bottom, Platform.OS === "ios" ? 2 : 0);

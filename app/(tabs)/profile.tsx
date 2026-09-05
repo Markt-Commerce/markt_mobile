@@ -18,7 +18,6 @@ import CreateRoleBottomSheet from "../../components/createRoleBottomSheet";
 import { useUser } from "../../hooks/userContextProvider";
 import { useToast } from "../../components/ToastProvider";
 import { switchUserRole } from "../../services/sections/auth";
-import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import {
   SettingsSection as Section,
@@ -31,8 +30,6 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { role, setRole, profile, setProfile, refreshProfile } = useUser();
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const [switchingRole, setSwitchingRole] = useState(false);
   const [createMode, setCreateMode] = useState<"buyer" | "seller" | null>(null);
@@ -114,14 +111,14 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
       <ScrollView
-        className={isDark ? "bg-surface-raised" : "bg-white"}
+        className={"bg-surface-raised"}
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Same identity treatment as Settings: centred, no card. It was a
             bordered box wrapping a bordered avatar and two stacked buttons, on
             a screen whose rows are now full-bleed. */}
-        <View className={`items-center px-6 pt-6 pb-6 bg-surface-raised`}>
+        <View className="items-center px-6 pt-6 pb-6 bg-surface-raised">
           <Avatar
             uri={profile?.profile_picture_url}
             name={displayName}
@@ -129,13 +126,13 @@ export default function ProfileScreen() {
             className="rounded-full"
           />
           <Text
-            className={`font-bold text-[22px] tracking-tight mt-3 text-text-primary`}
+            className="font-bold text-[22px] tracking-tight mt-3 text-text-primary"
             numberOfLines={1}
           >
             {displayName}
           </Text>
           <Text
-            className={`text-[14px] mt-0.5 text-text-muted`}
+            className="text-[14px] mt-0.5 text-text-muted"
             numberOfLines={1}
           >
             @{profile?.username ?? "user"}
@@ -155,9 +152,9 @@ export default function ProfileScreen() {
               activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel="Edit profile"
-              className={`flex-1 h-11 rounded-xl items-center justify-center bg-surface-sunken`}
+              className="flex-1 h-11 rounded-xl items-center justify-center bg-surface-sunken"
             >
-              <Text className={`font-semibold text-[14px] ${"text-text-primary"}`}>
+              <Text className="font-semibold text-[14px] text-text-primary">
                 Edit profile
               </Text>
             </TouchableOpacity>
@@ -173,7 +170,7 @@ export default function ProfileScreen() {
             >
               <ArrowRightLeft size={15} color={t.surfacePage} strokeWidth={2.2} />
               <Text
-                className={`font-semibold text-[14px] ml-1.5 ${"text-surface-page"}`}
+                className="font-semibold text-[14px] ml-1.5 text-surface-page"
                 numberOfLines={1}
               >
                 {switchingRole

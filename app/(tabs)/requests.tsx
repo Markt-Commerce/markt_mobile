@@ -52,12 +52,12 @@ function EmptyRequestsState({
         strokeWidth={1.5}
       />
       <Text
-        className={`text-[22px] font-bold text-center mt-5 text-text-primary`}
+        className="text-[22px] font-bold text-center mt-5 text-text-primary"
       >
         {title}
       </Text>
       <Text
-        className={`text-[15px] text-center mt-2 leading-[21px] text-text-muted`}
+        className="text-[15px] text-center mt-2 leading-[21px] text-text-muted"
       >
         {description}
       </Text>
@@ -150,7 +150,7 @@ export default function RequestsScreen() {
       <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
         <View className="flex-1 items-center justify-center py-16">
           <ActivityIndicator size="large" color={t.textPrimary} />
-          <Text className={`mt-4 font-bold text-[11px] tracking-[2px] uppercase text-text-secondary`}>
+          <Text className="mt-4 font-bold text-[11px] tracking-[2px] uppercase text-text-secondary">
             Loading requests
           </Text>
         </View>
@@ -163,13 +163,13 @@ export default function RequestsScreen() {
       {/* No border under the header: the first row already draws a hairline,
           and two lines 4px apart read as a mistake. px-4 lines the title up
           with the rows beneath it instead of sitting 8px further in. */}
-      <View className={`px-4 pt-4 pb-3 bg-surface-raised`}>
+      <View className="px-4 pt-4 pb-3 bg-surface-raised">
         <View className="flex-row items-center justify-between">
           <View className="flex-1 pr-4">
-            <Text className={`font-bold text-[26px] tracking-tight text-text-primary`}>
+            <Text className="font-bold text-[26px] tracking-tight text-text-primary">
               {isBuyer ? "My requests" : "Buyer requests"}
             </Text>
-            <Text className={`text-[13px] mt-0.5 leading-[18px] text-text-muted`}>
+            <Text className="text-[13px] mt-0.5 leading-[18px] text-text-muted">
               {isBuyer
                 ? "Tell sellers what you need and let offers come to you."
                 : "Open requests from buyers looking for what you sell."}
@@ -193,7 +193,7 @@ export default function RequestsScreen() {
           in full, so filtering it locally is instant and needs no endpoint. */}
       <View className="px-4 pb-3">
         <View
-          className={`flex-row items-center h-11 px-3 rounded-xl bg-surface-sunken`}
+          className="flex-row items-center h-11 px-3 rounded-xl bg-surface-sunken"
         >
           <Search size={17} color={t.textMuted} strokeWidth={2} />
           <TextInput
@@ -201,7 +201,7 @@ export default function RequestsScreen() {
             onChangeText={setQuery}
             placeholder="Search requests"
             placeholderTextColor={t.textMuted}
-            className={`flex-1 ml-2 text-[15px] text-text-primary`}
+            className="flex-1 ml-2 text-[15px] text-text-primary"
             returnKeyType="search"
             accessibilityLabel="Search requests"
           />

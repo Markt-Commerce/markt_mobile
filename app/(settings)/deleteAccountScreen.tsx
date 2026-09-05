@@ -20,7 +20,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { AlertTriangle, Trash2 } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
-import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { useUser } from "../../hooks/userContextProvider";
@@ -48,8 +47,6 @@ const RETAINED = [
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const { show } = useToast();
   const { setUser } = useUser();
@@ -113,13 +110,13 @@ export default function DeleteAccountScreen() {
     }
   };
 
-  const label = isDark ? "text-text-primary" : "text-black";
-  const muted = isDark ? "text-text-secondary" : "text-tertiary";
-  const card = isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border";
+  const label = "text-text-primary";
+  const muted = "text-text-secondary";
+  const card = "bg-surface-raised border-border";
 
   return (
     <SafeAreaView
-      className={`flex-1 bg-surface-raised`}
+      className="flex-1 bg-surface-raised"
       edges={["top", "left", "right", "bottom"]}
     >
       <ScreenHeader title="Delete account" onBack={() => router.back()} />
@@ -223,7 +220,7 @@ export default function DeleteAccountScreen() {
             onPress={handleDelete}
             disabled={!canSubmit}
             activeOpacity={0.85}
-            className={`h-14 rounded items-center justify-center flex-row gap-2 ${canSubmit ? "bg-primary" : isDark ? "bg-surface-sunken" : "bg-bg-muted"}`}
+            className={`h-14 rounded items-center justify-center flex-row gap-2 ${canSubmit ? "bg-primary" : "bg-surface-sunken"}`}
             accessibilityRole="button"
             accessibilityState={{ disabled: !canSubmit }}
             accessibilityLabel="Permanently delete my account"

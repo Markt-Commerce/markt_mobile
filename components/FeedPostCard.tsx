@@ -15,7 +15,6 @@ import { likePost } from "../services/sections/post";
 import { useToast } from "./ToastProvider";
 import Avatar from "./Avatar";
 import { PostMediaGrid, mediaTypeOf, type MediaItem } from "./postMedia";
-import { useTheme } from "./themeProvider";
 import { useGamificationLookup } from "../hooks/useGamificationLookup";
 import TierBadge from "./gamification/TierBadge";
 import PostActionBar from "./PostActionBar";
@@ -47,8 +46,6 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
   const [likedByMe, setLikedByMe] = useState(post.liked_by_me ?? false);
   const [isLiking, setIsLiking] = useState(false);
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const { profile: authorGamification } = useGamificationLookup(post.user?.id);
 
@@ -127,7 +124,7 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
   return (
     <Link href={`/postDetails/${post.id}`} asChild>
       <TouchableOpacity activeOpacity={0.9}>
-        <View className={`flex-row px-4 py-3 border-b ${isDark ? "bg-surface-raised border-border" : "bg-white border-border"}`}>
+        <View className="flex-row px-4 py-3 border-b bg-surface-raised border-border">
           <Pressable
             onPress={handleOpenAuthor}
             disabled={!post.user?.id}
@@ -152,7 +149,7 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
                 accessibilityLabel={`View ${post.user?.username ?? "author"}'s profile`}
               >
                 <Text
-                  className={`font-bold text-[15px] flex-shrink text-text-primary`}
+                  className="font-bold text-[15px] flex-shrink text-text-primary"
                   numberOfLines={1}
                 >
                   {post.user?.username ?? "Unknown"}
@@ -167,7 +164,7 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
                 )}
               </Pressable>
               <Text
-                className={`text-[13px] flex-shrink ${"text-text-secondary"}`}
+                className="text-[13px] flex-shrink text-text-secondary"
                 numberOfLines={1}
               >
                 {post.niche ? ` · ${post.niche.name}` : ""}{` · ${compactAge(post.created_at)}`}
@@ -187,7 +184,7 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
 
           {post.caption ? (
             <Text
-              className={`mb-2 text-[15px] leading-[21px] text-text-primary`}
+              className="mb-2 text-[15px] leading-[21px] text-text-primary"
               numberOfLines={6}
             >
               {post.caption}

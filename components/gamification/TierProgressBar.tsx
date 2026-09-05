@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { useTheme } from "../themeProvider";
 import { useTokens } from "../../theme/useTokens";
 
 export interface TierProgressBarProps {
@@ -19,8 +18,6 @@ export default function TierProgressBar({
   colorHex,
   className = "",
 }: TierProgressBarProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const pct = Math.max(0, Math.min(1, progress)) * 100;
   const color = colorHex || t.primaryText;
@@ -29,7 +26,7 @@ export default function TierProgressBar({
   return (
     <View className={className}>
       <View
-        className={`h-2 rounded overflow-hidden bg-surface-sunken`}
+        className="h-2 rounded overflow-hidden bg-surface-sunken"
       >
         <View
           className="h-2 rounded"
@@ -37,7 +34,7 @@ export default function TierProgressBar({
         />
       </View>
       <Text
-        className={`text-xs mt-2 text-text-secondary`}
+        className="text-xs mt-2 text-text-secondary"
       >
         {atMax
           ? "Top tier reached"

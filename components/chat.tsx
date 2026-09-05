@@ -1030,15 +1030,15 @@ export default function ChatScreen({
               ) {
                 return (
                   <View
-                    className={`px-4 py-3 min-w-[200px] ${bubbleShape} ${isMe ? "bg-primary" : isDark ? "bg-dark-surface border border-dark-border" : "bg-white border border-border"}`}
+                    className={`px-4 py-3 min-w-[200px] ${bubbleShape} ${isMe ? "bg-primary" : "bg-surface-raised border border-border"}`}
                   >
                     <Text
-                      className={`text-xs font-medium uppercase tracking-wide ${isMe ? "text-white/80" : isDark ? "text-dark-muted" : "text-tertiary"}`}
+                      className={`text-xs font-medium uppercase tracking-wide ${isMe ? "text-white/80" : "text-text-secondary"}`}
                     >
                       Buyer request
                     </Text>
                     <Text
-                      className={`text-base font-semibold mt-1 ${isMe ? "text-white" : isDark ? "text-dark-text" : "text-black"}`}
+                      className={`text-base font-semibold mt-1 ${isMe ? "text-white" : "text-text-primary"}`}
                       numberOfLines={2}
                     >
                       {sharedRequest?.title ||
@@ -1046,7 +1046,7 @@ export default function ChatScreen({
                     </Text>
                     {sharedRequest?.description ? (
                       <Text
-                        className={`text-sm mt-1 ${isMe ? "text-white/90" : isDark ? "text-dark-muted" : "text-tertiary"}`}
+                        className={`text-sm mt-1 ${isMe ? "text-white/90" : "text-text-secondary"}`}
                         numberOfLines={3}
                       >
                         {sharedRequest.description}
@@ -1054,7 +1054,7 @@ export default function ChatScreen({
                     ) : null}
                     {sharedRequest?.budget != null && (
                       <Text
-                        className={`text-sm font-semibold mt-2 ${isMe ? "text-white" : isDark ? "text-dark-text" : "text-black"}`}
+                        className={`text-sm font-semibold mt-2 ${isMe ? "text-white" : "text-text-primary"}`}
                       >
                         Budget: ₦{Number(sharedRequest.budget).toLocaleString()}
                       </Text>
@@ -1081,10 +1081,10 @@ export default function ChatScreen({
               }
               return (
                 <View
-                  className={`px-4 py-2.5 ${bubbleShape} ${isMe ? "bg-primary" : isDark ? "bg-dark-surface border border-dark-border" : "bg-white border border-border"}`}
+                  className={`px-4 py-2.5 ${bubbleShape} ${isMe ? "bg-primary" : "bg-surface-raised border border-border"}`}
                 >
                   <Text
-                    className={`text-base ${isMe ? "text-white" : isDark ? "text-dark-text" : "text-black"}`}
+                    className={`text-base ${isMe ? "text-white" : "text-text-primary"}`}
                   >
                     {item.content}
                   </Text>
@@ -1102,10 +1102,10 @@ export default function ChatScreen({
               if (!imageUri) {
                 return (
                   <View
-                    className={`w-56 h-40 rounded items-center justify-center px-3 bg-media`}
+                    className="w-56 h-40 rounded items-center justify-center px-3 bg-media"
                   >
                     <Text
-                      className={`text-sm text-center ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                      className="text-sm text-center text-text-secondary"
                     >
                       Image unavailable
                     </Text>
@@ -1119,7 +1119,7 @@ export default function ChatScreen({
                 >
                   <Image
                     source={{ uri: imageUri }}
-                    className={`w-56 h-40 rounded bg-media`}
+                    className="w-56 h-40 rounded bg-media"
                     resizeMode="cover"
                   />
                   {item.pending && (
@@ -1139,10 +1139,10 @@ export default function ChatScreen({
               if (!videoUri) {
                 return (
                   <View
-                    className={`w-56 h-40 rounded items-center justify-center px-3 bg-media`}
+                    className="w-56 h-40 rounded items-center justify-center px-3 bg-media"
                   >
                     <Text
-                      className={`text-sm text-center ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                      className="text-sm text-center text-text-secondary"
                     >
                       Video unavailable
                     </Text>
@@ -1152,7 +1152,7 @@ export default function ChatScreen({
               return (
                 <View>
                   <View
-                    className={`w-56 h-40 rounded overflow-hidden bg-media`}
+                    className="w-56 h-40 rounded overflow-hidden bg-media"
                   >
                     <InlineVideo
                       uri={videoUri}
@@ -1177,10 +1177,10 @@ export default function ChatScreen({
               if (!productId && !embeddedProduct?.id) {
                 return (
                   <View
-                    className={`rounded border px-4 py-3 ${isDark ? "bg-dark-surface border-dark-border" : "bg-surface border-border"}`}
+                    className="rounded border px-4 py-3 bg-surface-sunken border-border"
                   >
                     <Text
-                      className={`text-sm ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                      className="text-sm text-text-secondary"
                     >
                       Product no longer available
                     </Text>
@@ -1191,10 +1191,10 @@ export default function ChatScreen({
                 <View className="gap-2">
                   {caption ? (
                     <View
-                      className={`px-4 py-2.5 ${bubbleShape} ${isMe ? "bg-primary" : isDark ? "bg-dark-surface border border-dark-border" : "bg-white border border-border"}`}
+                      className={`px-4 py-2.5 ${bubbleShape} ${isMe ? "bg-primary" : "bg-surface-raised border border-border"}`}
                     >
                       <Text
-                        className={`text-base ${isMe ? "text-white" : isDark ? "text-dark-text" : "text-black"}`}
+                        className={`text-base ${isMe ? "text-white" : "text-text-primary"}`}
                       >
                         {caption}
                       </Text>
@@ -1212,18 +1212,18 @@ export default function ChatScreen({
 
           {item.message_type === "offer" && (
             <View
-              className={`rounded overflow-hidden border min-w-[200px] ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+              className="rounded overflow-hidden border min-w-[200px] bg-surface-raised border-border"
             >
               <View
-                className={`px-4 py-3 bg-media`}
+                className="px-4 py-3 bg-media"
               >
                 <Text
-                  className={`text-xs font-medium uppercase tracking-wide ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                  className="text-xs font-medium uppercase tracking-wide text-text-secondary"
                 >
                   Price offer
                 </Text>
                 <Text
-                  className={`text-lg font-bold mt-0.5 ${isDark ? "text-dark-text" : "text-black"}`}
+                  className="text-lg font-bold mt-0.5 text-text-primary"
                 >
                   ₦
                   {Number(
@@ -1235,7 +1235,7 @@ export default function ChatScreen({
                 </Text>
                 {(item as any).offer?.message && (
                   <Text
-                    className={`text-sm mt-1 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                    className="text-sm mt-1 text-text-secondary"
                     numberOfLines={2}
                   >
                     {(item as any).offer.message}
@@ -1266,10 +1266,10 @@ export default function ChatScreen({
                           "reject",
                         )
                       }
-                      className={`flex-1 py-2.5 rounded border items-center ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border"}`}
+                      className="flex-1 py-2.5 rounded border items-center bg-surface-sunken border-border"
                     >
                       <Text
-                        className={`font-semibold text-sm ${isDark ? "text-dark-text" : "text-black"}`}
+                        className="font-semibold text-sm text-text-primary"
                       >
                         Decline
                       </Text>
@@ -1280,7 +1280,7 @@ export default function ChatScreen({
                 (item as any).offer?.status !== "pending" && (
                   <View className="px-4 py-2">
                     <Text
-                      className={`text-xs capitalize ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                      className="text-xs capitalize text-text-secondary"
                     >
                       {(item as any).offer.status}
                     </Text>
@@ -1329,7 +1329,7 @@ export default function ChatScreen({
                     })()}
                     {(r.count > 1 || r.has_reacted) && (
                       <Text
-                        className={`text-[11px] ${r.has_reacted ? `${isDark ? "text-dark-text" : "text-black"} font-semibold` : isDark ? "text-dark-muted" : "text-tertiary"}`}
+                        className={`text-[11px] ${r.has_reacted ? `text-text-primary font-semibold` : "text-text-secondary"}`}
                       >
                         {r.count}
                       </Text>
@@ -1360,7 +1360,7 @@ export default function ChatScreen({
                         <TouchableOpacity
                           key={type}
                           onPress={() => handlePickerReaction(item, type)}
-                          className={`px-2 py-1 rounded border ${active ? (isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border") : isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+                          className={`px-2 py-1 rounded border ${active ? ("bg-surface-sunken border-border") : "bg-surface-raised border-border"}`}
                         >
                           {(() => {
                             const PickerIcon = getReactionIcon(type);
@@ -1376,7 +1376,7 @@ export default function ChatScreen({
                     })}
                     <TouchableOpacity
                       onPress={() => setReactionPickerFor(null)}
-                      className={`px-2 py-1 rounded bg-media`}
+                      className="px-2 py-1 rounded bg-media"
                     >
                       <X size={14} color={mutedColor} />
                     </TouchableOpacity>
@@ -1452,12 +1452,12 @@ export default function ChatScreen({
         !loading && sortedMessages.length === 0 ? (
         <View className="items-center justify-center px-6 py-10">
           <Text
-            className={`text-base font-semibold text-center ${isDark ? "text-dark-text" : "text-black"}`}
+            className="text-base font-semibold text-center text-text-primary"
           >
             Start a conversation…
           </Text>
           <Text
-            className={`text-sm mt-2 text-center ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+            className="text-sm mt-2 text-center text-text-secondary"
           >
             Say hello or ask a question about this product.
           </Text>
@@ -1470,14 +1470,14 @@ export default function ChatScreen({
   const typingIndicator = typingUser ? (
     <View className="px-4 py-2 flex-row items-center">
       <View
-        className={`flex-row gap-1 px-3 py-2 rounded border self-start ${isDark ? "bg-dark-surface border-dark-border" : "bg-surface border-border"}`}
+        className="flex-row gap-1 px-3 py-2 rounded border self-start bg-surface-sunken border-border"
       >
         <View className="w-2 h-2 rounded bg-text-secondary opacity-60" />
         <View className="w-2 h-2 rounded bg-text-secondary opacity-80" />
         <View className="w-2 h-2 rounded bg-text-secondary" />
       </View>
       <Text
-        className={`text-sm ml-2 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+        className="text-sm ml-2 text-text-secondary"
       >
         {typingUser} is typing
       </Text>
@@ -1486,11 +1486,11 @@ export default function ChatScreen({
 
   const inputBar = (
     <View
-      className={`flex-row items-center px-4 py-2 border-t gap-2 min-h-[52px] ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+      className="flex-row items-center px-4 py-2 border-t gap-2 min-h-[52px] bg-surface-raised border-border"
       style={{ paddingBottom: inputBottomPad }}
     >
       <View
-        className={`flex-1 flex-row items-center rounded-3xl pl-4 pr-1 py-1.5 bg-media`}
+        className="flex-1 flex-row items-center rounded-3xl pl-4 pr-1 py-1.5 bg-media"
       >
         <InputComponent
           value={input}
@@ -1500,7 +1500,7 @@ export default function ChatScreen({
           }}
           placeholder="Type a message…"
           placeholderTextColor={mutedColor}
-          className={`flex-1 text-base min-h-[24px] max-h-[80px] ${isDark ? "text-dark-text" : "text-black"}`}
+          className="flex-1 text-base min-h-[24px] max-h-[80px] text-text-primary"
           multiline
           maxLength={1000}
           textAlignVertical="center"
@@ -1551,17 +1551,17 @@ export default function ChatScreen({
             activeOpacity={1}
           />
           <View
-            className={`rounded-t max-h-[50%] px-4 pt-4 pb-10 ${isDark ? "bg-dark-surface" : "bg-white"}`}
+            className="rounded-t max-h-[50%] px-4 pt-4 pb-10 bg-surface-raised"
           >
             <View className="flex-row justify-between mb-4">
               <Text
-                className={`font-semibold text-base ${isDark ? "text-dark-text" : "text-black"}`}
+                className="font-semibold text-base text-text-primary"
               >
                 Active discounts
               </Text>
               <TouchableOpacity onPress={() => setDiscountVisible(false)}>
                 <Text
-                  className={`font-semibold ${isDark ? "text-dark-text" : "text-black"}`}
+                  className="font-semibold text-text-primary"
                 >
                   Done
                 </Text>
@@ -1571,7 +1571,7 @@ export default function ChatScreen({
               <ActivityIndicator size="small" color={textColor} />
             ) : (Array.isArray(discounts) ? discounts : []).length === 0 ? (
               <Text
-                className={`text-sm ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                className="text-sm text-text-secondary"
               >
                 No active discounts for this chat.
               </Text>
@@ -1579,15 +1579,15 @@ export default function ChatScreen({
               (Array.isArray(discounts) ? discounts : []).map((d) => (
                 <View
                   key={d.id}
-                  className={`rounded p-3 mb-2 bg-media`}
+                  className="rounded p-3 mb-2 bg-media"
                 >
                   <Text
-                    className={`font-medium text-sm ${isDark ? "text-dark-text" : "text-black"}`}
+                    className="font-medium text-sm text-text-primary"
                   >
                     {d.discount_message ?? d.discount_type ?? "Discount"}
                   </Text>
                   <Text
-                    className={`font-semibold text-sm mt-1 ${isDark ? "text-dark-text" : "text-black"}`}
+                    className="font-semibold text-sm mt-1 text-text-primary"
                   >
                     ₦{Number(d.discount_value ?? 0).toLocaleString()}
                   </Text>
@@ -1608,10 +1608,10 @@ export default function ChatScreen({
                           onPress={() =>
                             handleRespondToDiscount(d.id, "rejected")
                           }
-                          className={`flex-1 py-2 rounded border items-center ${isDark ? "bg-dark-surface border-dark-border-strong" : "bg-surface border-border"}`}
+                          className="flex-1 py-2 rounded border items-center bg-surface-sunken border-border"
                         >
                           <Text
-                            className={`font-semibold text-sm ${isDark ? "text-dark-text" : "text-black"}`}
+                            className="font-semibold text-sm text-text-primary"
                           >
                             Decline
                           </Text>
@@ -1685,7 +1685,7 @@ export default function ChatScreen({
   if (loading) {
     return (
       <View
-        className={`flex-1 items-center justify-center ${isDark ? "bg-dark-page" : "bg-bg-elevated"}`}
+        className="flex-1 items-center justify-center bg-surface-page"
       >
         <ActivityIndicator size="large" color={textColor} />
       </View>
@@ -1694,13 +1694,13 @@ export default function ChatScreen({
 
   return (
     <KeyboardAvoidingView
-      className={`flex-1 ${isDark ? "bg-dark-page" : "bg-bg-elevated"}`}
+      className="flex-1 bg-surface-page"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={0}
     >
       {/* Header */}
       <View
-        className={`flex-row items-center px-4 py-3 border-b ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+        className="flex-row items-center px-4 py-3 border-b bg-surface-raised border-border"
       >
         <TouchableOpacity
           onPress={() => (onClose ? onClose() : router.back())}
@@ -1715,7 +1715,7 @@ export default function ChatScreen({
           size={40}
         />
         <Text
-          className={`ml-3 font-semibold text-base flex-1 ${isDark ? "text-dark-text" : "text-black"}`}
+          className="ml-3 font-semibold text-base flex-1 text-text-primary"
           numberOfLines={1}
         >
           {otherUser?.username ?? "Chat"}

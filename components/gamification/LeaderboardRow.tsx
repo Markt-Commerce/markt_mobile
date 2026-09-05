@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, Image } from "react-native";
 import TierBadge from "./TierBadge";
-import { useTheme } from "../themeProvider";
 import type { LeaderboardRow as Row, TierKey } from "../../types/gamification";
 
 export interface LeaderboardRowProps {
@@ -32,8 +31,6 @@ export default function LeaderboardRow({
   isCurrentUser = false,
   className = "",
 }: LeaderboardRowProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const name = row.username ?? "User";
   const podiumColors = podium(row.rank);
 
@@ -41,9 +38,9 @@ export default function LeaderboardRow({
     <View
       accessibilityLabel={`Rank ${row.rank}, ${name}, ${row.points} points`}
       className={`flex-row items-center px-4 py-3 border-b ${
-        isDark ? "border-border" : "border-border-light"
+        "border-border"
       } ${
-        isCurrentUser ? (isDark ? "bg-surface-sunken" : "bg-surface") : ""
+        isCurrentUser ? ("bg-surface-sunken") : ""
       } ${className}`}
     >
       <View className="w-9 items-center">
@@ -59,7 +56,7 @@ export default function LeaderboardRow({
         ) : (
           <Text
             className={`font-semibold text-[14px] ${
-              isDark ? "text-text-muted" : "text-tertiary"
+              "text-text-muted"
             }`}
           >
             {row.rank}
@@ -76,12 +73,12 @@ export default function LeaderboardRow({
       ) : (
         <View
           className={`w-9 h-9 rounded-full ml-1 items-center justify-center ${
-            isDark ? "bg-surface-raised" : "bg-surface"
+            "bg-surface-sunken"
           }`}
         >
           <Text
             className={`font-bold text-sm ${
-              isDark ? "text-text-primary" : "text-black"
+              "text-text-primary"
             }`}
           >
             {name.charAt(0).toUpperCase()}
@@ -93,7 +90,7 @@ export default function LeaderboardRow({
         <Text
           numberOfLines={1}
           className={`font-bold text-sm ${
-            isDark ? "text-text-primary" : "text-black"
+            "text-text-primary"
           }`}
         >
           {name}
@@ -113,11 +110,11 @@ export default function LeaderboardRow({
           unit — a bare number left the reader to infer what it counted. */}
       <View className="items-end">
         <Text
-          className={`font-bold text-[15px] text-text-primary`}
+          className="font-bold text-[15px] text-text-primary"
         >
           {row.points.toLocaleString()}
         </Text>
-        <Text className={`text-[11px] text-text-muted`}>
+        <Text className="text-[11px] text-text-muted">
           pts
         </Text>
       </View>

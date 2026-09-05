@@ -11,7 +11,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 
-import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import { getPointsHistory } from "../../services/sections/gamification";
 import { reasonLabel } from "../../utils/gamification";
@@ -19,8 +18,6 @@ import type { PointsHistoryItem } from "../../types/gamification";
 
 export default function PointsHistoryScreen() {
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
 
   const [items, setItems] = useState<PointsHistoryItem[]>([]);
@@ -71,7 +68,7 @@ export default function PointsHistoryScreen() {
     >
       <View
         className={`flex-row items-center px-4 py-3 border-b ${
-          isDark ? "border-border-strong" : "border-border"
+          "border-border"
         }`}
       >
         <TouchableOpacity onPress={() => router.back()}>
@@ -79,7 +76,7 @@ export default function PointsHistoryScreen() {
         </TouchableOpacity>
         <Text
           className={`text-lg font-bold ml-2 ${
-            isDark ? "text-text-primary" : "text-black"
+            "text-text-primary"
           }`}
         >
           Points History
@@ -92,20 +89,20 @@ export default function PointsHistoryScreen() {
         renderItem={({ item }) => (
           <View
             className={`flex-row items-center justify-between px-6 py-4 border-b ${
-              isDark ? "border-border-strong" : "border-border"
+              "border-border"
             }`}
           >
             <View className="flex-1 pr-3">
               <Text
                 className={`font-bold text-sm ${
-                  isDark ? "text-text-primary" : "text-black"
+                  "text-text-primary"
                 }`}
               >
                 {reasonLabel(item.reason)}
               </Text>
               <Text
                 className={`text-xs mt-0.5 ${
-                  isDark ? "text-text-secondary" : "text-tertiary"
+                  "text-text-secondary"
                 }`}
               >
                 {formatDate(item.created_at)} · balance {item.balance_after.toLocaleString()}
@@ -138,7 +135,7 @@ export default function PointsHistoryScreen() {
           ) : (
             <Text
               className={`text-center text-sm py-16 ${
-                isDark ? "text-text-secondary" : "text-tertiary"
+                "text-text-secondary"
               }`}
             >
               No points yet.

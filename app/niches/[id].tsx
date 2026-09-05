@@ -10,7 +10,6 @@ import PostDisplayComponent from "../../components/PostDisplayComponent";
 import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { likePost } from "../../services/sections/post";
-import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import logger from "../../utils/logger";
 
@@ -27,8 +26,6 @@ export default function NicheDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
 
   const [posts, setPosts] = useState<NichePost[]>([]);
@@ -224,7 +221,7 @@ export default function NicheDetailScreen() {
             description and the Join button in two more bordered strips below,
             so the community had no presence at all. */}
         <View>
-          <View className={`h-32 bg-surface-sunken`}>
+          <View className="h-32 bg-surface-sunken">
             {niche?.banner_url ? (
               <Image
                 source={{ uri: niche.banner_url }}
@@ -257,7 +254,7 @@ export default function NicheDetailScreen() {
           <View className="px-4 pt-3 pb-4">
             <View className="flex-row items-end" style={{ marginTop: -34 }}>
               <View
-                className={`rounded-2xl p-1 bg-surface-raised`}
+                className="rounded-2xl p-1 bg-surface-raised"
               >
                 {niche?.image_url ? (
                   <Image
@@ -267,9 +264,9 @@ export default function NicheDetailScreen() {
                 ) : (
                   <View
                     style={{ width: 64, height: 64, borderRadius: 16 }}
-                    className={`items-center justify-center bg-surface-sunken`}
+                    className="items-center justify-center bg-surface-sunken"
                   >
-                    <Text className={`text-[22px] font-bold text-text-secondary`}>
+                    <Text className="text-[22px] font-bold text-text-secondary">
                       {(niche?.name ?? "?").slice(0, 1).toUpperCase()}
                     </Text>
                   </View>
@@ -289,28 +286,28 @@ export default function NicheDetailScreen() {
             </View>
 
             <Text
-              className={`text-[22px] font-bold mt-3 text-text-primary`}
+              className="text-[22px] font-bold mt-3 text-text-primary"
               numberOfLines={2}
             >
               {niche?.name || "Community"}
             </Text>
             <View className="flex-row items-center mt-1">
               <Users size={13} color={t.textMuted} strokeWidth={2} />
-              <Text className={`text-[13px] ml-1.5 text-text-muted`}>
+              <Text className="text-[13px] ml-1.5 text-text-muted">
                 {niche?.member_count ?? 0} members · {niche?.post_count ?? 0} posts
               </Text>
             </View>
 
             {niche?.description ? (
               <Text
-                className={`text-[14px] leading-[20px] mt-2.5 ${"text-text-secondary"}`}
+                className="text-[14px] leading-[20px] mt-2.5 text-text-secondary"
               >
                 {niche.description}
               </Text>
             ) : null}
 
             {niche ? (
-              <Text className={`text-[12px] mt-2 text-text-muted`}>
+              <Text className="text-[12px] mt-2 text-text-muted">
                 {niche.allow_buyer_posts && niche.allow_seller_posts
                   ? "Buyers and sellers can post"
                   : niche.allow_buyer_posts
@@ -345,7 +342,7 @@ export default function NicheDetailScreen() {
 
         {/* Banned Message */}
         {isBanned && (
-          <View className={`mx-4 mb-3 p-3 rounded-xl ${"bg-danger-muted"}`}>
+          <View className="mx-4 mb-3 p-3 rounded-xl bg-danger-muted">
             <Text className="text-danger-text text-[14px] font-semibold">
               You've been removed from this community
             </Text>
@@ -357,7 +354,7 @@ export default function NicheDetailScreen() {
 
         {/* Error state with retry */}
         {hasError && (
-          <View className={`mx-4 mt-4 p-3 border rounded items-center ${"bg-danger-muted border-danger"}`}>
+          <View className="mx-4 mt-4 p-3 border rounded items-center bg-danger-muted border-danger">
             <Text className="text-error text-sm font-semibold">Failed to load posts</Text>
             <TouchableOpacity onPress={handleRetry} className="mt-2 px-4 py-2 bg-primary rounded">
               <Text className="text-white text-sm font-semibold">Retry</Text>
@@ -376,13 +373,13 @@ export default function NicheDetailScreen() {
             loading && posts.length === 0 ? (
               <View className="items-center justify-center py-16">
                 <ActivityIndicator size="large" color={t.textPrimary} />
-                <Text className={`text-sm mt-2 text-text-secondary`}>Loading posts…</Text>
+                <Text className="text-sm mt-2 text-text-secondary">Loading posts…</Text>
               </View>
             ) : !loading && !hasError ? (
               <View className="items-center justify-center py-16">
-                <Text className={`text-sm text-text-secondary`}>No posts yet</Text>
+                <Text className="text-sm text-text-secondary">No posts yet</Text>
                 {isJoined && !isBanned && (
-                  <Text className={`text-xs mt-2 text-text-secondary`}>Be the first to post!</Text>
+                  <Text className="text-xs mt-2 text-text-secondary">Be the first to post!</Text>
                 )}
               </View>
             ) : null

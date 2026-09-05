@@ -21,7 +21,6 @@ import { createPost } from "../services/sections/post";
 import { createNichePost } from "../services/sections/niches";
 import { useToast } from "./ToastProvider";
 import { friendlyErrorMessage } from "../utils/errorMessages";
-import { useTheme } from "./themeProvider";
 import { useTokens } from "../theme/useTokens";
 import logger from "../utils/logger";
 
@@ -48,8 +47,6 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
     //user
     const { user } = useUser();
     const { show } = useToast();
-    const { resolvedTheme } = useTheme();
-    const isDark = resolvedTheme === "dark";
     const t = useTokens();
 
     const [postImages, setpostImages] = useState<string[]>([]);
@@ -189,26 +186,26 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
         handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
       >
         <BottomSheetScrollView className="p-4">
-        <Text className={`text-lg font-bold mb-3 text-text-primary`}>Create Post</Text>
+        <Text className="text-lg font-bold mb-3 text-text-primary">Create Post</Text>
 
           {/* Caption */}
           <Input name="caption" control={control} label="Caption" placeholder="Share a product you're curious about…" multiline numberOfLines={6} />
 
           {/* Images */}
-          <Text className={`mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary`}>Images</Text>
+          <Text className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary">Images</Text>
           {Array.isArray(Imagevalue) && Imagevalue.length > 0 && (
-            <Text className={`text-xs mb-2 text-text-secondary`}>Long press on each image to remove it</Text>
+            <Text className="text-xs mb-2 text-text-secondary">Long press on each image to remove it</Text>
           )}
           {/* <<< IMPORTANT: pass value & onChange so we can receive images >>> */}
           <InstagramGrid value={Imagevalue} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} allowVideos />
   
 
           {/* Categories */}
-        <Text className={`mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary`}>Categories</Text>
+        <Text className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary">Categories</Text>
         <View className="flex-row flex-wrap gap-3 p-3 pr-4">
           {selectedCategories.map(cat => (
-            <View key={cat.id.toString()} className={`flex-row items-center border rounded px-3 py-1 ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}>
-              <Text className={`text-sm font-medium mr-2 text-text-primary`}>{cat.name}</Text>
+            <View key={cat.id.toString()} className="flex-row items-center border rounded px-3 py-1 bg-surface-sunken border-border">
+              <Text className="text-sm font-medium mr-2 text-text-primary">{cat.name}</Text>
               <TouchableOpacity onPress={() => removeCategory(cat.id)}>
                 <X size={16} color={t.textPrimary} />
               </TouchableOpacity>
@@ -216,15 +213,15 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
           ))}
           <TouchableOpacity
             onPress={() => setModalVisible(true)}
-            className={`border rounded px-4 py-2 justify-center items-center ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}
+            className="border rounded px-4 py-2 justify-center items-center bg-surface-raised border-border"
           >
-            <Text className={`text-sm font-bold text-text-primary`}>+ Add Categories</Text>
+            <Text className="text-sm font-bold text-text-primary">+ Add Categories</Text>
           </TouchableOpacity>
         </View>
         {errors.category_ids && <Text className="text-error text-xs mt-1">{errors.category_ids.message}</Text>}
 
           {/* Products */}
-          <Text className={`mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary`}>Tag Products</Text>
+          <Text className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary">Tag Products</Text>
 
           {/* Selected Products Section */}
           {currentProducts.length > 0 && (
@@ -234,9 +231,9 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
                 .map(product => (
                   <View
                     key={product.id}
-                    className={`flex-row items-center border rounded px-3 py-1 ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
+                    className="flex-row items-center border rounded px-3 py-1 bg-surface-sunken border-border"
                   >
-                    <Text className={`text-sm font-medium mr-2 text-text-primary`}>{product.name}</Text>
+                    <Text className="text-sm font-medium mr-2 text-text-primary">{product.name}</Text>
                     <TouchableOpacity onPress={() => setCurrentProducts(prev => prev.filter(pId => pId !== product.id))}>
                       <X size={16} color={t.textPrimary} />
                     </TouchableOpacity>
@@ -246,9 +243,9 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
           )}
           <TouchableOpacity
             onPress={() => setProductVisible(true)}
-            className={`border rounded px-4 py-2 justify-center items-center mb-3 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}
+            className="border rounded px-4 py-2 justify-center items-center mb-3 bg-surface-raised border-border"
           >
-            <Text className={`text-sm font-bold text-text-primary`}>+ Tag Products</Text>
+            <Text className="text-sm font-bold text-text-primary">+ Tag Products</Text>
           </TouchableOpacity>
 
 

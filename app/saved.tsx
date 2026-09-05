@@ -20,7 +20,6 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { Bookmark, Compass, RotateCw } from "lucide-react-native";
 import ScreenHeader from "../components/ScreenHeader";
 import SkeletonImage from "../components/SkeletonImage";
-import { useTheme } from "../components/themeProvider";
 import { useTokens } from "../theme/useTokens";
 import { useToast } from "../components/ToastProvider";
 import { formatNaira } from "../utils/formatCurrency";
@@ -36,8 +35,6 @@ const FILTERS: { key: SavedType | "all"; label: string }[] = [
 
 export default function SavedScreen() {
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const { show } = useToast();
 
@@ -50,9 +47,9 @@ export default function SavedScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const ink = isDark ? "text-text-primary" : "text-black";
-  const muted = isDark ? "text-text-secondary" : "text-tertiary";
-  const rule = isDark ? "border-border-strong" : "border-border";
+  const ink = "text-text-primary";
+  const muted = "text-text-secondary";
+  const rule = "border-border";
 
   const load = useCallback(
     async (opts: { refresh?: boolean; forFilter?: SavedType | "all" } = {}) => {
@@ -153,7 +150,7 @@ export default function SavedScreen() {
       accessibilityLabel={`Open ${item.title ?? item.content_type}`}
     >
       <View
-        className={`w-16 h-16 rounded overflow-hidden bg-surface-sunken`}
+        className="w-16 h-16 rounded overflow-hidden bg-surface-sunken"
       >
         {item.image_url ? (
           <SkeletonImage
@@ -196,7 +193,7 @@ export default function SavedScreen() {
 
   return (
     <SafeAreaView
-      className={`flex-1 bg-surface-raised`}
+      className="flex-1 bg-surface-raised"
       edges={["top", "left", "right", "bottom"]}
     >
       <ScreenHeader title="Saved" onBack={() => router.back()} />
@@ -213,7 +210,7 @@ export default function SavedScreen() {
                   setLoading(true);
                   load({ forFilter: f.key });
                 }}
-                className={`px-4 min-h-[36px] justify-center rounded-full ${active ? "bg-primary" : isDark ? "bg-surface-sunken" : "bg-surface"}`}
+                className={`px-4 min-h-[36px] justify-center rounded-full ${active ? "bg-primary" : "bg-surface-sunken"}`}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
                 accessibilityLabel={`Show ${f.label.toLowerCase()}`}
@@ -277,7 +274,7 @@ export default function SavedScreen() {
           ListEmptyComponent={
             <View className="items-center justify-center px-10 pt-24">
               <View
-                className={`w-20 h-20 rounded-full items-center justify-center mb-6 bg-surface-sunken`}
+                className="w-20 h-20 rounded-full items-center justify-center mb-6 bg-surface-sunken"
               >
                 <Bookmark size={30} color={t.textSecondary} strokeWidth={1.6} />
               </View>

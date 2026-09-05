@@ -11,15 +11,12 @@ import { CheckCircle2, XCircle } from "lucide-react-native";
 import { verifyPayment } from "../../services/sections/payments";
 import { getOrderDetails } from "../../services/sections/orders";
 import type { Order } from "../../models/orders";
-import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import { clearIdempotencyKey } from "../../utils/idempotency";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 
 export default function PaymentResult() {
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
 
   const { status, payment_id, order_id, error } = useLocalSearchParams<{
@@ -80,14 +77,14 @@ export default function PaymentResult() {
 
   return (
     <SafeAreaView
-      className={`flex-1 bg-surface-raised`}
+      className="flex-1 bg-surface-raised"
       edges={["top", "left", "right", "bottom"]}
     >
       <View className="flex-1 items-center justify-center px-6">
         {loading ? (
           <>
             <ActivityIndicator size="large" color={t.textPrimary} />
-            <Text className={`mt-4 text-sm text-text-secondary`}>
+            <Text className="mt-4 text-sm text-text-secondary">
               Confirming your payment…
             </Text>
           </>
@@ -102,7 +99,7 @@ export default function PaymentResult() {
             )}
 
             <Text
-              className={`mt-6 text-2xl font-bold text-center text-text-primary`}
+              className="mt-6 text-2xl font-bold text-center text-text-primary"
             >
               {isSuccess
                 ? verified
@@ -112,7 +109,7 @@ export default function PaymentResult() {
             </Text>
 
             <Text
-              className={`mt-2 text-sm text-center text-text-secondary`}
+              className="mt-2 text-sm text-center text-text-secondary"
             >
               {isSuccess
                 ? verified
@@ -127,7 +124,7 @@ export default function PaymentResult() {
 
             {order?.order_number ? (
               <Text
-                className={`mt-4 text-sm font-semibold text-text-primary`}
+                className="mt-4 text-sm font-semibold text-text-primary"
               >
                 Order {order.order_number}
               </Text>
@@ -149,12 +146,12 @@ export default function PaymentResult() {
 
           {!isSuccess && resolvedOrderId ? (
             <TouchableOpacity
-              className={`h-12 rounded border items-center justify-center border-border-strong`}
+              className="h-12 rounded border items-center justify-center border-border-strong"
               onPress={() =>
                 router.replace(`/checkout/payment-method/${resolvedOrderId}`)
               }
             >
-              <Text className={`font-semibold text-text-primary`}>
+              <Text className="font-semibold text-text-primary">
                 Retry payment
               </Text>
             </TouchableOpacity>
@@ -164,7 +161,7 @@ export default function PaymentResult() {
             className="h-12 items-center justify-center"
             onPress={() => router.replace("/(tabs)/orders")}
           >
-            <Text className={`font-semibold text-text-secondary`}>
+            <Text className="font-semibold text-text-secondary">
               Back to orders
             </Text>
           </TouchableOpacity>

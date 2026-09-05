@@ -82,7 +82,7 @@ export default function ProductPicker({
     >
       <BottomSheetView className="flex-1 px-4">
         <Text
-          className={`text-lg font-semibold mt-4 mb-2 ${isDark ? "text-dark-text" : "text-black"}`}
+          className="text-lg font-semibold mt-4 mb-2 text-text-primary"
         >
           Select Product
         </Text>
@@ -94,7 +94,7 @@ export default function ProductPicker({
               color={t.textPrimary}
             />
             <Text
-              className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm mt-3`}
+              className="text-text-secondary text-sm mt-3"
             >
               Loading products...
             </Text>
@@ -102,12 +102,12 @@ export default function ProductPicker({
         ) : products.length === 0 ? (
           <View className="flex-1 items-center justify-center py-12">
             <Text
-              className={`text-center ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+              className="text-center text-text-secondary"
             >
               No products available.
             </Text>
             <Text
-              className={`text-center text-sm mt-1 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+              className="text-center text-sm mt-1 text-text-secondary"
             >
               Create products in your dashboard first.
             </Text>
@@ -142,17 +142,17 @@ export default function ProductPicker({
                         ? { uri: imageUri }
                         : require("../assets/icon.png")
                     }
-                    className={`w-12 h-12 rounded border mr-3 ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface-dim border-border"}`}
+                    className="w-12 h-12 rounded border mr-3 bg-surface-sunken border-border"
                   />
 
                   <View className="flex-1">
                     <Text
-                      className={`text-base font-medium ${isDark ? "text-dark-text" : "text-black"}`}
+                      className="text-base font-medium text-text-primary"
                     >
                       {item.name}
                     </Text>
                     <Text
-                      className={`text-sm ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                      className="text-sm text-text-secondary"
                     >
                       {formatNaira(item.price)}
                     </Text>
@@ -161,7 +161,7 @@ export default function ProductPicker({
                   {onRemove && (
                     <TouchableOpacity
                       onPress={() => handleRemove(item)}
-                      className={`p-2 rounded border ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-white border-border"}`}
+                      className="p-2 rounded border bg-surface-raised border-border"
                       accessibilityLabel={`Remove ${item.name}`}
                     >
                       <Trash2 color={t.dangerText} size={20} />

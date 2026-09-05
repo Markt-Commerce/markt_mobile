@@ -77,24 +77,24 @@ export default function TrackOrderScreen() {
     return Math.round(((furthest + 1) / STAGE_ORDER.length) * 100);
   }, [tracking]);
 
-  const cardClass = `rounded border p-4 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`;
-  const labelClass = `text-sm ${isDark ? "text-dark-muted" : "text-tertiary"}`;
-  const valueClass = `text-sm ${isDark ? "text-dark-text" : "text-black"}`;
+  const cardClass = `rounded border p-4 bg-surface-raised border-border`;
+  const labelClass = `text-sm text-text-secondary`;
+  const valueClass = `text-sm text-text-primary`;
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-page">
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
         <TouchableOpacity
           onPress={() => router.back()}
-          className={`h-10 w-10 rounded items-center justify-center border ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+          className="h-10 w-10 rounded items-center justify-center border bg-surface-raised border-border"
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
           <ArrowLeft size={18} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
-          className={`flex-1 text-center text-lg font-bold -ml-10 ${isDark ? "text-dark-text" : "text-black"}`}
+          className="flex-1 text-center text-lg font-bold -ml-10 text-text-primary"
         >
           Track order
         </Text>
@@ -107,7 +107,7 @@ export default function TrackOrderScreen() {
         </View>
       ) : error || !tracking ? (
         <View className="flex-1 justify-center items-center px-6 py-16">
-          <Text className={`font-semibold text-lg text-center ${isDark ? "text-dark-text" : "text-black"}`}>
+          <Text className="font-semibold text-lg text-center text-text-primary">
             Could not load tracking
           </Text>
           <Text className={`${labelClass} mt-2 text-center`}>Please try again later.</Text>
@@ -118,14 +118,14 @@ export default function TrackOrderScreen() {
           <View className="px-4">
             <View className={cardClass}>
               <View className="flex-row items-center justify-between">
-                <Text className={`font-bold ${isDark ? "text-dark-text" : "text-black"}`}>
+                <Text className="font-bold text-text-primary">
                   Order #{tracking.order_number ?? tracking.order_id}
                 </Text>
-                <Text className={`font-semibold ${isDark ? "text-dark-text" : "text-black"}`}>
+                <Text className="font-semibold text-text-primary">
                   {progressPct}%
                 </Text>
               </View>
-              <View className={`mt-3 h-2 w-full rounded overflow-hidden ${isDark ? "bg-dark-border" : "bg-border"}`}>
+              <View className="mt-3 h-2 w-full rounded overflow-hidden bg-border">
                 <View className="h-2 bg-primary rounded" style={{ width: `${progressPct}%` }} />
               </View>
               <Text className={`mt-2 text-xs capitalize ${labelClass}`}>
@@ -143,16 +143,16 @@ export default function TrackOrderScreen() {
                   <View key={`${s.status}-${idx}`} className="flex-row">
                     <View className="items-center mr-3">
                       <View
-                        className={`h-6 w-6 rounded items-center justify-center ${isDark ? "bg-dark-elevated" : "bg-surface-dim"}`}
+                        className="h-6 w-6 rounded items-center justify-center bg-surface-sunken"
                       >
                         {timelineIcon(s.status, isDark)}
                       </View>
                       {!last && (
-                        <View className={`flex-1 w-[2px] ${isDark ? "bg-dark-border" : "bg-border"}`} />
+                        <View className="flex-1 w-[2px] bg-border" />
                       )}
                     </View>
                     <View className={`pb-5 ${last ? "pb-0" : ""} flex-1`}>
-                      <Text className={`text-base font-semibold ${isDark ? "text-dark-text" : "text-black"}`}>
+                      <Text className="text-base font-semibold text-text-primary">
                         {s.label}
                       </Text>
                       {!!s.timestamp && (
@@ -170,13 +170,13 @@ export default function TrackOrderScreen() {
           {/* Per-item status */}
           <View className="px-4 mt-4">
             <View className={cardClass}>
-              <Text className={`font-bold mb-3 ${isDark ? "text-dark-text" : "text-black"}`}>
+              <Text className="font-bold mb-3 text-text-primary">
                 Items ({tracking.items.length})
               </Text>
               {tracking.items.map((item) => (
                 <View
                   key={item.id}
-                  className={`flex-row items-center justify-between py-2 ${isDark ? "border-dark-border" : "border-border"} ${item !== tracking.items[tracking.items.length - 1] ? "border-b" : ""}`}
+                  className={`flex-row items-center justify-between py-2 border-border ${item !== tracking.items[tracking.items.length - 1] ? "border-b" : ""}`}
                 >
                   <View className="flex-1 pr-3">
                     <Text className={valueClass} numberOfLines={1}>
@@ -184,10 +184,10 @@ export default function TrackOrderScreen() {
                     </Text>
                   </View>
                   <View
-                    className={`px-2 py-0.5 rounded bg-media`}
+                    className="px-2 py-0.5 rounded bg-media"
                   >
                     <Text
-                      className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                      className="text-[10px] font-bold uppercase tracking-wider text-text-secondary"
                     >
                       {ITEM_STATUS_LABEL[item.status] ?? item.status}
                     </Text>
@@ -201,7 +201,7 @@ export default function TrackOrderScreen() {
           {tracking.shipment && (
             <View className="px-4 mt-4">
               <View className={cardClass}>
-                <Text className={`font-bold mb-2 ${isDark ? "text-dark-text" : "text-black"}`}>
+                <Text className="font-bold mb-2 text-text-primary">
                   Shipment
                 </Text>
                 {tracking.shipment.carrier && (
@@ -232,7 +232,7 @@ export default function TrackOrderScreen() {
           {tracking.delivery && (
             <View className="px-4 mt-4">
               <View className={cardClass}>
-                <Text className={`font-bold mb-2 ${isDark ? "text-dark-text" : "text-black"}`}>
+                <Text className="font-bold mb-2 text-text-primary">
                   Delivery
                 </Text>
                 <View className="flex-row justify-between py-1.5">
@@ -259,7 +259,7 @@ export default function TrackOrderScreen() {
               <View className={cardClass}>
                 <View className="flex-row items-center gap-2 mb-2">
                   <MapPin size={16} color={t.textSecondary} />
-                  <Text className={`font-bold ${isDark ? "text-dark-text" : "text-black"}`}>
+                  <Text className="font-bold text-text-primary">
                     Delivery address
                   </Text>
                 </View>

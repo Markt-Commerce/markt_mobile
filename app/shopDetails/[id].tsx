@@ -148,17 +148,17 @@ export default function Shop() {
   };
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-page">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header with back button */}
         <View
-          className={`flex-row items-center justify-between px-6 py-4 border-b ${isDark ? "border-dark-border" : "border-border"}`}
+          className="flex-row items-center justify-between px-6 py-4 border-b border-border"
         >
           <TouchableOpacity onPress={() => router.back()} className="p-1 -ml-1">
             <ArrowLeft size={24} color={t.textPrimary} />
           </TouchableOpacity>
           <Text
-            className={`text-xl font-bold flex-1 text-center pr-4 ${isDark ? "text-dark-text" : "text-black"}`}
+            className="text-xl font-bold flex-1 text-center pr-4 text-text-primary"
           >
             Shop
           </Text>
@@ -172,7 +172,7 @@ export default function Shop() {
           source={{
             uri: shop?.user.profile_picture || defaultProfilePicture,
           }}
-          className={`w-full h-56 overflow-hidden bg-media`}
+          className="w-full h-56 overflow-hidden bg-media"
           resizeMode="cover"
         />
 
@@ -184,12 +184,12 @@ export default function Shop() {
               source={{
                 uri: shop?.user.profile_picture || defaultProfilePicture,
               }}
-              className={`w-24 h-24 rounded-full border-4 ${isDark ? "border-dark-page bg-dark-elevated" : "border-white bg-surface"}`}
+              className="w-24 h-24 rounded-full border-4 border-surface-page bg-surface-sunken"
             />
             <View className="flex-1 pb-1">
               <View className="flex-row items-center gap-2">
                 <Text
-                  className={`text-2xl font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+                  className="text-2xl font-bold text-text-primary"
                 >
                   {shop?.shop_name}
                 </Text>
@@ -204,7 +204,7 @@ export default function Shop() {
               </View>
               <View className="flex-row items-center gap-2 mt-2">
                 <Text
-                  className={`text-sm font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+                  className="text-sm font-bold text-text-primary"
                 >
                   {shop?.average_rating || 0}
                 </Text>
@@ -233,7 +233,7 @@ export default function Shop() {
                 disabled={followLoading}
               >
                 <Text
-                  className={`font-bold text-sm ${isFollowing ? (isDark ? "text-dark-text" : "text-black") : "text-white"}`}
+                  className={`font-bold text-sm ${isFollowing ? ("text-text-primary") : "text-white"}`}
                 >
                   {followLoading
                     ? "Loading..."
@@ -247,40 +247,40 @@ export default function Shop() {
 
           {/* Stats Row */}
           <View
-            className={`flex-row justify-between gap-4 py-6 border-t border-b ${isDark ? "border-dark-border" : "border-border"}`}
+            className="flex-row justify-between gap-4 py-6 border-t border-b border-border"
           >
             <View className="flex-1 items-center">
               <Text
-                className={`text-xl font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+                className="text-xl font-bold text-text-primary"
               >
                 {shop?.stats.product_count || 0}
               </Text>
               <Text
-                className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-xs mt-1`}
+                className="text-text-secondary text-xs mt-1"
               >
                 Products
               </Text>
             </View>
             <View className="flex-1 items-center">
               <Text
-                className={`text-xl font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+                className="text-xl font-bold text-text-primary"
               >
                 {shop?.stats.post_count || 0}
               </Text>
               <Text
-                className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-xs mt-1`}
+                className="text-text-secondary text-xs mt-1"
               >
                 Posts
               </Text>
             </View>
             <View className="flex-1 items-center">
               <Text
-                className={`text-xl font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+                className="text-xl font-bold text-text-primary"
               >
                 {shop?.stats.follower_count || 0}
               </Text>
               <Text
-                className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-xs mt-1`}
+                className="text-text-secondary text-xs mt-1"
               >
                 Followers
               </Text>
@@ -291,10 +291,10 @@ export default function Shop() {
         {/* Badges earned */}
         {sellerBadges.filter((b) => b.earned).length > 0 && (
           <View
-            className={`px-6 py-6 border-b ${isDark ? "border-dark-border" : "border-border"}`}
+            className="px-6 py-6 border-b border-border"
           >
             <Text
-              className={`${isDark ? "text-dark-text" : "text-black"} text-xl font-bold mb-4`}
+              className="text-text-primary text-xl font-bold mb-4"
             >
               Badges earned
             </Text>
@@ -308,10 +308,10 @@ export default function Shop() {
         {/* Description */}
         {shop?.description && (
           <View
-            className={`px-6 py-6 border-b ${isDark ? "border-dark-border" : "border-border"}`}
+            className="px-6 py-6 border-b border-border"
           >
             <Text
-              className={`${isDark ? "text-dark-text" : "text-black"} text-base leading-7`}
+              className="text-text-primary text-base leading-7"
             >
               {shop?.description}
             </Text>
@@ -320,7 +320,7 @@ export default function Shop() {
 
         {/* Tabs */}
         <View
-          className={`flex-row border-b px-6 gap-8 ${isDark ? "border-dark-border" : "border-border"}`}
+          className="flex-row border-b px-6 gap-8 border-border"
         >
           <TouchableOpacity
             className={`flex-1 items-center border-b-[2px] pb-4 pt-6 ${activeTab === "products" ? "border-primary" : "border-transparent"}`}
@@ -329,7 +329,7 @@ export default function Shop() {
             accessibilityState={{ selected: activeTab === "products" }}
           >
             <Text
-              className={`text-sm font-bold ${activeTab === "products" ? (isDark ? "text-dark-text" : "text-black") : isDark ? "text-dark-muted" : "text-tertiary"}`}
+              className={`text-sm font-bold ${activeTab === "products" ? ("text-text-primary") : "text-text-secondary"}`}
             >
               Products
             </Text>
@@ -341,7 +341,7 @@ export default function Shop() {
             accessibilityState={{ selected: activeTab === "posts" }}
           >
             <Text
-              className={`text-sm font-bold ${activeTab === "posts" ? (isDark ? "text-dark-text" : "text-black") : isDark ? "text-dark-muted" : "text-tertiary"}`}
+              className={`text-sm font-bold ${activeTab === "posts" ? ("text-text-primary") : "text-text-secondary"}`}
             >
               Posts
             </Text>
@@ -352,7 +352,7 @@ export default function Shop() {
           <>
             {/* Featured */}
             <Text
-              className={`${isDark ? "text-dark-text" : "text-black"} text-xl font-bold px-6 pb-4 pt-8`}
+              className="text-text-primary text-xl font-bold px-6 pb-4 pt-8"
             >
               Featured
             </Text>
@@ -371,7 +371,7 @@ export default function Shop() {
 
             {/* All Products */}
             <Text
-              className={`${isDark ? "text-dark-text" : "text-black"} text-xl font-bold px-6 pb-4 pt-8`}
+              className="text-text-primary text-xl font-bold px-6 pb-4 pt-8"
             >
               All Products
             </Text>
@@ -394,7 +394,7 @@ export default function Shop() {
           <View className="pt-2">
             {(shop?.recent_posts ?? []).length === 0 ? (
               <View className="items-center justify-center py-16 px-6">
-                <Text className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm text-center`}>
+                <Text className="text-text-secondary text-sm text-center">
                   This shop hasn't posted anything yet.
                 </Text>
               </View>

@@ -184,12 +184,12 @@ export default function PaymentMethod() {
 
   return (
     <SafeAreaView
-      className={`flex-1 justify-between bg-surface-raised`}
+      className="flex-1 justify-between bg-surface-raised"
       edges={["top", "left", "right", "bottom"]}
     >
       <ScrollView>
         <View
-          className={`flex-row items-center p-4 pb-2 justify-between bg-surface-raised`}
+          className="flex-row items-center p-4 pb-2 justify-between bg-surface-raised"
         >
           <TouchableOpacity
             onPress={() => router.back()}
@@ -201,7 +201,7 @@ export default function PaymentMethod() {
 
         <View className="px-4 pt-4">
           <Text
-            className={`text-lg font-bold mb-3 text-text-primary`}
+            className="text-lg font-bold mb-3 text-text-primary"
           >
             Choose payment method
           </Text>
@@ -223,25 +223,25 @@ export default function PaymentMethod() {
                 activeOpacity={0.8}
               >
                 <View
-                  className={`w-9 h-9 rounded items-center justify-center mr-3 border ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}
+                  className="w-9 h-9 rounded items-center justify-center mr-3 border bg-surface-raised border-border"
                 >
                   {m.icon}
                 </View>
                 <View className="flex-1">
                   <Text
-                    className={`text-sm font-semibold text-text-primary`}
+                    className="text-sm font-semibold text-text-primary"
                   >
                     {m.title}
                   </Text>
                   <Text
-                    className={`text-xs text-text-secondary`}
+                    className="text-xs text-text-secondary"
                   >
                     {m.subtitle}
                   </Text>
                 </View>
                 {selected ? (
                   <Text
-                    className={`text-xs font-bold text-text-primary`}
+                    className="text-xs font-bold text-text-primary"
                   >
                     Selected
                   </Text>
@@ -250,18 +250,18 @@ export default function PaymentMethod() {
             );
           })}
 
-          <View className={`mt-4 p-3 rounded bg-surface-sunken`}>
-            <Text className={`text-xs text-text-secondary`}>
+          <View className="mt-4 p-3 rounded bg-surface-sunken">
+            <Text className="text-xs text-text-secondary">
               Order total
             </Text>
             <Text
-              className={`text-xl font-bold text-text-primary`}
+              className="text-xl font-bold text-text-primary"
             >
               {orderTotal ? formatMoney(orderTotal) : "NGN 0.00"}
             </Text>
             {selectedMethod !== "wallet" ? (
               <Text
-                className={`text-xs mt-2 text-text-secondary`}
+                className="text-xs mt-2 text-text-secondary"
               >
                 You will complete payment on Paystack.
               </Text>
@@ -270,7 +270,7 @@ export default function PaymentMethod() {
         </View>
       </ScrollView>
 
-      <View className={`px-4 py-3 bg-surface-raised`}>
+      <View className="px-4 py-3 bg-surface-raised">
         <TouchableOpacity
           onPress={handleProceed}
           disabled={isProcessing}

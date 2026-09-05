@@ -50,7 +50,7 @@ function SectionLabel({ children, isDark }: { children: React.ReactNode; isDark:
   return (
     <Text
       className={`text-[11px] font-bold tracking-[2px] uppercase ${
-        isDark ? "text-dark-muted" : "text-tertiary"
+        "text-text-secondary"
       }`}
     >
       {children}
@@ -108,7 +108,7 @@ export default function BuyerRequestDetails() {
   const Header = (
     <View
       className={`flex-row items-center justify-between px-4 py-3 border-b ${
-        isDark ? "bg-dark-page border-dark-border" : "bg-white border-border"
+        "bg-surface-page border-border"
       }`}
     >
       <View className="flex-row items-center gap-3">
@@ -116,14 +116,14 @@ export default function BuyerRequestDetails() {
           onPress={() => router.back()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           className={`w-10 h-10 rounded items-center justify-center border ${
-            isDark ? "bg-dark-surface border-dark-border-strong" : "bg-surface border-border"
+            "bg-surface-sunken border-border"
           }`}
         >
           <ArrowLeft size={20} color={iconColor} />
         </TouchableOpacity>
         <Text
           className={`text-lg font-bold tracking-tight ${
-            isDark ? "text-dark-text" : "text-black"
+            "text-text-primary"
           }`}
         >
           Request Details
@@ -134,13 +134,13 @@ export default function BuyerRequestDetails() {
 
   if (loading) {
     return (
-      <SafeAreaView className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}>
+      <SafeAreaView className="flex-1 bg-surface-page">
         {Header}
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={iconColor} />
           <Text
             className={`mt-4 font-bold text-[11px] tracking-[2px] uppercase ${
-              isDark ? "text-dark-muted" : "text-tertiary"
+              "text-text-secondary"
             }`}
           >
             Loading request
@@ -152,26 +152,26 @@ export default function BuyerRequestDetails() {
 
   if (loadError || !requestDetails) {
     return (
-      <SafeAreaView className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}>
+      <SafeAreaView className="flex-1 bg-surface-page">
         {Header}
         <View className="flex-1 items-center justify-center px-8">
           <View
             className={`w-16 h-16 rounded items-center justify-center border mb-5 ${
-              isDark ? "bg-dark-surface border-dark-border-strong" : "bg-surface border-border"
+              "bg-surface-sunken border-border"
             }`}
           >
             <FileText size={26} color={iconColor} strokeWidth={1.8} />
           </View>
           <Text
             className={`text-xl font-bold text-center ${
-              isDark ? "text-dark-text" : "text-black"
+              "text-text-primary"
             }`}
           >
             Couldn't load this request
           </Text>
           <Text
             className={`text-sm text-center mt-2 leading-5 ${
-              isDark ? "text-dark-muted" : "text-tertiary"
+              "text-text-secondary"
             }`}
           >
             Check your connection and try again.
@@ -191,7 +191,7 @@ export default function BuyerRequestDetails() {
   }
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-page">
       {Header}
 
       <ScrollView
@@ -212,7 +212,7 @@ export default function BuyerRequestDetails() {
           >
             <Text
               className={`text-[10px] font-bold uppercase tracking-[2px] ${
-                isOpen ? "text-primary" : isDark ? "text-dark-muted" : "text-tertiary"
+                isOpen ? "text-primary" : "text-text-secondary"
               }`}
             >
               {statusLabel}
@@ -220,7 +220,7 @@ export default function BuyerRequestDetails() {
           </View>
           {requestDetails.created_at ? (
             <Text
-              className={`text-xs ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+              className="text-xs text-text-secondary"
             >
               Posted {parseDate(requestDetails.created_at)}
             </Text>
@@ -231,7 +231,7 @@ export default function BuyerRequestDetails() {
         <View className="px-6 pt-3">
           <Text
             className={`text-[26px] font-bold leading-8 tracking-tight ${
-              isDark ? "text-dark-text" : "text-black"
+              "text-text-primary"
             }`}
           >
             {requestDetails.title || "Untitled request"}
@@ -245,12 +245,12 @@ export default function BuyerRequestDetails() {
               <View
                 key={cat.id}
                 className={`px-3 h-7 rounded border justify-center ${
-                  isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border"
+                  "bg-surface-sunken border-border"
                 }`}
               >
                 <Text
                   className={`text-[11px] font-bold uppercase tracking-wider ${
-                    isDark ? "text-dark-text" : "text-black"
+                    "text-text-primary"
                   }`}
                 >
                   {cat.name}
@@ -264,7 +264,7 @@ export default function BuyerRequestDetails() {
         <View className="px-6 pt-5">
           <View
             className={`rounded border overflow-hidden ${
-              isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"
+              "bg-surface-raised border-border"
             }`}
           >
             <View className="flex-row">
@@ -275,7 +275,7 @@ export default function BuyerRequestDetails() {
                 </View>
                 <Text
                   className={`text-[22px] font-bold tracking-tight ${
-                    isDark ? "text-dark-text" : "text-black"
+                    "text-text-primary"
                   }`}
                 >
                   {requestDetails.budget != null
@@ -283,7 +283,7 @@ export default function BuyerRequestDetails() {
                     : "Not stated"}
                 </Text>
               </View>
-              <View className={`w-px ${isDark ? "bg-dark-border" : "bg-border"}`} />
+              <View className="w-px bg-border" />
               <View className="flex-1 p-5">
                 <View className="flex-row items-center gap-1.5 mb-2">
                   <Clock size={13} color={mutedIconColor} strokeWidth={2} />
@@ -293,7 +293,7 @@ export default function BuyerRequestDetails() {
                 </View>
                 <Text
                   className={`text-base font-bold ${
-                    isDark ? "text-dark-text" : "text-black"
+                    "text-text-primary"
                   }`}
                 >
                   {requestDetails.expires_at
@@ -313,7 +313,7 @@ export default function BuyerRequestDetails() {
         <View className="px-6 pt-4">
           <View
             className={`rounded border p-4 flex-row items-center ${
-              isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"
+              "bg-surface-raised border-border"
             }`}
           >
             <Avatar
@@ -324,7 +324,7 @@ export default function BuyerRequestDetails() {
             <View className="ml-3 flex-1">
               <Text
                 className={`font-bold text-base ${
-                  isDark ? "text-dark-text" : "text-black"
+                  "text-text-primary"
                 }`}
                 numberOfLines={1}
               >
@@ -334,7 +334,7 @@ export default function BuyerRequestDetails() {
                 <View className="h-1.5 w-1.5 rounded bg-primary mr-2" />
                 <Text
                   className={`text-[10px] font-bold uppercase tracking-wider ${
-                    isDark ? "text-dark-muted" : "text-tertiary"
+                    "text-text-secondary"
                   }`}
                 >
                   {isOwnRequest ? "Your request" : "Requested by"}
@@ -345,7 +345,7 @@ export default function BuyerRequestDetails() {
               <View className="flex-row items-center gap-1.5">
                 <Eye size={14} color={mutedIconColor} strokeWidth={2} />
                 <Text
-                  className={`text-xs ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                  className="text-xs text-text-secondary"
                 >
                   {requestDetails.views}
                 </Text>
@@ -359,7 +359,7 @@ export default function BuyerRequestDetails() {
           <SectionLabel isDark={isDark}>Description</SectionLabel>
           <Text
             className={`mt-2 text-base leading-7 ${
-              isDark ? "text-dark-text" : "text-black"
+              "text-text-primary"
             }`}
           >
             {requestDetails.description || "No description provided."}
@@ -385,7 +385,7 @@ export default function BuyerRequestDetails() {
                   source={{ uri }}
                   style={{ width: width * 0.7, height: 208 }}
                   className={`mr-3 rounded border ${
-                    isDark ? "bg-dark-elevated border-dark-border" : "bg-surface border-border"
+                    "bg-surface-sunken border-border"
                   }`}
                   resizeMode="cover"
                 />
@@ -399,7 +399,7 @@ export default function BuyerRequestDetails() {
       {showMessageBar && (
         <View
           className={`absolute bottom-0 left-0 right-0 border-t px-6 pt-4 pb-8 ${
-            isDark ? "bg-dark-page border-dark-border" : "bg-white border-border"
+            "bg-surface-page border-border"
           }`}
         >
           <TouchableOpacity

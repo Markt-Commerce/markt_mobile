@@ -1,6 +1,5 @@
 import { Text, View, TouchableOpacity, TouchableOpacityProps, ActivityIndicator } from "react-native";
 import React from "react";
-import { useTheme } from "./themeProvider";
 import { useTokens } from "../theme/useTokens";
 
 type ButtonVariant = "primary" | "conversion" | "secondary" | "outline";
@@ -34,8 +33,6 @@ const Button = ({
   ...rest
 }: ButtonProps) => {
   const isDisabled = disabled || loading;
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
 
   const variantStyles = {
@@ -48,12 +45,12 @@ const Button = ({
       text: isDisabled ? "text-tertiary" : "text-white",
     },
     secondary: {
-      container: isDark ? "bg-surface-sunken" : "bg-surface",
-      text: isDark ? "text-text-primary" : "text-secondary",
+      container: "bg-surface-sunken",
+      text: "text-text-primary",
     },
     outline: {
       container: `bg-transparent border border-border-strong`,
-      text: isDark ? "text-text-primary" : "text-secondary",
+      text: "text-text-primary",
     },
   };
 

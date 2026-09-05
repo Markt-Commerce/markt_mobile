@@ -4,7 +4,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Award, Lock, CheckCircle2 } from "lucide-react-native";
 
-import { useTheme } from "../../../components/themeProvider";
 import { useTokens } from "../../../theme/useTokens";
 import { useUser } from "../../../hooks/userContextProvider";
 import { useBadges } from "../../../hooks/useBadges";
@@ -12,9 +11,7 @@ import { useBadges } from "../../../hooks/useBadges";
 export default function BadgeDetailScreen() {
   const router = useRouter();
   const { slug } = useLocalSearchParams<{ slug: string }>();
-  const { resolvedTheme } = useTheme();
   const { user } = useUser();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
 
   const { badges, loading } = useBadges(user?.user_id);
@@ -34,7 +31,7 @@ export default function BadgeDetailScreen() {
     >
       <View
         className={`flex-row items-center px-4 py-3 border-b ${
-          isDark ? "border-border-strong" : "border-border"
+          "border-border"
         }`}
       >
         <TouchableOpacity onPress={() => router.back()}>
@@ -42,7 +39,7 @@ export default function BadgeDetailScreen() {
         </TouchableOpacity>
         <Text
           className={`text-lg font-bold ml-2 ${
-            isDark ? "text-text-primary" : "text-black"
+            "text-text-primary"
           }`}
         >
           Badge
@@ -56,7 +53,7 @@ export default function BadgeDetailScreen() {
       ) : !badge ? (
         <Text
           className={`text-center text-sm py-16 ${
-            isDark ? "text-text-secondary" : "text-tertiary"
+            "text-text-secondary"
           }`}
         >
           Badge not found.
@@ -65,7 +62,7 @@ export default function BadgeDetailScreen() {
         <View className="items-center px-8 pt-10">
           <View
             className={`w-28 h-28 rounded-full items-center justify-center ${
-              isDark ? "bg-surface-sunken" : "bg-surface"
+              "bg-surface-sunken"
             }`}
             style={{ opacity: badge.earned ? 1 : 0.55 }}
           >
@@ -83,7 +80,7 @@ export default function BadgeDetailScreen() {
 
           <Text
             className={`font-bold text-2xl mt-6 text-center ${
-              isDark ? "text-text-primary" : "text-black"
+              "text-text-primary"
             }`}
           >
             {badge.name}
@@ -99,7 +96,7 @@ export default function BadgeDetailScreen() {
           ) : (
             <Text
               className={`font-bold text-sm mt-2 ${
-                isDark ? "text-text-secondary" : "text-tertiary"
+                "text-text-secondary"
               }`}
             >
               Locked
@@ -109,7 +106,7 @@ export default function BadgeDetailScreen() {
           {!!badge.description && (
             <Text
               className={`text-base text-center mt-4 leading-6 ${
-                isDark ? "text-text-secondary" : "text-tertiary"
+                "text-text-secondary"
               }`}
             >
               {badge.description}
@@ -120,14 +117,14 @@ export default function BadgeDetailScreen() {
             <View className="w-full mt-8">
               <Text
                 className={`font-bold text-xs mb-2 ${
-                  isDark ? "text-text-secondary" : "text-tertiary"
+                  "text-text-secondary"
                 }`}
               >
                 {Math.round(badge.progress * 100)}% there
               </Text>
               <View
                 className={`h-2 rounded overflow-hidden ${
-                  isDark ? "bg-surface-sunken" : "bg-surface"
+                  "bg-surface-sunken"
                 }`}
               >
                 <View

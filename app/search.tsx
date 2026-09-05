@@ -19,7 +19,6 @@ import ProductDisplayComponent from "../components/productDisplayComponent";
 import PostDisplayComponent from "../components/PostDisplayComponent";
 import BuyerRequestFormBottomSheet from "../components/buyerRequestBottomSheet";
 import { defaultProfilePicture } from "../models/defaults";
-import { useTheme } from "../components/themeProvider";
 import { useTokens } from "../theme/useTokens";
 import { useUser } from "../hooks/userContextProvider";
 import type { Product as FeedProduct } from "../models/feed";
@@ -47,8 +46,6 @@ export default function SearchPage() {
   const hasMoreRef = useRef(true);
   const loadingMoreRef = useRef(false);
   const { role } = useUser();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const requestFormRef = useRef<BottomSheetMethods>(null);
 
@@ -159,8 +156,8 @@ export default function SearchPage() {
     posts: "Social Feed",
   };
 
-  const headingColor = isDark ? "text-text-primary" : "text-black";
-  const mutedColor = isDark ? "text-text-secondary" : "text-tertiary";
+  const headingColor = "text-text-primary";
+  const mutedColor = "text-text-secondary";
   const iconColor = t.textPrimary;
   const mutedIconColor = t.textSecondary;
 
@@ -183,11 +180,11 @@ export default function SearchPage() {
     <Link key={item.id} href={`/shopDetails/${item.id}`} asChild>
       <TouchableOpacity activeOpacity={0.8} className="mb-4">
         <View
-          className={`flex-row items-center gap-4 p-4 rounded border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-white border-border"}`}
+          className="flex-row items-center gap-4 p-4 rounded border bg-surface-raised border-border"
         >
           <Image
             source={{ uri: item.profile_picture_url || defaultProfilePicture }}
-            className={`w-14 h-14 rounded-full border ${isDark ? "bg-surface-raised border-border-strong" : "bg-surface border-border"}`}
+            className="w-14 h-14 rounded-full border bg-surface-sunken border-border"
           />
           <View className="flex-1">
             <Text
@@ -239,14 +236,14 @@ export default function SearchPage() {
     >
       {/* Search Input */}
       <View
-        className={`px-6 pt-6 pb-4 border-b ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}
+        className="px-6 pt-6 pb-4 border-b bg-surface-raised border-border"
       >
         <View
-          className={`h-14 px-5 flex-row items-center rounded border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
+          className="h-14 px-5 flex-row items-center rounded border bg-surface-sunken border-border"
         >
           <Search size={20} color={iconColor} strokeWidth={1.5} />
           <TextInput
-            className={`ml-4 flex-1 font-semibold text-base text-text-primary`}
+            className="ml-4 flex-1 font-semibold text-base text-text-primary"
             placeholder="Search products, sellers, posts…"
             placeholderTextColor={mutedIconColor}
             value={query}
@@ -261,7 +258,7 @@ export default function SearchPage() {
           <TouchableOpacity
             onPress={() => requestFormRef.current?.expand()}
             activeOpacity={0.8}
-            className={`mt-3 flex-row items-center gap-3 px-4 py-3 rounded border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
+            className="mt-3 flex-row items-center gap-3 px-4 py-3 rounded border bg-surface-sunken border-border"
           >
             <View className="w-9 h-9 rounded-full bg-primary items-center justify-center">
               <Megaphone size={18} color="white" />
@@ -279,7 +276,7 @@ export default function SearchPage() {
           <View className="mt-3 flex-row items-center gap-3">
             <TouchableOpacity
               onPress={() => setView("all")}
-              className={`flex-row items-center gap-1 px-3 py-1.5 rounded border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
+              className="flex-row items-center gap-1 px-3 py-1.5 rounded border bg-surface-sunken border-border"
             >
               <ChevronLeft size={14} color={iconColor} strokeWidth={2} />
               <Text

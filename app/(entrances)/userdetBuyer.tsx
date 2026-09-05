@@ -24,7 +24,6 @@ import { useToast } from "../../components/ToastProvider";
 import * as ImagePicker from "expo-image-picker";
 import { useDebouncedCallback } from "../../hooks/useDebouncedCallback";
 import { useWatch } from "react-hook-form";
-import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 
@@ -40,8 +39,6 @@ export default function UserInfoScreen() {
   const { regData, setRegData } = useRegData();
   const router = useRouter();
   const { show } =  useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const iconColor = t.textPrimary;
   const mutedIconColor = t.textSecondary;
@@ -139,11 +136,11 @@ export default function UserInfoScreen() {
   };
 
   const Label = ({ children }: { children: React.ReactNode }) => (
-    <Text className={`mb-2 text-sm font-bold ${isDark ? "text-text-primary" : "text-secondary"}`}>{children}</Text>
+    <Text className="mb-2 text-sm font-bold text-text-primary">{children}</Text>
   );
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-surface-sunken" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-raised">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -166,7 +163,7 @@ export default function UserInfoScreen() {
               <TouchableOpacity
                 onPress={() => router.back()}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                className={`h-10 w-10 items-center justify-center rounded border ${isDark ? "bg-surface-raised border-border-strong" : "bg-surface border-border"}`}
+                className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
               >
                 <ArrowLeft size={20} color={iconColor} />
               </TouchableOpacity>
@@ -174,36 +171,36 @@ export default function UserInfoScreen() {
 
             {/* Title */}
             <View className="mb-8">
-              <Text className={`text-[32px] font-bold leading-tight text-text-primary`}>
+              <Text className="text-[32px] font-bold leading-tight text-text-primary">
                 Your{"\n"}profile
               </Text>
-              <Text className={`text-base mt-2 text-text-secondary`}>
+              <Text className="text-base mt-2 text-text-secondary">
                 Let's get to know you better.
               </Text>
             </View>
 
             {/* Progress hint */}
             <View className="flex-row gap-2 items-center justify-center mb-10 px-2">
-              <View className={`h-1.5 flex-1 rounded ${"bg-text-primary"}`} />
-              <View className={`h-1.5 flex-1 rounded bg-surface-sunken`} />
-              <View className={`h-1.5 flex-1 rounded bg-surface-sunken`} />
+              <View className="h-1.5 flex-1 rounded bg-text-primary" />
+              <View className="h-1.5 flex-1 rounded bg-surface-sunken" />
+              <View className="h-1.5 flex-1 rounded bg-surface-sunken" />
             </View>
 
             {/* Card */}
-            <View className={`rounded border px-6 py-8 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
+            <View className="rounded border px-6 py-8 bg-surface-raised border-border">
               {/* Avatar placeholder with image picker */}
               <View className="items-center mb-10">
                 <TouchableOpacity
                   activeOpacity={0.85}
                   onPress={changeProfilePicture}
-                  className={`h-24 w-24 rounded-full border-2 border-dashed items-center justify-center overflow-hidden ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
+                  className="h-24 w-24 rounded-full border-2 border-dashed items-center justify-center overflow-hidden bg-surface-sunken border-border"
                 >
                   {profilePictureUri ? (
                     <Image source={{ uri: profilePictureUri }} className="w-full h-full" />
                   ) : (
                     <View className="items-center">
                       <ImageIcon size={32} color={mutedIconColor} />
-                      <Text className={`text-[10px] font-bold mt-1 text-text-secondary`}>ADD PHOTO</Text>
+                      <Text className="text-[10px] font-bold mt-1 text-text-secondary">ADD PHOTO</Text>
                     </View>
                   )}
                 </TouchableOpacity>
@@ -241,9 +238,9 @@ export default function UserInfoScreen() {
                       <Text className="text-xs text-success ">Username is available</Text>
                     </View>
                   ) : usernameStatus === "checking" ? (
-                    <Text className={`text-xs italic text-text-secondary`}>Checking availability...</Text>
+                    <Text className="text-xs italic text-text-secondary">Checking availability...</Text>
                   ) : (
-                    <Text className={`text-xs text-text-secondary`}>This will be your unique identifier.</Text>
+                    <Text className="text-xs text-text-secondary">This will be your unique identifier.</Text>
                   )}
                 </View>
               </View>

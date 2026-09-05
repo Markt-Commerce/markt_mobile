@@ -62,7 +62,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
       // nothing. The row now runs edge to edge and a single hairline separates
       // one request from the next.
       className={`px-4 py-3 border-b ${
-        isDark ? "bg-surface-raised border-border" : "bg-white border-border-light"
+        "bg-surface-raised border-border"
       }`}
     >
       {/* Who, and how the request stands */}
@@ -74,10 +74,10 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
         />
         <View className="flex-1 ml-2.5">
           <Text
-            className={`text-[14px] text-text-secondary`}
+            className="text-[14px] text-text-secondary"
             numberOfLines={1}
           >
-            <Text className={`font-semibold text-text-primary`}>
+            <Text className="font-semibold text-text-primary">
               {req.user?.username || "Unknown buyer"}
             </Text>
             {deadline ? `  ·  ${deadline}` : ""}
@@ -97,7 +97,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
         >
           <Text
             className={`text-[10px] font-bold uppercase tracking-wider ${
-              isOpen ? "text-primary" : isDark ? "text-text-muted" : "text-tertiary"
+              isOpen ? "text-primary" : "text-text-muted"
             }`}
           >
             {statusLabel}
@@ -108,7 +108,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
       {/* What they want */}
       <Text
         className={`font-bold text-[16px] leading-[21px] ${
-          isDark ? "text-text-primary" : "text-black"
+          "text-text-primary"
         }`}
         numberOfLines={1}
       >
@@ -117,7 +117,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
       {req.description ? (
         <Text
           className={`text-[13px] leading-[18px] mt-0.5 ${
-            isDark ? "text-text-muted" : "text-tertiary"
+            "text-text-muted"
           }`}
           numberOfLines={2}
         >
@@ -131,13 +131,13 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
         <View className="flex-row items-baseline">
           <Text
             className={`text-[10px] font-bold uppercase tracking-[1.2px] mr-1.5 ${
-              isDark ? "text-text-muted" : "text-tertiary"
+              "text-text-muted"
             }`}
           >
             Budget
           </Text>
           <Text
-            className={`text-[16px] font-bold text-text-primary`}
+            className="text-[16px] font-bold text-text-primary"
           >
             ₦{(req.budget ?? 0).toLocaleString()}
           </Text>
@@ -159,7 +159,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
               strokeWidth={2.2}
             />
             <Text
-              className={`text-[13px] font-semibold ml-1.5 ${"text-surface-page"}`}
+              className="text-[13px] font-semibold ml-1.5 text-surface-page"
             >
               Message
             </Text>

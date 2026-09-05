@@ -12,7 +12,6 @@ import { Bell } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import Avatar from "./Avatar";
 import { useDrawer } from "../hooks/drawerContext";
-import { useTheme } from "./themeProvider";
 import { useTokens } from "../theme/useTokens";
 
 interface AppBarProps {
@@ -32,12 +31,10 @@ export default function AppBar({
 }: AppBarProps) {
   const { openDrawer } = useDrawer();
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const t = useTokens();
 
   return (
-    <View className={`flex-row items-center justify-between px-4 py-2 border-b ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
+    <View className="flex-row items-center justify-between px-4 py-2 border-b bg-surface-raised border-border">
       <View className="w-9 h-9 items-center justify-center">
         {showAvatar ? (
           <TouchableOpacity
@@ -53,7 +50,7 @@ export default function AppBar({
           <View className="w-10" />
         )}
       </View>
-      <Text className={`text-xl font-bold flex-1 text-center tracking-tight text-text-primary`} numberOfLines={1}>
+      <Text className="text-xl font-bold flex-1 text-center tracking-tight text-text-primary" numberOfLines={1}>
         {title}
       </Text>
       <View className="w-9 h-9 items-center justify-center">
