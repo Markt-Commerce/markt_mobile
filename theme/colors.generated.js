@@ -18,6 +18,8 @@ module.exports = {
   "primary-muted": "var(--c-primary-muted)",
   "success": "var(--c-success)",
   "success-muted": "var(--c-success-muted)",
+  "success-fill": "var(--c-success-fill)",
+  "on-success-fill": "var(--c-on-success-fill)",
   "danger": "var(--c-danger)",
   "danger-muted": "var(--c-danger-muted)",
   "warning": "var(--c-warning)",

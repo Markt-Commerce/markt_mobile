@@ -87,6 +87,13 @@ for (const themeName of ["light", "dark"]) {
   if (!ok) failures++;
   rows.push([themeName, "textOnPrimary", "primaryFill", r, ok]);
 
+  // The tick drawn inside a completed step disc. Checked because the dark
+  // success swatch is a light green — a white glyph on it is 1.74:1.
+  const rs = ratio(t.onSuccessFill, t.successFill);
+  const oks = rs >= 4.5 || isAccepted(themeName, "onSuccessFill", "successFill");
+  if (!oks) failures++;
+  rows.push([themeName, "onSuccessFill", "successFill", rs, oks]);
+
   // Surfaces must actually differ, or "elevation" is a fiction.
   const step = ratio(t.surfacePage, t.surfaceRaised);
   if (themeName === "dark" && step < 1.05) {

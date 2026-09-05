@@ -70,6 +70,14 @@ export interface ThemeTokens {
   dangerMuted: string;
   warning: string;
   warningMuted: string;
+  /**
+   * A filled success disc (a completed step in a progress track) and whatever
+   * is drawn on top of it. Separate from `success` because the dark swatch is
+   * a *light* green: white on it measures 1.74:1, so the glyph has to invert.
+   */
+  successFill: string;
+  onSuccessFill: string;
+
   /** Semantic colours used as text, held to the text bar. */
   successText: string;
   dangerText: string;
@@ -119,6 +127,8 @@ export const darkTokens: ThemeTokens = {
 
   success: "#4ADE80", // 11.00 / 10.01 / 8.94
   successMuted: "rgba(74,222,128,0.16)",
+  successFill: "#4ADE80",
+  onSuccessFill: "#0E0F11", // 11.00 on the fill — the glyph inverts on dark
   danger: "#FF6B6B", // 6.91 / 6.28 / 5.62
   dangerMuted: "rgba(255,107,107,0.16)",
   warning: "#FBBF24",
@@ -171,6 +181,8 @@ export const lightTokens: ThemeTokens = {
 
   success: "#178B1F",
   successMuted: "rgba(23,139,31,0.10)",
+  successFill: "#0F6B16", // white on #178B1F is 4.42 — just under
+  onSuccessFill: "#FFFFFF",
   danger: "#BA1A1A",
   dangerMuted: "rgba(186,26,26,0.10)",
   warning: "#A15C00",

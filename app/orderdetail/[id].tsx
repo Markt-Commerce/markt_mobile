@@ -11,6 +11,7 @@ import type { ProductDetail } from "../../models/products";
 import { useTheme } from "../../components/themeProvider";
 import { useTokens, tokensFor } from "../../theme/useTokens";
 import { formatStatus } from "../../utils/formatStatus";
+import OrderProgress from "../../components/OrderProgress";
 
 function formatOrderDate(dateString?: string): string {
   if (!dateString) return "";
@@ -128,7 +129,7 @@ export default function OrderDetail() {
             Chowdeck's checkout does this with a segmented bar; the same idea
             applies better here, where there are four steps and the buyer's real
             question is "what happens next". */}
-        <OrderProgress status={order.status} isDark={isDark} />
+        <OrderProgress status={order.status} />
 
         {/* Buyer */}
         {order.buyer?.buyername ? (
@@ -270,87 +271,6 @@ export default function OrderDetail() {
   );
 }
 
-/**
- * The order's journey as a segmented bar.
- *
- * Four steps, filled up to where the order currently is. A buyer opening this
- * screen is asking "where is my thing and what happens next" — the answer was a
- * single word in a bordered box, which told them the state but not the shape of
- * it.
- *
- * Cancelled and refunded orders don't get a progress bar: there is no journey
- * left to show, and drawing a half-finished one would suggest otherwise.
- */
-const PROGRESS_STEPS = ["Paid", "Processing", "Shipped", "Delivered"] as const;
-
-const STATUS_STEP: Record<string, number> = {
-  pending_payment: 0,
-  pending: 0,
-  processing: 2,
-  ready_for_delivery: 2,
-  shipped: 3,
-  delivered: 4,
-};
-
-function OrderProgress({ status, isDark }: { status?: string; isDark: boolean }) {
-  const key = String(status ?? "").toLowerCase();
-  const terminal = ["cancelled", "refunded", "returned", "failed"].includes(key);
-  const reached = STATUS_STEP[key] ?? 1;
-
-  if (terminal) {
-    return (
-      <View className="rounded-2xl p-4 mb-3 bg-danger-muted">
-        <Text className="text-danger-text text-[11px] font-bold uppercase tracking-[1.5px]">
-          Status
-        </Text>
-        <Text className="text-danger-text text-[20px] font-bold mt-1">
-          {formatStatus(status)}
-        </Text>
-      </View>
-    );
-  }
-
-  return (
-    <View className="rounded-2xl p-4 mb-3 bg-surface-sunken">
-      <Text
-        className="text-[11px] font-bold uppercase tracking-[1.5px] text-text-muted"
-      >
-        Status
-      </Text>
-      <Text
-        className="text-[20px] font-bold mt-1 text-text-primary"
-      >
-        {formatStatus(status)}
-      </Text>
-
-      <View className="flex-row gap-1.5 mt-3">
-        {PROGRESS_STEPS.map((step, i) => (
-          <View key={step} className="flex-1">
-            <View
-              className="h-1.5 rounded-full"
-              style={{
-                backgroundColor:
-                  i < reached ? tokensFor(isDark).primaryText : tokensFor(isDark).borderStrong,
-              }}
-            />
-            <Text
-              className={`text-[10px] mt-1.5 ${
-                i < reached
-                  ? isDark
-                    ? "text-text-primary"
-                    : "text-black"
-                  : "text-text-muted"
-              }`}
-              numberOfLines={1}
-            >
-              {step}
-            </Text>
-          </View>
-        ))}
-      </View>
-    </View>
-  );
-}
 
 function ItemRow({
   item,
