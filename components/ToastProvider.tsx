@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useMemo, useRef, useStat
 import { View, Text, TouchableOpacity, Animated } from "react-native";
 import { X, AlertCircle, CheckCircle2, Info } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTokens } from "../theme/useTokens";
 
 type ToastVariant = "error" | "success" | "info";
 type ToastInput = { title?: string; message?: string; variant?: ToastVariant; duration?: number };
@@ -16,10 +17,39 @@ export const useToast = () => {
   return ctx;
 };
 
+/**
+ * A toast floats above everything, so it sits on `surface-overlay` in both
+ * themes. The variant reads from the border, the icon and the title rather
+ * than a tinted fill: the fill used to be `bg-error-bg` / `bg-success/10`,
+ * but an unconditional `bg-white` further along the class string won every
+ * time, so the tint never actually rendered and every toast was white —
+ * including on a near-black page.
+ *
+ * Message text stays at `text-secondary` instead of a faded variant colour;
+ * `text-error/80` was below AA on both grounds.
+ */
 const variantUI = {
-  error: { icon: AlertCircle, container: "bg-error-bg border-error/20", title: "text-error", message: "text-error/80" },
-  success:{ icon: CheckCircle2, container: "bg-success/10 border-success/20", title: "text-success", message: "text-success/80" },
-  info:  { icon: Info, container: "bg-surface border-border", title: "text-black", message: "text-tertiary" },
+  error: {
+    icon: AlertCircle,
+    container: "border-danger/40",
+    title: "text-danger-text",
+    message: "text-text-secondary",
+    iconToken: "dangerText",
+  },
+  success: {
+    icon: CheckCircle2,
+    container: "border-success/40",
+    title: "text-success-text",
+    message: "text-text-secondary",
+    iconToken: "successText",
+  },
+  info: {
+    icon: Info,
+    container: "border-border",
+    title: "text-text-primary",
+    message: "text-text-secondary",
+    iconToken: "textPrimary",
+  },
 } as const;
 
 const ToastBubble = ({ item, onClose, index }: { item: ToastItem; onClose: (id: string) => void; index: number }) => {
@@ -44,6 +74,7 @@ const ToastBubble = ({ item, onClose, index }: { item: ToastItem; onClose: (id: 
     ]).start(({ finished }) => finished && onClose(item.id));
   };
 
+  const t = useTokens();
   const v = variantUI[item.variant];
   const Icon = v.icon;
 
@@ -51,18 +82,18 @@ const ToastBubble = ({ item, onClose, index }: { item: ToastItem; onClose: (id: 
     <Animated.View
       pointerEvents="auto"
       style={{ opacity, transform: [{ translateY }], zIndex: 1000 - index }}
-      className={`mx-6 mt-3 rounded border ${v.container} shadow-sm bg-white`}
+      className={`mx-6 mt-3 rounded border ${v.container} shadow-sm bg-surface-overlay`}
     >
       <View className="flex-row items-start px-5 py-4">
         <View className="mt-0.5 mr-3">
-          <Icon size={20} color={item.variant === 'error' ? '#ba1a1a' : item.variant === 'success' ? '#178b1f' : '#000000'} strokeWidth={1.5} />
+          <Icon size={20} color={t[v.iconToken]} strokeWidth={1.5} />
         </View>
         <View className="flex-1">
           {!!item.title && <Text className={`font-bold text-sm ${v.title}`}>{item.title}</Text>}
           {!!item.message && <Text className={`mt-1 text-xs leading-5 ${v.message}`}>{item.message}</Text>}
         </View>
         <TouchableOpacity onPress={handleClose} className="ml-4 p-1 active:opacity-70">
-          <X size={18} color="#71717A" strokeWidth={1.5} />
+          <X size={18} color={t.textMuted} strokeWidth={1.5} />
         </TouchableOpacity>
       </View>
     </Animated.View>

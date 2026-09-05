@@ -15,6 +15,7 @@ import {
 import { getSellerStartCards } from "../services/sections/analytics";
 import { useToast } from "./ToastProvider";
 import { friendlyErrorMessage } from "../utils/errorMessages";
+import { useTokens } from "../theme/useTokens";
 
 type StartCardUI = {
   id: string;
@@ -124,6 +125,7 @@ export default function StartCards({
   }>({ loading: true, data: null, error: null });
 
   const { show } = useToast?.() ?? { show: (_: any) => {} };
+  const t = useTokens();
 
   const [removed, setRemoved ] = useState<boolean>(false);
 
@@ -172,7 +174,7 @@ export default function StartCards({
     <View className="px-4 pt-2 pb-3">
       {/* Header */}
       <View className="mb-2 flex-row justify-between">
-        <Text className="text-[20px] font-bold text-black">{title}</Text>
+        <Text className="text-[20px] font-bold text-text-primary">{title}</Text>
         <Pressable onPress={() => { onRemoved?.(); setRemoved(true); }}>
           <X size={20}/>
         </Pressable>
@@ -181,10 +183,10 @@ export default function StartCards({
       {/* Progress row — show "X of Y" only when total > 0 (avoid "0 of —") */}
       <View className="mb-3">
         <View className="flex-row items-center justify-between">
-          <Text className="text-sm text-tertiary">
+          <Text className="text-sm text-text-secondary">
             {total > 0 ? `${done} of ${total} steps completed` : "Complete these steps to start selling."}
           </Text>
-          {total > 0 && <Text className="text-sm font-semibold text-black">{pct}%</Text>}
+          {total > 0 && <Text className="text-sm font-semibold text-text-primary">{pct}%</Text>}
         </View>
         {total > 0 && (
           <View className="mt-2 h-2 w-full rounded bg-border overflow-hidden">
@@ -206,12 +208,12 @@ export default function StartCards({
           {[0, 1, 2].map((i) => (
             <View
               key={i}
-              className="mr-3 w-64 rounded bg-white border border-border p-4"
+              className="mr-3 w-64 rounded bg-surface-raised border border-border p-4"
             >
-              <View className="w-8 h-8 rounded bg-surface" />
-              <View className="mt-3 h-4 w-40 rounded bg-surface" />
-              <View className="mt-2 h-3 w-48 rounded bg-surface" />
-              <View className="mt-4 h-10 w-28 rounded bg-surface" />
+              <View className="w-8 h-8 rounded bg-skeleton" />
+              <View className="mt-3 h-4 w-40 rounded bg-skeleton" />
+              <View className="mt-2 h-3 w-48 rounded bg-skeleton" />
+              <View className="mt-4 h-10 w-28 rounded bg-skeleton" />
             </View>
           ))}
         </ScrollView>
@@ -224,18 +226,18 @@ export default function StartCards({
           {(cards.length ? cards : []).map((card) => {
             const Icon = pickIcon(card.icon);
             const body = (
-              <View className="mr-3 w-64 rounded bg-white border border-border p-4">
+              <View className="mr-3 w-64 rounded bg-surface-raised border border-border p-4">
                 <View className="flex-row items-center">
-                  <View className="h-10 w-10 rounded bg-surface items-center justify-center">
-                    <Icon size={18} color="#000000" />
+                  <View className="h-10 w-10 rounded bg-surface-sunken items-center justify-center">
+                    <Icon size={18} color={t.textPrimary} />
                   </View>
-                  <Text className="ml-3 text-base font-semibold text-black" numberOfLines={1}>
+                  <Text className="ml-3 text-base font-semibold text-text-primary" numberOfLines={1}>
                     {card.title}
                   </Text>
                 </View>
 
                 {card.subtitle && (
-                  <Text className="mt-2 text-sm text-tertiary" numberOfLines={2}>
+                  <Text className="mt-2 text-sm text-text-secondary" numberOfLines={2}>
                     {card.subtitle}
                   </Text>
                 )}
