@@ -106,7 +106,7 @@ export default function MarketsScreen() {
               accessibilityLabel={`Browse ${item.name}`}
             >
               <View
-                className={`w-14 h-14 rounded-full items-center justify-center ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                className={`w-14 h-14 rounded-full items-center justify-center bg-media`}
               >
                 <Store size={22} color="#E94C2A" strokeWidth={2} />
               </View>

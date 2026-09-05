@@ -170,7 +170,7 @@ export default function Shop() {
           source={{
             uri: shop?.user.profile_picture || defaultProfilePicture,
           }}
-          className={`w-full h-56 overflow-hidden ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+          className={`w-full h-56 overflow-hidden bg-media`}
           resizeMode="cover"
         />
 

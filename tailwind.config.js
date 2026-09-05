@@ -24,13 +24,21 @@ module.exports = {
         "bg-muted": "#F4F4F5",
         "bg-elevated": "#FFFFFF",
         "border-light": "#F4F4F5",
-        "dark-page": "#0b0b0c",
-        "dark-surface": "#1a1c1d",
-        "dark-elevated": "#2f3132",
-        "dark-border": "#27272a",
-        "dark-border-strong": "#46464e",
-        "dark-text": "#f5f5f5",
-        "dark-muted": "#c6c5cf",
+        // The other vocabulary. 374 uses across the app referred to these
+        // rather than to raw hex, so rather than rewrite every one they now
+        // alias the semantic tokens — which converges both vocabularies on one
+        // set of values and makes those uses theme-aware for free.
+        //
+        // They resolve correctly in *both* themes, not just dark: "dark-text"
+        // means "the primary text colour", and in light mode that is #09090B.
+        // The names are legacy; the behaviour is right.
+        "dark-page": "var(--c-surface-page)",
+        "dark-surface": "var(--c-surface-raised)",
+        "dark-elevated": "var(--c-surface-sunken)",
+        "dark-border": "var(--c-border)",
+        "dark-border-strong": "var(--c-border-strong)",
+        "dark-text": "var(--c-text-primary)",
+        "dark-muted": "var(--c-text-secondary)",
         error: "#ba1a1a",
         success: "#178b1f",
         "error-bg": "#ffdad6",

@@ -1100,7 +1100,7 @@ export default function ChatScreen({
               if (!imageUri) {
                 return (
                   <View
-                    className={`w-56 h-40 rounded items-center justify-center px-3 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                    className={`w-56 h-40 rounded items-center justify-center px-3 bg-media`}
                   >
                     <Text
                       className={`text-sm text-center ${isDark ? "text-dark-muted" : "text-tertiary"}`}
@@ -1117,7 +1117,7 @@ export default function ChatScreen({
                 >
                   <Image
                     source={{ uri: imageUri }}
-                    className={`w-56 h-40 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                    className={`w-56 h-40 rounded bg-media`}
                     resizeMode="cover"
                   />
                   {item.pending && (
@@ -1137,7 +1137,7 @@ export default function ChatScreen({
               if (!videoUri) {
                 return (
                   <View
-                    className={`w-56 h-40 rounded items-center justify-center px-3 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                    className={`w-56 h-40 rounded items-center justify-center px-3 bg-media`}
                   >
                     <Text
                       className={`text-sm text-center ${isDark ? "text-dark-muted" : "text-tertiary"}`}
@@ -1150,7 +1150,7 @@ export default function ChatScreen({
               return (
                 <View>
                   <View
-                    className={`w-56 h-40 rounded overflow-hidden ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                    className={`w-56 h-40 rounded overflow-hidden bg-media`}
                   >
                     <InlineVideo
                       uri={videoUri}
@@ -1213,7 +1213,7 @@ export default function ChatScreen({
               className={`rounded overflow-hidden border min-w-[200px] ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
             >
               <View
-                className={`px-4 py-3 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                className={`px-4 py-3 bg-media`}
               >
                 <Text
                   className={`text-xs font-medium uppercase tracking-wide ${isDark ? "text-dark-muted" : "text-tertiary"}`}
@@ -1374,7 +1374,7 @@ export default function ChatScreen({
                     })}
                     <TouchableOpacity
                       onPress={() => setReactionPickerFor(null)}
-                      className={`px-2 py-1 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                      className={`px-2 py-1 rounded bg-media`}
                     >
                       <X size={14} color={mutedColor} />
                     </TouchableOpacity>
@@ -1488,7 +1488,7 @@ export default function ChatScreen({
       style={{ paddingBottom: inputBottomPad }}
     >
       <View
-        className={`flex-1 flex-row items-center rounded-3xl pl-4 pr-1 py-1.5 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+        className={`flex-1 flex-row items-center rounded-3xl pl-4 pr-1 py-1.5 bg-media`}
       >
         <InputComponent
           value={input}
@@ -1577,7 +1577,7 @@ export default function ChatScreen({
               (Array.isArray(discounts) ? discounts : []).map((d) => (
                 <View
                   key={d.id}
-                  className={`rounded p-3 mb-2 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                  className={`rounded p-3 mb-2 bg-media`}
                 >
                   <Text
                     className={`font-medium text-sm ${isDark ? "text-dark-text" : "text-black"}`}

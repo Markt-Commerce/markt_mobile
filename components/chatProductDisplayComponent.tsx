@@ -118,14 +118,14 @@ export default function ChatProductDisplayComponent({
       >
         <View className="flex-row gap-3 items-stretch">
           <View
-            className={`w-[100px] h-[72px] rounded shrink-0 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+            className={`w-[100px] h-[72px] rounded shrink-0 bg-media`}
           />
           <View className="flex-1 justify-center">
             <View
-              className={`h-4 rounded w-3/4 mb-2 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+              className={`h-4 rounded w-3/4 mb-2 bg-media`}
             />
             <View
-              className={`h-3 rounded w-1/3 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+              className={`h-3 rounded w-1/3 bg-media`}
             />
           </View>
         </View>
@@ -160,7 +160,7 @@ export default function ChatProductDisplayComponent({
         <TouchableOpacity activeOpacity={0.85}>
           <View className="flex-row p-3 gap-3 items-stretch">
             <View
-              className={`w-[100px] h-[72px] rounded overflow-hidden items-center justify-center shrink-0 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+              className={`w-[100px] h-[72px] rounded overflow-hidden items-center justify-center shrink-0 bg-media`}
             >
               {displayImage && !imageError ? (
                 <Image

@@ -139,7 +139,7 @@ export default function OrderPodCodeScreen() {
               <TouchableOpacity
                 onPress={() => setShowAsText((prev) => !prev)}
                 activeOpacity={0.8}
-                className={`flex-row items-center gap-1.5 mt-5 h-9 px-4 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                className={`flex-row items-center gap-1.5 mt-5 h-9 px-4 rounded bg-media`}
                 accessibilityRole="button"
               >
                 {showAsText ? (

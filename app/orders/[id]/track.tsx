@@ -182,7 +182,7 @@ export default function TrackOrderScreen() {
                     </Text>
                   </View>
                   <View
-                    className={`px-2 py-0.5 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                    className={`px-2 py-0.5 rounded bg-media`}
                   >
                     <Text
                       className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-dark-muted" : "text-tertiary"}`}

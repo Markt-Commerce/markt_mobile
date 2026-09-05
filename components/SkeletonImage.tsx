@@ -43,7 +43,9 @@ export default function SkeletonImage({
 
   return (
     <View className={`relative ${containerClassName}`}>
-      {!loaded && <View className="absolute inset-0 bg-surface" />}
+      {/* bg-skeleton so the placeholder matches the theme rather than
+          flashing a light grey block on a dark page. */}
+      {!loaded && <View className="absolute inset-0 bg-skeleton" />}
       <Image
         source={source}
         style={[{ width: "100%", height: "100%" }, style]}

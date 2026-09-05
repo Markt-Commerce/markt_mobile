@@ -42,7 +42,7 @@ const IconBubble = ({
   isDark: boolean;
 }) => (
   <View
-    className={`w-12 h-12 rounded items-center justify-center ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+    className={`w-12 h-12 rounded items-center justify-center bg-media`}
   >
     {Cmp ? (
       <Cmp size={20} color={isDark ? "#f5f5f5" : "#000000"} strokeWidth={1.5} />

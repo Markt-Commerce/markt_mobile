@@ -372,9 +372,9 @@ function ItemRow({
       <View className="flex-row justify-between items-start">
         <View className="flex-row flex-1 pr-2 gap-3">
           {imageUrl ? (
-            <Image source={{ uri: imageUrl }} className={`w-12 h-12 rounded ${isDark ? "bg-dark-elevated" : "bg-surface"}`} />
+            <Image source={{ uri: imageUrl }} className={`w-12 h-12 rounded bg-media`} />
           ) : (
-            <View className={`w-12 h-12 rounded items-center justify-center ${isDark ? "bg-dark-elevated" : "bg-surface"}`}>
+            <View className={`w-12 h-12 rounded items-center justify-center bg-media`}>
               <Package size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
             </View>
           )}

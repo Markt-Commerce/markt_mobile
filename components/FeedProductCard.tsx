@@ -167,7 +167,9 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
               </Text>
             </View>
             <View
-              className={`w-full aspect-square overflow-hidden border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-bg-muted border-border"}`}
+              // bg-media, not a surface: a letterboxed or still-loading image was
+              // sitting on a lighter patch than the card containing it.
+              className="w-full aspect-square overflow-hidden border bg-media border-border"
               style={{ borderRadius: 12 }}
             >
               {imageUrl ? (
