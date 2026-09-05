@@ -13,6 +13,7 @@ import { useRouter } from "expo-router";
 import Avatar from "./Avatar";
 import { useDrawer } from "../hooks/drawerContext";
 import { useTheme } from "./themeProvider";
+import { useNotificationsBadge } from "../hooks/notificationsContext";
 
 interface AppBarProps {
   title?: string;
@@ -33,6 +34,7 @@ export default function AppBar({
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const { unreadCount } = useNotificationsBadge();
 
   return (
     <View className={`flex-row items-center justify-between px-4 py-2 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
@@ -61,9 +63,24 @@ export default function AppBar({
             className="p-1 -mr-1"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
-            accessibilityLabel="Notifications"
+            accessibilityLabel={
+              unreadCount > 0
+                ? `Notifications, ${unreadCount} unread`
+                : "Notifications"
+            }
           >
-            <Bell size={22} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.75} />
+            <View>
+              <Bell size={22} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.75} />
+              {unreadCount > 0 && (
+                <View
+                  className={`absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full items-center justify-center bg-primary border ${isDark ? "border-[#1a1c1d]" : "border-white"}`}
+                >
+                  <Text className="text-[9px] font-bold text-white">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
           </TouchableOpacity>
         ) : (
           <View className="w-10" />
