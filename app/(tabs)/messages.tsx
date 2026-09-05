@@ -19,6 +19,7 @@ import { getRooms } from "../../services/sections/chat";
 import type { RoomListResponse } from "../../models/chat";
 import Avatar from "../../components/Avatar";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 
 function formatTimeAgo(iso: string) {
   const d = new Date(iso);
@@ -53,6 +54,7 @@ export default function MessagesScreen() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const fetchRooms = async () => {
     try {
@@ -91,12 +93,12 @@ export default function MessagesScreen() {
       <View className={`border-b px-6 pt-6 pb-4 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
         <Text className={`text-2xl font-bold text-text-primary`}>Messages</Text>
         <View className={`flex-row items-center rounded mt-4 px-4 py-3 bg-surface-sunken`}>
-          <Search size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
+          <Search size={18} color={t.textSecondary} />
           <TextInput
             value={search}
             onChangeText={setSearch}
             placeholder="Search conversations"
-            placeholderTextColor={isDark ? "#c6c5cf" : "#71717A"}
+            placeholderTextColor={t.textSecondary}
             className={`flex-1 ml-3 text-base py-0 text-text-primary`}
           />
         </View>
@@ -104,7 +106,7 @@ export default function MessagesScreen() {
 
       {loading ? (
         <View className={`flex-1 items-center justify-center bg-surface-raised`}>
-          <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+          <ActivityIndicator size="large" color={t.textPrimary} />
         </View>
       ) : rooms.length > 0 ? (
         <FlatList
@@ -181,14 +183,14 @@ export default function MessagesScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={isDark ? "#f0f1f2" : "#000000"}
+              tintColor={t.textPrimary}
             />
           }
         />
       ) : (
         <View className={`flex-1 items-center justify-center px-8 bg-surface-raised`}>
           <View className="mb-5">
-            <MessageCircle size={44} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={1.5} />
+            <MessageCircle size={44} color={t.textMuted} strokeWidth={1.5} />
           </View>
           <Text className={`text-xl font-bold text-center text-text-primary`}>
             {search.trim() ? "No matches" : "No messages yet"}

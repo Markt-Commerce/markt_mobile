@@ -4,6 +4,7 @@ import { MessageSquare } from "lucide-react-native";
 import { BuyerRequest } from "../models/feed";
 import { router } from "expo-router";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 import { useUser } from "../hooks/userContextProvider";
 import Avatar from "./Avatar";
 
@@ -34,6 +35,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
   const { resolvedTheme } = useTheme();
   const { user } = useUser();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   // No messaging yourself about your own request.
   const isOwnRequest =
@@ -153,7 +155,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
           >
             <MessageSquare
               size={14}
-              color={isDark ? "#1a1c1d" : "#FFFFFF"}
+              color={t.surfacePage}
               strokeWidth={2.2}
             />
             <Text

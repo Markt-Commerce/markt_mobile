@@ -14,6 +14,7 @@ import { ShieldOff, RotateCw } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
 import Avatar from "../../components/Avatar";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import { listBlockedUsers, unblockUser, type BlockedUser } from "../../services/sections/moderation";
@@ -22,6 +23,7 @@ export default function BlockedAccountsScreen() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
 
   const [users, setUsers] = useState<BlockedUser[]>([]);
@@ -148,7 +150,7 @@ export default function BlockedAccountsScreen() {
               <View
                 className={`w-20 h-20 rounded-full items-center justify-center mb-6 bg-surface-sunken`}
               >
-                <ShieldOff size={30} color={isDark ? "#c6c5cf" : "#A1A1AA"} strokeWidth={1.6} />
+                <ShieldOff size={30} color={t.textSecondary} strokeWidth={1.6} />
               </View>
               <Text className={`text-xl font-bold text-center ${ink}`}>
                 You haven't blocked anyone

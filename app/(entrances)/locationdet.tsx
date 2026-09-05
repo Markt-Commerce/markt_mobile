@@ -15,6 +15,7 @@ import * as Location from 'expo-location';
 import { registerUser } from "../../services/sections/auth";
 import Button from "../../components/button";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 
 export default function AddAddressScreen() {
   const { show } = useToast();
@@ -23,7 +24,8 @@ export default function AddAddressScreen() {
   const { regData, setRegData } = useRegData();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
+  const t = useTokens();
+  const iconColor = t.textPrimary;
   const [location, setLocation] = React.useState<Location.LocationObject | null>(null);
   const [geocoding, setGeocoding] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);

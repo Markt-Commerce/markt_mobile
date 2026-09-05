@@ -12,6 +12,7 @@ import { getUserProfile } from "../../services/sections/profile";
 import Avatar from "../../components/Avatar";
 import type { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { getProductById } from "../../services/sections/product";
 import { addToCart } from "../../services/sections/cart";
 import type { ProductDetail } from "../../models/products";
@@ -103,6 +104,7 @@ export default function PostDetailsScreen() {
   const [addingToCart, setAddingToCart] = useState(false);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const insets = useSafeAreaInsets();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
@@ -309,7 +311,7 @@ export default function PostDetailsScreen() {
     return (
       <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "bottom"]}>
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+          <ActivityIndicator size="large" color={t.textPrimary} />
         </View>
       </SafeAreaView>
     );
@@ -335,7 +337,7 @@ export default function PostDetailsScreen() {
           className="flex size-12 shrink-0 items-center justify-center"
           onPress={() => router.back()}
         >
-          <ArrowLeft size={24} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>
         <Text className={`text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12 text-text-primary`}>
           Post
@@ -404,7 +406,7 @@ export default function PostDetailsScreen() {
               accessibilityLabel={`Add ${sponsoredProduct.name} to cart`}
             >
               {addingToCart ? (
-                <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
+                <ActivityIndicator size="small" color={t.textPrimary} />
               ) : (
                 <Text className={`text-sm font-medium leading-normal truncate text-text-primary`}>
                   Add to Cart
@@ -476,7 +478,7 @@ export default function PostDetailsScreen() {
         keyboardVerticalOffset={0}
         className="flex-1 bg-surface-page"
       >
-        <View className="relative flex-1 flex-col justify-between" style={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}>
+        <View className="relative flex-1 flex-col justify-between" style={{ backgroundColor: t.surfacePage }}>
           <FlatList
           data={comments}
           keyExtractor={(item) => item.id.toString()}
@@ -502,7 +504,7 @@ export default function PostDetailsScreen() {
                 <TextInput
                   ref={commentInputRef}
                   placeholder="Add a comment..."
-                  placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
+                  placeholderTextColor={t.textSecondary}
                   className={`flex-1 text-base font-normal py-2 text-text-primary`}
                   value={newComment}
                   onChangeText={setNewComment}
@@ -523,9 +525,9 @@ export default function PostDetailsScreen() {
                     accessibilityState={{ busy: postingComment, disabled: postingComment || !newComment.trim() }}
                   >
                     {postingComment ? (
-                      <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
+                      <ActivityIndicator size="small" color={t.textPrimary} />
                     ) : (
-                      <SendHorizonal size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+                      <SendHorizonal size={20} color={t.textPrimary} />
                     )}
                   </TouchableOpacity>
                 </View>

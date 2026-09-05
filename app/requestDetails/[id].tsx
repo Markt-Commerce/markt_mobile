@@ -25,6 +25,7 @@ import QuickChatBottomSheet from "../../components/quickChatBottomSheet";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { useUser } from "../../hooks/userContextProvider";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { defaultProfilePicture } from "../../models/defaults";
 import Avatar from "../../components/Avatar";
 
@@ -66,8 +67,9 @@ export default function BuyerRequestDetails() {
   const { role, user } = useUser();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
-  const mutedIconColor = isDark ? "#c6c5cf" : "#71717A";
+  const t = useTokens();
+  const iconColor = t.textPrimary;
+  const mutedIconColor = t.textSecondary;
 
   const chatSheetRef = useRef<BottomSheet>(null);
   // Dual-role users in seller mode shouldn't be offered a chat with themselves

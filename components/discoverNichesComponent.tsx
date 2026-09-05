@@ -5,6 +5,7 @@ import { Niches } from "../models/niches";
 import { useRouter } from "expo-router";
 import { useToast } from "./ToastProvider";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 import logger from "../utils/logger";
 
 // Deterministic warm-toned tile color from the niche name (avoids a network placeholder).
@@ -23,6 +24,7 @@ export default function DiscoverNiches() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   useEffect(() => {
     loadNiches();
@@ -66,7 +68,7 @@ export default function DiscoverNiches() {
   };
 
   if (loading) {
-    return <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} style={{ marginVertical: 20 }} />;
+    return <ActivityIndicator size="large" color={t.textPrimary} style={{ marginVertical: 20 }} />;
   }
 
   return (

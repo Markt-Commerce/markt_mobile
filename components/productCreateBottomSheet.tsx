@@ -20,6 +20,7 @@ import { useToast } from './ToastProvider';
 import { friendlyErrorMessage } from '../utils/errorMessages';
 import { useTheme } from './themeProvider';
 import logger from '../utils/logger';
+import { useTokens } from "../theme/useTokens";
 
 
 // Zod Schema for Validation
@@ -59,6 +60,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
     React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === "dark";
+    const t = useTokens();
 
     productSchema.refine(()=> selectedCategories?.length ?? 0 > 0,{
       path: ["category_ids"]
@@ -167,8 +169,8 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
       snapPoints={snapPoints}
       enablePanDownToClose={!sending}
       enableContentPanningGesture={!sending}
-      backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}
-      handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
+      backgroundStyle={{ backgroundColor: t.surfacePage }}
+      handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
     >
       <BottomSheetScrollView className="p-4">
         <Text className={`text-lg font-bold mb-4 text-text-primary`}>Create Product</Text>
@@ -176,7 +178,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         {/* In-flight banner — visible while a slow network keeps us waiting */}
         {sending && (
           <View className={`flex-row items-center gap-3 rounded border px-4 py-3 mb-4 ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}>
-            <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
+            <ActivityIndicator size="small" color={t.textPrimary} />
             <Text className={`flex-1 text-xs leading-5 text-text-secondary`}>
               {stage === "uploading"
                 ? "Uploading images… please keep this sheet open."
@@ -206,7 +208,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
             <View key={cat.id.toString()} className={`flex-row items-center border rounded px-3 py-1 ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}>
               <Text className={`text-sm font-medium mr-2 text-text-primary`}>{cat.name}</Text>
               <TouchableOpacity onPress={() => removeCategory(cat.id)}>
-                <X size={16} color={isDark ? "#f0f1f2" : "#000000"} />
+                <X size={16} color={t.textPrimary} />
               </TouchableOpacity>
             </View>
           ))}

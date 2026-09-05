@@ -22,6 +22,7 @@ import { createNichePost } from "../services/sections/niches";
 import { useToast } from "./ToastProvider";
 import { friendlyErrorMessage } from "../utils/errorMessages";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 import logger from "../utils/logger";
 
 const postSchema = z.object({
@@ -49,6 +50,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
     const { show } = useToast();
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === "dark";
+    const t = useTokens();
 
     const [postImages, setpostImages] = useState<string[]>([]);
 
@@ -183,8 +185,8 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
         index={-1}
         snapPoints={snapPoints}
         enablePanDownToClose={!sending}
-        backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}
-        handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
+        backgroundStyle={{ backgroundColor: t.surfacePage }}
+        handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
       >
         <BottomSheetScrollView className="p-4">
         <Text className={`text-lg font-bold mb-3 text-text-primary`}>Create Post</Text>
@@ -208,7 +210,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
             <View key={cat.id.toString()} className={`flex-row items-center border rounded px-3 py-1 ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}>
               <Text className={`text-sm font-medium mr-2 text-text-primary`}>{cat.name}</Text>
               <TouchableOpacity onPress={() => removeCategory(cat.id)}>
-                <X size={16} color={isDark ? "#f0f1f2" : "#000000"} />
+                <X size={16} color={t.textPrimary} />
               </TouchableOpacity>
             </View>
           ))}
@@ -236,7 +238,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
                   >
                     <Text className={`text-sm font-medium mr-2 text-text-primary`}>{product.name}</Text>
                     <TouchableOpacity onPress={() => setCurrentProducts(prev => prev.filter(pId => pId !== product.id))}>
-                      <X size={16} color={isDark ? "#f0f1f2" : "#000000"} />
+                      <X size={16} color={t.textPrimary} />
                     </TouchableOpacity>
                   </View>
                 ))}

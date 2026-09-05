@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, Image, TouchableOpacity } from "react-native";
 import { Lock, Award } from "lucide-react-native";
 import { useTheme } from "../themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import type { Badge } from "../../types/gamification";
 
 export interface BadgeCardProps {
@@ -22,6 +23,7 @@ export default function BadgeCard({
 }: BadgeCardProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const pct = Math.max(0, Math.min(1, progress)) * 100;
 
   return (
@@ -46,9 +48,9 @@ export default function BadgeCard({
             style={{ width: 40, height: 40, borderRadius: 20 }}
           />
         ) : earned ? (
-          <Award size={26} color={isDark ? "#f0f1f2" : "#000000"} />
+          <Award size={26} color={t.textPrimary} />
         ) : (
-          <Lock size={22} color={isDark ? "#c6c5cf" : "#A1A1AA"} />
+          <Lock size={22} color={t.textSecondary} />
         )}
       </View>
 

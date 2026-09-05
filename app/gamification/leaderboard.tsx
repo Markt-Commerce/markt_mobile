@@ -12,6 +12,7 @@ import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useUser } from "../../hooks/userContextProvider";
 import { useLeaderboard } from "../../hooks/useLeaderboard";
 import LeaderboardScopeTabs from "../../components/gamification/LeaderboardScopeTabs";
@@ -23,6 +24,7 @@ export default function LeaderboardScreen() {
   const { resolvedTheme } = useTheme();
   const { user } = useUser();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const {
     scope,
@@ -98,7 +100,7 @@ export default function LeaderboardScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={22} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={22} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
           className={`text-[17px] font-bold ml-3 text-text-primary`}
@@ -183,13 +185,13 @@ export default function LeaderboardScreen() {
           <RefreshControl
             refreshing={loading}
             onRefresh={refresh}
-            tintColor={isDark ? "#f0f1f2" : "#000000"}
+            tintColor={t.textPrimary}
           />
         }
         ListEmptyComponent={
           loading ? (
             <View className="items-center py-16">
-              <ActivityIndicator color={isDark ? "#f0f1f2" : "#000000"} />
+              <ActivityIndicator color={t.textPrimary} />
             </View>
           ) : (
             <Text
@@ -204,7 +206,7 @@ export default function LeaderboardScreen() {
         ListFooterComponent={
           loadingMore ? (
             <ActivityIndicator
-              color={isDark ? "#f0f1f2" : "#000000"}
+              color={t.textPrimary}
               style={{ marginVertical: 16 }}
             />
           ) : null

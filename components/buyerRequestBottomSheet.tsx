@@ -25,6 +25,7 @@ import { CreateRequestPayload } from "../models/request";
 import { useToast } from "./ToastProvider";
 import { friendlyErrorMessage } from "../utils/errorMessages";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 import logger from "../utils/logger";
 
 // Default expiry: seven days from when the request is placed. The backend
@@ -58,6 +59,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const snapPoints = React.useMemo(() => ["50%", "85%"], []);
   const [requestImages, setRequestImages] = useState<string[]>([]);
@@ -168,8 +170,8 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
       snapPoints={snapPoints}
       enableDynamicSizing={false}
       enablePanDownToClose={!sending}
-      backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }}
-      handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
+      backgroundStyle={{ backgroundColor: t.surfacePage }}
+      handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
     >
       <BottomSheetScrollView
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
@@ -228,7 +230,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
                 {cat.name}
               </Text>
               <TouchableOpacity onPress={() => removeCategory(cat.id)}>
-                <X size={16} color={isDark ? "#f5f5f5" : "#000000"} />
+                <X size={16} color={t.textPrimary} />
               </TouchableOpacity>
             </View>
           ))}

@@ -20,6 +20,7 @@ import { getShops, getShopCategories } from "../services/sections/shops";
 import type { ShopLite, ShopCategory } from "../services/sections/shops";
 import Avatar from "../components/Avatar";
 import { useTheme } from "../components/themeProvider";
+import { useTokens } from "../theme/useTokens";
 import VerifiedBadge, { isVerifiedSeller } from "../components/VerifiedBadge";
 
 function dedupeById<T extends { id: string | number }>(items: T[]): T[] {
@@ -87,6 +88,7 @@ export default function DiscoverShopsScreen() {
   >("rating");
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   // Ref guard, not state — onEndReached can fire more than once before a state
   // update flushes, letting two calls fetch the same page and append duplicate
@@ -163,7 +165,7 @@ export default function DiscoverShopsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={24} color={isDark ? "#f5f5f5" : "#000000"} />
+          <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
           className={`flex-1 text-xl font-bold text-center pr-8 ${isDark ? "text-dark-text" : "text-black"}`}
@@ -175,11 +177,11 @@ export default function DiscoverShopsScreen() {
       <View
         className={`px-4 py-3 flex-row items-center rounded mx-6 mt-4 ${isDark ? "bg-dark-surface" : "bg-surface"}`}
       >
-        <Search size={20} color={isDark ? "#c6c5cf" : "#71717A"} />
+        <Search size={20} color={t.textSecondary} />
         <TextInput
           className={`ml-3 flex-1 text-base ${isDark ? "text-dark-text" : "text-black"}`}
           placeholder="Search shops..."
-          placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
+          placeholderTextColor={t.textSecondary}
           value={search}
           onChangeText={setSearch}
         />
@@ -201,7 +203,7 @@ export default function DiscoverShopsScreen() {
         }}
       >
         <View className="flex-row items-center pr-0.5">
-          <ArrowUpDown size={13} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+          <ArrowUpDown size={13} color={t.textMuted} strokeWidth={2} />
         </View>
         {(["rating", "followers", "recent", "name"] as const).map((srt) => {
           const active = sortBy === srt;
@@ -303,7 +305,7 @@ export default function DiscoverShopsScreen() {
         <View className="flex-1 justify-center items-center py-16">
           <ActivityIndicator
             size="large"
-            color={isDark ? "#f5f5f5" : "#000000"}
+            color={t.textPrimary}
           />
           <Text
             className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm mt-2`}
@@ -342,7 +344,7 @@ export default function DiscoverShopsScreen() {
               <View className="py-6 items-center">
                 <ActivityIndicator
                   size="small"
-                  color={isDark ? "#f5f5f5" : "#000000"}
+                  color={t.textPrimary}
                 />
               </View>
             ) : null

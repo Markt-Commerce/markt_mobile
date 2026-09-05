@@ -4,12 +4,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 
 export default function VerificationScreen() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
+  const t = useTokens();
+  const iconColor = t.textPrimary;
 
     return (
       <SafeAreaView className={`flex-1 justify-center items-center px-4 ${isDark ? "bg-surface-sunken" : "bg-white"}`}>
@@ -33,7 +35,7 @@ export default function VerificationScreen() {
 
           <TextInput
             placeholder="Enter verification code"
-            placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
+            placeholderTextColor={t.textSecondary}
             className={`form-input w-full rounded h-14 px-4 text-base font-normal mb-4 border ${isDark ? "text-text-primary bg-surface-raised border-border-strong" : "text-black bg-surface border-border"}`}
           />
 

@@ -25,6 +25,7 @@ import {
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import { Seller } from "../../models/search";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 
 type OrderStatus = "pending" | "shipped" | "delivered" | "canceled";
 
@@ -38,6 +39,7 @@ export default function SellerOrders() {
   const [refreshKey, setRefreshKey] = useState(0);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const pageSize = 10;
 
@@ -188,7 +190,7 @@ export default function SellerOrders() {
           accessibilityRole="button"
           accessibilityLabel="Pending fulfilment requests"
         >
-          <Clock size={16} color={isDark ? "#c6c5cf" : "#71717A"} />
+          <Clock size={16} color={t.textSecondary} />
           <Text className={`text-xs font-bold text-text-primary`}>Requests</Text>
         </TouchableOpacity>
       </View>
@@ -198,12 +200,12 @@ export default function SellerOrders() {
         {/* Search */}
         <View className={`flex-row items-center rounded overflow-hidden border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}>
           <View className="w-12 items-center justify-center">
-            <Search size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
+            <Search size={18} color={t.textSecondary} />
           </View>
           <TextInput
             className={`flex-1 h-11 px-3 text-base text-text-primary`}
             placeholder="Search product name"
-            placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
+            placeholderTextColor={t.textSecondary}
             value={query}
             onChangeText={setQuery}
             returnKeyType="search"

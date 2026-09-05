@@ -23,6 +23,7 @@ import RequestDisplayComponent from "../../components/requestDisplayComponent";
 import BuyerRequestFormBottomSheet from "../../components/buyerRequestBottomSheet";
 import QuickChatBottomSheet from "../../components/quickChatBottomSheet";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { getMyRequests } from "../../services/sections/request";
 
 function EmptyRequestsState({
@@ -78,6 +79,7 @@ export default function RequestsScreen() {
   const { role, user } = useUser();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const isBuyer = role === "buyer";
   const [items, setItems] = useState<BuyerRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -147,7 +149,7 @@ export default function RequestsScreen() {
     return (
       <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
         <View className="flex-1 items-center justify-center py-16">
-          <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+          <ActivityIndicator size="large" color={t.textPrimary} />
           <Text className={`mt-4 font-bold text-[11px] tracking-[2px] uppercase text-text-secondary`}>
             Loading requests
           </Text>
@@ -193,12 +195,12 @@ export default function RequestsScreen() {
         <View
           className={`flex-row items-center h-11 px-3 rounded-xl bg-surface-sunken`}
         >
-          <Search size={17} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+          <Search size={17} color={t.textMuted} strokeWidth={2} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Search requests"
-            placeholderTextColor={isDark ? "#8f9195" : "#A1A1AA"}
+            placeholderTextColor={t.textMuted}
             className={`flex-1 ml-2 text-[15px] text-text-primary`}
             returnKeyType="search"
             accessibilityLabel="Search requests"
@@ -279,7 +281,7 @@ export default function RequestsScreen() {
         ListFooterComponent={<View className="h-8" />}
         contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "#f0f1f2" : "#000000"} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.textPrimary} />
         }
       />
 

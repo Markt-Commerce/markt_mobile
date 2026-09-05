@@ -12,6 +12,7 @@ import { OTPInput } from "../../components/inputs";
 import { useToast } from "../../components/ToastProvider"; // <-- toast
 import Button from "../../components/button";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 
 const schema = z.object({
@@ -28,7 +29,8 @@ const EmailVerification = () => {
   const { show } = useToast(); // <-- toast API
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
+  const t = useTokens();
+  const iconColor = t.textPrimary;
 
   const [verificationCodeSent, setVerificationCodeSent] = useState(false);
   const [sending, setSending] = useState(false);

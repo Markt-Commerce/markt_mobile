@@ -19,6 +19,7 @@ import { useUser } from "../../hooks/userContextProvider";
 import { useToast } from "../../components/ToastProvider";
 import { switchUserRole } from "../../services/sections/auth";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import {
   SettingsSection as Section,
   SettingsRow as Row,
@@ -32,6 +33,7 @@ export default function ProfileScreen() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const [switchingRole, setSwitchingRole] = useState(false);
   const [createMode, setCreateMode] = useState<"buyer" | "seller" | null>(null);
   const createRoleRef = useRef<BottomSheet | null>(null);
@@ -169,7 +171,7 @@ export default function ProfileScreen() {
                 isDark ? "bg-[#f0f1f2]" : "bg-black"
               } ${switchingRole ? "opacity-60" : ""}`}
             >
-              <ArrowRightLeft size={15} color={isDark ? "#1a1c1d" : "#FFFFFF"} strokeWidth={2.2} />
+              <ArrowRightLeft size={15} color={t.surfacePage} strokeWidth={2.2} />
               <Text
                 className={`font-semibold text-[14px] ml-1.5 ${isDark ? "text-[#1a1c1d]" : "text-white"}`}
                 numberOfLines={1}

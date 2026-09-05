@@ -20,6 +20,7 @@ import PostDisplayComponent from "../components/PostDisplayComponent";
 import BuyerRequestFormBottomSheet from "../components/buyerRequestBottomSheet";
 import { defaultProfilePicture } from "../models/defaults";
 import { useTheme } from "../components/themeProvider";
+import { useTokens } from "../theme/useTokens";
 import { useUser } from "../hooks/userContextProvider";
 import type { Product as FeedProduct } from "../models/feed";
 import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
@@ -48,6 +49,7 @@ export default function SearchPage() {
   const { role } = useUser();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const requestFormRef = useRef<BottomSheetMethods>(null);
 
   const performSearch = useCallback(
@@ -159,8 +161,8 @@ export default function SearchPage() {
 
   const headingColor = isDark ? "text-text-primary" : "text-black";
   const mutedColor = isDark ? "text-text-secondary" : "text-tertiary";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
-  const mutedIconColor = isDark ? "#c6c5cf" : "#A1A1AA";
+  const iconColor = t.textPrimary;
+  const mutedIconColor = t.textSecondary;
 
   const renderViewAll = (target: Exclude<SearchView, "all">, label: string) => (
     <TouchableOpacity

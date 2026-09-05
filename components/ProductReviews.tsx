@@ -18,6 +18,7 @@ import Avatar from "./Avatar";
 import VerifiedBadge from "./VerifiedBadge";
 import { StarRating, StarRatingInput } from "./StarRating";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 import { useToast } from "./ToastProvider";
 import { useUser } from "../hooks/userContextProvider";
 import {
@@ -50,6 +51,7 @@ function relativeDate(iso?: string) {
 export default function ProductReviews({ productId, onChanged }: Props) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
   const { user } = useUser();
   const myId = user?.user_id ? String(user.user_id) : "";
@@ -215,7 +217,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
               accessibilityRole="button"
               accessibilityLabel="Cancel"
             >
-              <X size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
+              <X size={18} color={t.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -225,7 +227,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
             value={content}
             onChangeText={setContent}
             placeholder="What should other buyers know?"
-            placeholderTextColor={isDark ? "#8f9195" : "#A1A1AA"}
+            placeholderTextColor={t.textMuted}
             multiline
             maxLength={1000}
             className={`mt-4 rounded-lg px-3 py-3 text-[15px] min-h-[88px] ${
@@ -258,7 +260,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
 
       {loading ? (
         <View className="py-8 items-center">
-          <ActivityIndicator color={isDark ? "#f0f1f2" : "#000000"} />
+          <ActivityIndicator color={t.textPrimary} />
         </View>
       ) : reviews.length === 0 ? (
         <View className="py-8 items-center">
@@ -311,7 +313,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
                       accessibilityRole="button"
                       accessibilityLabel="Edit your review"
                     >
-                      <Pencil size={16} color={isDark ? "#c6c5cf" : "#71717A"} />
+                      <Pencil size={16} color={t.textSecondary} />
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => remove(r.id)}

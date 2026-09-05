@@ -86,6 +86,7 @@ import {
 import { normalizeUri, resolveProductImageUri } from "../utils/imageUri";
 import { getUserProfile } from "../services/sections/profile";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { InlineVideo, MediaViewerModal } from "./postMedia";
 
@@ -203,8 +204,9 @@ export default function ChatScreen({
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const textColor = isDark ? "#f5f5f5" : "#000000";
-  const mutedColor = isDark ? "#c6c5cf" : "#71717A";
+  const t = useTokens();
+  const textColor = t.textPrimary;
+  const mutedColor = t.textSecondary;
 
   const [attachmentVisible, setAttachmentVisible] = useState(false);
   const [productLoading, setProductLoading] = useState(false);

@@ -20,12 +20,14 @@ import QRCode from "react-native-qrcode-svg";
 import { getPodCode } from "../../../services/sections/orders";
 import { PodCode } from "../../../models/orders";
 import { useTheme } from "../../../components/themeProvider";
+import { useTokens } from "../../../theme/useTokens";
 
 export default function OrderPodCodeScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const [data, setData] = useState<PodCode | null>(null);
   const [loading, setLoading] = useState(true);
@@ -66,7 +68,7 @@ export default function OrderPodCodeScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={18} color={isDark ? "#f5f5f5" : "#000000"} />
+          <ArrowLeft size={18} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
           className={`flex-1 text-center text-lg font-bold -ml-10 ${isDark ? "text-dark-text" : "text-black"}`}
@@ -83,13 +85,13 @@ export default function OrderPodCodeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => load(true)}
-            tintColor={isDark ? "#f5f5f5" : "#000000"}
+            tintColor={t.textPrimary}
           />
         }
       >
         {loading ? (
           <View className="flex-1 justify-center items-center py-16">
-            <ActivityIndicator size="large" color={isDark ? "#f5f5f5" : "#000000"} />
+            <ActivityIndicator size="large" color={t.textPrimary} />
           </View>
         ) : error || !data ? (
           <View className="flex-1 justify-center items-center py-16">
@@ -100,7 +102,7 @@ export default function OrderPodCodeScreen() {
           </View>
         ) : !data.ready || !data.code ? (
           <View className="flex-1 justify-center items-center py-16">
-            <Clock size={32} color={isDark ? "#c6c5cf" : "#71717A"} />
+            <Clock size={32} color={t.textSecondary} />
             <Text className={`font-semibold text-lg text-center mt-4 ${isDark ? "text-dark-text" : "text-black"}`}>
               No code yet
             </Text>
@@ -114,7 +116,7 @@ export default function OrderPodCodeScreen() {
             <View className={`${cardClass} items-center px-8 py-10`}>
               {showAsText ? (
                 <>
-                  <KeyRound size={28} color={isDark ? "#f5f5f5" : "#000000"} />
+                  <KeyRound size={28} color={t.textPrimary} />
                   <Text className={`${labelClass} mt-4 text-center`}>
                     Read this code out to your rider to confirm delivery
                   </Text>
@@ -143,9 +145,9 @@ export default function OrderPodCodeScreen() {
                 accessibilityRole="button"
               >
                 {showAsText ? (
-                  <KeyRound size={14} color={isDark ? "#f5f5f5" : "#000000"} />
+                  <KeyRound size={14} color={t.textPrimary} />
                 ) : (
-                  <TypeIcon size={14} color={isDark ? "#f5f5f5" : "#000000"} />
+                  <TypeIcon size={14} color={t.textPrimary} />
                 )}
                 <Text className={`text-xs font-bold ${isDark ? "text-dark-text" : "text-black"}`}>
                   {showAsText ? "Show QR instead" : "Show code instead"}

@@ -16,6 +16,7 @@ import { isOwnProductListing } from "../../utils/chatGuards";
 import { normalizeUri, resolveMediaUri } from "../../utils/imageUri";
 import Avatar from "../../components/Avatar";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { StarRating } from "../../components/StarRating";
 import ProductReviews from "../../components/ProductReviews";
 import { runMessageSellerFlow } from "../../utils/messageSellerFlow";
@@ -46,6 +47,7 @@ export default function ProductDetails() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const toggleDetail = (key: string) => {
     setOpenDetails((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -198,10 +200,10 @@ const addProductToCart = async (product:ProductDetail)=>{
         {/* Header */}
         <View className="flex-row items-center justify-between p-4 pb-2">
           <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <ArrowLeft color={isDark ? "#f0f1f2" : "#000000"} size={24} />
+            <ArrowLeft color={t.textPrimary} size={24} />
           </TouchableOpacity>
           {role == "buyer" && <TouchableOpacity className="p-2" onPress={()=> router.navigate("/cart")}>
-            <ShoppingBag color={isDark ? "#f0f1f2" : "#000000"} size={24} />
+            <ShoppingBag color={t.textPrimary} size={24} />
           </TouchableOpacity>}
         </View>
 
@@ -284,7 +286,7 @@ const addProductToCart = async (product:ProductDetail)=>{
               >
                 <Text
                   className="font-bold"
-                  style={{ color: addedToCart ? "#ffffff" : (isDark ? "#f0f1f2" : "#000000") }}
+                  style={{ color: addedToCart ? "#ffffff" : (t.textPrimary) }}
                 >
                   {!addedToCart ? "Add to Cart" : "Added"}
                 </Text>
@@ -349,7 +351,7 @@ const addProductToCart = async (product:ProductDetail)=>{
               </Text>
               <ArrowBigDown
                 size={20}
-                color={isDark ? "#f0f1f2" : "#000000"}
+                color={t.textPrimary}
                 style={{ transform: [{ rotate: openDetails.details ? "180deg" : "0deg" }] }}
               />
             </Pressable>
@@ -482,7 +484,7 @@ const addProductToCart = async (product:ProductDetail)=>{
       ListFooterComponent={
         loading ? (
           <View className="py-5">
-            <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+            <ActivityIndicator size="large" color={t.textPrimary} />
           </View>
         ) : null
       }

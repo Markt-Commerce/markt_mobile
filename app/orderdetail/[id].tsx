@@ -9,6 +9,7 @@ import { getProductById } from "../../services/sections/product";
 import { Order, OrderItem } from "../../models/orders";
 import type { ProductDetail } from "../../models/products";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens, tokensFor } from "../../theme/useTokens";
 import { formatStatus } from "../../utils/formatStatus";
 
 function formatOrderDate(dateString?: string): string {
@@ -45,8 +46,9 @@ export default function OrderDetail() {
   const [productsById, setProductsById] = useState<Record<string, ProductDetail>>({});
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#f5f5f5" : "#000000";
-  const mutedColor = isDark ? "#c6c5cf" : "#71717A";
+  const t = useTokens();
+  const iconColor = t.textPrimary;
+  const mutedColor = t.textSecondary;
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -328,7 +330,7 @@ function OrderProgress({ status, isDark }: { status?: string; isDark: boolean })
               className="h-1.5 rounded-full"
               style={{
                 backgroundColor:
-                  i < reached ? "#E94C2A" : isDark ? "#46464e" : "#E4E4E7",
+                  i < reached ? "#E94C2A" : tokensFor(isDark).borderStrong,
               }}
             />
             <Text
@@ -375,7 +377,7 @@ function ItemRow({
             <Image source={{ uri: imageUrl }} className={`w-12 h-12 rounded bg-media`} />
           ) : (
             <View className={`w-12 h-12 rounded items-center justify-center bg-media`}>
-              <Package size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
+              <Package size={18} color={tokensFor(isDark).textSecondary} />
             </View>
           )}
           <View className="flex-1">

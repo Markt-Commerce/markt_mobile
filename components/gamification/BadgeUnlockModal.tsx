@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, Image, TouchableOpacity, Modal } from "react-native";
 import { Award } from "lucide-react-native";
 import { useTheme } from "../themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import type { BadgeEarnedEvent } from "../../types/gamification";
 
 export interface BadgeUnlockModalProps {
@@ -21,6 +22,7 @@ export default function BadgeUnlockModal({
 }: BadgeUnlockModalProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   return (
     <Modal visible={visible && !!badge} transparent animationType="fade" onRequestClose={onClose}>
@@ -50,7 +52,7 @@ export default function BadgeUnlockModal({
                 style={{ width: 72, height: 72, borderRadius: 36 }}
               />
             ) : (
-              <Award size={44} color={isDark ? "#f0f1f2" : "#000000"} />
+              <Award size={44} color={t.textPrimary} />
             )}
           </View>
 

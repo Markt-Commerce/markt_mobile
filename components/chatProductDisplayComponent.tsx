@@ -19,6 +19,7 @@ import { ProductDetail } from "../models/products";
 import { getProductById } from "../services/sections/product";
 import { resolveProductImageUri } from "../utils/imageUri";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 
 type EmbeddedProduct = {
   id: string;
@@ -49,7 +50,8 @@ export default function ChatProductDisplayComponent({
   const [imageError, setImageError] = useState(false);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#c6c5cf" : "#71717A";
+  const t = useTokens();
+  const iconColor = t.textSecondary;
 
   const id = embeddedProduct?.id ?? productId;
   const displayName = product?.name ?? embeddedProduct?.name ?? "Product";
@@ -131,7 +133,7 @@ export default function ChatProductDisplayComponent({
         </View>
         <ActivityIndicator
           size="small"
-          color={isDark ? "#f5f5f5" : "#000000"}
+          color={t.textPrimary}
           className="mt-2"
         />
       </View>

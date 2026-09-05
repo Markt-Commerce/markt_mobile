@@ -13,6 +13,7 @@ import { Check, Search, X } from "lucide-react-native";
 import { Category } from "../models/categories";
 import { getAllCategories } from "../services/sections/categories";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 
 interface CategoryAdditionProps {
   visible: boolean;
@@ -62,8 +63,9 @@ export const CategoryAddition = ({
   }, [visible, categories.length, fallbackCategories.length]);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const textColor = isDark ? "#f5f5f5" : "#000000";
-  const mutedColor = isDark ? "#c6c5cf" : "#71717A";
+  const t = useTokens();
+  const textColor = t.textPrimary;
+  const mutedColor = t.textSecondary;
 
   React.useEffect(() => {
     setSelectedCategories(parentSelectedCategories);
@@ -129,7 +131,7 @@ export const CategoryAddition = ({
               <TextInput
                 className={`flex-1 ml-2 ${isDark ? "text-dark-text" : "text-black"}`}
                 placeholder="Search categories"
-                placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
+                placeholderTextColor={t.textSecondary}
                 value={query}
                 onChangeText={setQuery}
                 autoCorrect={false}

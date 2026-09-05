@@ -33,6 +33,7 @@ import type { Order, SellerOrderItem } from "../../models/orders";
 import { useToast } from "../../components/ToastProvider";
 import OrdersList from "../../components/orderList";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useShippingAddress } from "../../hooks/useShippingAddress";
 import {
   isShippingAddressUsable,
@@ -62,6 +63,7 @@ function MyCartTab() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const [cart, setCart] = useState<Cart | null>(null);
   const [summary, setSummary] = useState<CartSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -166,7 +168,7 @@ function MyCartTab() {
   if (loading && !refreshing) {
     return (
       <View className="flex-1 items-center justify-center py-16">
-        <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+        <ActivityIndicator size="large" color={t.textPrimary} />
       </View>
     );
   }
@@ -175,7 +177,7 @@ function MyCartTab() {
     return (
         <View className="flex-1 items-center justify-center px-6 py-16" >
           <View className="mb-5">
-            <ShoppingCart size={44} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={1.5} />
+            <ShoppingCart size={44} color={t.textMuted} strokeWidth={1.5} />
           </View>
         <Text className={`text-[22px] font-bold text-center text-text-primary`}>
           Your cart is empty
@@ -197,7 +199,7 @@ function MyCartTab() {
     <ScrollView
       className="flex-1"
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchCart(); }} tintColor={isDark ? "#f0f1f2" : "#000000"} />
+        <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchCart(); }} tintColor={t.textPrimary} />
       }
       contentContainerStyle={{ paddingBottom: 24 }}
     >
@@ -239,7 +241,7 @@ function MyCartTab() {
                           onPress={() => handleRemove(item)}
                           className={`ml-1 w-8 h-8 rounded items-center justify-center bg-surface-sunken`}
                         >
-                          <Trash2 size={16} color={isDark ? "#f0f1f2" : "#000000"} />
+                          <Trash2 size={16} color={t.textPrimary} />
                         </TouchableOpacity>
                       </View>
                     </View>

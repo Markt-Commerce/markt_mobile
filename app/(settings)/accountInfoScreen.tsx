@@ -20,6 +20,7 @@ import { isArray } from 'lodash';
 import { useTheme } from '../../components/themeProvider';
 import logger from '../../utils/logger';
 import { friendlyErrorMessage } from '../../utils/errorMessages';
+import { useTokens } from '../../theme/useTokens';
 
 const BuyerSchema = z.object({
   buyername: z.string().min(2).max(60).optional(),
@@ -41,6 +42,7 @@ export default function AccountInfoScreen() {
   const { user, role, profile: sharedProfile, setProfile: setSharedProfile } = useUser();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const [profileData, setProfileData] = useState<UserProfile | null>(sharedProfile);
   const { show } = useToast();
   const [currentProfilePic, setCurrentProfilePic] = useState<string | null>(null);
@@ -261,7 +263,7 @@ export default function AccountInfoScreen() {
               <Image source={{ uri: currentProfilePic }} className={`w-12 h-12 rounded-full border ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`} />
             ) : (
               <View className={`w-12 h-12 rounded-full items-center justify-center border ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
-                <Camera size={18} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.7} />
+                <Camera size={18} color={t.textPrimary} strokeWidth={1.7} />
               </View>
             )}
             <View className="flex-1">

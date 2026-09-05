@@ -11,6 +11,7 @@ import { ArrowLeft, Trash2, ShoppingCart, Check } from "lucide-react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useToast } from "../../components/ToastProvider";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useShippingAddress } from "../../hooks/useShippingAddress";
 import {
   isShippingAddressUsable,
@@ -24,6 +25,7 @@ export default function CartScreen() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const [cart, setCart] = useState<Cart | null>(null);
   const [summary, setSummary] = useState<CartSummary | null>(null);
@@ -163,7 +165,7 @@ export default function CartScreen() {
   if (loading && !refreshing) {
     return (
       <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
-        <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+        <ActivityIndicator size="large" color={t.textPrimary} />
         <Text className={`mt-3 font-medium text-text-primary`}>Loading your cart…</Text>
       </SafeAreaView>
     );
@@ -175,17 +177,17 @@ export default function CartScreen() {
         {/* Header */}
         <View className={`flex-row items-center justify-between px-6 py-4 border-b ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
           <TouchableOpacity onPress={() => router.back()} className={`h-10 w-10 rounded items-center justify-center bg-surface-sunken`}>
-            <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+            <ArrowLeft size={20} color={t.textPrimary} />
           </TouchableOpacity>
           <Text className={`flex-1 text-center text-xl font-bold pr-10 text-text-primary`}>Cart</Text>
         </View>
 
         <ScrollView
           contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "#f0f1f2" : "#000000"} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.textPrimary} />}
         >
           <View className="mb-5">
-            <ShoppingCart size={44} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={1.5} />
+            <ShoppingCart size={44} color={t.textMuted} strokeWidth={1.5} />
           </View>
           <Text className={`text-2xl font-bold text-text-primary`}>Your cart is empty</Text>
           <Text className={`mt-2 text-base text-center leading-6 text-text-secondary`}>
@@ -211,14 +213,14 @@ export default function CartScreen() {
       {/* Header */}
       <View className={`flex-row items-center justify-between px-6 py-4 border-b ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
         <TouchableOpacity onPress={() => router.back()} className={`h-10 w-10 rounded items-center justify-center bg-surface-sunken`}>
-          <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={20} color={t.textPrimary} />
         </TouchableOpacity>
         <Text className={`flex-1 text-center text-xl font-bold pr-10 text-text-primary`}>Cart</Text>
       </View>
 
       <ScrollView
         className="flex-1 py-4"
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "#f0f1f2" : "#000000"} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.textPrimary} />}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         {/* Items container */}
@@ -275,7 +277,7 @@ export default function CartScreen() {
                             className={`ml-2 w-8 h-8 rounded border items-center justify-center ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
                             activeOpacity={0.8}
                           >
-                            <Trash2 size={14} color={isDark ? "#f0f1f2" : "#000000"} />
+                            <Trash2 size={14} color={t.textPrimary} />
                           </TouchableOpacity>
                         </View>
                       </View>

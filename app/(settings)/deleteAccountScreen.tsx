@@ -21,6 +21,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { AlertTriangle, Trash2 } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { useUser } from "../../hooks/userContextProvider";
 import { navigateToGuestHome } from "../../utils/authNavigation";
@@ -49,6 +50,7 @@ export default function DeleteAccountScreen() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
   const { setUser } = useUser();
 
@@ -195,7 +197,7 @@ export default function DeleteAccountScreen() {
             autoCapitalize="characters"
             autoCorrect={false}
             placeholder={CONFIRM_WORD}
-            placeholderTextColor={isDark ? "#6b6b73" : "#A1A1AA"}
+            placeholderTextColor={t.textMuted}
             className={`h-14 rounded border px-4 text-[15px] mb-5 ${card} ${label}`}
             accessibilityLabel={`Type ${CONFIRM_WORD} to confirm account deletion`}
           />
@@ -212,7 +214,7 @@ export default function DeleteAccountScreen() {
             autoCorrect={false}
             textContentType="password"
             placeholder="Your password"
-            placeholderTextColor={isDark ? "#6b6b73" : "#A1A1AA"}
+            placeholderTextColor={t.textMuted}
             className={`h-14 rounded border px-4 text-[15px] mb-8 ${card} ${label}`}
             accessibilityLabel="Confirm your password to delete your account"
           />
@@ -232,7 +234,7 @@ export default function DeleteAccountScreen() {
               <>
                 <Trash2
                   size={18}
-                  color={canSubmit ? "#FFFFFF" : isDark ? "#c6c5cf" : "#71717A"}
+                  color={canSubmit ? "#FFFFFF" : t.textSecondary}
                   strokeWidth={1.8}
                 />
                 <Text

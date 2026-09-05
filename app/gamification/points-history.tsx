@@ -12,6 +12,7 @@ import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { getPointsHistory } from "../../services/sections/gamification";
 import { reasonLabel } from "../../utils/gamification";
 import type { PointsHistoryItem } from "../../types/gamification";
@@ -20,6 +21,7 @@ export default function PointsHistoryScreen() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const [items, setItems] = useState<PointsHistoryItem[]>([]);
   const [cursor, setCursor] = useState<number | null>(null);
@@ -73,7 +75,7 @@ export default function PointsHistoryScreen() {
         }`}
       >
         <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={20} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
           className={`text-lg font-bold ml-2 ${
@@ -125,13 +127,13 @@ export default function PointsHistoryScreen() {
           <RefreshControl
             refreshing={loading}
             onRefresh={() => fetchPage(true, null)}
-            tintColor={isDark ? "#f0f1f2" : "#000000"}
+            tintColor={t.textPrimary}
           />
         }
         ListEmptyComponent={
           loading ? (
             <View className="items-center py-16">
-              <ActivityIndicator color={isDark ? "#f0f1f2" : "#000000"} />
+              <ActivityIndicator color={t.textPrimary} />
             </View>
           ) : (
             <Text
@@ -146,7 +148,7 @@ export default function PointsHistoryScreen() {
         ListFooterComponent={
           loadingMore ? (
             <ActivityIndicator
-              color={isDark ? "#f0f1f2" : "#000000"}
+              color={t.textPrimary}
               style={{ marginVertical: 16 }}
             />
           ) : null

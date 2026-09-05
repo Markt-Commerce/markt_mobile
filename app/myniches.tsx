@@ -10,6 +10,7 @@ import { Niches } from "../models/niches";
 import CreateNicheBottomSheet from "../components/nicheCreateBottomSheet";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { useTheme } from "../components/themeProvider";
+import { useTokens } from "../theme/useTokens";
 import logger from "../utils/logger";
 import { useFeed } from "../hooks/useFeed";
 import type { FeedItem } from "../types/feed";
@@ -22,6 +23,7 @@ export default function MyNichesScreen() {
   const { role } = useUser();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const nicheFormRef = useRef<BottomSheet | null>(null);
   const [niches, setNiches] = useState<Niches[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,7 +116,7 @@ export default function MyNichesScreen() {
     return (
       <SafeAreaView className="flex-1 bg-surface-page" edges={["top"]}>
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+          <ActivityIndicator size="large" color={t.textPrimary} />
         </View>
       </SafeAreaView>
     );
@@ -130,7 +132,7 @@ export default function MyNichesScreen() {
               className={`h-10 w-10 rounded border items-center justify-center mb-4 ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+              <ArrowLeft size={20} color={t.textPrimary} />
             </TouchableOpacity>
             <Text className={`text-2xl font-bold text-text-primary`}>My Niches</Text>
             <Text className={`text-sm mt-1 text-text-secondary`}>
@@ -162,12 +164,12 @@ export default function MyNichesScreen() {
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         refreshControl={
-          <RefreshControl refreshing={refreshing || feedRefreshing} onRefresh={handleRefresh} tintColor={isDark ? "#f0f1f2" : "#000000"} />
+          <RefreshControl refreshing={refreshing || feedRefreshing} onRefresh={handleRefresh} tintColor={t.textPrimary} />
         }
         ListFooterComponent={
           loadingMore ? (
             <View className="py-6">
-              <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
+              <ActivityIndicator size="small" color={t.textPrimary} />
             </View>
           ) : null
         }
@@ -175,7 +177,7 @@ export default function MyNichesScreen() {
           !feedLoading ? (
             <View className="items-center justify-center py-20 px-8">
               <View className="mb-5">
-                <Compass size={44} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={1.5} />
+                <Compass size={44} color={t.textMuted} strokeWidth={1.5} />
               </View>
               <Text className={`font-bold text-xl text-center text-text-primary`}>
                 {niches.length === 0 ? "No niches yet" : "No posts yet"}
@@ -207,7 +209,7 @@ export default function MyNichesScreen() {
                 onPress={() => router.push("/discoverNiches")}
                 className={`w-28 h-20 rounded-xl border items-center justify-center mr-6 ${isDark ? "border-border-strong" : "border-[#e8e4e2]"}`}
               >
-                <Compass size={20} color={isDark ? "#c6c5cf" : "#71717A"} />
+                <Compass size={20} color={t.textSecondary} />
                 <Text className={`text-xs font-semibold mt-1 text-text-secondary`}>Explore</Text>
               </TouchableOpacity>
             </ScrollView>

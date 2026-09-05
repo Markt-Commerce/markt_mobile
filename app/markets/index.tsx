@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getMarkets } from "../../services/sections/markets";
 import type { Market } from "../../services/sections/markets";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 
 export default function MarketsScreen() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function MarketsScreen() {
   const [error, setError] = useState(false);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   useEffect(() => {
     let cancelled = false;
@@ -56,7 +58,7 @@ export default function MarketsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={24} color={isDark ? "#f5f5f5" : "#000000"} />
+          <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
           className={`flex-1 text-xl font-bold text-center pr-8 ${isDark ? "text-dark-text" : "text-black"}`}
@@ -69,7 +71,7 @@ export default function MarketsScreen() {
         <View className="flex-1 justify-center items-center py-16">
           <ActivityIndicator
             size="large"
-            color={isDark ? "#f5f5f5" : "#000000"}
+            color={t.textPrimary}
           />
           <Text
             className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm mt-2`}
@@ -123,7 +125,7 @@ export default function MarketsScreen() {
                   {item.seller_count} seller{item.seller_count !== 1 ? "s" : ""}
                 </Text>
               </View>
-              <ChevronRight size={20} color={isDark ? "#c6c5cf" : "#71717A"} />
+              <ChevronRight size={20} color={t.textSecondary} />
             </TouchableOpacity>
           )}
         />

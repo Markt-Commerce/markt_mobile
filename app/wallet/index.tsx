@@ -24,6 +24,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { ArrowDownLeft, ArrowLeft, ArrowUpRight, Plus, Wallet } from "lucide-react-native";
 import { SettingsSection } from "../../components/SettingsList";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { formatNaira } from "../../utils/formatCurrency";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
@@ -108,6 +109,7 @@ export default function WalletScreen() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const [balance, setBalance] = useState<number | null>(null);
   const [currency, setCurrency] = useState("NGN");
@@ -275,7 +277,7 @@ export default function WalletScreen() {
   const canWithdraw = (balance ?? 0) >= MIN_WITHDRAWAL_AMOUNT;
 
   const inputClass = `h-14 rounded border px-4 text-[15px] mb-4 ${isDark ? "bg-surface-raised border-border-strong text-text-primary" : "bg-white border-border text-black"}`;
-  const placeholderColor = isDark ? "#6b6b73" : "#A1A1AA";
+  const placeholderColor = t.textMuted;
 
   // A wallet should feel like a wallet, not another settings list. The balance
   // sits on a coloured ground that runs to the top of the screen, the way

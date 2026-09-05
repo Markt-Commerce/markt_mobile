@@ -22,6 +22,7 @@ import { Store, UserPlus, UserMinus } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
 import Avatar from "../../components/Avatar";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import {
   getUserPublicProfile,
@@ -59,6 +60,7 @@ export default function PublicProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
 
   const [profile, setProfile] = useState<PublicProfile | null>(null);
@@ -177,7 +179,7 @@ export default function PublicProfileScreen() {
                 accessibilityLabel={following ? "Unfollow" : "Follow"}
               >
                 {following ? (
-                  <UserMinus size={16} color={isDark ? "#f0f1f2" : "#000000"} />
+                  <UserMinus size={16} color={t.textPrimary} />
                 ) : (
                   <UserPlus size={16} color="#FFFFFF" />
                 )}

@@ -23,6 +23,7 @@ import {
   SellerAllocation,
 } from "../../services/sections/fulfilment";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 
 type RowAction = "accept" | "decline" | "start-preparing" | "cancel";
@@ -38,6 +39,7 @@ export default function SellerAllocationsScreen() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
 
   const [items, setItems] = useState<SellerAllocation[] | null>(null);
@@ -137,7 +139,7 @@ export default function SellerAllocationsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={18} color={isDark ? "#f5f5f5" : "#000000"} />
+          <ArrowLeft size={18} color={t.textPrimary} />
         </TouchableOpacity>
         <Text className={`flex-1 text-center text-lg font-bold -ml-10 ${isDark ? "text-dark-text" : "text-black"}`}>
           Fulfilment requests
@@ -149,12 +151,12 @@ export default function SellerAllocationsScreen() {
         className="flex-1 px-4"
         contentContainerStyle={{ paddingBottom: 20 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={isDark ? "#f5f5f5" : "#000000"} />
+          <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={t.textPrimary} />
         }
       >
         {loading ? (
           <View className="flex-1 justify-center items-center py-16">
-            <ActivityIndicator size="large" color={isDark ? "#f5f5f5" : "#000000"} />
+            <ActivityIndicator size="large" color={t.textPrimary} />
           </View>
         ) : error ? (
           <View className="flex-1 justify-center items-center py-16">
@@ -165,7 +167,7 @@ export default function SellerAllocationsScreen() {
           </View>
         ) : !items?.length ? (
           <View className="flex-1 justify-center items-center py-16">
-            <Clock size={32} color={isDark ? "#c6c5cf" : "#71717A"} />
+            <Clock size={32} color={t.textSecondary} />
             <Text className={`font-semibold text-lg text-center mt-4 ${isDark ? "text-dark-text" : "text-black"}`}>
               Nothing pending
             </Text>

@@ -26,6 +26,7 @@ import { useRouter } from "expo-router";
 import { ChevronDown, Mail, Search } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens, tokensFor } from "../../theme/useTokens";
 import { SettingsSection } from "../../components/SettingsList";
 
 const SUPPORT_EMAIL = "support@marktcommerce.com";
@@ -157,7 +158,7 @@ function Accordion({
           {item.q}
         </Text>
         <View style={{ transform: [{ rotate: open ? "180deg" : "0deg" }], marginTop: 2 }}>
-          <ChevronDown size={18} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+          <ChevronDown size={18} color={tokensFor(isDark).textMuted} strokeWidth={2} />
         </View>
       </TouchableOpacity>
       {open ? (
@@ -180,6 +181,7 @@ export default function HelpCenterScreen() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const [query, setQuery] = useState("");
   const [openKey, setOpenKey] = useState<string | null>(null);
 
@@ -220,12 +222,12 @@ export default function HelpCenterScreen() {
               isDark ? "bg-surface-sunken" : "bg-[#F4F4F5]"
             }`}
           >
-            <Search size={17} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+            <Search size={17} color={t.textMuted} strokeWidth={2} />
             <TextInput
               value={query}
               onChangeText={setQuery}
               placeholder="Search help"
-              placeholderTextColor={isDark ? "#8f9195" : "#A1A1AA"}
+              placeholderTextColor={t.textMuted}
               className={`flex-1 ml-2 text-[15px] ${strong}`}
               returnKeyType="search"
               accessibilityLabel="Search help topics"

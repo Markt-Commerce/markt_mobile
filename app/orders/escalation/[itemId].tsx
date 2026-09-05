@@ -26,6 +26,7 @@ import {
 import { acceptRequestOffer } from "../../../services/sections/requests";
 import { cancelOrder } from "../../../services/sections/orders";
 import { useTheme } from "../../../components/themeProvider";
+import { useTokens } from "../../../theme/useTokens";
 import { useToast } from "../../../components/ToastProvider";
 
 export default function ItemEscalationScreen() {
@@ -33,6 +34,7 @@ export default function ItemEscalationScreen() {
   const { itemId } = useLocalSearchParams<{ itemId: string }>();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
 
   const [data, setData] = useState<ItemEscalation | null>(null);
@@ -135,7 +137,7 @@ export default function ItemEscalationScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={18} color={isDark ? "#f5f5f5" : "#000000"} />
+          <ArrowLeft size={18} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
           className={`flex-1 text-center text-lg font-bold -ml-10 ${isDark ? "text-dark-text" : "text-black"}`}
@@ -147,7 +149,7 @@ export default function ItemEscalationScreen() {
 
       {loading ? (
         <View className="flex-1 justify-center items-center py-16">
-          <ActivityIndicator size="large" color={isDark ? "#f5f5f5" : "#000000"} />
+          <ActivityIndicator size="large" color={t.textPrimary} />
         </View>
       ) : error || !data ? (
         <View className="flex-1 justify-center items-center px-6 py-16">
@@ -158,7 +160,7 @@ export default function ItemEscalationScreen() {
         </View>
       ) : !data.escalated ? (
         <View className="flex-1 justify-center items-center px-6 py-16">
-          <PackageX size={32} color={isDark ? "#c6c5cf" : "#71717A"} />
+          <PackageX size={32} color={t.textSecondary} />
           <Text className={`font-semibold text-lg text-center mt-4 ${isDark ? "text-dark-text" : "text-black"}`}>
             Nothing to resolve
           </Text>
@@ -198,7 +200,7 @@ export default function ItemEscalationScreen() {
                     }`}
                   >
                     <View className="flex-row items-center gap-3 flex-1 pr-3">
-                      <Store size={18} color={isDark ? "#f5f5f5" : "#000000"} />
+                      <Store size={18} color={t.textPrimary} />
                       <View className="flex-1">
                         <Text className={valueClass} numberOfLines={1}>
                           {offer.seller_name ?? `Seller #${offer.seller_id}`}

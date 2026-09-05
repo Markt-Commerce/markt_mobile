@@ -34,6 +34,7 @@ import CreateNicheBottomSheet from '../../components/nicheCreateBottomSheet';
 import BottomSheet from '@gorhom/bottom-sheet';
 import StartCards from '../../components/startCards';
 import { useTheme } from '../../components/themeProvider';
+import { useTokens } from '../../theme/useTokens';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -42,6 +43,7 @@ export default function SellerDashboard() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   //chart width
   const chartWidth = Math.min(screenWidth - 32, 800);
 
@@ -214,7 +216,7 @@ export default function SellerDashboard() {
         return () => loop.stop();
       }, [opacity]);
 
-      const pulseColor = isDark ? "#f0f1f2" : "#000000";
+      const pulseColor = t.textPrimary;
 
       return (
         <View style={{ width: 4, backgroundColor: pulseColor, position: 'relative' }}>
@@ -338,7 +340,7 @@ export default function SellerDashboard() {
               {formatStatus(item.status)}
             </Text>
           </View>
-          <ChevronRight size={18} color={isDark ? "#6b6d71" : "#A1A1AA"} strokeWidth={2} />
+          <ChevronRight size={18} color={t.textMuted} strokeWidth={2} />
         </View>
       </View>
     </TouchableOpacity>
@@ -367,7 +369,7 @@ export default function SellerDashboard() {
       <ScrollView
         className={isDark ? "bg-surface-raised" : "bg-white"}
         contentContainerStyle={{ paddingBottom: 60 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "#f0f1f2" : "#000000"} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.textPrimary} />}
       >
         {/* Time selector (7d / 30d / 90d) + Export menu */}
         <View className="flex-row items-center justify-between px-6 py-4">
@@ -621,12 +623,12 @@ export default function SellerDashboard() {
           <View className={`rounded border p-6 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
             <View className={`flex-row items-center rounded overflow-hidden border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}>
               <View className="w-12 items-center justify-center">
-                <Search size={20} color={isDark ? "#c6c5cf" : "#71717A"} />
+                <Search size={20} color={t.textSecondary} />
               </View>
               <TextInput
                 placeholder="Search products"
                 className={`flex-1 h-12 px-3 text-base text-text-primary`}
-                placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
+                placeholderTextColor={t.textSecondary}
                 value={searchText}
                 onChangeText={setSearchText}
                 accessibilityLabel="inventory-search"
@@ -642,7 +644,7 @@ export default function SellerDashboard() {
                   <Text className={`font-bold text-sm capitalize ${(invFilter === 'active' || invFilter === 'inactive') ? "text-white" : (isDark ? "text-text-primary" : "text-black")}`}>
                     {invFilter === 'active' || invFilter === 'inactive' ? invFilter : 'Status'}
                   </Text>
-                  <CaretDown size={16} color={(invFilter === 'active' || invFilter === 'inactive') ? "#ffffff" : (isDark ? "#f0f1f2" : "#000000")} />
+                  <CaretDown size={16} color={(invFilter === 'active' || invFilter === 'inactive') ? "#ffffff" : (t.textPrimary)} />
                 </TouchableOpacity>
                 {statusMenuVisible && (
                   <View className={`absolute top-11 left-0 z-10 rounded border overflow-hidden min-w-[130px] ${isDark ? "bg-surface-sunken border-border-strong" : "bg-white border-border"}`}>

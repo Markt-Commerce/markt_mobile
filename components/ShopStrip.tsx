@@ -12,6 +12,7 @@ import { getTrendingShops } from "../services/sections/shops";
 import type { ShopLite } from "../services/sections/shops";
 import Avatar from "./Avatar";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 
 const AVATAR_SIZE = 48;
 
@@ -21,6 +22,7 @@ export default function ShopStrip() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   useEffect(() => {
     let cancelled = false;
@@ -70,7 +72,7 @@ export default function ShopStrip() {
         accessibilityLabel="Discover shops"
       >
         <Text className={`font-semibold text-sm text-text-primary`}>Discover shops</Text>
-        <ChevronRight size={18} color={isDark ? "#f0f1f2" : "#000000"} />
+        <ChevronRight size={18} color={t.textPrimary} />
       </TouchableOpacity>
     );
   }
@@ -132,7 +134,7 @@ export default function ShopStrip() {
         accessibilityLabel="Discover more shops"
       >
         <Text className={`text-xs font-semibold text-text-secondary`}>See all</Text>
-        <ChevronRight size={16} color={isDark ? "#c6c5cf" : "#71717A"} />
+        <ChevronRight size={16} color={t.textSecondary} />
       </TouchableOpacity>
     </View>
   );

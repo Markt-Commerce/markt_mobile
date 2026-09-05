@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { WebView, type WebViewNavigation } from "react-native-webview";
 import { ArrowLeft } from "lucide-react-native";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { verifyWalletTopUp } from "../../services/sections/wallet";
 import {
@@ -27,6 +28,7 @@ export default function WalletTopUpScreen() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const { authorization_url, topup_id } = useLocalSearchParams<{
     authorization_url?: string;
@@ -111,7 +113,7 @@ export default function WalletTopUpScreen() {
       <SafeAreaView
         className={`flex-1 items-center justify-center bg-surface-raised`}
       >
-        <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+        <ActivityIndicator size="large" color={t.textPrimary} />
         <Text className={`mt-3 text-sm text-text-secondary`}>
           Confirming top-up…
         </Text>
@@ -152,7 +154,7 @@ export default function WalletTopUpScreen() {
           accessibilityRole="button"
           accessibilityLabel="Cancel top-up"
         >
-          <ArrowLeft size={24} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
           className={`ml-3 text-base font-semibold text-text-primary`}

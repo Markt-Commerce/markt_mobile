@@ -33,6 +33,7 @@ import { setUserSession } from "../services/authStorage";
 import { useToast } from "./ToastProvider";
 import type { UserProfile } from "../models/profile";
 import { useTheme } from "./themeProvider";
+import { useTokens, tokensFor } from "../theme/useTokens";
 
 const DRAWER_WIDTH = Math.min(Dimensions.get("window").width * 0.8, 320);
 
@@ -59,7 +60,7 @@ const Row = ({
     activeOpacity={0.7}
   >
     <View className={`w-10 h-10 rounded items-center justify-center bg-surface-sunken`}>
-      <Icon size={20} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.5} />
+      <Icon size={20} color={tokensFor(isDark).textPrimary} strokeWidth={1.5} />
     </View>
     <Text className={`font-bold text-base text-text-primary`}>{label}</Text>
   </TouchableOpacity>
@@ -75,6 +76,7 @@ export default function NavDrawer({
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const slideAnim = React.useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const overlayOpacity = React.useRef(new Animated.Value(0)).current;
 
@@ -194,7 +196,7 @@ export default function NavDrawer({
           top: 0,
           bottom: 0,
           width: DRAWER_WIDTH,
-          backgroundColor: isDark ? "#1a1c1d" : "white",
+          backgroundColor: t.surfacePage,
           zIndex: 999,
           transform: [{ translateX: slideAnim }],
           shadowColor: "#000",
@@ -219,7 +221,7 @@ export default function NavDrawer({
                 className="p-2 -mr-2"
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <X size={24} color={isDark ? "#c6c5cf" : "#71717A"} strokeWidth={1.5} />
+                <X size={24} color={t.textSecondary} strokeWidth={1.5} />
               </TouchableOpacity>
             </View>
             <Text className={`font-bold text-xl text-text-primary`} numberOfLines={1}>

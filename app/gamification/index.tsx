@@ -12,6 +12,7 @@ import { useRouter } from "expo-router";
 import { ArrowLeft, ChevronRight } from "lucide-react-native";
 
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useUser } from "../../hooks/userContextProvider";
 import { useGamificationContext } from "../../hooks/gamificationContext";
 import { getPointsHistory, getLeaderboard } from "../../services/sections/gamification";
@@ -27,6 +28,7 @@ export default function GamificationScreen() {
   const { resolvedTheme } = useTheme();
   const { user } = useUser();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const { profile: data, badges, loading, error, refresh, refreshBadges } = useGamificationContext();
 
@@ -71,7 +73,7 @@ export default function GamificationScreen() {
         }`}
       >
         <TouchableOpacity onPress={() => router.back()} className="flex-row items-center">
-          <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={20} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
           className={`text-lg font-bold ml-2 ${
@@ -88,7 +90,7 @@ export default function GamificationScreen() {
           <RefreshControl
             refreshing={loading}
             onRefresh={onRefresh}
-            tintColor={isDark ? "#f0f1f2" : "#000000"}
+            tintColor={t.textPrimary}
           />
         }
       >
@@ -110,7 +112,7 @@ export default function GamificationScreen() {
           </View>
         ) : !data ? (
           <View className="items-center py-16">
-            <ActivityIndicator color={isDark ? "#f0f1f2" : "#000000"} />
+            <ActivityIndicator color={t.textPrimary} />
           </View>
         ) : (
           <>

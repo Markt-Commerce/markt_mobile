@@ -3,6 +3,7 @@ import { Control, Controller, FieldErrors, FieldValues, Path } from "react-hook-
 import React, { useRef, useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useTheme } from "./themeProvider";
+import { useTokens, tokensFor } from "../theme/useTokens";
 
 interface InputProps<TFieldValues extends FieldValues = FieldValues> extends React.ComponentProps<typeof TextInput> {
   name?: Path<TFieldValues>;
@@ -41,6 +42,7 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
   const errorMessage = hasError ? (errors[name!]?.message as string) : undefined;
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   // Multiline fields (post caption, request description) render as a taller
   // top-aligned textbox instead of a single-line 48px input.
@@ -63,7 +65,7 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
               onBlur={onBlur}
               value={fieldValue}
               placeholder={placeholder}
-              placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
+              placeholderTextColor={t.textSecondary}
               secureTextEntry={secureTextEntry}
               className={`w-full rounded ${sizeClass} px-4 text-base ${isDark ? "text-text-primary bg-surface-raised" : "text-secondary bg-background"} border ${
                 hasError ? "border-error" : isDark ? "border-border-strong focus:border-[#f0f1f2]" : "border-border focus:border-secondary"
@@ -125,7 +127,7 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
                 }}
                 value={fieldValue}
                 placeholder={inputProps.placeholder}
-                placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
+                placeholderTextColor={tokensFor(isDark).textSecondary}
                 secureTextEntry={!visible}
                 className={`flex-1 text-base ${isDark ? "text-text-primary" : "text-secondary"}`}
                 keyboardType={inputProps.keyboardType ?? "default"}
@@ -140,7 +142,7 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
                   accessibilityLabel={visible ? "Hide password" : "Show password"}
                   accessibilityRole="button"
                 >
-                  {visible ? <EyeOff size={20} color={isDark ? "#c6c5cf" : "#71717A"} /> : <Eye size={20} color={isDark ? "#c6c5cf" : "#71717A"} />}
+                  {visible ? <EyeOff size={20} color={tokensFor(isDark).textSecondary} /> : <Eye size={20} color={tokensFor(isDark).textSecondary} />}
                 </TouchableOpacity>
               )}
             </View>

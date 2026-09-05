@@ -8,6 +8,7 @@ import { UserProvider, useUser } from "../hooks/userContextProvider";
 import { RegisterProvider } from "../models/signupSteps";
 import { ToastProvider } from "../components/ToastProvider";
 import { ThemeProvider } from "../components/themeProvider";
+import { useTokens } from "../theme/useTokens";
 import { useTheme } from "../components/themeProvider";
 import { useState } from "react";
 import { RegisterRequest } from "../models/auth";
@@ -67,6 +68,7 @@ export function AppStack() {
   const { resolvedTheme } = useTheme();
   const isLoggedIn = !!user;
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   if (isRestoringSession) {
     return (
@@ -76,7 +78,7 @@ export function AppStack() {
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
         <ActivityIndicator
           size="large"
-          color={isDark ? "#f5f5f5" : "#000000"}
+          color={t.textPrimary}
         />
         <Text
           className={`mt-3 text-sm ${isDark ? "text-dark-muted" : "text-tertiary"}`}

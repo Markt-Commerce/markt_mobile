@@ -6,6 +6,7 @@ import { Camera, Image as ImageIcon, Save } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
 import { SettingsSection, SettingsSwitchRow } from "../../components/SettingsList";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { getMyNiches, getNicheById, updateNiche } from "../../services/sections/niches";
 import { attemptMultipleUpload } from "../../services/sections/media";
@@ -18,6 +19,7 @@ export default function NicheSettingsScreen() {
   const { resolvedTheme } = useTheme();
   const { show } = useToast();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const [niche, setNiche] = useState<Niches | null>(null);
   const [ownerChecked, setOwnerChecked] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -120,20 +122,20 @@ export default function NicheSettingsScreen() {
         <SettingsSection title="Community identity" dark={isDark}>
           <View className="p-4">
             <Text className={`text-xs font-bold uppercase tracking-[2px] mb-2 ${muted}`}>Name</Text>
-            <TextInput value={name} onChangeText={setName} className={`${inputClass} mb-4`} placeholder="Community name" placeholderTextColor={isDark ? "#8f9195" : "#A1A1AA"} />
+            <TextInput value={name} onChangeText={setName} className={`${inputClass} mb-4`} placeholder="Community name" placeholderTextColor={t.textMuted} />
             <Text className={`text-xs font-bold uppercase tracking-[2px] mb-2 ${muted}`}>Description</Text>
-            <TextInput value={description} onChangeText={setDescription} multiline numberOfLines={4} textAlignVertical="top" className={`${inputClass} min-h-[110px]`} placeholder="What is this community about?" placeholderTextColor={isDark ? "#8f9195" : "#A1A1AA"} />
+            <TextInput value={description} onChangeText={setDescription} multiline numberOfLines={4} textAlignVertical="top" className={`${inputClass} min-h-[110px]`} placeholder="What is this community about?" placeholderTextColor={t.textMuted} />
           </View>
         </SettingsSection>
 
         <SettingsSection title="Images" dark={isDark}>
           <TouchableOpacity disabled={saving} onPress={() => changeImage("image_id")} className={`flex-row items-center px-4 py-3 min-h-[72px] ${saving ? "opacity-60" : ""}`}>
             {niche.image_url ? <Image source={{ uri: niche.image_url }} className="w-12 h-12 rounded-xl" /> : <Camera size={22} color={isDark ? "#c6c5cf" : "#3F3F46"} />}
-            <View className="flex-1 ml-4"><Text className={`text-base text-text-primary`}>Community profile picture</Text><Text className={`text-[13px] mt-0.5 ${muted}`}>{uploadingField === "image_id" ? "Uploading…" : "Shown beside the community name"}</Text></View>{uploadingField === "image_id" ? <ActivityIndicator size="small" /> : <ImageIcon size={18} color={isDark ? "#8f9195" : "#A1A1AA"} />}
+            <View className="flex-1 ml-4"><Text className={`text-base text-text-primary`}>Community profile picture</Text><Text className={`text-[13px] mt-0.5 ${muted}`}>{uploadingField === "image_id" ? "Uploading…" : "Shown beside the community name"}</Text></View>{uploadingField === "image_id" ? <ActivityIndicator size="small" /> : <ImageIcon size={18} color={t.textMuted} />}
           </TouchableOpacity>
           <TouchableOpacity disabled={saving} onPress={() => changeImage("banner_id")} className={`flex-row items-center px-4 py-3 min-h-[72px] border-t border-[#EFEFF1] ${saving ? "opacity-60" : ""}`}>
             {niche.banner_url ? <Image source={{ uri: niche.banner_url }} className="w-12 h-12 rounded-xl" /> : <ImageIcon size={22} color={isDark ? "#c6c5cf" : "#3F3F46"} />}
-            <View className="flex-1 ml-4"><Text className={`text-base text-text-primary`}>Community banner</Text><Text className={`text-[13px] mt-0.5 ${muted}`}>{uploadingField === "banner_id" ? "Uploading…" : "Shown at the top of the community"}</Text></View>{uploadingField === "banner_id" ? <ActivityIndicator size="small" /> : <ImageIcon size={18} color={isDark ? "#8f9195" : "#A1A1AA"} />}
+            <View className="flex-1 ml-4"><Text className={`text-base text-text-primary`}>Community banner</Text><Text className={`text-[13px] mt-0.5 ${muted}`}>{uploadingField === "banner_id" ? "Uploading…" : "Shown at the top of the community"}</Text></View>{uploadingField === "banner_id" ? <ActivityIndicator size="small" /> : <ImageIcon size={18} color={t.textMuted} />}
           </TouchableOpacity>
         </SettingsSection>
 
@@ -145,7 +147,7 @@ export default function NicheSettingsScreen() {
         </SettingsSection>
 
         <SettingsSection title="Community details" dark={isDark}>
-          <View className="p-4"><Text className={`text-xs font-bold uppercase tracking-[2px] mb-2 ${muted}`}>Tags, separated by commas</Text><TextInput value={tags} onChangeText={setTags} className={`${inputClass} mb-4`} placeholder="fashion, tech, food" placeholderTextColor={isDark ? "#8f9195" : "#A1A1AA"} /><Text className={`text-xs font-bold uppercase tracking-[2px] mb-2 ${muted}`}>Rules, one per line</Text><TextInput value={rules} onChangeText={setRules} multiline className={`${inputClass} min-h-[100px]`} placeholder="Be respectful\nKeep posts relevant" placeholderTextColor={isDark ? "#8f9195" : "#A1A1AA"} /></View>
+          <View className="p-4"><Text className={`text-xs font-bold uppercase tracking-[2px] mb-2 ${muted}`}>Tags, separated by commas</Text><TextInput value={tags} onChangeText={setTags} className={`${inputClass} mb-4`} placeholder="fashion, tech, food" placeholderTextColor={t.textMuted} /><Text className={`text-xs font-bold uppercase tracking-[2px] mb-2 ${muted}`}>Rules, one per line</Text><TextInput value={rules} onChangeText={setRules} multiline className={`${inputClass} min-h-[100px]`} placeholder="Be respectful\nKeep posts relevant" placeholderTextColor={t.textMuted} /></View>
         </SettingsSection>
         <TouchableOpacity disabled={saving} onPress={() => save()} className="mx-4 mt-6 h-12 rounded bg-primary flex-row items-center justify-center"><Save size={18} color="#fff" /><Text className="text-white font-bold ml-2">{saving ? "Saving…" : "Save changes"}</Text></TouchableOpacity>
       </ScrollView>

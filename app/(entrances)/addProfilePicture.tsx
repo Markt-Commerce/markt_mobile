@@ -13,13 +13,15 @@ import { uploadProfilePicture } from "../../services/sections/auth";
 import { useToast } from "../../components/ToastProvider";
 import Button from "../../components/button";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 
 export default function AddProfilePictureScreen() {
   const router = useRouter();
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#c6c5cf" : "#A1A1AA";
+  const t = useTokens();
+  const iconColor = t.textSecondary;
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 

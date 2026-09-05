@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Award, Lock, CheckCircle2 } from "lucide-react-native";
 
 import { useTheme } from "../../../components/themeProvider";
+import { useTokens } from "../../../theme/useTokens";
 import { useUser } from "../../../hooks/userContextProvider";
 import { useBadges } from "../../../hooks/useBadges";
 
@@ -14,6 +15,7 @@ export default function BadgeDetailScreen() {
   const { resolvedTheme } = useTheme();
   const { user } = useUser();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const { badges, loading } = useBadges(user?.user_id);
   const badge = useMemo(
@@ -36,7 +38,7 @@ export default function BadgeDetailScreen() {
         }`}
       >
         <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={20} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
           className={`text-lg font-bold ml-2 ${
@@ -49,7 +51,7 @@ export default function BadgeDetailScreen() {
 
       {loading && !badge ? (
         <View className="items-center py-16">
-          <ActivityIndicator color={isDark ? "#f0f1f2" : "#000000"} />
+          <ActivityIndicator color={t.textPrimary} />
         </View>
       ) : !badge ? (
         <Text
@@ -73,9 +75,9 @@ export default function BadgeDetailScreen() {
                 style={{ width: 80, height: 80, borderRadius: 40 }}
               />
             ) : badge.earned ? (
-              <Award size={52} color={isDark ? "#f0f1f2" : "#000000"} />
+              <Award size={52} color={t.textPrimary} />
             ) : (
-              <Lock size={44} color={isDark ? "#c6c5cf" : "#A1A1AA"} />
+              <Lock size={44} color={t.textSecondary} />
             )}
           </View>
 

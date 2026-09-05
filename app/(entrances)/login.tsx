@@ -21,6 +21,7 @@ import { useRegData } from "../../models/signupSteps";
 import { useToast } from "../../components/ToastProvider";
 import { navigateToAppHome } from "../../utils/authNavigation"; 
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 
 const schema = z.object({
@@ -35,7 +36,8 @@ export default function LoginScreen() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
+  const t = useTokens();
+  const iconColor = t.textPrimary;
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);

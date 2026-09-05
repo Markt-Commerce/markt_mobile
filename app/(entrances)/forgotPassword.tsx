@@ -12,6 +12,7 @@ import Button from '../../components/button';
 import { useToast } from '../../components/ToastProvider';
 import { sendPasswordResetEmail, resetPassword } from '../../services/sections/auth';
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 
 // Step 1: Email Schema
@@ -34,7 +35,8 @@ const ForgotPasswordScreen = () => {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
+  const t = useTokens();
+  const iconColor = t.textPrimary;
   
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);

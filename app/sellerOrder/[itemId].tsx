@@ -25,6 +25,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Image as ImageIcon, MessageSquare } from "lucide-react-native";
 import Avatar from "../../components/Avatar";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { getSellerOrders, updateSellerOrderItem } from "../../services/sections/orders";
 import type { SellerOrderItem } from "../../models/orders";
@@ -55,6 +56,7 @@ export default function SellerOrderDetail() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
 
   const [item, setItem] = useState<SellerOrderItem | null>(null);
@@ -122,7 +124,7 @@ export default function SellerOrderDetail() {
     );
   };
 
-  const bg = isDark ? "#1a1c1d" : "#FFFFFF";
+  const bg = t.surfacePage;
   const strong = isDark ? "text-text-primary" : "text-black";
   const muted = isDark ? "text-text-muted" : "text-tertiary";
   const card = isDark ? "bg-surface-sunken" : "bg-[#F7F7F8]";
@@ -131,7 +133,7 @@ export default function SellerOrderDetail() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: bg }} edges={["top", "bottom"]}>
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+          <ActivityIndicator size="large" color={t.textPrimary} />
         </View>
       </SafeAreaView>
     );
@@ -171,7 +173,7 @@ export default function SellerOrderDetail() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={22} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={22} color={t.textPrimary} />
         </TouchableOpacity>
         <Text className={`text-[17px] font-bold ml-3 ${strong}`} numberOfLines={1}>
           {item.order?.order_number ?? `Order ${item.order_id ?? ""}`}
@@ -187,7 +189,7 @@ export default function SellerOrderDetail() {
               setRefreshing(true);
               load();
             }}
-            tintColor={isDark ? "#f0f1f2" : "#000000"}
+            tintColor={t.textPrimary}
           />
         }
       >

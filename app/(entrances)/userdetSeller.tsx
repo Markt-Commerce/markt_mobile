@@ -26,6 +26,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useDebouncedCallback } from "../../hooks/useDebouncedCallback";
 import { useWatch } from "react-hook-form"; 
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
@@ -43,8 +44,9 @@ const ShopInformationScreen = () => {
   const { show } = useToast(); // <-- toast API
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
-  const mutedIconColor = isDark ? "#c6c5cf" : "#A1A1AA";
+  const t = useTokens();
+  const iconColor = t.textPrimary;
+  const mutedIconColor = t.textSecondary;
 
   const [categories, setCategories] = React.useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = React.useState<Category[]>([]);

@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, AlertTriangle } from "lucide-react-native";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 
 /** 11.5: itemised fee breakdown, shown before the buyer is sent to
  * Paystack. Params come straight from POST /payments/checkout/initialize's
@@ -13,6 +14,7 @@ export default function CheckoutConfirm() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const [proceeding, setProceeding] = useState(false);
 
   const {
@@ -86,7 +88,7 @@ export default function CheckoutConfirm() {
       <ScrollView>
         <View className={`flex-row items-center px-4 py-3 bg-surface-raised`}>
           <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
-            <ArrowLeft size={24} color={isDark ? "#f0f1f2" : "#000000"} />
+            <ArrowLeft size={24} color={t.textPrimary} />
           </TouchableOpacity>
           <Text className={`ml-3 text-lg font-bold text-text-primary`}>
             Confirm order

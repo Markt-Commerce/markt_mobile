@@ -1,6 +1,7 @@
 import { Text, View, TouchableOpacity, TouchableOpacityProps, ActivityIndicator } from "react-native";
 import React from "react";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 
 type ButtonVariant = "primary" | "conversion" | "secondary" | "outline";
 
@@ -35,6 +36,7 @@ const Button = ({
   const isDisabled = disabled || loading;
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const variantStyles = {
     primary: {
@@ -69,7 +71,7 @@ const Button = ({
       {...rest}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={variant === "outline" || variant === "secondary" || isDisabled ? (isDark ? "#f0f1f2" : "#000000") : "#ffffff"} />
+        <ActivityIndicator size="small" color={variant === "outline" || variant === "secondary" || isDisabled ? (t.textPrimary) : "#ffffff"} />
       ) : children != null ? (
         children
       ) : (

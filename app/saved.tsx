@@ -21,6 +21,7 @@ import { Bookmark, Compass, RotateCw } from "lucide-react-native";
 import ScreenHeader from "../components/ScreenHeader";
 import SkeletonImage from "../components/SkeletonImage";
 import { useTheme } from "../components/themeProvider";
+import { useTokens } from "../theme/useTokens";
 import { useToast } from "../components/ToastProvider";
 import { formatNaira } from "../utils/formatCurrency";
 import { friendlyErrorMessage } from "../utils/errorMessages";
@@ -37,6 +38,7 @@ export default function SavedScreen() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
 
   const [items, setItems] = useState<SavedItem[]>([]);
@@ -162,7 +164,7 @@ export default function SavedScreen() {
           />
         ) : (
           <View className="flex-1 items-center justify-center">
-            <Bookmark size={20} color={isDark ? "#6b6b73" : "#A1A1AA"} />
+            <Bookmark size={20} color={t.textMuted} />
           </View>
         )}
       </View>
@@ -277,7 +279,7 @@ export default function SavedScreen() {
               <View
                 className={`w-20 h-20 rounded-full items-center justify-center mb-6 bg-surface-sunken`}
               >
-                <Bookmark size={30} color={isDark ? "#c6c5cf" : "#A1A1AA"} strokeWidth={1.6} />
+                <Bookmark size={30} color={t.textSecondary} strokeWidth={1.6} />
               </View>
               <Text className={`text-xl font-bold text-center ${ink}`}>
                 {filter === "all" ? "Nothing saved yet" : "Nothing here yet"}

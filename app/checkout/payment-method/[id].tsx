@@ -17,6 +17,7 @@ import { getWallet } from "../../../services/sections/wallet";
 import { getOrderDetails } from "../../../services/sections/orders";
 import { useToast } from "../../../components/ToastProvider";
 import { useTheme } from "../../../components/themeProvider";
+import { useTokens } from "../../../theme/useTokens";
 import { getOrCreateIdempotencyKey } from "../../../utils/idempotency";
 import { friendlyErrorMessage } from "../../../utils/errorMessages";
 import type { PaymentMethod } from "../../../models/payments";
@@ -25,6 +26,7 @@ export default function PaymentMethod() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>("card");
   const [orderTotal, setOrderTotal] = useState<number>(0);
   const [orderStatus, setOrderStatus] = useState<string>("");
@@ -160,13 +162,13 @@ export default function PaymentMethod() {
       id: "card",
       title: "Pay with card",
       subtitle: "Instant payment via Paystack",
-      icon: <CreditCard size={20} color={isDark ? "#f0f1f2" : "#000000"} />,
+      icon: <CreditCard size={20} color={t.textPrimary} />,
     },
     {
       id: "bank_transfer",
       title: "Bank transfer",
       subtitle: "Pay via bank transfer on Paystack",
-      icon: <Bank size={20} color={isDark ? "#f0f1f2" : "#000000"} />,
+      icon: <Bank size={20} color={t.textPrimary} />,
     },
     {
       id: "wallet",
@@ -175,7 +177,7 @@ export default function PaymentMethod() {
         walletBalance != null
           ? `Balance: ${formatMoney(walletBalance)}`
           : "Pay instantly from wallet",
-      icon: <Wallet size={20} color={isDark ? "#f0f1f2" : "#000000"} />,
+      icon: <Wallet size={20} color={t.textPrimary} />,
       disabled: walletBalance != null && walletBalance < orderTotal,
     },
   ];
@@ -193,7 +195,7 @@ export default function PaymentMethod() {
             onPress={() => router.back()}
             className="size-12 items-center justify-center"
           >
-            <X size={24} color={isDark ? "#f0f1f2" : "#000000"} />
+            <X size={24} color={t.textPrimary} />
           </TouchableOpacity>
         </View>
 

@@ -13,6 +13,7 @@ import {
   Percent,
 } from "lucide-react-native";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 
 type Props = {
   visible: boolean;
@@ -41,6 +42,7 @@ const OptionCard = ({
 }) => {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   return (
     <TouchableOpacity
@@ -52,7 +54,7 @@ const OptionCard = ({
       <View
         className={`w-14 h-14 rounded items-center justify-center mb-3 ${isDark ? "bg-dark-surface" : "bg-surface"}`}
       >
-        <Icon size={28} color={isDark ? "#f5f5f5" : "#000000"} />
+        <Icon size={28} color={t.textPrimary} />
       </View>
       <Text
         className={`font-semibold text-sm ${isDark ? "text-dark-text" : "text-black"}`}

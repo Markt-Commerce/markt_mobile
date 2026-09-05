@@ -2,6 +2,7 @@ import React from "react";
 import { View, Image } from "react-native";
 import { Award } from "lucide-react-native";
 import { useTheme } from "../themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import type { Badge } from "../../types/gamification";
 
 type Size = "xs" | "sm";
@@ -22,6 +23,7 @@ export interface BadgeChipProps {
 export default function BadgeChip({ badge, size = "sm", className = "" }: BadgeChipProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const d = DIAMETER[size];
 
   return (
@@ -41,7 +43,7 @@ export default function BadgeChip({ badge, size = "sm", className = "" }: BadgeC
       {badge.icon_url ? (
         <Image source={{ uri: badge.icon_url }} style={{ width: d, height: d }} />
       ) : (
-        <Award size={ICON_SIZE[size]} color={isDark ? "#f0f1f2" : "#000000"} />
+        <Award size={ICON_SIZE[size]} color={t.textPrimary} />
       )}
     </View>
   );

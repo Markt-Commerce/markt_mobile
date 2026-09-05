@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { ArrowLeft } from "lucide-react-native";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 
 interface ScreenHeaderProps {
   title: string;
@@ -16,6 +17,7 @@ export default function ScreenHeader({
 }: ScreenHeaderProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   return (
     <View
       className={`flex-row items-center justify-between px-6 py-4 border-b ${isDark ? "border-dark-border-strong bg-dark-surface" : "border-border bg-white"}`}
@@ -28,7 +30,7 @@ export default function ScreenHeader({
       >
         <ArrowLeft
           size={22}
-          color={isDark ? "#f5f5f5" : "#000000"}
+          color={t.textPrimary}
           strokeWidth={1.75}
         />
       </TouchableOpacity>

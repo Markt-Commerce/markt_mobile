@@ -37,6 +37,7 @@ import { getUserProfile } from "../../services/sections/profile";
 import type { Niches } from "../../models/niches";
 import type { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { saveItem, unsaveItem } from "../../services/sections/saved";
 
 // Early launch: only the main feed is live. Discover/Trending/Following are
@@ -74,6 +75,7 @@ export default function FeedScreen() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const { role, user, setRole } = useUser();
   const feedTab = selectedTab;
@@ -521,7 +523,7 @@ export default function FeedScreen() {
           ) : (
             <View className="items-center justify-center py-12 px-8">
               <View className="mb-6">
-                <Search size={44} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={1.5} />
+                <Search size={44} color={t.textMuted} strokeWidth={1.5} />
               </View>
               <Text className={`font-bold text-2xl text-center leading-tight text-text-primary`}>
                 {selectedTab === "following" ? "Expand your\ncommunity" : "The gallery is\nempty for now"}
@@ -553,8 +555,8 @@ export default function FeedScreen() {
         enablePanDownToClose
         backdropComponent={renderMenuBackdrop}
         onChange={handleMenuChange}
-        backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}
-        handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
+        backgroundStyle={{ backgroundColor: t.surfacePage }}
+        handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
       >
         <BottomSheetView className={`flex-1 p-4 bg-surface-raised`}>
           <Text className={`text-lg font-bold mb-4 text-text-primary`}>Create</Text>

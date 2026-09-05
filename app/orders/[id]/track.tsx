@@ -14,6 +14,7 @@ import {
 import { trackOrder } from "../../../services/sections/orders";
 import { OrderTracking } from "../../../models/orders";
 import { useTheme } from "../../../components/themeProvider";
+import { useTokens, tokensFor } from "../../../theme/useTokens";
 
 // Overall-order stage order, used only to compute the progress bar --
 // the timeline itself is rendered directly from the backend's entries.
@@ -28,7 +29,7 @@ const ITEM_STATUS_LABEL: Record<string, string> = {
 };
 
 function timelineIcon(status: string, isDark: boolean) {
-  const color = isDark ? "#f5f5f5" : "#000000";
+  const color = tokensFor(isDark).textPrimary;
   if (status === "cancelled") return <XCircle size={16} color="#e26136" />;
   if (status === "delivered") return <CheckCircle2 size={16} color={color} />;
   if (status === "shipped") return <Truck size={16} color={color} />;
@@ -41,6 +42,7 @@ export default function TrackOrderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const [tracking, setTracking] = useState<OrderTracking | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,7 +91,7 @@ export default function TrackOrderScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={18} color={isDark ? "#f5f5f5" : "#000000"} />
+          <ArrowLeft size={18} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
           className={`flex-1 text-center text-lg font-bold -ml-10 ${isDark ? "text-dark-text" : "text-black"}`}
@@ -101,7 +103,7 @@ export default function TrackOrderScreen() {
 
       {loading ? (
         <View className="flex-1 justify-center items-center py-16">
-          <ActivityIndicator size="large" color={isDark ? "#f5f5f5" : "#000000"} />
+          <ActivityIndicator size="large" color={t.textPrimary} />
         </View>
       ) : error || !tracking ? (
         <View className="flex-1 justify-center items-center px-6 py-16">
@@ -256,7 +258,7 @@ export default function TrackOrderScreen() {
             <View className="px-4 mt-4">
               <View className={cardClass}>
                 <View className="flex-row items-center gap-2 mb-2">
-                  <MapPin size={16} color={isDark ? "#c6c5cf" : "#71717A"} />
+                  <MapPin size={16} color={t.textSecondary} />
                   <Text className={`font-bold ${isDark ? "text-dark-text" : "text-black"}`}>
                     Delivery address
                   </Text>

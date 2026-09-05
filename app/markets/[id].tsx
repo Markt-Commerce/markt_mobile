@@ -26,6 +26,7 @@ import Avatar from "../../components/Avatar";
 import ProductDisplayComponent from "../../components/productDisplayComponent";
 import PostDisplayComponent from "../../components/PostDisplayComponent";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens, tokensFor } from "../../theme/useTokens";
 import VerifiedBadge, { isVerifiedSeller } from "../../components/VerifiedBadge";
 
 type Tab = "sellers" | "products" | "posts";
@@ -83,6 +84,7 @@ export default function MarketDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const [market, setMarket] = useState<Market | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("sellers");
@@ -173,7 +175,7 @@ export default function MarketDetailScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={24} color={isDark ? "#f5f5f5" : "#000000"} />
+          <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
           className={`flex-1 text-xl font-bold text-center pr-8 ${isDark ? "text-dark-text" : "text-black"}`}
@@ -207,7 +209,7 @@ export default function MarketDetailScreen() {
         <View className="flex-1 justify-center items-center py-16">
           <ActivityIndicator
             size="large"
-            color={isDark ? "#f5f5f5" : "#000000"}
+            color={t.textPrimary}
           />
         </View>
       ) : activeTab === "sellers" ? (
@@ -277,7 +279,7 @@ function LoadMoreFooter({ loading, isDark }: { loading: boolean; isDark: boolean
   if (!loading) return null;
   return (
     <View className="py-6 items-center">
-      <ActivityIndicator size="small" color={isDark ? "#f5f5f5" : "#000000"} />
+      <ActivityIndicator size="small" color={tokensFor(isDark).textPrimary} />
     </View>
   );
 }

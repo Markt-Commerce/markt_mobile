@@ -11,6 +11,7 @@ import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { likePost } from "../../services/sections/post";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import logger from "../../utils/logger";
 
 function dedupeById<T extends { id: string | number }>(items: T[]): T[] {
@@ -28,6 +29,7 @@ export default function NicheDetailScreen() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const [posts, setPosts] = useState<NichePost[]>([]);
   const [niche, setNiche] = useState<Niches | null>(null);
@@ -293,7 +295,7 @@ export default function NicheDetailScreen() {
               {niche?.name || "Community"}
             </Text>
             <View className="flex-row items-center mt-1">
-              <Users size={13} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+              <Users size={13} color={t.textMuted} strokeWidth={2} />
               <Text className={`text-[13px] ml-1.5 text-text-muted`}>
                 {niche?.member_count ?? 0} members · {niche?.post_count ?? 0} posts
               </Text>
@@ -375,7 +377,7 @@ export default function NicheDetailScreen() {
           ListEmptyComponent={
             loading && posts.length === 0 ? (
               <View className="items-center justify-center py-16">
-                <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+                <ActivityIndicator size="large" color={t.textPrimary} />
                 <Text className={`text-sm mt-2 text-text-secondary`}>Loading posts…</Text>
               </View>
             ) : !loading && !hasError ? (
@@ -388,7 +390,7 @@ export default function NicheDetailScreen() {
             ) : null
           }
           ListFooterComponent={
-            loading ? <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} style={{ marginVertical: 20 }} /> : null
+            loading ? <ActivityIndicator size="large" color={t.textPrimary} style={{ marginVertical: 20 }} /> : null
           }
         />
       </View>

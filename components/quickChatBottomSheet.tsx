@@ -30,6 +30,7 @@ import { friendlyErrorMessage } from "../utils/errorMessages";
 import { useUser } from "../hooks/userContextProvider";
 import { isOwnProductListing } from "../utils/chatGuards";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 import { pickProfilePicture, type ChatOtherUser } from "../utils/chatAvatar";
 
 export type QuickChatBottomSheetProps = {
@@ -65,7 +66,8 @@ export default function QuickChatBottomSheet({
   const { user } = useUser();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const textColor = isDark ? "#f5f5f5" : "#000000";
+  const t = useTokens();
+  const textColor = t.textPrimary;
   const currentUserId = user?.user_id?.toString() ?? "";
   const [sheetOpen, setSheetOpen] = useState(false);
   const [roomData, setRoomData] = useState<ChatRoomLite | null>(null);
@@ -254,8 +256,8 @@ export default function QuickChatBottomSheet({
       keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
       footerComponent={showChat ? renderFooter : undefined}
-      backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }}
-      handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
+      backgroundStyle={{ backgroundColor: t.surfacePage }}
+      handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
     >
       <BottomSheetView style={styles.sheetRoot}>
         {/* Fixed header */}
@@ -264,7 +266,7 @@ export default function QuickChatBottomSheet({
             styles.header,
             {
               borderBottomColor: isDark ? "#2a2a2e" : "#efe9e7",
-              backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF",
+              backgroundColor: t.surfacePage,
             },
           ]}
         >

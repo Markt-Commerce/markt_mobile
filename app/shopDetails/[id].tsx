@@ -25,6 +25,7 @@ import ProductDisplayComponent from "../../components/productDisplayComponent";
 import { Product } from "../../models/feed";
 import { defaultProfilePicture } from "../../models/defaults";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import VerifiedBadge, { isVerifiedSeller } from "../../components/VerifiedBadge";
 import { useGamificationLookup } from "../../hooks/useGamificationLookup";
 import { useBadges } from "../../hooks/useBadges";
@@ -77,6 +78,7 @@ export default function Shop() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { profile: sellerGamification } = useGamificationLookup(shop?.user?.id);
   const { badges: sellerBadges } = useBadges(shop?.user?.id);
 
@@ -153,7 +155,7 @@ export default function Shop() {
           className={`flex-row items-center justify-between px-6 py-4 border-b ${isDark ? "border-dark-border" : "border-border"}`}
         >
           <TouchableOpacity onPress={() => router.back()} className="p-1 -ml-1">
-            <ArrowLeft size={24} color={isDark ? "#f5f5f5" : "#000000"} />
+            <ArrowLeft size={24} color={t.textPrimary} />
           </TouchableOpacity>
           <Text
             className={`text-xl font-bold flex-1 text-center pr-4 ${isDark ? "text-dark-text" : "text-black"}`}
@@ -161,7 +163,7 @@ export default function Shop() {
             Shop
           </Text>
           <TouchableOpacity className="p-1">
-            <Share size={24} color={isDark ? "#f5f5f5" : "#000000"} />
+            <Share size={24} color={t.textPrimary} />
           </TouchableOpacity>
         </View>
 

@@ -11,6 +11,7 @@ import { WebView, type WebViewNavigation } from "react-native-webview";
 import { ArrowLeft } from "lucide-react-native";
 import { getPaymentDetails, verifyPayment } from "../../../services/sections/payments";
 import { useTheme } from "../../../components/themeProvider";
+import { useTokens } from "../../../theme/useTokens";
 import { useToast } from "../../../components/ToastProvider";
 import {
   isPaymentCallbackUrl,
@@ -24,6 +25,7 @@ export default function PayScreen() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const { id, authorization_url, order_id } = useLocalSearchParams<{
     id: string;
@@ -129,7 +131,7 @@ export default function PayScreen() {
       <SafeAreaView
         className={`flex-1 items-center justify-center bg-surface-raised`}
       >
-        <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+        <ActivityIndicator size="large" color={t.textPrimary} />
         <Text className={`mt-3 text-sm text-text-secondary`}>
           {verifying ? "Confirming payment…" : "Loading Paystack…"}
         </Text>
@@ -164,7 +166,7 @@ export default function PayScreen() {
     >
       <View className="flex-row items-center px-4 py-3">
         <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
-          <ArrowLeft size={24} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
           className={`ml-3 text-base font-semibold text-text-primary`}

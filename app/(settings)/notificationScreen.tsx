@@ -7,10 +7,12 @@ import { useRouter } from 'expo-router';
 import { useNotifications, useUpdateNotifications } from '../../hooks/useNotification';
 import { useTheme } from '../../components/themeProvider';
 import { friendlyErrorMessage } from '../../utils/errorMessages';
+import { useTokens } from '../../theme/useTokens';
 
 export default function NotificationsScreen() {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { data, isLoading } = useNotifications();
   const update = useUpdateNotifications();
   const isUpdating = update.isPending;
@@ -30,7 +32,7 @@ export default function NotificationsScreen() {
       <SafeAreaView className={`flex-1 bg-surface-raised`}>
         <ScreenHeader title="Notifications" onBack={() => nav.back()} />
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
+          <ActivityIndicator size="small" color={t.textPrimary} />
           <Text className={`text-sm mt-3 text-text-secondary`}>Loading preferences...</Text>
         </View>
       </SafeAreaView>
@@ -56,7 +58,7 @@ export default function NotificationsScreen() {
                 value={!!settings.push}
                 onValueChange={(v) => toggle('push', v)}
                 disabled={isUpdating}
-                trackColor={{ false: isDark ? "#46464e" : "#E4E4E7", true: "#000000" }}
+                trackColor={{ false: t.borderStrong, true: "#000000" }}
                 thumbColor={isDark ? "#F0F1F2" : "#FFFFFF"}
               />
             </View>
@@ -70,7 +72,7 @@ export default function NotificationsScreen() {
                 value={!!settings.email}
                 onValueChange={(v) => toggle('email', v)}
                 disabled={isUpdating}
-                trackColor={{ false: isDark ? "#46464e" : "#E4E4E7", true: "#000000" }}
+                trackColor={{ false: t.borderStrong, true: "#000000" }}
                 thumbColor={isDark ? "#F0F1F2" : "#FFFFFF"}
               />
             </View>
@@ -84,7 +86,7 @@ export default function NotificationsScreen() {
                 value={!!settings.sms}
                 onValueChange={(v) => toggle('sms', v)}
                 disabled={isUpdating}
-                trackColor={{ false: isDark ? "#46464e" : "#E4E4E7", true: "#000000" }}
+                trackColor={{ false: t.borderStrong, true: "#000000" }}
                 thumbColor={isDark ? "#F0F1F2" : "#FFFFFF"}
               />
             </View>

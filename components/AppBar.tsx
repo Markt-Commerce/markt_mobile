@@ -13,6 +13,7 @@ import { useRouter } from "expo-router";
 import Avatar from "./Avatar";
 import { useDrawer } from "../hooks/drawerContext";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 
 interface AppBarProps {
   title?: string;
@@ -33,6 +34,7 @@ export default function AppBar({
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   return (
     <View className={`flex-row items-center justify-between px-4 py-2 border-b ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
@@ -63,7 +65,7 @@ export default function AppBar({
             accessibilityRole="button"
             accessibilityLabel="Notifications"
           >
-            <Bell size={22} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.75} />
+            <Bell size={22} color={t.textPrimary} strokeWidth={1.75} />
           </TouchableOpacity>
         ) : (
           <View className="w-10" />

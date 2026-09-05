@@ -25,6 +25,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useDebouncedCallback } from "../../hooks/useDebouncedCallback";
 import { useWatch } from "react-hook-form";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
@@ -41,8 +42,9 @@ export default function UserInfoScreen() {
   const { show } =  useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
-  const mutedIconColor = isDark ? "#c6c5cf" : "#A1A1AA";
+  const t = useTokens();
+  const iconColor = t.textPrimary;
+  const mutedIconColor = t.textSecondary;
   const [profilePictureUri, setProfilePictureUri] = React.useState<string | null>(null);
   const [usernameStatus, setUsernameStatus] = React.useState<"idle" | "checking" | "available" | "taken">("idle");
   const [usernameMessage, setUsernameMessage] = React.useState("");

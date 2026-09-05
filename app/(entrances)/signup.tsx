@@ -23,6 +23,7 @@ import { getPasswordStrength } from "../../utils/passwordStrength";
 import Button from "../../components/button";
 import { Check, Circle } from "lucide-react-native";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 
 // --- Validation schema ---
 const schema = z
@@ -51,8 +52,9 @@ export default function SignupScreen() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
-  const mutedIconColor = isDark ? "#c6c5cf" : "#A1A1AA";
+  const t = useTokens();
+  const iconColor = t.textPrimary;
+  const mutedIconColor = t.textSecondary;
 
   const {
     control,

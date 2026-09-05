@@ -26,6 +26,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Search, Users, Plus, ArrowUpDown } from "lucide-react-native";
 import { useTheme } from "../components/themeProvider";
+import { useTokens } from "../theme/useTokens";
 import { useToast } from "../components/ToastProvider";
 import { getNiches, joinNiche, leaveNiche } from "../services/sections/niches";
 import type { Niches, NichesListParams } from "../models/niches";
@@ -92,6 +93,7 @@ export default function CommunitiesScreen() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
 
   const [tab, setTab] = useState<Tab>("home");
@@ -202,12 +204,12 @@ export default function CommunitiesScreen() {
               isDark ? "bg-surface-sunken" : "bg-[#F4F4F5]"
             }`}
           >
-            <Search size={17} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+            <Search size={17} color={t.textMuted} strokeWidth={2} />
             <TextInput
               value={query}
               onChangeText={setQuery}
               placeholder="Search communities"
-              placeholderTextColor={isDark ? "#8f9195" : "#A1A1AA"}
+              placeholderTextColor={t.textMuted}
               className={`flex-1 ml-2 text-[15px] ${strong}`}
               returnKeyType="search"
               accessibilityLabel="Search communities"
@@ -220,7 +222,7 @@ export default function CommunitiesScreen() {
             contentContainerStyle={{ gap: 8, paddingTop: 12 }}
           >
             <View className="flex-row items-center pr-1">
-              <ArrowUpDown size={13} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+              <ArrowUpDown size={13} color={t.textMuted} strokeWidth={2} />
             </View>
             {SORTS.map((s) => {
               const active = sort === s.key;
@@ -281,7 +283,7 @@ export default function CommunitiesScreen() {
             {item.name}
           </Text>
           <View className="flex-row items-center mt-0.5">
-            <Users size={12} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+            <Users size={12} color={t.textMuted} strokeWidth={2} />
             <Text className={`text-[12px] ml-1 ${muted}`}>
               {compactCount(item.member_count)} members
             </Text>
@@ -342,7 +344,7 @@ export default function CommunitiesScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={22} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={22} color={t.textPrimary} />
         </TouchableOpacity>
         <Text className={`flex-1 text-center text-[17px] font-bold ${strong}`}>
           Communities
@@ -353,7 +355,7 @@ export default function CommunitiesScreen() {
           accessibilityRole="button"
           accessibilityLabel="Create a community"
         >
-          <Plus size={22} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={2.2} />
+          <Plus size={22} color={t.textPrimary} strokeWidth={2.2} />
         </TouchableOpacity>
       </View>
 
@@ -394,7 +396,7 @@ export default function CommunitiesScreen() {
               setRefreshing(true);
               load();
             }}
-            tintColor={isDark ? "#f0f1f2" : "#000000"}
+            tintColor={t.textPrimary}
           />
         }
         contentContainerStyle={{ paddingBottom: 32, flexGrow: 1 }}
@@ -402,7 +404,7 @@ export default function CommunitiesScreen() {
         ListEmptyComponent={
           loading ? (
             <View className="py-16 items-center">
-              <ActivityIndicator color={isDark ? "#f0f1f2" : "#000000"} />
+              <ActivityIndicator color={t.textPrimary} />
             </View>
           ) : (
             <View className="px-8 py-16 items-center">

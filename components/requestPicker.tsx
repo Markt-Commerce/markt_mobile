@@ -9,6 +9,7 @@ import {
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import type { BuyerRequest } from "../models/feed";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 
 type Props = {
   visible: boolean;
@@ -31,6 +32,7 @@ export default function RequestPicker({
   const snapPoints = useMemo(() => ["60%", "100%"], []);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   if (!visible) return null;
 
@@ -45,9 +47,9 @@ export default function RequestPicker({
       snapPoints={snapPoints}
       onClose={onClose}
       enablePanDownToClose
-      backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }}
+      backgroundStyle={{ backgroundColor: t.surfacePage }}
       handleIndicatorStyle={{
-        backgroundColor: isDark ? "#46464e" : "#E4E4E7",
+        backgroundColor: t.borderStrong,
         width: 40,
         height: 4,
         borderRadius: 8,
@@ -64,7 +66,7 @@ export default function RequestPicker({
           <View className="flex-1 items-center justify-center py-12">
             <ActivityIndicator
               size="large"
-              color={isDark ? "#f5f5f5" : "#000000"}
+              color={t.textPrimary}
             />
             <Text
               className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm mt-3`}

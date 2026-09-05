@@ -29,6 +29,7 @@ import {
 import { submitDeliveryWaitChoice } from "../services/sections/orders";
 import { useRouter } from "expo-router";
 import { useTheme } from "../components/themeProvider";
+import { useTokens, tokensFor } from "../theme/useTokens";
 import { useToast } from "../components/ToastProvider";
 
 type DecisionState = "pending" | "resolved" | "error";
@@ -45,11 +46,11 @@ const IconBubble = ({
     className={`w-12 h-12 rounded items-center justify-center bg-media`}
   >
     {Cmp ? (
-      <Cmp size={20} color={isDark ? "#f5f5f5" : "#000000"} strokeWidth={1.5} />
+      <Cmp size={20} color={tokensFor(isDark).textPrimary} strokeWidth={1.5} />
     ) : (
       <Bell
         size={20}
-        color={isDark ? "#f5f5f5" : "#000000"}
+        color={tokensFor(isDark).textPrimary}
         strokeWidth={1.5}
       />
     )}
@@ -71,6 +72,7 @@ export default function NotificationsScreen() {
   const [decisionState, setDecisionState] = useState<Record<number, DecisionState>>({});
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
 
   const handleSubstitutionDecision = async (n: NotificationItem, approve: boolean) => {
@@ -292,7 +294,7 @@ export default function NotificationsScreen() {
         >
           <ArrowLeft
             size={20}
-            color={isDark ? "#f5f5f5" : "#000000"}
+            color={t.textPrimary}
             strokeWidth={1.5}
           />
         </TouchableOpacity>
@@ -349,7 +351,7 @@ export default function NotificationsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={isDark ? "#f5f5f5" : "#000000"}
+            tintColor={t.textPrimary}
           />
         }
       >

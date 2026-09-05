@@ -34,6 +34,7 @@ import {
   UserMinus,
 } from "lucide-react-native";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 import { useToast } from "./ToastProvider";
 import {
   reasonsFor,
@@ -80,6 +81,7 @@ export default function ContentActionsSheet({
   const sheetRef = useRef<BottomSheet>(null);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
 
   const [step, setStep] = useState<Step>("actions");
@@ -115,7 +117,7 @@ export default function ContentActionsSheet({
   const ink = isDark ? "text-text-primary" : "text-black";
   const muted = isDark ? "text-text-secondary" : "text-tertiary";
   const rule = isDark ? "border-border-strong" : "border-border";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
+  const iconColor = t.textPrimary;
 
   const reasons = useMemo(
     () => reasonsFor((target?.type ?? "post") as ReportableType),
@@ -287,7 +289,7 @@ export default function ContentActionsSheet({
       onClose={onClose}
       backdropComponent={renderBackdrop}
       backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "#ffffff" }}
-      handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
+      handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
     >
       <BottomSheetView className="flex-1">
         {step === "actions" && (
@@ -383,7 +385,7 @@ export default function ContentActionsSheet({
                 multiline
                 maxLength={2000}
                 placeholder="What happened?"
-                placeholderTextColor={isDark ? "#6b6b73" : "#A1A1AA"}
+                placeholderTextColor={t.textMuted}
                 className={`min-h-[110px] rounded border px-4 py-3 text-[15px] ${isDark ? "bg-surface-raised border-border-strong text-text-primary" : "bg-white border-border text-black"}`}
                 textAlignVertical="top"
                 accessibilityLabel="Add details about your report, optional"

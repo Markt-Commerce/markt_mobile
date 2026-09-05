@@ -12,6 +12,7 @@ import { verifyPayment } from "../../services/sections/payments";
 import { getOrderDetails } from "../../services/sections/orders";
 import type { Order } from "../../models/orders";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { clearIdempotencyKey } from "../../utils/idempotency";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 
@@ -19,6 +20,7 @@ export default function PaymentResult() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const { status, payment_id, order_id, error } = useLocalSearchParams<{
     status?: string;
@@ -84,7 +86,7 @@ export default function PaymentResult() {
       <View className="flex-1 items-center justify-center px-6">
         {loading ? (
           <>
-            <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+            <ActivityIndicator size="large" color={t.textPrimary} />
             <Text className={`mt-4 text-sm text-text-secondary`}>
               Confirming your payment…
             </Text>
