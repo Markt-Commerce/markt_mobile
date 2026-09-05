@@ -5,6 +5,7 @@ import { Order, OrderItem, SellerOrderItem } from "../models/orders";
 import { useTheme } from "./themeProvider";
 import { formatNaira } from "../utils/formatCurrency";
 import { formatStatus, statusTone } from "../utils/formatStatus";
+import { useTokens } from "../theme/useTokens";
 
 /** Tone -> [light, dark] class pairs. Colour carries the state so the row can
  *  be scanned without reading the word. */
@@ -41,6 +42,7 @@ function isOrderItem(o: any): o is OrderItem {
 export default function OrderCard({ order, isSeller }: OrderCardProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   // Safe extraction with fallbacks
   let title = "Order";
@@ -106,7 +108,7 @@ export default function OrderCard({ order, isSeller }: OrderCardProps) {
           // because imageUri was never assigned -- and even once it is, a
           // missing thumbnail is not worth a sentence.
           <View className={`w-14 h-14 rounded-lg items-center justify-center bg-surface-sunken`}>
-            <ImageIcon size={18} color={isDark ? "#6b6d71" : "#C4C4C8"} strokeWidth={1.8} />
+            <ImageIcon size={18} color={t.textMuted} strokeWidth={1.8} />
           </View>
         )}
 

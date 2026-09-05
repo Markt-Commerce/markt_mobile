@@ -183,7 +183,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
           <Text className={`font-bold text-[18px] ${strong}`}>Reviews</Text>
           {rated.length > 0 ? (
             <View className="flex-row items-center mt-1">
-              <StarRating value={average} size={14} dark={isDark} />
+              <StarRating value={average} size={14} />
               <Text className={`text-[13px] ml-2 ${muted}`}>
                 {average.toFixed(1)} · {rated.length}{" "}
                 {rated.length === 1 ? "review" : "reviews"}
@@ -221,7 +221,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
             </TouchableOpacity>
           </View>
 
-          <StarRatingInput value={rating} onChange={setRating} dark={isDark} />
+          <StarRatingInput value={rating} onChange={setRating} />
 
           <TextInput
             value={content}
@@ -296,7 +296,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
                   </View>
                   <View className="flex-row items-center mt-0.5">
                     {typeof r.rating === "number" ? (
-                      <StarRating value={r.rating} size={12} dark={isDark} />
+                      <StarRating value={r.rating} size={12} />
                     ) : null}
                     <Text className={`text-[12px] ml-2 ${muted}`}>
                       {relativeDate(r.created_at)}

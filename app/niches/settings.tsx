@@ -119,7 +119,7 @@ export default function NicheSettingsScreen() {
     <View className={`flex-1 bg-surface-raised`}>
       <ScreenHeader title="Community settings" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <SettingsSection title="Community identity" dark={isDark}>
+        <SettingsSection title="Community identity">
           <View className="p-4">
             <Text className={`text-xs font-bold uppercase tracking-[2px] mb-2 ${muted}`}>Name</Text>
             <TextInput value={name} onChangeText={setName} className={`${inputClass} mb-4`} placeholder="Community name" placeholderTextColor={t.textMuted} />
@@ -128,7 +128,7 @@ export default function NicheSettingsScreen() {
           </View>
         </SettingsSection>
 
-        <SettingsSection title="Images" dark={isDark}>
+        <SettingsSection title="Images">
           <TouchableOpacity disabled={saving} onPress={() => changeImage("image_id")} className={`flex-row items-center px-4 py-3 min-h-[72px] ${saving ? "opacity-60" : ""}`}>
             {niche.image_url ? <Image source={{ uri: niche.image_url }} className="w-12 h-12 rounded-xl" /> : <Camera size={22} color={t.textSecondary} />}
             <View className="flex-1 ml-4"><Text className={`text-base text-text-primary`}>Community profile picture</Text><Text className={`text-[13px] mt-0.5 ${muted}`}>{uploadingField === "image_id" ? "Uploading…" : "Shown beside the community name"}</Text></View>{uploadingField === "image_id" ? <ActivityIndicator size="small" /> : <ImageIcon size={18} color={t.textMuted} />}
@@ -139,14 +139,14 @@ export default function NicheSettingsScreen() {
           </TouchableOpacity>
         </SettingsSection>
 
-        <SettingsSection title="Posting & privacy" dark={isDark}>
+        <SettingsSection title="Posting & privacy">
           <View className="px-4 py-4"><Text className={`text-xs font-bold uppercase tracking-[2px] mb-3 ${muted}`}>Visibility</Text><View className="flex-row gap-2">{(["public", "private", "restricted"] as NicheVisibility[]).map((option) => <TouchableOpacity key={option} onPress={() => setVisibility(option)} className={`px-4 py-2 rounded-full border ${visibility === option ? "bg-primary border-primary" : isDark ? "border-border-strong" : "border-border"}`}><Text className={`text-sm capitalize ${visibility === option ? "text-white font-bold" : isDark ? "text-text-secondary" : "text-secondary"}`}>{option}</Text></TouchableOpacity>)}</View></View>
-          <SettingsSwitchRow icon={Camera} title="Allow buyer posts" value={allowBuyerPosts} onValueChange={setAllowBuyerPosts} dark={isDark} />
-          <SettingsSwitchRow icon={Camera} title="Allow seller posts" value={allowSellerPosts} onValueChange={setAllowSellerPosts} dark={isDark} />
-          <SettingsSwitchRow icon={Save} title="Approve posts before publishing" subtitle="Review new posts before members can see them." value={requireApproval} onValueChange={setRequireApproval} dark={isDark} last />
+          <SettingsSwitchRow icon={Camera} title="Allow buyer posts" value={allowBuyerPosts} onValueChange={setAllowBuyerPosts} />
+          <SettingsSwitchRow icon={Camera} title="Allow seller posts" value={allowSellerPosts} onValueChange={setAllowSellerPosts} />
+          <SettingsSwitchRow icon={Save} title="Approve posts before publishing" subtitle="Review new posts before members can see them." value={requireApproval} onValueChange={setRequireApproval} last />
         </SettingsSection>
 
-        <SettingsSection title="Community details" dark={isDark}>
+        <SettingsSection title="Community details">
           <View className="p-4"><Text className={`text-xs font-bold uppercase tracking-[2px] mb-2 ${muted}`}>Tags, separated by commas</Text><TextInput value={tags} onChangeText={setTags} className={`${inputClass} mb-4`} placeholder="fashion, tech, food" placeholderTextColor={t.textMuted} /><Text className={`text-xs font-bold uppercase tracking-[2px] mb-2 ${muted}`}>Rules, one per line</Text><TextInput value={rules} onChangeText={setRules} multiline className={`${inputClass} min-h-[100px]`} placeholder="Be respectful\nKeep posts relevant" placeholderTextColor={t.textMuted} /></View>
         </SettingsSection>
         <TouchableOpacity disabled={saving} onPress={() => save()} className="mx-4 mt-6 h-12 rounded bg-primary flex-row items-center justify-center"><Save size={18} color="#fff" /><Text className="text-white font-bold ml-2">{saving ? "Saving…" : "Save changes"}</Text></TouchableOpacity>

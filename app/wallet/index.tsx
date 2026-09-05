@@ -350,7 +350,7 @@ export default function WalletScreen() {
           </View>
         </View>
 
-        <SettingsSection title="Activity" dark={isDark} />
+        <SettingsSection title="Activity" />
       </>
     ),
     [balance, currency, isDark, canWithdraw, router]

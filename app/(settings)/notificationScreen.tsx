@@ -59,7 +59,7 @@ export default function NotificationsScreen() {
                 onValueChange={(v) => toggle('push', v)}
                 disabled={isUpdating}
                 trackColor={{ false: t.borderStrong, true: "#000000" }}
-                thumbColor={isDark ? "#F0F1F2" : "#FFFFFF"}
+                thumbColor={t.textOnPrimary}
               />
             </View>
 
@@ -73,7 +73,7 @@ export default function NotificationsScreen() {
                 onValueChange={(v) => toggle('email', v)}
                 disabled={isUpdating}
                 trackColor={{ false: t.borderStrong, true: "#000000" }}
-                thumbColor={isDark ? "#F0F1F2" : "#FFFFFF"}
+                thumbColor={t.textOnPrimary}
               />
             </View>
 
@@ -87,7 +87,7 @@ export default function NotificationsScreen() {
                 onValueChange={(v) => toggle('sms', v)}
                 disabled={isUpdating}
                 trackColor={{ false: t.borderStrong, true: "#000000" }}
-                thumbColor={isDark ? "#F0F1F2" : "#FFFFFF"}
+                thumbColor={t.textOnPrimary}
               />
             </View>
           </View>

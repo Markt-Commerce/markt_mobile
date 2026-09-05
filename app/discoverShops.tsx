@@ -223,13 +223,7 @@ export default function DiscoverShopsScreen() {
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
               className={`px-3.5 h-8 rounded-full items-center justify-center ${
-                active
-                  ? isDark
-                    ? "bg-[#f0f1f2]"
-                    : "bg-black"
-                  : isDark
-                    ? "bg-surface-sunken"
-                    : "bg-[#F4F4F5]"
+                active ? "bg-text-primary" : "bg-surface-sunken"
               }`}
             >
               <Text

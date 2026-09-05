@@ -169,60 +169,52 @@ export default function SettingsProfileScreen() {
           </View>
         </View>
 
-        <SettingsSection title="Account Controls" dark={isDark}>
+        <SettingsSection title="Account Controls">
           <SettingsRow
             icon={UserCog}
             title="Account Information"
             onPress={() => router.push("/(settings)/accountInfoScreen")}
-            dark={isDark}
           />
           <SettingsRow
             icon={Lock}
             title="Password & Security"
             onPress={() => router.push("/(settings)/changePasswordScreen")}
-            dark={isDark}
           />
           <SettingsRow
             icon={Wallet}
             title="Wallet"
             onPress={() => router.push("/wallet" as any)}
-            dark={isDark}
           />
           <SettingsRow
             icon={Bookmark}
             title="Saved"
             onPress={() => router.push("/saved" as any)}
-            dark={isDark}
           />
           <SettingsRow
             icon={ShieldOff}
             title="Blocked accounts"
             onPress={() => router.push("/(settings)/blockedAccountsScreen" as any)}
-            dark={isDark}
           />
           <SettingsRow
             icon={Bell}
             title="Notifications"
             onPress={() => router.push("/(settings)/notificationScreen")}
             last
-            dark={isDark}
           />
         </SettingsSection>
 
-        <SettingsSection title="Preferences" dark={isDark}>
+        <SettingsSection title="Preferences">
           <SettingsRow
             icon={Palette}
             title="Appearance"
             value={resolvedTheme.toUpperCase()}
             onPress={handleThemeToggle}
-            dark={isDark}
           />
           <SettingsRow
             icon={Globe}
             title="Language"
             value={language}
             onPress={handleLanguageToggle}
-            dark={isDark}
           />
           <SettingsSwitchRow
             icon={Trophy}
@@ -232,41 +224,36 @@ export default function SettingsProfileScreen() {
             onValueChange={handleLeaderboardToggle}
             disabled={leaderboardUpdating}
             last
-            dark={isDark}
           />
         </SettingsSection>
 
-        <SettingsSection title="Support & Legal" dark={isDark}>
+        <SettingsSection title="Support & Legal">
           <SettingsRow
             icon={HelpCircle}
             title="Help Center"
             onPress={() => router.push("/support/help" as any)}
-            dark={isDark}
           />
           <SettingsRow
             icon={ShieldCheck}
             title="Privacy Policy"
             onPress={() => router.push("/support/privacy" as any)}
-            dark={isDark}
           />
           <SettingsRow
             icon={Lock}
             title="Terms of Use"
             onPress={() => router.push("/support/terms" as any)}
-            dark={isDark}
           />
           <SettingsRow
             icon={Info}
             title="About Markt"
             onPress={() => router.push("/support/about" as any)}
             last
-            dark={isDark}
           />
         </SettingsSection>
 
         {/* Apple App Store 5.1.1(v): account deletion has to be reachable from
             inside the app, not only from a website. */}
-        <SettingsSection title="Danger Zone" dark={isDark}>
+        <SettingsSection title="Danger Zone">
           <SettingsRow
             icon={Trash2}
             destructive
@@ -274,7 +261,6 @@ export default function SettingsProfileScreen() {
             subtitle="Permanently delete your account and personal data."
             onPress={() => router.push("/(settings)/deleteAccountScreen" as any)}
             last
-            dark={isDark}
           />
         </SettingsSection>
 

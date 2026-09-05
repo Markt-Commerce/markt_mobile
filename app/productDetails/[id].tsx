@@ -385,7 +385,6 @@ const addProductToCart = async (product:ProductDetail)=>{
                     size={14}
                     showValue
                     count={Number(product.seller?.total_raters) || undefined}
-                    dark={isDark}
                   />
                 </View>
               ) : (
@@ -460,14 +459,14 @@ const addProductToCart = async (product:ProductDetail)=>{
                   }}
                   className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded bg-surface-sunken`}
                 >
-                  <ShoppingCart size={14} color={isDark ? "#f0f1f2" : "#71717A"} />
+                  <ShoppingCart size={14} color={t.textSecondary} />
                   <Text className={`text-[11px] font-bold text-text-primary`}>Add</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => router.push(`/productDetails/${item.id}`)}
                   className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded bg-surface-sunken`}
                 >
-                  <MessageCircle size={14} color={isDark ? "#f0f1f2" : "#71717A"} />
+                  <MessageCircle size={14} color={t.textSecondary} />
                   <Text className={`text-[11px] font-bold text-text-primary`}>Chat</Text>
                 </TouchableOpacity>
               </View>

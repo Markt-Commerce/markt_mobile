@@ -272,7 +272,7 @@ export default function AccountInfoScreen() {
                 {imageLoading ? "Uploading and saving…" : "Tap to choose a new profile image."}
               </Text>
             </View>
-            {imageLoading && <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#E94C2A"} />}
+            {imageLoading && <ActivityIndicator size="small" color={t.primaryText} />}
           </TouchableOpacity>
 
           <View className="mt-8">

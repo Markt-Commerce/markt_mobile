@@ -23,7 +23,7 @@ import RequestDisplayComponent from "../../components/requestDisplayComponent";
 import BuyerRequestFormBottomSheet from "../../components/buyerRequestBottomSheet";
 import QuickChatBottomSheet from "../../components/quickChatBottomSheet";
 import { useTheme } from "../../components/themeProvider";
-import { useTokens } from "../../theme/useTokens";
+import { useTokens, tokensFor } from "../../theme/useTokens";
 import { getMyRequests } from "../../services/sections/request";
 
 function EmptyRequestsState({
@@ -48,7 +48,7 @@ function EmptyRequestsState({
     <View className="flex-1 items-center justify-center px-8 py-16">
       <FileText
         size={44}
-        color={isDark ? "#8f9195" : "#000000"}
+        color={tokensFor(isDark).textMuted}
         strokeWidth={1.5}
       />
       <Text
@@ -218,13 +218,7 @@ export default function RequestsScreen() {
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
                 className={`px-4 h-8 rounded-full items-center justify-center ${
-                  active
-                    ? isDark
-                      ? "bg-[#f0f1f2]"
-                      : "bg-black"
-                    : isDark
-                      ? "bg-surface-sunken"
-                      : "bg-[#F4F4F5]"
+                  active ? "bg-text-primary" : "bg-surface-sunken"
                 }`}
               >
                 <Text

@@ -220,7 +220,7 @@ export default function SellerOrderDetail() {
                 <View
                   className={`w-16 h-16 rounded-lg items-center justify-center bg-surface-raised`}
                 >
-                  <ImageIcon size={20} color={isDark ? "#6b6d71" : "#C4C4C8"} />
+                  <ImageIcon size={20} color={t.textMuted} />
                 </View>
               )}
               <View className="flex-1 ml-3">

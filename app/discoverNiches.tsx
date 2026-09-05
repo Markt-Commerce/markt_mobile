@@ -234,13 +234,7 @@ export default function CommunitiesScreen() {
                   accessibilityRole="tab"
                   accessibilityState={{ selected: active }}
                   className={`px-3.5 h-8 rounded-full items-center justify-center ${
-                    active
-                      ? isDark
-                        ? "bg-[#f0f1f2]"
-                        : "bg-black"
-                      : isDark
-                        ? "bg-surface-sunken"
-                        : "bg-[#F4F4F5]"
+                    active ? "bg-text-primary" : "bg-surface-sunken"
                   }`}
                 >
                   <Text
@@ -305,13 +299,7 @@ export default function CommunitiesScreen() {
           className={`px-4 h-9 rounded-full items-center justify-center ${
             working ? "opacity-60" : ""
           } ${
-            joined
-              ? isDark
-                ? "bg-surface-sunken"
-                : "bg-[#F4F4F5]"
-              : isDark
-                ? "bg-[#f0f1f2]"
-                : "bg-black"
+            joined ? "bg-surface-sunken" : "bg-text-primary"
           }`}
         >
           <Text

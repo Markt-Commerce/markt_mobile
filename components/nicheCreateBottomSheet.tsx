@@ -189,7 +189,7 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
                     borderRadius: 8,
                     borderWidth: 1,
                     borderColor: value === "public" ? (t.textPrimary) : (t.borderStrong),
-                    backgroundColor: value === "public" ? (isDark ? "#46464e" : "#F4F4F5") : (t.surfaceSunken),
+                    backgroundColor: value === "public" ? t.primaryMuted : t.surfaceSunken,
                     marginRight: 8,
                   }}
                 >
@@ -203,7 +203,7 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
                     borderRadius: 8,
                     borderWidth: 1,
                     borderColor: value === "private" ? (t.textPrimary) : (t.borderStrong),
-                    backgroundColor: value === "private" ? (isDark ? "#46464e" : "#F4F4F5") : (t.surfaceSunken),
+                    backgroundColor: value === "private" ? t.primaryMuted : t.surfaceSunken,
                   }}
                 >
                   <Text style={{ color: t.textPrimary }}>Private</Text>
@@ -251,7 +251,7 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
           <Text style={{ marginBottom: 6, color: t.textPrimary }}>Categories</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 8 }}>
             {selectedCategories.map((c) => (
-              <View key={c.id} style={{ backgroundColor: t.surfaceSunken, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, marginRight: 8, marginBottom: 8, borderWidth: 1, borderColor: isDark ? "#46464e" : "transparent" }}>
+              <View key={c.id} style={{ backgroundColor: t.surfaceSunken, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, marginRight: 8, marginBottom: 8, borderWidth: 1, borderColor: t.border }}>
                 <Text style={{ color: t.textPrimary }}>{c.name}</Text>
               </View>
             ))}
@@ -275,7 +275,7 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
             style={{ backgroundColor: t.textPrimary, padding: 12, borderRadius: 8, alignItems: "center", opacity: submitting ? 0.7 : 1 }}
             disabled={submitting}
           >
-            <Text style={{ color: isDark ? "#000000" : "#fff", fontWeight: "700" }}>{submitting ? "Creating..." : "Create Niche"}</Text>
+            <Text style={{ color: t.surfacePage, fontWeight: "700" }}>{submitting ? "Creating..." : "Create Niche"}</Text>
           </TouchableOpacity>
 
           <CategoryAddition

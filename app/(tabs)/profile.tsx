@@ -197,7 +197,7 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        <Section title="Role Overview" dark={isDark}>
+        <Section title="Role Overview">
           <Row
             icon={CircleUserRound}
             title="Buyer Identity"
@@ -209,7 +209,6 @@ export default function ProfileScreen() {
             onPress={() => {
               void handleRoleRowPress("buyer");
             }}
-            dark={isDark}
           />
           <Row
             icon={Briefcase}
@@ -223,35 +222,30 @@ export default function ProfileScreen() {
               void handleRoleRowPress("seller");
             }}
             last
-            dark={isDark}
           />
         </Section>
 
-        <Section title="Account Navigation" dark={isDark}>
+        <Section title="Account Navigation">
           <Row
             icon={Trophy}
             title="Rewards & Badges"
             onPress={() => router.push("/gamification" as any)}
-            dark={isDark}
           />
           <Row
             icon={Settings}
             title="Settings"
             onPress={() => router.push("/(settings)/settingsProfileScreen")}
-            dark={isDark}
           />
           <Row
             icon={LayoutGrid}
             title="My Niches"
             onPress={() => router.push("/myniches" as any)}
-            dark={isDark}
           />
           <Row
             icon={ShieldCheck}
             title="Help & Policies"
             onPress={() => router.push("/support/help" as any)}
             last
-            dark={isDark}
           />
         </Section>
       </ScrollView>

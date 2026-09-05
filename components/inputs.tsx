@@ -172,6 +172,7 @@ interface OTPInputProps {
  * - Consistent with user reference image
  */
 export function OTPInput({ value, onChange, error, digits = 6 }: OTPInputProps) {
+  const t = useTokens();
   const inputRefs = useRef<Array<TextInput | null>>([]);
   const [digitArray, setDigits] = useState<string[]>(Array(digits).fill(""));
   const { resolvedTheme } = useTheme();
@@ -226,7 +227,7 @@ export function OTPInput({ value, onChange, error, digits = 6 }: OTPInputProps) 
               style={{
                 width: `${100 / digits - 2}%`,
                 aspectRatio: 1,
-                backgroundColor: isDark ? "#2f3132" : "#000000",
+                backgroundColor: isDark ? t.surfaceOverlay : t.textPrimary,
               }}
             >
               <TextInput

@@ -516,8 +516,8 @@ export default function SellerDashboard() {
                 width={chartWidth - 48}
                 height={160}
                 chartConfig={{
-                  backgroundGradientFrom: isDark ? '#1a1c1d' : '#ffffff',
-                  backgroundGradientTo: isDark ? '#1a1c1d' : '#ffffff',
+                  backgroundGradientFrom: t.surfaceRaised,
+                  backgroundGradientTo: t.surfaceRaised,
                   color: (opacity = 1) => `rgba(233, 76, 42, ${opacity})`,
                   labelColor: (opacity = 1) => chartLabelColor(opacity),
                   decimalPlaces: 0,

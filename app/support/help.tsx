@@ -246,7 +246,7 @@ export default function HelpCenterScreen() {
           </View>
         ) : (
           groups.map((g) => (
-            <SettingsSection key={g.id} title={g.name} dark={isDark}>
+            <SettingsSection key={g.id} title={g.name}>
               {g.items.map((item, idx) => {
                 const key = `${g.id}:${idx}`;
                 return (
