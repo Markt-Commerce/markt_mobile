@@ -35,7 +35,7 @@ export default function AppBar({
   const isDark = resolvedTheme === "dark";
 
   return (
-    <View className={`flex-row items-center justify-between px-4 py-2 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+    <View className={`flex-row items-center justify-between px-4 py-2 border-b ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
       <View className="w-9 h-9 items-center justify-center">
         {showAvatar ? (
           <TouchableOpacity
@@ -51,7 +51,7 @@ export default function AppBar({
           <View className="w-10" />
         )}
       </View>
-      <Text className={`text-xl font-bold flex-1 text-center tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+      <Text className={`text-xl font-bold flex-1 text-center tracking-tight text-text-primary`} numberOfLines={1}>
         {title}
       </Text>
       <View className="w-9 h-9 items-center justify-center">

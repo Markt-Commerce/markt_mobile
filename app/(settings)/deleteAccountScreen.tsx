@@ -111,13 +111,13 @@ export default function DeleteAccountScreen() {
     }
   };
 
-  const label = isDark ? "text-[#f0f1f2]" : "text-black";
-  const muted = isDark ? "text-[#c6c5cf]" : "text-tertiary";
-  const card = isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border";
+  const label = isDark ? "text-text-primary" : "text-black";
+  const muted = isDark ? "text-text-secondary" : "text-tertiary";
+  const card = isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border";
 
   return (
     <SafeAreaView
-      className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      className={`flex-1 bg-surface-raised`}
       edges={["top", "left", "right", "bottom"]}
     >
       <ScreenHeader title="Delete account" onBack={() => router.back()} />
@@ -221,7 +221,7 @@ export default function DeleteAccountScreen() {
             onPress={handleDelete}
             disabled={!canSubmit}
             activeOpacity={0.85}
-            className={`h-14 rounded items-center justify-center flex-row gap-2 ${canSubmit ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
+            className={`h-14 rounded items-center justify-center flex-row gap-2 ${canSubmit ? "bg-primary" : isDark ? "bg-surface-sunken" : "bg-bg-muted"}`}
             accessibilityRole="button"
             accessibilityState={{ disabled: !canSubmit }}
             accessibilityLabel="Permanently delete my account"

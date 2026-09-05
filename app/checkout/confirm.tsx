@@ -71,24 +71,24 @@ export default function CheckoutConfirm() {
 
   const Row = ({ label, value, muted }: { label: string; value: string; muted?: boolean }) => (
     <View className="flex-row justify-between py-2">
-      <Text className={`text-sm ${muted ? (isDark ? "text-[#c6c5cf]" : "text-tertiary") : isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+      <Text className={`text-sm ${muted ? (isDark ? "text-text-secondary" : "text-tertiary") : isDark ? "text-text-primary" : "text-black"}`}>
         {label}
       </Text>
-      <Text className={`text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{value}</Text>
+      <Text className={`text-sm font-bold text-text-primary`}>{value}</Text>
     </View>
   );
 
   return (
     <SafeAreaView
-      className={`flex-1 justify-between ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      className={`flex-1 justify-between bg-surface-raised`}
       edges={["top", "left", "right", "bottom"]}
     >
       <ScrollView>
-        <View className={`flex-row items-center px-4 py-3 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+        <View className={`flex-row items-center px-4 py-3 bg-surface-raised`}>
           <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
             <ArrowLeft size={24} color={isDark ? "#f0f1f2" : "#000000"} />
           </TouchableOpacity>
-          <Text className={`ml-3 text-lg font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className={`ml-3 text-lg font-bold text-text-primary`}>
             Confirm order
           </Text>
         </View>
@@ -99,7 +99,7 @@ export default function CheckoutConfirm() {
               className={`flex-row gap-3 rounded border p-4 ${isDark ? "bg-[#2a1f16] border-[#5c3d1f]" : "bg-[#fff4e5] border-[#e8b876]"}`}
             >
               <AlertTriangle size={18} color="#c17a1f" />
-              <Text className={`flex-1 text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`flex-1 text-xs text-text-primary`}>
                 Your items come from {deliveryCount} different markets, so this order needs{" "}
                 {deliveryCount} separate deliveries. The shipping fee below covers all of them.
               </Text>
@@ -108,7 +108,7 @@ export default function CheckoutConfirm() {
         ) : null}
 
         <View className="px-6 mt-2">
-          <View className={`rounded border p-6 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+          <View className={`rounded border p-6 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
             <Row label="Subtotal" value={formatMoney(subtotal)} muted />
             <Row
               label={isMultiMarket ? `Shipping fee (${deliveryCount} deliveries)` : "Shipping fee"}
@@ -127,7 +127,7 @@ export default function CheckoutConfirm() {
             <View className={`h-[1px] my-4 ${isDark ? "bg-[#46464e]" : "bg-border"}`} />
             <Row label="Total charged today" value={formatMoney(amount)} />
 
-            <Text className={`text-xs mt-4 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`text-xs mt-4 text-text-secondary`}>
               {reliabilityOptedIn
                 ? `Max you could be charged (worst case, if a substitution happens): ${formatMoney(capture_ceiling)}.`
                 : `Max you could be charged (worst case, if a substitution happens): ${formatMoney(capture_ceiling)}. This excludes the reliability fee since you didn't opt in.`}
@@ -136,7 +136,7 @@ export default function CheckoutConfirm() {
         </View>
       </ScrollView>
 
-      <View className={`px-4 py-3 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+      <View className={`px-4 py-3 bg-surface-raised`}>
         <TouchableOpacity
           onPress={handlePayNow}
           disabled={proceeding || !payment_id}

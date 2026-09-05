@@ -26,61 +26,61 @@ export default function AboutScreen() {
   const isDark = resolvedTheme === "dark";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "bottom"]}>
       <ScreenHeader title="About Markt" onBack={() => router.back()} />
       
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-6 py-8">
           <View className={`w-12 h-1 mb-6 rounded-full bg-primary`} />
-          <Text className={`font-bold text-4xl tracking-tighter mb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className={`font-bold text-4xl tracking-tighter mb-4 text-text-primary`}>
             Not just products.{"\n"}
             <Text className="text-primary">People.</Text>
           </Text>
-          <Text className={`text-xl leading-8 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className={`text-xl leading-8 text-text-secondary`}>
             We're humanizing the digital marketplace by bringing back the soul of traditional commerce.
           </Text>
         </View>
 
         {visionSections.map((section, idx) => (
-          <View key={idx} className={`px-6 py-10 ${idx % 2 === 1 ? (isDark ? "bg-[#2f3132]/30" : "bg-surface/30") : ""}`}>
-            <Text className={`font-bold text-2xl tracking-tighter mb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <View key={idx} className={`px-6 py-10 ${idx % 2 === 1 ? (isDark ? "bg-surface-sunken/30" : "bg-surface/30") : ""}`}>
+            <Text className={`font-bold text-2xl tracking-tighter mb-4 text-text-primary`}>
               {section.title}
             </Text>
-            <Text className={`text-base leading-7 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`text-base leading-7 text-text-secondary`}>
               {section.description}
             </Text>
           </View>
         ))}
 
         <View className="px-6 py-12">
-          <View className={`p-8 rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`font-bold text-lg mb-6 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <View className={`p-8 rounded border ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
+            <Text className={`font-bold text-lg mb-6 text-text-primary`}>
               Our Values
             </Text>
             
             <View className="mb-6">
-              <Text className={`font-bold text-sm uppercase tracking-widest mb-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`font-bold text-sm uppercase tracking-widest mb-1 text-text-primary`}>
                 Transparency
               </Text>
-              <Text className={`text-sm leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`text-sm leading-6 text-text-secondary`}>
                 No hidden fees, no obscured interactions. Everything is out in the open.
               </Text>
             </View>
 
             <View className="mb-6">
-              <Text className={`font-bold text-sm uppercase tracking-widest mb-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`font-bold text-sm uppercase tracking-widest mb-1 text-text-primary`}>
                 Control
               </Text>
-              <Text className={`text-sm leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`text-sm leading-6 text-text-secondary`}>
                 Sellers own their audience; buyers own their experience.
               </Text>
             </View>
 
             <View>
-              <Text className={`font-bold text-sm uppercase tracking-widest mb-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`font-bold text-sm uppercase tracking-widest mb-1 text-text-primary`}>
                 Innovation
               </Text>
-              <Text className={`text-sm leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`text-sm leading-6 text-text-secondary`}>
                 Pushing the boundaries of what's possible in real-time social selling.
               </Text>
             </View>

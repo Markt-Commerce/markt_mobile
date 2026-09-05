@@ -31,13 +31,13 @@ export default function BadgeCard({
       accessibilityRole="button"
       accessibilityLabel={`${badge.name}${earned ? ", earned" : ", locked"}`}
       className={`rounded border p-3 items-center ${
-        isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"
+        isDark ? "bg-surface-sunken border-border-strong" : "bg-white border-border"
       } ${className}`}
       style={{ opacity: earned ? 1 : 0.55 }}
     >
       <View
         className={`w-14 h-14 rounded-full items-center justify-center mb-2 ${
-          isDark ? "bg-[#1a1c1d]" : "bg-surface"
+          isDark ? "bg-surface-raised" : "bg-surface"
         }`}
       >
         {badge.icon_url ? (
@@ -55,7 +55,7 @@ export default function BadgeCard({
       <Text
         numberOfLines={1}
         className={`font-bold text-xs text-center ${
-          isDark ? "text-[#f0f1f2]" : "text-black"
+          isDark ? "text-text-primary" : "text-black"
         }`}
       >
         {badge.name}
@@ -64,7 +64,7 @@ export default function BadgeCard({
       {!earned && progress > 0 && progress < 1 && (
         <View
           className={`h-1 w-full rounded overflow-hidden mt-2 ${
-            isDark ? "bg-[#1a1c1d]" : "bg-surface"
+            isDark ? "bg-surface-raised" : "bg-surface"
           }`}
         >
           <View className="h-1 bg-primary rounded" style={{ width: `${pct}%` }} />

@@ -58,10 +58,10 @@ const Row = ({
     className="flex-row items-center gap-4 px-6 py-4"
     activeOpacity={0.7}
   >
-    <View className={`w-10 h-10 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+    <View className={`w-10 h-10 rounded items-center justify-center bg-surface-sunken`}>
       <Icon size={20} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.5} />
     </View>
-    <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{label}</Text>
+    <Text className={`font-bold text-base text-text-primary`}>{label}</Text>
   </TouchableOpacity>
 );
 
@@ -206,7 +206,7 @@ export default function NavDrawer({
       >
         <View className="flex-1 py-6">
           {/* Header: avatar, name, handle */}
-          <View className={`px-6 pb-6 border-b ${isDark ? "border-[#46464e]" : "border-border"}`}>
+          <View className={`px-6 pb-6 border-b border-border-strong`}>
             <View className="flex-row items-center justify-between mb-6">
               <Avatar
                 uri={profile?.profile_picture_url}
@@ -222,27 +222,27 @@ export default function NavDrawer({
                 <X size={24} color={isDark ? "#c6c5cf" : "#71717A"} strokeWidth={1.5} />
               </TouchableOpacity>
             </View>
-            <Text className={`font-bold text-xl ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+            <Text className={`font-bold text-xl text-text-primary`} numberOfLines={1}>
               {displayName}
             </Text>
-            <Text className={`text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={1}>
+            <Text className={`text-sm mt-1 text-text-secondary`} numberOfLines={1}>
               @{profile?.username ?? "user"}
             </Text>
             <View className="flex-row mt-4 gap-2">
               <View
-                className={`px-3 py-1 rounded ${role === "buyer" ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                className={`px-3 py-1 rounded ${role === "buyer" ? "bg-primary" : isDark ? "bg-surface-sunken" : "bg-surface"}`}
               >
                 <Text
-                  className={`text-[10px] font-bold uppercase tracking-wider ${role === "buyer" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                  className={`text-[10px] font-bold uppercase tracking-wider ${role === "buyer" ? "text-white" : isDark ? "text-text-secondary" : "text-tertiary"}`}
                 >
                   Buyer
                 </Text>
               </View>
               <View
-                className={`px-3 py-1 rounded ${role === "seller" ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                className={`px-3 py-1 rounded ${role === "seller" ? "bg-primary" : isDark ? "bg-surface-sunken" : "bg-surface"}`}
               >
                 <Text
-                  className={`text-[10px] font-bold uppercase tracking-wider ${role === "seller" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                  className={`text-[10px] font-bold uppercase tracking-wider ${role === "seller" ? "text-white" : isDark ? "text-text-secondary" : "text-tertiary"}`}
                 >
                   Seller
                 </Text>

@@ -112,9 +112,9 @@ export default function ContentActionsSheet({
     []
   );
 
-  const ink = isDark ? "text-[#f0f1f2]" : "text-black";
-  const muted = isDark ? "text-[#c6c5cf]" : "text-tertiary";
-  const rule = isDark ? "border-[#46464e]" : "border-border";
+  const ink = isDark ? "text-text-primary" : "text-black";
+  const muted = isDark ? "text-text-secondary" : "text-tertiary";
+  const rule = isDark ? "border-border-strong" : "border-border";
   const iconColor = isDark ? "#f0f1f2" : "#000000";
 
   const reasons = useMemo(
@@ -346,7 +346,7 @@ export default function ContentActionsSheet({
                   key={r.value}
                   icon={
                     <View
-                      className={`w-5 h-5 rounded-full border-2 items-center justify-center ${reason === r.value ? "border-primary bg-primary" : isDark ? "border-[#46464e]" : "border-border"}`}
+                      className={`w-5 h-5 rounded-full border-2 items-center justify-center ${reason === r.value ? "border-primary bg-primary" : isDark ? "border-border-strong" : "border-border"}`}
                     >
                       {reason === r.value ? <Check size={12} color="#fff" /> : null}
                     </View>
@@ -384,7 +384,7 @@ export default function ContentActionsSheet({
                 maxLength={2000}
                 placeholder="What happened?"
                 placeholderTextColor={isDark ? "#6b6b73" : "#A1A1AA"}
-                className={`min-h-[110px] rounded border px-4 py-3 text-[15px] ${isDark ? "bg-[#1a1c1d] border-[#46464e] text-[#f0f1f2]" : "bg-white border-border text-black"}`}
+                className={`min-h-[110px] rounded border px-4 py-3 text-[15px] ${isDark ? "bg-surface-raised border-border-strong text-text-primary" : "bg-white border-border text-black"}`}
                 textAlignVertical="top"
                 accessibilityLabel="Add details about your report, optional"
               />

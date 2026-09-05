@@ -226,7 +226,7 @@ export default function DiscoverShopsScreen() {
                     ? "bg-[#f0f1f2]"
                     : "bg-black"
                   : isDark
-                    ? "bg-[#2f3132]"
+                    ? "bg-surface-sunken"
                     : "bg-[#F4F4F5]"
               }`}
             >
@@ -237,7 +237,7 @@ export default function DiscoverShopsScreen() {
                       ? "text-black"
                       : "text-white"
                     : isDark
-                      ? "text-[#c6c5cf]"
+                      ? "text-text-secondary"
                       : "text-[#52525B]"
                 }`}
               >
@@ -258,7 +258,7 @@ export default function DiscoverShopsScreen() {
             accessibilityRole="tab"
             accessibilityState={{ selected: selectedCategory === null }}
             className={`px-3.5 h-8 rounded-full items-center justify-center ${
-              selectedCategory === null ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"
+              selectedCategory === null ? "bg-primary" : isDark ? "bg-surface-sunken" : "bg-[#F4F4F5]"
             }`}
           >
             <Text
@@ -266,7 +266,7 @@ export default function DiscoverShopsScreen() {
                 selectedCategory === null
                   ? "text-white"
                   : isDark
-                    ? "text-[#c6c5cf]"
+                    ? "text-text-secondary"
                     : "text-[#52525B]"
               }`}
             >
@@ -284,12 +284,12 @@ export default function DiscoverShopsScreen() {
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
               className={`px-3.5 h-8 rounded-full items-center justify-center ${
-                active ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"
+                active ? "bg-primary" : isDark ? "bg-surface-sunken" : "bg-[#F4F4F5]"
               }`}
             >
               <Text
                 className={`text-[13px] font-semibold ${
-                  active ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-[#52525B]"
+                  active ? "text-white" : isDark ? "text-text-secondary" : "text-[#52525B]"
                 }`}
               >
                 {c.name}

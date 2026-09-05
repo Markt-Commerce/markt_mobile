@@ -62,7 +62,7 @@ export default function LeaderboardScreen() {
                     ? "bg-[#4a2d25] border-[#784637]"
                     : "bg-[#fdf0eb] border-[#fdf0eb]"
                   : isDark
-                  ? "bg-[#2f3132] border-[#46464e]"
+                  ? "bg-surface-sunken border-border-strong"
                   : "bg-white border-[#e6e0dd]"
               }`}
             >
@@ -73,7 +73,7 @@ export default function LeaderboardScreen() {
                       ? "text-[#ffd5c7]"
                       : "text-[#a63d22]"
                     : isDark
-                    ? "text-[#c6c5cf]"
+                    ? "text-text-secondary"
                     : "text-[#3a302c]"
                 }`}
               >
@@ -88,7 +88,7 @@ export default function LeaderboardScreen() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}
+      className="flex-1 bg-surface-page"
       edges={["top", "bottom"]}
     >
       <View className="flex-row items-center px-4 h-12">
@@ -101,7 +101,7 @@ export default function LeaderboardScreen() {
           <ArrowLeft size={22} color={isDark ? "#f0f1f2" : "#000000"} />
         </TouchableOpacity>
         <Text
-          className={`text-[17px] font-bold ml-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+          className={`text-[17px] font-bold ml-3 text-text-primary`}
         >
           Leaderboard
         </Text>
@@ -194,7 +194,7 @@ export default function LeaderboardScreen() {
           ) : (
             <Text
               className={`text-center text-sm py-16 ${
-                isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                isDark ? "text-text-secondary" : "text-tertiary"
               }`}
             >
               No one on this leaderboard yet.

@@ -27,7 +27,7 @@ export default function TierProgressBar({
   return (
     <View className={className}>
       <View
-        className={`h-2 rounded overflow-hidden ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+        className={`h-2 rounded overflow-hidden bg-surface-sunken`}
       >
         <View
           className="h-2 rounded"
@@ -35,7 +35,7 @@ export default function TierProgressBar({
         />
       </View>
       <Text
-        className={`text-xs mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+        className={`text-xs mt-2 text-text-secondary`}
       >
         {atMax
           ? "Top tier reached"

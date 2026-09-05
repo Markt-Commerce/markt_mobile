@@ -170,9 +170,9 @@ export default function ProductReviews({ productId, onChanged }: Props) {
     ? rated.reduce((sum, r) => sum + (r.rating ?? 0), 0) / rated.length
     : 0;
 
-  const border = isDark ? "border-[#2f3132]" : "border-border-light";
-  const muted = isDark ? "text-[#8f9195]" : "text-tertiary";
-  const strong = isDark ? "text-[#f0f1f2]" : "text-black";
+  const border = isDark ? "border-border" : "border-border-light";
+  const muted = isDark ? "text-text-muted" : "text-tertiary";
+  const strong = isDark ? "text-text-primary" : "text-black";
 
   return (
     <View className={`border-t ${border} pt-6`}>
@@ -204,7 +204,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
       </View>
 
       {composing ? (
-        <View className={`rounded-xl p-4 mb-5 ${isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]"}`}>
+        <View className={`rounded-xl p-4 mb-5 ${isDark ? "bg-surface-sunken" : "bg-[#F7F7F8]"}`}>
           <View className="flex-row items-center justify-between mb-3">
             <Text className={`font-semibold text-[15px] ${strong}`}>
               {editingId ? "Edit your review" : "How was it?"}
@@ -229,7 +229,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
             multiline
             maxLength={1000}
             className={`mt-4 rounded-lg px-3 py-3 text-[15px] min-h-[88px] ${
-              isDark ? "bg-[#1a1c1d] text-[#f0f1f2]" : "bg-white text-black"
+              isDark ? "bg-surface-raised text-text-primary" : "bg-white text-black"
             }`}
             textAlignVertical="top"
             accessibilityLabel="Your review"
@@ -329,7 +329,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
               {r.title ? (
                 <Text className={`font-semibold text-[15px] mt-3 ${strong}`}>{r.title}</Text>
               ) : null}
-              <Text className={`text-[14px] leading-[20px] mt-2 ${isDark ? "text-[#c6c5cf]" : "text-[#3F3F46]"}`}>
+              <Text className={`text-[14px] leading-[20px] mt-2 ${isDark ? "text-text-secondary" : "text-[#3F3F46]"}`}>
                 {r.content}
               </Text>
 

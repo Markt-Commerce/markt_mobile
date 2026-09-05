@@ -131,7 +131,7 @@ export default function OrderDetail() {
         {/* Buyer */}
         {order.buyer?.buyername ? (
           <View
-            className={`mb-5 pt-5 border-t flex-row items-center gap-3 ${isDark ? "border-[#2f3132]" : "border-border-light"}`}
+            className={`mb-5 pt-5 border-t flex-row items-center gap-3 border-border`}
           >
             <User size={18} color={mutedColor} />
             <View>
@@ -148,7 +148,7 @@ export default function OrderDetail() {
         {/* Shipping Address */}
         {shippingAddressLine ? (
           <View
-            className={`mb-5 pt-5 border-t ${isDark ? "border-[#2f3132]" : "border-border-light"}`}
+            className={`mb-5 pt-5 border-t border-border`}
           >
             <View className="flex-row items-center gap-2">
               <MapPin size={16} color={mutedColor} />
@@ -170,7 +170,7 @@ export default function OrderDetail() {
         {/* Payment & Notes */}
         {(order.payment_method || order.customer_note) ? (
           <View
-            className={`mb-5 pt-5 border-t ${isDark ? "border-[#2f3132]" : "border-border-light"}`}
+            className={`mb-5 pt-5 border-t border-border`}
           >
             {order.payment_method ? (
               <View className="flex-row items-center gap-2 mb-3">
@@ -193,7 +193,7 @@ export default function OrderDetail() {
 
         {/* Items */}
         <View
-          className={`mb-5 pt-5 border-t ${isDark ? "border-[#2f3132]" : "border-border-light"}`}
+          className={`mb-5 pt-5 border-t border-border`}
         >
           <Text
             className={`font-bold text-lg mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
@@ -217,7 +217,7 @@ export default function OrderDetail() {
 
         {/* Pricing */}
         <View
-          className={`mb-6 pt-5 border-t ${isDark ? "border-[#2f3132]" : "border-border-light"}`}
+          className={`mb-6 pt-5 border-t border-border`}
         >
           <Text
             className={`font-bold text-lg mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
@@ -309,14 +309,14 @@ function OrderProgress({ status, isDark }: { status?: string; isDark: boolean })
   }
 
   return (
-    <View className={`rounded-2xl p-4 mb-3 ${isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]"}`}>
+    <View className={`rounded-2xl p-4 mb-3 ${isDark ? "bg-surface-sunken" : "bg-[#F7F7F8]"}`}>
       <Text
-        className={`text-[11px] font-bold uppercase tracking-[1.5px] ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}
+        className={`text-[11px] font-bold uppercase tracking-[1.5px] text-text-muted`}
       >
         Status
       </Text>
       <Text
-        className={`text-[20px] font-bold mt-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+        className={`text-[20px] font-bold mt-1 text-text-primary`}
       >
         {formatStatus(status)}
       </Text>
@@ -335,10 +335,10 @@ function OrderProgress({ status, isDark }: { status?: string; isDark: boolean })
               className={`text-[10px] mt-1.5 ${
                 i < reached
                   ? isDark
-                    ? "text-[#f0f1f2]"
+                    ? "text-text-primary"
                     : "text-black"
                   : isDark
-                    ? "text-[#6b6d71]"
+                    ? "text-text-muted"
                     : "text-[#A1A1AA]"
               }`}
               numberOfLines={1}

@@ -125,7 +125,7 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
   return (
     <Link href={`/postDetails/${post.id}`} asChild>
       <TouchableOpacity activeOpacity={0.9}>
-        <View className={`flex-row px-4 py-3 border-b ${isDark ? "bg-[#1a1c1d] border-[#34363a]" : "bg-white border-border"}`}>
+        <View className={`flex-row px-4 py-3 border-b ${isDark ? "bg-surface-raised border-border" : "bg-white border-border"}`}>
           <Pressable
             onPress={handleOpenAuthor}
             disabled={!post.user?.id}
@@ -150,7 +150,7 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
                 accessibilityLabel={`View ${post.user?.username ?? "author"}'s profile`}
               >
                 <Text
-                  className={`font-bold text-[15px] flex-shrink ${isDark ? "text-[#f0f1f2]" : "text-text-primary"}`}
+                  className={`font-bold text-[15px] flex-shrink text-text-primary`}
                   numberOfLines={1}
                 >
                   {post.user?.username ?? "Unknown"}
@@ -185,7 +185,7 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
 
           {post.caption ? (
             <Text
-              className={`mb-2 text-[15px] leading-[21px] ${isDark ? "text-[#f0f1f2]" : "text-text-primary"}`}
+              className={`mb-2 text-[15px] leading-[21px] text-text-primary`}
               numberOfLines={6}
             >
               {post.caption}

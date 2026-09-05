@@ -171,13 +171,13 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
       handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
     >
       <BottomSheetScrollView className="p-4">
-        <Text className={`text-lg font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Product</Text>
+        <Text className={`text-lg font-bold mb-4 text-text-primary`}>Create Product</Text>
 
         {/* In-flight banner — visible while a slow network keeps us waiting */}
         {sending && (
-          <View className={`flex-row items-center gap-3 rounded border px-4 py-3 mb-4 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
+          <View className={`flex-row items-center gap-3 rounded border px-4 py-3 mb-4 ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}>
             <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
-            <Text className={`flex-1 text-xs leading-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`flex-1 text-xs leading-5 text-text-secondary`}>
               {stage === "uploading"
                 ? "Uploading images… please keep this sheet open."
                 : "Creating your product… almost done."}
@@ -200,11 +200,11 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         <Input name='description' label='Description' placeholder='Describe your product…' control={control} multiline errors={errors} />
 
         {/* Category IDs */}
-        <Text className={`mb-2 text-xs font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Categories</Text>
+        <Text className={`mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary`}>Categories</Text>
         <View className="flex-row flex-wrap gap-3 p-3 pr-4">
           {selectedCategories.map(cat => (
-            <View key={cat.id.toString()} className={`flex-row items-center border rounded px-3 py-1 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-              <Text className={`text-sm font-medium mr-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{cat.name}</Text>
+            <View key={cat.id.toString()} className={`flex-row items-center border rounded px-3 py-1 ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}>
+              <Text className={`text-sm font-medium mr-2 text-text-primary`}>{cat.name}</Text>
               <TouchableOpacity onPress={() => removeCategory(cat.id)}>
                 <X size={16} color={isDark ? "#f0f1f2" : "#000000"} />
               </TouchableOpacity>
@@ -212,23 +212,23 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
           ))}
           <TouchableOpacity
             onPress={() => setModalVisible(true)}
-            className={`border rounded px-4 py-2 justify-center items-center ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+            className={`border rounded px-4 py-2 justify-center items-center ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}
           >
-            <Text className={`text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>+ Add Categories</Text>
+            <Text className={`text-sm font-bold text-text-primary`}>+ Add Categories</Text>
           </TouchableOpacity>
         </View>
         {errors.category_ids && <Text className="text-error text-xs mt-1">{errors.category_ids.message}</Text>}
 
         {/* Product Images */}
-        <Text className={`mb-2 text-xs font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Product Images</Text>
+        <Text className={`mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary`}>Product Images</Text>
         {Array.isArray(Imagevalue) && Imagevalue.length > 0 && (
-          <Text className={`text-xs mb-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Long press on each image to remove it</Text>
+          <Text className={`text-xs mb-2 text-text-secondary`}>Long press on each image to remove it</Text>
         )}
         {/* <<< IMPORTANT: pass value & onChange so we can receive images >>> */}
         <InstagramGrid value={Imagevalue} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} />
 
         {/* Optional forms*/}
-        <Text className={`text-xs font-bold uppercase tracking-[2px] mt-6 mb-3 ${isDark ? "text-[#f0f1f2]" : "text-tertiary"}`}>Optional Details</Text>
+        <Text className={`text-xs font-bold uppercase tracking-[2px] mt-6 mb-3 ${isDark ? "text-text-primary" : "text-tertiary"}`}>Optional Details</Text>
 
         {/* Barcode */}
         <Input name='barcode' label='Barcode' placeholder='Scan or enter a barcode' control={control} errors={errors} />

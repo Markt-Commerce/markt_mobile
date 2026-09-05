@@ -137,11 +137,11 @@ export default function UserInfoScreen() {
   };
 
   const Label = ({ children }: { children: React.ReactNode }) => (
-    <Text className={`mb-2 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>{children}</Text>
+    <Text className={`mb-2 text-sm font-bold ${isDark ? "text-text-primary" : "text-secondary"}`}>{children}</Text>
   );
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
+    <SafeAreaView className={`flex-1 ${isDark ? "bg-surface-sunken" : "bg-white"}`}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -164,7 +164,7 @@ export default function UserInfoScreen() {
               <TouchableOpacity
                 onPress={() => router.back()}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                className={`h-10 w-10 items-center justify-center rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
+                className={`h-10 w-10 items-center justify-center rounded border ${isDark ? "bg-surface-raised border-border-strong" : "bg-surface border-border"}`}
               >
                 <ArrowLeft size={20} color={iconColor} />
               </TouchableOpacity>
@@ -172,10 +172,10 @@ export default function UserInfoScreen() {
 
             {/* Title */}
             <View className="mb-8">
-              <Text className={`text-[32px] font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`text-[32px] font-bold leading-tight text-text-primary`}>
                 Your{"\n"}profile
               </Text>
-              <Text className={`text-base mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`text-base mt-2 text-text-secondary`}>
                 Let's get to know you better.
               </Text>
             </View>
@@ -183,25 +183,25 @@ export default function UserInfoScreen() {
             {/* Progress hint */}
             <View className="flex-row gap-2 items-center justify-center mb-10 px-2">
               <View className={`h-1.5 flex-1 rounded ${isDark ? "bg-[#f0f1f2]" : "bg-secondary"}`} />
-              <View className={`h-1.5 flex-1 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`} />
-              <View className={`h-1.5 flex-1 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`} />
+              <View className={`h-1.5 flex-1 rounded bg-surface-sunken`} />
+              <View className={`h-1.5 flex-1 rounded bg-surface-sunken`} />
             </View>
 
             {/* Card */}
-            <View className={`rounded border px-6 py-8 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+            <View className={`rounded border px-6 py-8 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
               {/* Avatar placeholder with image picker */}
               <View className="items-center mb-10">
                 <TouchableOpacity
                   activeOpacity={0.85}
                   onPress={changeProfilePicture}
-                  className={`h-24 w-24 rounded-full border-2 border-dashed items-center justify-center overflow-hidden ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+                  className={`h-24 w-24 rounded-full border-2 border-dashed items-center justify-center overflow-hidden ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
                 >
                   {profilePictureUri ? (
                     <Image source={{ uri: profilePictureUri }} className="w-full h-full" />
                   ) : (
                     <View className="items-center">
                       <ImageIcon size={32} color={mutedIconColor} />
-                      <Text className={`text-[10px] font-bold mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>ADD PHOTO</Text>
+                      <Text className={`text-[10px] font-bold mt-1 text-text-secondary`}>ADD PHOTO</Text>
                     </View>
                   )}
                 </TouchableOpacity>
@@ -239,9 +239,9 @@ export default function UserInfoScreen() {
                       <Text className="text-xs text-success ">Username is available</Text>
                     </View>
                   ) : usernameStatus === "checking" ? (
-                    <Text className={`text-xs italic ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Checking availability...</Text>
+                    <Text className={`text-xs italic text-text-secondary`}>Checking availability...</Text>
                   ) : (
-                    <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>This will be your unique identifier.</Text>
+                    <Text className={`text-xs text-text-secondary`}>This will be your unique identifier.</Text>
                   )}
                 </View>
               </View>

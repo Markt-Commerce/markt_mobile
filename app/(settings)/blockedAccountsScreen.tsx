@@ -30,9 +30,9 @@ export default function BlockedAccountsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const ink = isDark ? "text-[#f0f1f2]" : "text-black";
-  const muted = isDark ? "text-[#c6c5cf]" : "text-tertiary";
-  const rule = isDark ? "border-[#46464e]" : "border-border";
+  const ink = isDark ? "text-text-primary" : "text-black";
+  const muted = isDark ? "text-text-secondary" : "text-tertiary";
+  const rule = isDark ? "border-border-strong" : "border-border";
 
   const load = useCallback(async (opts: { refresh?: boolean } = {}) => {
     if (opts.refresh) setRefreshing(true);
@@ -81,7 +81,7 @@ export default function BlockedAccountsScreen() {
 
   return (
     <SafeAreaView
-      className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      className={`flex-1 bg-surface-raised`}
       edges={["top", "left", "right", "bottom"]}
     >
       <ScreenHeader title="Blocked accounts" onBack={() => router.back()} />
@@ -146,7 +146,7 @@ export default function BlockedAccountsScreen() {
           ListEmptyComponent={
             <View className="items-center justify-center px-10 pt-24">
               <View
-                className={`w-20 h-20 rounded-full items-center justify-center mb-6 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                className={`w-20 h-20 rounded-full items-center justify-center mb-6 bg-surface-sunken`}
               >
                 <ShieldOff size={30} color={isDark ? "#c6c5cf" : "#A1A1AA"} strokeWidth={1.6} />
               </View>

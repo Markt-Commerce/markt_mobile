@@ -76,11 +76,11 @@ function CommunityAvatar({
   return (
     <View
       style={{ width: size, height: size, borderRadius: radius }}
-      className={`items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}
+      className={`items-center justify-center bg-surface-sunken`}
     >
       <Text
         style={{ fontSize: size * 0.36 }}
-        className={`font-bold ${isDark ? "text-[#c6c5cf]" : "text-[#52525B]"}`}
+        className={`font-bold text-text-secondary`}
       >
         {initials}
       </Text>
@@ -157,9 +157,9 @@ export default function CommunitiesScreen() {
     }
   };
 
-  const strong = isDark ? "text-[#f0f1f2]" : "text-black";
-  const muted = isDark ? "text-[#8f9195]" : "text-tertiary";
-  const hairline = isDark ? "border-[#2f3132]" : "border-border-light";
+  const strong = isDark ? "text-text-primary" : "text-black";
+  const muted = isDark ? "text-text-muted" : "text-tertiary";
+  const hairline = isDark ? "border-border" : "border-border-light";
 
   const header = useMemo(
     () => (
@@ -181,7 +181,7 @@ export default function CommunitiesScreen() {
                 accessibilityLabel={`Open ${n.name}`}
                 style={{ width: 108 }}
                 className={`rounded-2xl border p-3 items-center ${hairline} ${
-                  isDark ? "bg-[#1a1c1d]" : "bg-white"
+                  isDark ? "bg-surface-raised" : "bg-white"
                 }`}
               >
                 <CommunityAvatar niche={n} size={52} isDark={isDark} />
@@ -199,7 +199,7 @@ export default function CommunitiesScreen() {
         <View className="px-4 pb-3">
           <View
             className={`flex-row items-center h-11 px-3 rounded-xl ${
-              isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"
+              isDark ? "bg-surface-sunken" : "bg-[#F4F4F5]"
             }`}
           >
             <Search size={17} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
@@ -237,7 +237,7 @@ export default function CommunitiesScreen() {
                         ? "bg-[#f0f1f2]"
                         : "bg-black"
                       : isDark
-                        ? "bg-[#2f3132]"
+                        ? "bg-surface-sunken"
                         : "bg-[#F4F4F5]"
                   }`}
                 >
@@ -248,7 +248,7 @@ export default function CommunitiesScreen() {
                           ? "text-black"
                           : "text-white"
                         : isDark
-                          ? "text-[#c6c5cf]"
+                          ? "text-text-secondary"
                           : "text-[#52525B]"
                     }`}
                   >
@@ -305,7 +305,7 @@ export default function CommunitiesScreen() {
           } ${
             joined
               ? isDark
-                ? "bg-[#2f3132]"
+                ? "bg-surface-sunken"
                 : "bg-[#F4F4F5]"
               : isDark
                 ? "bg-[#f0f1f2]"
@@ -316,7 +316,7 @@ export default function CommunitiesScreen() {
             className={`text-[13px] font-bold ${
               joined
                 ? isDark
-                  ? "text-[#c6c5cf]"
+                  ? "text-text-secondary"
                   : "text-[#52525B]"
                 : isDark
                   ? "text-black"
@@ -332,7 +332,7 @@ export default function CommunitiesScreen() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }}
+      className="flex-1 bg-surface-page"
       edges={["top", "left", "right"]}
     >
       <View className="flex-row items-center px-4 h-12">

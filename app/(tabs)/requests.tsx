@@ -51,12 +51,12 @@ function EmptyRequestsState({
         strokeWidth={1.5}
       />
       <Text
-        className={`text-[22px] font-bold text-center mt-5 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+        className={`text-[22px] font-bold text-center mt-5 text-text-primary`}
       >
         {title}
       </Text>
       <Text
-        className={`text-[15px] text-center mt-2 leading-[21px] ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}
+        className={`text-[15px] text-center mt-2 leading-[21px] text-text-muted`}
       >
         {description}
       </Text>
@@ -145,10 +145,10 @@ export default function RequestsScreen() {
 
   if (loading && !refreshing) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
+      <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
         <View className="flex-1 items-center justify-center py-16">
           <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
-          <Text className={`mt-4 font-bold text-[11px] tracking-[2px] uppercase ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className={`mt-4 font-bold text-[11px] tracking-[2px] uppercase text-text-secondary`}>
             Loading requests
           </Text>
         </View>
@@ -157,17 +157,17 @@ export default function RequestsScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
       {/* No border under the header: the first row already draws a hairline,
           and two lines 4px apart read as a mistake. px-4 lines the title up
           with the rows beneath it instead of sitting 8px further in. */}
-      <View className={`px-4 pt-4 pb-3 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+      <View className={`px-4 pt-4 pb-3 bg-surface-raised`}>
         <View className="flex-row items-center justify-between">
           <View className="flex-1 pr-4">
-            <Text className={`font-bold text-[26px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+            <Text className={`font-bold text-[26px] tracking-tight text-text-primary`}>
               {isBuyer ? "My requests" : "Buyer requests"}
             </Text>
-            <Text className={`text-[13px] mt-0.5 leading-[18px] ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
+            <Text className={`text-[13px] mt-0.5 leading-[18px] text-text-muted`}>
               {isBuyer
                 ? "Tell sellers what you need and let offers come to you."
                 : "Open requests from buyers looking for what you sell."}
@@ -191,7 +191,7 @@ export default function RequestsScreen() {
           in full, so filtering it locally is instant and needs no endpoint. */}
       <View className="px-4 pb-3">
         <View
-          className={`flex-row items-center h-11 px-3 rounded-xl ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}
+          className={`flex-row items-center h-11 px-3 rounded-xl bg-surface-sunken`}
         >
           <Search size={17} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
           <TextInput
@@ -199,7 +199,7 @@ export default function RequestsScreen() {
             onChangeText={setQuery}
             placeholder="Search requests"
             placeholderTextColor={isDark ? "#8f9195" : "#A1A1AA"}
-            className={`flex-1 ml-2 text-[15px] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+            className={`flex-1 ml-2 text-[15px] text-text-primary`}
             returnKeyType="search"
             accessibilityLabel="Search requests"
           />
@@ -221,7 +221,7 @@ export default function RequestsScreen() {
                       ? "bg-[#f0f1f2]"
                       : "bg-black"
                     : isDark
-                      ? "bg-[#2f3132]"
+                      ? "bg-surface-sunken"
                       : "bg-[#F4F4F5]"
                 }`}
               >
@@ -232,7 +232,7 @@ export default function RequestsScreen() {
                         ? "text-black"
                         : "text-white"
                       : isDark
-                        ? "text-[#c6c5cf]"
+                        ? "text-text-secondary"
                         : "text-[#52525B]"
                   }`}
                 >

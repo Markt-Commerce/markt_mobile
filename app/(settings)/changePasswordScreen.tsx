@@ -37,41 +37,41 @@ export default function ChangePasswordScreen() {
   const canSubmit = !!email.trim() && !!code.trim() && !!newPassword.trim() && !isSubmitting;
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
-      <ScrollView className={isDark ? "bg-[#1a1c1d]" : "bg-white"} contentContainerStyle={{ paddingBottom: 32 }}>
+    <SafeAreaView className={`flex-1 bg-surface-raised`}>
+      <ScrollView className={isDark ? "bg-surface-raised" : "bg-white"} contentContainerStyle={{ paddingBottom: 32 }}>
         <ScreenHeader title="Change Password" onBack={() => nav.back()} />
         <View className="px-6 pt-6">
-          <Text className={`text-sm leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className={`text-sm leading-6 text-text-secondary`}>
             Enter the email tied to your account, the reset code you received, and a new password.
           </Text>
 
-          <View className={`mt-6 border rounded p-4 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-sm font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Email</Text>
+          <View className={`mt-6 border rounded p-4 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
+            <Text className={`text-sm font-bold mb-2 text-text-primary`}>Email</Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
-              className={`border p-3 rounded mb-4 ${isDark ? "border-[#46464e] bg-[#2f3132] text-[#f0f1f2]" : "border-border bg-surface text-black"}`}
+              className={`border p-3 rounded mb-4 ${isDark ? "border-border-strong bg-surface-sunken text-text-primary" : "border-border bg-surface text-black"}`}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
               placeholderTextColor={isDark ? "#8f8f98" : "#5b5b64"}
             />
 
-            <Text className={`text-sm font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Reset Code</Text>
+            <Text className={`text-sm font-bold mb-2 text-text-primary`}>Reset Code</Text>
             <TextInput
               value={code}
               onChangeText={setCode}
-              className={`border p-3 rounded mb-4 ${isDark ? "border-[#46464e] bg-[#2f3132] text-[#f0f1f2]" : "border-border bg-surface text-black"}`}
+              className={`border p-3 rounded mb-4 ${isDark ? "border-border-strong bg-surface-sunken text-text-primary" : "border-border bg-surface text-black"}`}
               keyboardType="number-pad"
               autoCapitalize="none"
               placeholderTextColor={isDark ? "#8f8f98" : "#5b5b64"}
             />
 
-            <Text className={`text-sm font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>New Password</Text>
+            <Text className={`text-sm font-bold mb-2 text-text-primary`}>New Password</Text>
             <TextInput
               value={newPassword}
               onChangeText={setNewPassword}
-              className={`border p-3 rounded ${isDark ? "border-[#46464e] bg-[#2f3132] text-[#f0f1f2]" : "border-border bg-surface text-black"}`}
+              className={`border p-3 rounded ${isDark ? "border-border-strong bg-surface-sunken text-text-primary" : "border-border bg-surface text-black"}`}
               secureTextEntry
               autoCapitalize="none"
               placeholderTextColor={isDark ? "#8f8f98" : "#5b5b64"}

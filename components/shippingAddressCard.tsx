@@ -40,21 +40,21 @@ export default function ShippingAddressCard({
   const showForm = !loading && (editing || !usable);
 
   const fieldClass = `rounded h-11 px-3 text-sm border ${
-    isDark ? "bg-[#1a1c1d] border-[#46464e] text-[#f0f1f2]" : "bg-white border-border text-black"
+    isDark ? "bg-surface-raised border-border-strong text-text-primary" : "bg-white border-border text-black"
   }`;
-  const labelClass = `text-xs font-bold mb-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`;
+  const labelClass = `text-xs font-bold mb-1 text-text-secondary`;
   const placeholderColor = isDark ? "#71717A" : "#A1A1AA";
 
   return (
-    <View className={`rounded border p-4 mb-4 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+    <View className={`rounded border p-4 mb-4 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
       <View className="flex-row items-center justify-between mb-2">
-        <Text className={`text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+        <Text className={`text-sm font-bold text-text-primary`}>
           Shipping Address
         </Text>
         {!loading && usable && (
           <TouchableOpacity onPress={() => setEditing((e) => !e)} className="flex-row items-center gap-1">
             <Pencil size={14} color={isDark ? "#c6c5cf" : "#71717A"} />
-            <Text className={`text-xs font-bold ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`text-xs font-bold text-text-secondary`}>
               {editing ? "Done" : "Edit"}
             </Text>
           </TouchableOpacity>
@@ -64,14 +64,14 @@ export default function ShippingAddressCard({
       {loading ? (
         <View className="flex-row items-center gap-2 py-2">
           <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
-          <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Resolving your address…</Text>
+          <Text className={`text-xs text-text-secondary`}>Resolving your address…</Text>
         </View>
       ) : !showForm ? (
         <View className="flex-row items-start gap-2">
           <MapPin size={16} color={isDark ? "#c6c5cf" : "#71717A"} style={{ marginTop: 2 }} />
           <View className="flex-1">
-            <Text className={`text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatSummary(address!)}</Text>
-            <Text className={`text-[10px] mt-1 uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`text-sm text-text-primary`}>{formatSummary(address!)}</Text>
+            <Text className={`text-[10px] mt-1 uppercase tracking-wider text-text-secondary`}>
               {source === "saved" ? "Saved address" : source === "geolocation" ? "Current location" : "Entered manually"}
             </Text>
           </View>
@@ -79,7 +79,7 @@ export default function ShippingAddressCard({
       ) : (
         <View className="gap-3">
           {!usable && (
-            <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`text-xs text-text-secondary`}>
               We need a shipping address before you can check out.
             </Text>
           )}
@@ -87,14 +87,14 @@ export default function ShippingAddressCard({
           <TouchableOpacity
             onPress={() => useCurrentLocation()}
             disabled={locating}
-            className={`flex-row items-center justify-center gap-2 h-11 rounded border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+            className={`flex-row items-center justify-center gap-2 h-11 rounded border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
           >
             {locating ? (
               <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
             ) : (
               <MapPin size={16} color={isDark ? "#f0f1f2" : "#000000"} />
             )}
-            <Text className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+            <Text className={`text-xs font-bold uppercase tracking-wider text-text-primary`}>
               Use current location
             </Text>
           </TouchableOpacity>

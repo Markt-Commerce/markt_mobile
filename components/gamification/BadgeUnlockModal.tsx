@@ -27,13 +27,13 @@ export default function BadgeUnlockModal({
       <View className="flex-1 items-center justify-center px-8" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
         <View
           className={`w-full rounded-2xl items-center px-6 py-8 ${
-            isDark ? "bg-[#1a1c1d]" : "bg-white"
+            isDark ? "bg-surface-raised" : "bg-white"
           }`}
         >
           <Text className="text-3xl mb-2">🎉</Text>
           <Text
             className={`font-bold text-[10px] tracking-[3px] uppercase ${
-              isDark ? "text-[#c6c5cf]" : "text-tertiary"
+              isDark ? "text-text-secondary" : "text-tertiary"
             }`}
           >
             Badge Unlocked
@@ -41,7 +41,7 @@ export default function BadgeUnlockModal({
 
           <View
             className={`w-24 h-24 rounded-full items-center justify-center my-5 ${
-              isDark ? "bg-[#2f3132]" : "bg-surface"
+              isDark ? "bg-surface-sunken" : "bg-surface"
             }`}
           >
             {badge?.icon_url ? (
@@ -56,7 +56,7 @@ export default function BadgeUnlockModal({
 
           <Text
             className={`font-bold text-xl text-center ${
-              isDark ? "text-[#f0f1f2]" : "text-black"
+              isDark ? "text-text-primary" : "text-black"
             }`}
           >
             {badge?.name}
@@ -64,7 +64,7 @@ export default function BadgeUnlockModal({
           {!!badge?.description && (
             <Text
               className={`text-sm text-center mt-2 ${
-                isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                isDark ? "text-text-secondary" : "text-tertiary"
               }`}
             >
               {badge.description}

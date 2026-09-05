@@ -42,11 +42,11 @@ function Stat({
 }) {
   return (
     <View className="items-center flex-1">
-      <Text className={`text-xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+      <Text className={`text-xl font-bold text-text-primary`}>
         {value.toLocaleString()}
       </Text>
       <Text
-        className={`font-bold text-[10px] tracking-[1.5px] uppercase mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+        className={`font-bold text-[10px] tracking-[1.5px] uppercase mt-1 text-text-secondary`}
       >
         {label}
       </Text>
@@ -117,13 +117,13 @@ export default function PublicProfileScreen() {
     }
   };
 
-  const label = isDark ? "text-[#f0f1f2]" : "text-black";
-  const muted = isDark ? "text-[#c6c5cf]" : "text-tertiary";
-  const card = isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border";
+  const label = isDark ? "text-text-primary" : "text-black";
+  const muted = isDark ? "text-text-secondary" : "text-tertiary";
+  const card = isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border";
 
   return (
     <SafeAreaView
-      className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      className={`flex-1 bg-surface-raised`}
       edges={["top", "left", "right", "bottom"]}
     >
       <ScreenHeader title="Profile" onBack={() => router.back()} />
@@ -172,7 +172,7 @@ export default function PublicProfileScreen() {
                 onPress={handleFollowToggle}
                 disabled={followBusy}
                 activeOpacity={0.85}
-                className={`mt-6 h-12 px-10 rounded items-center justify-center flex-row gap-2 ${following ? `border ${isDark ? "border-[#46464e]" : "border-border"}` : "bg-primary"}`}
+                className={`mt-6 h-12 px-10 rounded items-center justify-center flex-row gap-2 ${following ? `border border-border-strong` : "bg-primary"}`}
                 accessibilityRole="button"
                 accessibilityLabel={following ? "Unfollow" : "Follow"}
               >
@@ -208,7 +208,7 @@ export default function PublicProfileScreen() {
             >
               <View className="flex-row items-center gap-3">
                 <View
-                  className={`w-11 h-11 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                  className={`w-11 h-11 rounded items-center justify-center bg-surface-sunken`}
                 >
                   <Store size={20} color="#E94C2A" strokeWidth={1.8} />
                 </View>

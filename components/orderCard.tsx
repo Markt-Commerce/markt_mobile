@@ -12,13 +12,13 @@ const TONE_BG: Record<string, [string, string]> = {
   positive: ["bg-[#E7F6EC]", "bg-[#1E3A28]"],
   attention: ["bg-[#FEF3E2]", "bg-[#3A2E18]"],
   negative: ["bg-[#FDECEC]", "bg-[#3A1E1E]"],
-  neutral: ["bg-[#F4F4F5]", "bg-[#2f3132]"],
+  neutral: ["bg-[#F4F4F5]", "bg-surface-sunken"],
 };
 const TONE_TEXT: Record<string, [string, string]> = {
   positive: ["text-[#0F7B3F]", "text-[#7BD9A2]"],
   attention: ["text-[#A15C00]", "text-[#F0B667]"],
   negative: ["text-[#C42B2B]", "text-[#F09A9A]"],
-  neutral: ["text-[#52525B]", "text-[#c6c5cf]"],
+  neutral: ["text-[#52525B]", "text-text-secondary"],
 };
 
 interface OrderCardProps {
@@ -93,34 +93,34 @@ export default function OrderCard({ order, isSeller }: OrderCardProps) {
 
   return (
     <View
-      className={`flex-row justify-between gap-4 px-4 py-3 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+      className={`flex-row justify-between gap-4 px-4 py-3 border-b ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}
     >
       <View className="flex-row gap-4 flex-1">
         {imageUri ? (
           <Image
             source={{ uri: imageUri }}
-            className={`w-14 h-14 rounded-lg ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+            className={`w-14 h-14 rounded-lg bg-surface-sunken`}
           />
         ) : (
           // A neutral tile, not the words "No image". Every row said that,
           // because imageUri was never assigned -- and even once it is, a
           // missing thumbnail is not worth a sentence.
-          <View className={`w-14 h-14 rounded-lg items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+          <View className={`w-14 h-14 rounded-lg items-center justify-center bg-surface-sunken`}>
             <ImageIcon size={18} color={isDark ? "#6b6d71" : "#C4C4C8"} strokeWidth={1.8} />
           </View>
         )}
 
         <View className="flex-1 justify-center">
-          <Text className={`text-base font-medium ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className={`text-base font-medium text-text-primary`}>
             {isSeller && isSellerOrderItem(order) ? `From: ${order.order?.buyer?.buyername ?? "Buyer"}` : title}
           </Text>
-          <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className={`text-sm text-text-secondary`}>
             {isSeller && isSellerOrderItem(order)
               ? `Product: ${order.product?.name ?? title}`
               : subtitle}
           </Text>
           <View className="flex-row items-center mt-1">
-            <Text className={`text-sm font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+            <Text className={`text-sm font-semibold text-text-primary`}>
               {priceText}
             </Text>
             {statusText ? (
@@ -142,7 +142,7 @@ export default function OrderCard({ order, isSeller }: OrderCardProps) {
               style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
             />
           </View>
-          <Text className={`text-sm font-medium ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{Math.round(progress)}%</Text>
+          <Text className={`text-sm font-medium text-text-primary`}>{Math.round(progress)}%</Text>
         </View>
       )}
     </View>

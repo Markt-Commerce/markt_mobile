@@ -62,26 +62,26 @@ export default function AddProfilePictureScreen() {
   };
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
+    <SafeAreaView className={`flex-1 ${isDark ? "bg-surface-sunken" : "bg-white"}`}>
       <View className="flex-1 items-center justify-center px-6">
-        <Text className={`text-[32px] font-bold text-center leading-tight mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+        <Text className={`text-[32px] font-bold text-center leading-tight mb-2 text-text-primary`}>
           Profile picture
         </Text>
-        <Text className={`text-sm text-center mb-12 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+        <Text className={`text-sm text-center mb-12 text-text-secondary`}>
           Help others recognize you on Markt.{"\n"}You can change this later in settings.
         </Text>
 
         <TouchableOpacity
           onPress={pickImage}
           activeOpacity={0.85}
-          className={`w-48 h-48 rounded-full border-2 border-dashed items-center justify-center mb-12 overflow-hidden shadow-sm ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
+          className={`w-48 h-48 rounded-full border-2 border-dashed items-center justify-center mb-12 overflow-hidden shadow-sm ${isDark ? "bg-surface-raised border-border-strong" : "bg-surface border-border"}`}
         >
           {imageUri ? (
             <Image source={{ uri: imageUri }} className="w-full h-full" resizeMode="cover" />
           ) : (
             <View className="items-center">
               <Camera size={48} color={iconColor} strokeWidth={1.5} />
-              <Text className={`text-[10px] font-bold mt-2 tracking-widest ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>TAP TO UPLOAD</Text>
+              <Text className={`text-[10px] font-bold mt-2 tracking-widest text-text-secondary`}>TAP TO UPLOAD</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -99,7 +99,7 @@ export default function AddProfilePictureScreen() {
             disabled={uploading}
             className="h-12 items-center justify-center"
           >
-            <Text className={`font-semibold text-sm underline ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Skip for now</Text>
+            <Text className={`font-semibold text-sm underline text-text-secondary`}>Skip for now</Text>
           </TouchableOpacity>
         </View>
       </View>

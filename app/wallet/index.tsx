@@ -62,10 +62,10 @@ function TransactionRow({
 
   return (
     <View
-      className={`flex-row items-center px-6 py-4 border-b ${isDark ? "border-[#46464e]" : "border-border"}`}
+      className={`flex-row items-center px-6 py-4 border-b border-border-strong`}
     >
       <View
-        className={`w-10 h-10 rounded items-center justify-center mr-3 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+        className={`w-10 h-10 rounded items-center justify-center mr-3 bg-surface-sunken`}
       >
         {isCredit ? (
           <ArrowDownLeft size={18} color="#178b1f" strokeWidth={1.8} />
@@ -75,13 +75,13 @@ function TransactionRow({
       </View>
       <View className="flex-1 pr-3">
         <Text
-          className={`font-semibold text-[15px] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+          className={`font-semibold text-[15px] text-text-primary`}
           numberOfLines={1}
         >
           {label}
         </Text>
         <Text
-          className={`text-[12px] mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+          className={`text-[12px] mt-0.5 text-text-secondary`}
           numberOfLines={1}
         >
           {tx.description ??
@@ -90,12 +90,12 @@ function TransactionRow({
       </View>
       <View className="items-end">
         <Text
-          className={`font-bold text-[15px] ${isCredit ? "text-[#178b1f]" : isDark ? "text-[#f0f1f2]" : "text-black"}`}
+          className={`font-bold text-[15px] ${isCredit ? "text-[#178b1f]" : isDark ? "text-text-primary" : "text-black"}`}
         >
           {isCredit ? "+" : "−"}
           {formatNaira(tx.amount)}
         </Text>
-        <Text className={`text-[11px] mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+        <Text className={`text-[11px] mt-0.5 text-text-secondary`}>
           {formatNaira(tx.balance_after)}
         </Text>
       </View>
@@ -274,7 +274,7 @@ export default function WalletScreen() {
 
   const canWithdraw = (balance ?? 0) >= MIN_WITHDRAWAL_AMOUNT;
 
-  const inputClass = `h-14 rounded border px-4 text-[15px] mb-4 ${isDark ? "bg-[#1a1c1d] border-[#46464e] text-[#f0f1f2]" : "bg-white border-border text-black"}`;
+  const inputClass = `h-14 rounded border px-4 text-[15px] mb-4 ${isDark ? "bg-surface-raised border-border-strong text-text-primary" : "bg-white border-border text-black"}`;
   const placeholderColor = isDark ? "#6b6b73" : "#A1A1AA";
 
   // A wallet should feel like a wallet, not another settings list. The balance
@@ -365,7 +365,7 @@ export default function WalletScreen() {
         keyExtractor={(tx) => String(tx.id)}
         renderItem={({ item }) => <TransactionRow tx={item} isDark={isDark} />}
         ListHeaderComponent={header}
-        className={isDark ? "bg-[#1a1c1d]" : "bg-white"}
+        className={isDark ? "bg-surface-raised" : "bg-white"}
         contentContainerStyle={{ paddingBottom: 32 }}
         refreshing={refreshing}
         onRefresh={() => load({ refresh: true })}
@@ -388,7 +388,7 @@ export default function WalletScreen() {
           ) : (
             <View className="px-6 py-12 items-center">
               <Text
-                className={`text-[15px] text-center ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                className={`text-[15px] text-center text-text-secondary`}
               >
                 No wallet activity yet. Fund your wallet to pay for orders
                 instantly.
@@ -410,11 +410,11 @@ export default function WalletScreen() {
           className="flex-1 justify-end"
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         >
-          <View className={`rounded-t-2xl p-6 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
-            <Text className={`text-lg font-bold mb-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <View className={`rounded-t-2xl p-6 bg-surface-raised`}>
+            <Text className={`text-lg font-bold mb-1 text-text-primary`}>
               Fund wallet
             </Text>
-            <Text className={`text-[13px] mb-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`text-[13px] mb-5 text-text-secondary`}>
               Minimum {formatNaira(MIN_TOPUP_AMOUNT)}. You'll complete payment with
               Paystack.
             </Text>
@@ -430,11 +430,11 @@ export default function WalletScreen() {
             <View className="flex-row gap-3">
               <TouchableOpacity
                 onPress={() => setTopUpOpen(false)}
-                className={`flex-1 h-14 rounded items-center justify-center border ${isDark ? "border-[#46464e]" : "border-border"}`}
+                className={`flex-1 h-14 rounded items-center justify-center border border-border-strong`}
                 accessibilityRole="button"
               >
                 <Text
-                  className={`font-bold text-xs tracking-[2px] uppercase ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+                  className={`font-bold text-xs tracking-[2px] uppercase text-text-primary`}
                 >
                   Cancel
                 </Text>
@@ -470,11 +470,11 @@ export default function WalletScreen() {
           className="flex-1 justify-end"
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         >
-          <View className={`rounded-t-2xl p-6 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
-            <Text className={`text-lg font-bold mb-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <View className={`rounded-t-2xl p-6 bg-surface-raised`}>
+            <Text className={`text-lg font-bold mb-1 text-text-primary`}>
               Withdraw to bank
             </Text>
-            <Text className={`text-[13px] mb-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`text-[13px] mb-5 text-text-secondary`}>
               Minimum {formatNaira(MIN_WITHDRAWAL_AMOUNT)}. Available{" "}
               {formatNaira(balance ?? 0)}.
             </Text>
@@ -516,11 +516,11 @@ export default function WalletScreen() {
             <View className="flex-row gap-3">
               <TouchableOpacity
                 onPress={() => setWithdrawOpen(false)}
-                className={`flex-1 h-14 rounded items-center justify-center border ${isDark ? "border-[#46464e]" : "border-border"}`}
+                className={`flex-1 h-14 rounded items-center justify-center border border-border-strong`}
                 accessibilityRole="button"
               >
                 <Text
-                  className={`font-bold text-xs tracking-[2px] uppercase ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+                  className={`font-bold text-xs tracking-[2px] uppercase text-text-primary`}
                 >
                   Cancel
                 </Text>

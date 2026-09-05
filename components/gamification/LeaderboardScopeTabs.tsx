@@ -27,7 +27,7 @@ export default function LeaderboardScopeTabs({
   return (
     <View
       className={`flex-row rounded p-1 border ${
-        isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"
+        isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"
       } ${className}`}
     >
       {TABS.map((t) => {
@@ -42,7 +42,7 @@ export default function LeaderboardScopeTabs({
           >
             <Text
               className={`font-bold text-xs ${
-                active ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                active ? "text-white" : isDark ? "text-text-secondary" : "text-tertiary"
               }`}
             >
               {t.label}

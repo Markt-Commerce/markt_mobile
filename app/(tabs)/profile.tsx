@@ -110,16 +110,16 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
       <ScrollView
-        className={isDark ? "bg-[#1a1c1d]" : "bg-white"}
+        className={isDark ? "bg-surface-raised" : "bg-white"}
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Same identity treatment as Settings: centred, no card. It was a
             bordered box wrapping a bordered avatar and two stacked buttons, on
             a screen whose rows are now full-bleed. */}
-        <View className={`items-center px-6 pt-6 pb-6 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+        <View className={`items-center px-6 pt-6 pb-6 bg-surface-raised`}>
           <Avatar
             uri={profile?.profile_picture_url}
             name={displayName}
@@ -127,13 +127,13 @@ export default function ProfileScreen() {
             className="rounded-full"
           />
           <Text
-            className={`font-bold text-[22px] tracking-tight mt-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+            className={`font-bold text-[22px] tracking-tight mt-3 text-text-primary`}
             numberOfLines={1}
           >
             {displayName}
           </Text>
           <Text
-            className={`text-[14px] mt-0.5 ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}
+            className={`text-[14px] mt-0.5 text-text-muted`}
             numberOfLines={1}
           >
             @{profile?.username ?? "user"}
@@ -153,9 +153,9 @@ export default function ProfileScreen() {
               activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel="Edit profile"
-              className={`flex-1 h-11 rounded-xl items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}
+              className={`flex-1 h-11 rounded-xl items-center justify-center bg-surface-sunken`}
             >
-              <Text className={`font-semibold text-[14px] ${isDark ? "text-[#f0f1f2]" : "text-[#3F3F46]"}`}>
+              <Text className={`font-semibold text-[14px] ${isDark ? "text-text-primary" : "text-[#3F3F46]"}`}>
                 Edit profile
               </Text>
             </TouchableOpacity>

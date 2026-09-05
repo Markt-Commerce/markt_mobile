@@ -151,7 +151,7 @@ function Accordion({
       >
         <Text
           className={`flex-1 text-[15px] leading-[21px] pr-3 ${
-            isDark ? "text-[#f0f1f2]" : "text-black"
+            isDark ? "text-text-primary" : "text-black"
           }`}
         >
           {item.q}
@@ -164,14 +164,14 @@ function Accordion({
         <View className="px-4 pb-4 -mt-1">
           <Text
             className={`text-[14px] leading-[21px] ${
-              isDark ? "text-[#c6c5cf]" : "text-[#52525B]"
+              isDark ? "text-text-secondary" : "text-[#52525B]"
             }`}
           >
             {item.a}
           </Text>
         </View>
       ) : null}
-      <View className={`h-px ml-4 ${isDark ? "bg-[#2f3132]" : "bg-[#EFEFF1]"}`} />
+      <View className={`h-px ml-4 ${isDark ? "bg-surface-sunken" : "bg-[#EFEFF1]"}`} />
     </>
   );
 }
@@ -196,12 +196,12 @@ export default function HelpCenterScreen() {
     })).filter((g) => g.items.length > 0);
   }, [query]);
 
-  const strong = isDark ? "text-[#f0f1f2]" : "text-black";
-  const muted = isDark ? "text-[#8f9195]" : "text-tertiary";
+  const strong = isDark ? "text-text-primary" : "text-black";
+  const muted = isDark ? "text-text-muted" : "text-tertiary";
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }}
+      className="flex-1 bg-surface-page"
       edges={["top", "left", "right", "bottom"]}
     >
       <ScrollView
@@ -217,7 +217,7 @@ export default function HelpCenterScreen() {
           </Text>
           <View
             className={`flex-row items-center h-11 px-3 rounded-xl mt-3 ${
-              isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"
+              isDark ? "bg-surface-sunken" : "bg-[#F4F4F5]"
             }`}
           >
             <Search size={17} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />

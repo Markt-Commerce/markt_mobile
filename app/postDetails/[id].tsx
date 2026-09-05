@@ -62,15 +62,15 @@ const SingleCommentComponent = React.memo(({ comment, isDark, grouped = false }:
       <View className="flex h-full flex-1 flex-col items-start justify-start">
         {grouped ? null : (
           <View className="flex w-full flex-row items-start justify-start gap-x-3">
-            <Text className={`text-sm font-bold leading-normal tracking-[0.015em] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+            <Text className={`text-sm font-bold leading-normal tracking-[0.015em] text-text-primary`}>
               {comment.user.username}
             </Text>
-            <Text className={`text-sm font-normal leading-normal ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`text-sm font-normal leading-normal text-text-secondary`}>
               {parseDate(comment.created_at)}
             </Text>
           </View>
         )}
-        <Text className={`text-sm font-normal leading-normal ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+        <Text className={`text-sm font-normal leading-normal text-text-primary`}>
           {comment.content}
         </Text>
       </View>
@@ -307,7 +307,7 @@ export default function PostDetailsScreen() {
 
   if (!post) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top", "bottom"]}>
+      <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "bottom"]}>
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
         </View>
@@ -330,14 +330,14 @@ export default function PostDetailsScreen() {
   const renderListHeader = () => (
     <View>
       {/* Header Bar */}
-      <View className={`flex items-center p-4 pb-2 flex-row ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+      <View className={`flex items-center p-4 pb-2 flex-row bg-surface-raised`}>
         <TouchableOpacity
           className="flex size-12 shrink-0 items-center justify-center"
           onPress={() => router.back()}
         >
           <ArrowLeft size={24} color={isDark ? "#f0f1f2" : "#000000"} />
         </TouchableOpacity>
-        <Text className={`text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+        <Text className={`text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12 text-text-primary`}>
           Post
         </Text>
       </View>
@@ -350,24 +350,24 @@ export default function PostDetailsScreen() {
         activeOpacity={0.7}
         accessibilityRole="button"
         accessibilityLabel={`View ${post.user?.username ?? "author"}'s profile`}
-        className={`flex flex-row gap-3 min-h-[64px] py-2 px-4 items-center ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+        className={`flex flex-row gap-3 min-h-[64px] py-2 px-4 items-center bg-surface-raised`}
       >
         <Avatar uri={post.user?.profile_picture_url} name={post.user?.username} size={48} />
         <View className="flex flex-col justify-center">
-          <Text className={`text-base font-bold leading-normal line-clamp-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className={`text-base font-bold leading-normal line-clamp-1 text-text-primary`}>
             {post.user.username}
           </Text>
         </View>
       </TouchableOpacity>
 
       {/* Caption */}
-      <Text className={`text-base font-normal leading-normal pb-3 pt-1 px-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+      <Text className={`text-base font-normal leading-normal pb-3 pt-1 px-4 text-text-primary`}>
         {post.caption}
       </Text>
 
       {/* Media — Instagram-style grid (max 5), tap any tile for fullscreen */}
       {postMedia.length > 0 && (
-        <View className={`flex w-full grow px-4 pb-3 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+        <View className={`flex w-full grow px-4 pb-3 bg-surface-raised`}>
           <PostMediaGrid media={postMedia} />
         </View>
       )}
@@ -383,22 +383,22 @@ export default function PostDetailsScreen() {
         <View className="flex items-stretch justify-between gap-4 rounded flex-row">
           <View className="flex flex-[2_2_0px] flex-col gap-4">
             <View className="flex flex-col gap-1">
-              <Text className={`text-sm font-normal leading-normal ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`text-sm font-normal leading-normal text-text-secondary`}>
                 Featured product
               </Text>
               <Text
                 numberOfLines={2}
-                className={`text-base font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+                className={`text-base font-bold leading-tight text-text-primary`}
               >
                 {sponsoredProduct.name}
               </Text>
-              <Text className={`text-sm font-normal leading-normal ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`text-sm font-normal leading-normal text-text-secondary`}>
                 {formatNaira(sponsoredProduct.price)}
               </Text>
             </View>
             <TouchableOpacity
               disabled={addingToCart}
-              className={`flex min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded h-8 px-4 flex-row-reverse w-fit ${addingToCart ? "opacity-60" : ""} ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+              className={`flex min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded h-8 px-4 flex-row-reverse w-fit ${addingToCart ? "opacity-60" : ""} bg-surface-sunken`}
               onPress={handleAddSponsoredToCart}
               accessibilityRole="button"
               accessibilityLabel={`Add ${sponsoredProduct.name} to cart`}
@@ -406,7 +406,7 @@ export default function PostDetailsScreen() {
               {addingToCart ? (
                 <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
               ) : (
-                <Text className={`text-sm font-medium leading-normal truncate ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                <Text className={`text-sm font-medium leading-normal truncate text-text-primary`}>
                   Add to Cart
                 </Text>
               )}
@@ -418,13 +418,13 @@ export default function PostDetailsScreen() {
               className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded flex-1"
             />
           ) : (
-            <View className={`flex-1 aspect-video rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`} />
+            <View className={`flex-1 aspect-video rounded bg-surface-sunken`} />
           )}
         </View>
       </TouchableOpacity>
       )}
 
-      <View className={`mx-4 pt-2 border-t ${isDark ? "border-[#46464e]" : "border-border"}`}>
+      <View className={`mx-4 pt-2 border-t border-border-strong`}>
         <Text className={`text-sm mb-1 ${isDark ? "text-[#aeb0b7]" : "text-text-secondary"}`}>
           {parseDate(post.created_at)}
         </Text>
@@ -444,7 +444,7 @@ export default function PostDetailsScreen() {
       </View>
 
       {/* Comments Header */}
-      <Text className={`text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+      <Text className={`text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4 text-text-primary`}>
         Comments
       </Text>
     </View>
@@ -470,11 +470,11 @@ export default function PostDetailsScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["top"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={0}
-        style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}
+        className="flex-1 bg-surface-page"
       >
         <View className="relative flex-1 flex-col justify-between" style={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}>
           <FlatList
@@ -492,18 +492,18 @@ export default function PostDetailsScreen() {
         />
 
           <View style={{ paddingBottom: keyboardVisible ? 0 : insets.bottom }}>
-            <View className={`px-4 py-2 border-t ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+            <View className={`px-4 py-2 border-t ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
               <View className="flex-row items-center gap-3">
                 <Avatar uri={myAvatarUri} name={myDisplayName} size={40} />
 
               {/* Input + Icons */}
-              <View className={`flex-1 flex-row items-center rounded px-3 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+              <View className={`flex-1 flex-row items-center rounded px-3 bg-surface-sunken`}>
                 {/* Text Input */}
                 <TextInput
                   ref={commentInputRef}
                   placeholder="Add a comment..."
                   placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
-                  className={`flex-1 text-base font-normal py-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+                  className={`flex-1 text-base font-normal py-2 text-text-primary`}
                   value={newComment}
                   onChangeText={setNewComment}
                   multiline

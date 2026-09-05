@@ -64,12 +64,12 @@ export default function PointsHistoryScreen() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}
+      className="flex-1 bg-surface-page"
       edges={["top", "bottom"]}
     >
       <View
         className={`flex-row items-center px-4 py-3 border-b ${
-          isDark ? "border-[#46464e]" : "border-border"
+          isDark ? "border-border-strong" : "border-border"
         }`}
       >
         <TouchableOpacity onPress={() => router.back()}>
@@ -77,7 +77,7 @@ export default function PointsHistoryScreen() {
         </TouchableOpacity>
         <Text
           className={`text-lg font-bold ml-2 ${
-            isDark ? "text-[#f0f1f2]" : "text-black"
+            isDark ? "text-text-primary" : "text-black"
           }`}
         >
           Points History
@@ -90,20 +90,20 @@ export default function PointsHistoryScreen() {
         renderItem={({ item }) => (
           <View
             className={`flex-row items-center justify-between px-6 py-4 border-b ${
-              isDark ? "border-[#46464e]" : "border-border"
+              isDark ? "border-border-strong" : "border-border"
             }`}
           >
             <View className="flex-1 pr-3">
               <Text
                 className={`font-bold text-sm ${
-                  isDark ? "text-[#f0f1f2]" : "text-black"
+                  isDark ? "text-text-primary" : "text-black"
                 }`}
               >
                 {reasonLabel(item.reason)}
               </Text>
               <Text
                 className={`text-xs mt-0.5 ${
-                  isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                  isDark ? "text-text-secondary" : "text-tertiary"
                 }`}
               >
                 {formatDate(item.created_at)} · balance {item.balance_after.toLocaleString()}
@@ -136,7 +136,7 @@ export default function PointsHistoryScreen() {
           ) : (
             <Text
               className={`text-center text-sm py-16 ${
-                isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                isDark ? "text-text-secondary" : "text-tertiary"
               }`}
             >
               No points yet.

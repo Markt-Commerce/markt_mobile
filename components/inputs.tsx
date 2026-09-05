@@ -49,7 +49,7 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
   return (
     <View className={`w-full ${label ? "mb-5" : ""}`}>
       {label ? (
-        <Text className={`mb-2 text-xs font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+        <Text className={`mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary`}>
           {label}
         </Text>
       ) : null}
@@ -65,8 +65,8 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
               placeholder={placeholder}
               placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
               secureTextEntry={secureTextEntry}
-              className={`w-full rounded ${sizeClass} px-4 text-base ${isDark ? "text-[#f0f1f2] bg-[#1a1c1d]" : "text-secondary bg-background"} border ${
-                hasError ? "border-error" : isDark ? "border-[#46464e] focus:border-[#f0f1f2]" : "border-border focus:border-secondary"
+              className={`w-full rounded ${sizeClass} px-4 text-base ${isDark ? "text-text-primary bg-surface-raised" : "text-secondary bg-background"} border ${
+                hasError ? "border-error" : isDark ? "border-border-strong focus:border-[#f0f1f2]" : "border-border focus:border-secondary"
               }`}
               multiline={multiline}
               numberOfLines={numberOfLines}
@@ -112,8 +112,8 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
         render={({ field: { onChange, onBlur, value: fieldValue } }) => (
           <>
             <View
-              className={`flex-row items-center rounded h-12 px-4 border ${isDark ? "bg-[#1a1c1d]" : "bg-background"} ${
-                hasError ? "border-error" : isFocused ? (isDark ? "border-[#f0f1f2]" : "border-secondary") : isDark ? "border-[#46464e]" : "border-border"
+              className={`flex-row items-center rounded h-12 px-4 border bg-surface-raised ${
+                hasError ? "border-error" : isFocused ? (isDark ? "border-[#f0f1f2]" : "border-secondary") : isDark ? "border-border-strong" : "border-border"
               }`}
             >
               <TextInput
@@ -127,7 +127,7 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
                 placeholder={inputProps.placeholder}
                 placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
                 secureTextEntry={!visible}
-                className={`flex-1 text-base ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}
+                className={`flex-1 text-base ${isDark ? "text-text-primary" : "text-secondary"}`}
                 keyboardType={inputProps.keyboardType ?? "default"}
                 textContentType="password"
                 accessibilityLabel={inputProps.placeholder}
@@ -231,7 +231,7 @@ export function OTPInput({ value, onChange, error, digits = 6 }: OTPInputProps) 
                 ref={(ref) => {
                   inputRefs.current[i] = ref;
                 }}
-                className={`text-2xl font-bold text-center w-full h-full ${isDark ? "text-[#f0f1f2]" : "text-white"}`}
+                className={`text-2xl font-bold text-center w-full h-full ${isDark ? "text-text-primary" : "text-white"}`}
                 keyboardType="number-pad"
                 maxLength={1}
                 value={digitArray[i]}

@@ -27,12 +27,12 @@ export default function BadgeDetailScreen() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}
+      className="flex-1 bg-surface-page"
       edges={["top", "bottom"]}
     >
       <View
         className={`flex-row items-center px-4 py-3 border-b ${
-          isDark ? "border-[#46464e]" : "border-border"
+          isDark ? "border-border-strong" : "border-border"
         }`}
       >
         <TouchableOpacity onPress={() => router.back()}>
@@ -40,7 +40,7 @@ export default function BadgeDetailScreen() {
         </TouchableOpacity>
         <Text
           className={`text-lg font-bold ml-2 ${
-            isDark ? "text-[#f0f1f2]" : "text-black"
+            isDark ? "text-text-primary" : "text-black"
           }`}
         >
           Badge
@@ -54,7 +54,7 @@ export default function BadgeDetailScreen() {
       ) : !badge ? (
         <Text
           className={`text-center text-sm py-16 ${
-            isDark ? "text-[#c6c5cf]" : "text-tertiary"
+            isDark ? "text-text-secondary" : "text-tertiary"
           }`}
         >
           Badge not found.
@@ -63,7 +63,7 @@ export default function BadgeDetailScreen() {
         <View className="items-center px-8 pt-10">
           <View
             className={`w-28 h-28 rounded-full items-center justify-center ${
-              isDark ? "bg-[#2f3132]" : "bg-surface"
+              isDark ? "bg-surface-sunken" : "bg-surface"
             }`}
             style={{ opacity: badge.earned ? 1 : 0.55 }}
           >
@@ -81,7 +81,7 @@ export default function BadgeDetailScreen() {
 
           <Text
             className={`font-bold text-2xl mt-6 text-center ${
-              isDark ? "text-[#f0f1f2]" : "text-black"
+              isDark ? "text-text-primary" : "text-black"
             }`}
           >
             {badge.name}
@@ -97,7 +97,7 @@ export default function BadgeDetailScreen() {
           ) : (
             <Text
               className={`font-bold text-sm mt-2 ${
-                isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                isDark ? "text-text-secondary" : "text-tertiary"
               }`}
             >
               Locked
@@ -107,7 +107,7 @@ export default function BadgeDetailScreen() {
           {!!badge.description && (
             <Text
               className={`text-base text-center mt-4 leading-6 ${
-                isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                isDark ? "text-text-secondary" : "text-tertiary"
               }`}
             >
               {badge.description}
@@ -118,14 +118,14 @@ export default function BadgeDetailScreen() {
             <View className="w-full mt-8">
               <Text
                 className={`font-bold text-xs mb-2 ${
-                  isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                  isDark ? "text-text-secondary" : "text-tertiary"
                 }`}
               >
                 {Math.round(badge.progress * 100)}% there
               </Text>
               <View
                 className={`h-2 rounded overflow-hidden ${
-                  isDark ? "bg-[#2f3132]" : "bg-surface"
+                  isDark ? "bg-surface-sunken" : "bg-surface"
                 }`}
               >
                 <View

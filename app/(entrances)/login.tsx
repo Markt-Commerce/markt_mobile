@@ -126,7 +126,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
+    <SafeAreaView className={`flex-1 ${isDark ? "bg-surface-sunken" : "bg-white"}`}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -142,7 +142,7 @@ export default function LoginScreen() {
             <View className="flex-row items-center mb-8">
               <TouchableOpacity
                 onPress={() => router.back()}
-                className={`h-10 w-10 items-center justify-center rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
+                className={`h-10 w-10 items-center justify-center rounded border ${isDark ? "bg-surface-raised border-border-strong" : "bg-surface border-border"}`}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <ArrowLeft size={20} color={iconColor} />
@@ -151,16 +151,16 @@ export default function LoginScreen() {
 
             {/* Title */}
             <View className="mb-8">
-              <Text className={`text-[32px] font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`text-[32px] font-bold leading-tight text-text-primary`}>
                 Welcome{"\n"}back
               </Text>
-              <Text className={`text-base mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`text-base mt-2 text-text-secondary`}>
                 Sign in to continue your journey.
               </Text>
             </View>
 
             {/* Panel */}
-            <View className={`rounded border px-5 py-8 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+            <View className={`rounded border px-5 py-8 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
               {/* Error banner */}
               {error ? (
                 <View className="mb-6 rounded bg-error-bg px-4 py-3 border border-error/10">
@@ -170,7 +170,7 @@ export default function LoginScreen() {
 
               {/* Email */}
               <View className="mb-6">
-                <Text className={`mb-2 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Email Address</Text>
+                <Text className={`mb-2 text-sm font-bold ${isDark ? "text-text-primary" : "text-secondary"}`}>Email Address</Text>
                 <Input
                   placeholder="Enter your email"
                   control={control}
@@ -185,7 +185,7 @@ export default function LoginScreen() {
 
               {/* Password — eye toggle */}
               <View className="mb-2">
-                <Text className={`mb-2 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Password</Text>
+                <Text className={`mb-2 text-sm font-bold ${isDark ? "text-text-primary" : "text-secondary"}`}>Password</Text>
                 <PasswordInput
                   placeholder="Enter your password"
                   control={control}
@@ -197,21 +197,21 @@ export default function LoginScreen() {
               {/* Forgot password */}
               <View className="items-end mb-8">
                 <Link href="/forgotPassword">
-                  <Text className={`text-sm underline ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Forgot Password?</Text>
+                  <Text className={`text-sm underline text-text-secondary`}>Forgot Password?</Text>
                 </Link>
               </View>
 
               {/* Role toggle */}
               <View className="mb-10">
-                <Text className={`mb-3 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Continue as</Text>
-                <View className={`flex-row items-center rounded p-1 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+                <Text className={`mb-3 text-sm font-bold ${isDark ? "text-text-primary" : "text-secondary"}`}>Continue as</Text>
+                <View className={`flex-row items-center rounded p-1 bg-surface-sunken`}>
                   <TouchableOpacity
                     onPress={() => setRole("buyer")}
                     accessibilityRole="button"
                     accessibilityState={{ selected: role === "buyer" }}
                     className={`flex-1 rounded py-2.5 items-center ${role === "buyer" ? "bg-primary shadow-sm" : "shadow-none"}`}
                   >
-                    <Text className={`font-bold text-sm ${role === "buyer" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                    <Text className={`font-bold text-sm ${role === "buyer" ? "text-white" : isDark ? "text-text-secondary" : "text-tertiary"}`}>
                       Buyer
                     </Text>
                   </TouchableOpacity>
@@ -222,7 +222,7 @@ export default function LoginScreen() {
                     accessibilityState={{ selected: role === "seller" }}
                     className={`flex-1 rounded py-2.5 items-center ${role === "seller" ? "bg-primary shadow-sm" : "shadow-none"}`}
                   >
-                    <Text className={`font-bold text-sm ${role === "seller" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                    <Text className={`font-bold text-sm ${role === "seller" ? "text-white" : isDark ? "text-text-secondary" : "text-tertiary"}`}>
                       Seller
                     </Text>
                   </TouchableOpacity>
@@ -241,11 +241,11 @@ export default function LoginScreen() {
               {/* Sign up */}
               <View className="mt-8 items-center">
                 <Text
-                  className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                  className={`text-sm text-text-secondary`}
                 >
                   Don’t have an account?{" "}
                   <Text 
-                    className={`font-bold underline ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}
+                    className={`font-bold underline ${isDark ? "text-text-primary" : "text-secondary"}`}
                     onPress={() => router.navigate("/signup")}
                   >
                     Sign up

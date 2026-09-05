@@ -177,10 +177,10 @@ function MyCartTab() {
           <View className="mb-5">
             <ShoppingCart size={44} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={1.5} />
           </View>
-        <Text className={`text-[22px] font-bold text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+        <Text className={`text-[22px] font-bold text-center text-text-primary`}>
           Your cart is empty
         </Text>
-        <Text className={`text-[15px] text-center mt-2 leading-[21px] ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
+        <Text className={`text-[15px] text-center mt-2 leading-[21px] text-text-muted`}>
           Add items from the feed to get started.
         </Text>
         <TouchableOpacity
@@ -202,7 +202,7 @@ function MyCartTab() {
       contentContainerStyle={{ paddingBottom: 24 }}
     >
       <View className="px-4">
-        <View className={isDark ? "bg-[#1a1c1d]" : "bg-white"}>
+        <View className={isDark ? "bg-surface-raised" : "bg-white"}>
           {cart.items.map((item, idx) => {
             const image = item.product?.images?.[0]?.media?.original_url ?? "";
             const name = item.product?.name ?? "Product";
@@ -211,23 +211,23 @@ function MyCartTab() {
             return (
               <View
                 key={item.id}
-                className={`px-4 py-3 ${idx !== cart.items!.length - 1 ? (isDark ? "border-b border-[#46464e]" : "border-b border-border") : ""}`}
+                className={`px-4 py-3 ${idx !== cart.items!.length - 1 ? (isDark ? "border-b border-border-strong" : "border-b border-border") : ""}`}
               >
                 <View className="flex-row gap-3">
-                  <Image source={{ uri: image }} className={`w-16 h-16 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`} />
+                  <Image source={{ uri: image }} className={`w-16 h-16 rounded bg-surface-sunken`} />
                   <View className="flex-1">
-                    <Text className={`font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>{name}</Text>
+                    <Text className={`font-semibold text-text-primary`} numberOfLines={1}>{name}</Text>
                     <View className="mt-2 flex-row items-center justify-between">
-                      <Text className={`font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(price)}</Text>
+                      <Text className={`font-semibold text-text-primary`}>{formatMoney(price)}</Text>
                       <View className="flex-row items-center gap-1.5">
                         <TouchableOpacity
                           onPress={() => handleQuantityChange(item, item.quantity - 1)}
-                          className={`w-8 h-8 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                          className={`w-8 h-8 rounded items-center justify-center bg-surface-sunken`}
                         >
-                          <Text className={`text-base font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>−</Text>
+                          <Text className={`text-base font-bold text-text-primary`}>−</Text>
                         </TouchableOpacity>
-                        <View className={`min-w-[36px] h-8 rounded border items-center justify-center px-2 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-bg-elevated border-border"}`}>
-                          <Text className={`font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.quantity}</Text>
+                        <View className={`min-w-[36px] h-8 rounded border items-center justify-center px-2 ${isDark ? "bg-surface-raised border-border-strong" : "bg-bg-elevated border-border"}`}>
+                          <Text className={`font-semibold text-text-primary`}>{item.quantity}</Text>
                         </View>
                         <TouchableOpacity
                           onPress={() => handleQuantityChange(item, item.quantity + 1)}
@@ -237,15 +237,15 @@ function MyCartTab() {
                         </TouchableOpacity>
                         <TouchableOpacity
                           onPress={() => handleRemove(item)}
-                          className={`ml-1 w-8 h-8 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                          className={`ml-1 w-8 h-8 rounded items-center justify-center bg-surface-sunken`}
                         >
                           <Trash2 size={16} color={isDark ? "#f0f1f2" : "#000000"} />
                         </TouchableOpacity>
                       </View>
                     </View>
                     <View className="mt-2 flex-row justify-between">
-                      <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Line total</Text>
-                      <Text className={`text-xs font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(lineTotal)}</Text>
+                      <Text className={`text-xs text-text-secondary`}>Line total</Text>
+                      <Text className={`text-xs font-semibold text-text-primary`}>{formatMoney(lineTotal)}</Text>
                     </View>
                   </View>
                 </View>
@@ -266,27 +266,27 @@ function MyCartTab() {
           updateAddress={shipping.updateAddress}
           isDark={isDark}
         />
-        <View className={`rounded border p-4 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-          <Text className={`text-base font-extrabold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Order Summary</Text>
+        <View className={`rounded border p-4 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
+          <Text className={`text-base font-extrabold mb-2 text-text-primary`}>Order Summary</Text>
           <View className="flex-row justify-between py-1.5">
-            <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Subtotal</Text>
-            <Text className={`text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(summary?.subtotal)}</Text>
+            <Text className={`text-sm text-text-secondary`}>Subtotal</Text>
+            <Text className={`text-sm text-text-primary`}>{formatMoney(summary?.subtotal)}</Text>
           </View>
           <View className="flex-row justify-between py-1.5">
-            <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Discount</Text>
-            <Text className={`text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>−{formatMoney(summary?.discount)}</Text>
+            <Text className={`text-sm text-text-secondary`}>Discount</Text>
+            <Text className={`text-sm text-text-primary`}>−{formatMoney(summary?.discount)}</Text>
           </View>
           <View className={`h-px my-2 ${isDark ? "bg-[#46464e]" : "bg-border-light"}`} />
           <View className="flex-row justify-between py-1.5">
-            <Text className={`text-sm font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Total</Text>
-            <Text className={`text-sm font-extrabold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(summary?.total)}</Text>
+            <Text className={`text-sm font-semibold text-text-primary`}>Total</Text>
+            <Text className={`text-sm font-extrabold text-text-primary`}>{formatMoney(summary?.total)}</Text>
           </View>
           <TouchableOpacity
             onPress={handleCheckout}
             disabled={processing || !isShippingAddressUsable(shipping.address)}
-            className={`mt-4 h-12 rounded items-center justify-center ${processing || !isShippingAddressUsable(shipping.address) ? (isDark ? "bg-[#2f3132]" : "bg-surface") : "bg-primary"}`}
+            className={`mt-4 h-12 rounded items-center justify-center ${processing || !isShippingAddressUsable(shipping.address) ? (isDark ? "bg-surface-sunken" : "bg-surface") : "bg-primary"}`}
           >
-            <Text className={processing || !isShippingAddressUsable(shipping.address) ? (isDark ? "text-[#c6c5cf]" : "text-tertiary") : "text-white font-semibold"}>
+            <Text className={processing || !isShippingAddressUsable(shipping.address) ? (isDark ? "text-text-secondary" : "text-tertiary") : "text-white font-semibold"}>
               {processing ? "Processing…" : "Proceed to Checkout"}
             </Text>
           </TouchableOpacity>
@@ -319,7 +319,7 @@ function BuyerOrdersTabs({
 
   return (
     <View className="flex-1">
-      <View className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+      <View className={`flex-1 bg-surface-raised`}>
         <OrdersList
           key={activeTab}
           fetchOrders={fetchOrders}
@@ -340,7 +340,7 @@ function SellerOrdersTab({ isDark }: { isDark: boolean }) {
 
   return (
     <View className="flex-1">
-      <View className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+      <View className={`flex-1 bg-surface-raised`}>
         <OrdersList
           fetchOrders={fetchOrders}
           isSeller
@@ -373,22 +373,22 @@ export default function OrdersScreen() {
       : [{ id: "ongoing" as const, label: "Orders" }];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }} edges={["left", "right", "bottom"]}>
-      <View className={`px-4 pt-4 pb-2 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
+      <View className={`px-4 pt-4 pb-2 bg-surface-raised`}>
         <View className=" mb-3">
-          <Text className={`text-xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Orders</Text>
+          <Text className={`text-xl font-bold text-text-primary`}>Orders</Text>
           <View className="w-10" />
         </View>
 
         {/* Segmented control (Chowdeck-style) */}
-        <View className={`flex-row rounded p-1 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+        <View className={`flex-row rounded p-1 bg-surface-sunken`}>
           {tabs.map((t) => (
             <TouchableOpacity
               key={t.id}
               onPress={() => setActiveTab(t.id)}
-              className={`flex-1 py-2 rounded items-center ${activeTab === t.id ? (isDark ? "bg-[#1a1c1d]" : "bg-white") : ""}`}
+              className={`flex-1 py-2 rounded items-center ${activeTab === t.id ? (isDark ? "bg-surface-raised" : "bg-white") : ""}`}
             >
-              <Text className={`text-sm font-semibold ${activeTab === t.id ? (isDark ? "text-[#f0f1f2]" : "text-black") : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`text-sm font-semibold ${activeTab === t.id ? (isDark ? "text-text-primary" : "text-black") : isDark ? "text-text-secondary" : "text-tertiary"}`}>
                 {t.label}
               </Text>
             </TouchableOpacity>

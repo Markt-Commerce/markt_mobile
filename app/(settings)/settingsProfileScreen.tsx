@@ -115,9 +115,9 @@ export default function SettingsProfileScreen() {
   };
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`} edges={["top", "left", "right", "bottom"]}>
+    <SafeAreaView className={`flex-1 bg-surface-raised`} edges={["top", "left", "right", "bottom"]}>
       <ScrollView
-        className={isDark ? "flex-1 bg-[#1a1c1d]" : "flex-1 bg-white"}
+        className={isDark ? "flex-1 bg-surface-raised" : "flex-1 bg-white"}
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
@@ -126,7 +126,7 @@ export default function SettingsProfileScreen() {
         {/* Centered identity, no card. This was a bordered box holding three
             more bordered chips -- four outlines stacked in one header. The
             tinted band does the separating, so nothing needs an outline. */}
-        <View className={`items-center px-6 pt-4 pb-6 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+        <View className={`items-center px-6 pt-4 pb-6 bg-surface-raised`}>
           <Avatar
             uri={profile?.profile_picture_url}
             name={displayName}
@@ -134,13 +134,13 @@ export default function SettingsProfileScreen() {
             className="rounded-full"
           />
           <Text
-            className={`font-bold text-[22px] tracking-tight mt-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+            className={`font-bold text-[22px] tracking-tight mt-3 text-text-primary`}
             numberOfLines={1}
           >
             {displayName}
           </Text>
           <Text
-            className={`text-[14px] mt-0.5 ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}
+            className={`text-[14px] mt-0.5 text-text-muted`}
             numberOfLines={1}
           >
             @{profile?.username ?? user?.email ?? "user"}
@@ -154,13 +154,13 @@ export default function SettingsProfileScreen() {
                 {role}
               </Text>
             </View>
-            <View className={`px-3 py-1.5 rounded-full ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}>
-              <Text className={`font-bold text-[11px] uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-[#52525B]"}`}>
+            <View className={`px-3 py-1.5 rounded-full bg-surface-sunken`}>
+              <Text className={`font-bold text-[11px] uppercase tracking-wider text-text-secondary`}>
                 {theme}
               </Text>
             </View>
-            <View className={`px-3 py-1.5 rounded-full ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}>
-              <Text className={`font-bold text-[11px] uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-[#52525B]"}`}>
+            <View className={`px-3 py-1.5 rounded-full bg-surface-sunken`}>
+              <Text className={`font-bold text-[11px] uppercase tracking-wider text-text-secondary`}>
                 {language}
               </Text>
             </View>
@@ -282,10 +282,10 @@ export default function SettingsProfileScreen() {
             activeOpacity={0.7}
             accessibilityRole="button"
             accessibilityLabel="Sign out"
-            className={`h-13 py-3.5 rounded-xl items-center justify-center flex-row gap-2 ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}
+            className={`h-13 py-3.5 rounded-xl items-center justify-center flex-row gap-2 bg-surface-sunken`}
           >
             <LogOut size={18} color={isDark ? "#f0f1f2" : "#3F3F46"} strokeWidth={1.9} />
-            <Text className={`font-semibold text-[15px] ${isDark ? "text-[#f0f1f2]" : "text-[#3F3F46]"}`}>
+            <Text className={`font-semibold text-[15px] ${isDark ? "text-text-primary" : "text-[#3F3F46]"}`}>
               Sign out
             </Text>
           </TouchableOpacity>

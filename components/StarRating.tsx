@@ -69,7 +69,7 @@ export function StarRating({
       })}
       {showValue ? (
         <Text
-          className={`text-[13px] ml-1.5 ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+          className={`text-[13px] ml-1.5 ${dark ? "text-text-secondary" : "text-tertiary"}`}
         >
           {safe.toFixed(1)}
           {count != null ? ` (${count})` : ""}

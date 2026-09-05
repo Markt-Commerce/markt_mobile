@@ -16,13 +16,13 @@ const STATUS_BG: Record<string, [string, string]> = {
   positive: ['bg-[#E7F6EC]', 'bg-[#1E3A28]'],
   attention: ['bg-[#FEF3E2]', 'bg-[#3A2E18]'],
   negative: ['bg-[#FDECEC]', 'bg-[#3A1E1E]'],
-  neutral: ['bg-[#F4F4F5]', 'bg-[#2f3132]'],
+  neutral: ['bg-[#F4F4F5]', 'bg-surface-sunken'],
 };
 const STATUS_FG: Record<string, [string, string]> = {
   positive: ['text-[#0F7B3F]', 'text-[#7BD9A2]'],
   attention: ['text-[#A15C00]', 'text-[#F0B667]'],
   negative: ['text-[#C42B2B]', 'text-[#F09A9A]'],
-  neutral: ['text-[#52525B]', 'text-[#c6c5cf]'],
+  neutral: ['text-[#52525B]', 'text-text-secondary'],
 };
 import { deleteProduct } from '../../services/sections/product';
 import { SellerAnalyticsOverview, SellerAnalyticsTimeseries } from '../../models/analytics';
@@ -308,19 +308,19 @@ export default function SellerDashboard() {
       activeOpacity={0.6}
       accessibilityRole="button"
       accessibilityLabel={`${item.product?.name ?? "Order"}, ${formatStatus(item.status)}. Open to manage.`}
-      className={`px-4 py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+      className={`px-4 py-4 border-b ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}
     >
       <View className="flex-row justify-between items-start">
         <View style={{ flex: 1 }}>
-          <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.product?.name}</Text>
-          <Text className={`text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{formatCurrency(item.price)}</Text>
-          <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Order #: {item.order.order_number ?? item.order_id}</Text>
+          <Text className={`font-bold text-base text-text-primary`}>{item.product?.name}</Text>
+          <Text className={`text-xs mt-1 text-text-secondary`}>{formatCurrency(item.price)}</Text>
+          <Text className={`text-xs text-text-secondary`}>Order #: {item.order.order_number ?? item.order_id}</Text>
           <View className="flex-row items-center mt-3">
             <Image
               source={{ uri: item.order?.buyer?.profile_picture ?? item.order?.buyer?.profile_picture_url ?? undefined }}
-              className={`w-6 h-6 rounded-full ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+              className={`w-6 h-6 rounded-full bg-surface-sunken`}
             />
-            <Text className={`text-xs ml-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.order?.buyer?.buyername ?? item.order?.buyer?.username ?? "Buyer"}</Text>
+            <Text className={`text-xs ml-2 text-text-primary`}>{item.order?.buyer?.buyername ?? item.order?.buyer?.username ?? "Buyer"}</Text>
           </View>
         </View>
 
@@ -345,17 +345,17 @@ export default function SellerDashboard() {
   );
 
   const renderProductItem = ({ item }: { item: any }) => (
-    <View className={`flex-row items-center justify-between px-4 py-4 border-b ${isDark ? "border-[#46464e]" : "border-border"}`}>
+    <View className={`flex-row items-center justify-between px-4 py-4 border-b border-border-strong`}>
       <View className="flex-1 pr-3">
-        <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>{item.name}</Text>
-        <Text className={`text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Status: {item.status}</Text>
-        <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Price: {formatCurrency(item.price)}, Stock: {item.stock}</Text>
+        <Text className={`font-bold text-base text-text-primary`} numberOfLines={1}>{item.name}</Text>
+        <Text className={`text-xs mt-1 text-text-secondary`}>Status: {item.status}</Text>
+        <Text className={`text-xs text-text-secondary`}>Price: {formatCurrency(item.price)}, Stock: {item.stock}</Text>
       </View>
 
       <TouchableOpacity
         accessibilityLabel={`delete-${item.id || item.name}`}
         onPress={() => handleDeleteProduct(item.id)}
-        className={`rounded px-4 h-9 items-center justify-center border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+        className={`rounded px-4 h-9 items-center justify-center border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
       >
         <Text className="text-error font-bold text-xs">Delete</Text>
       </TouchableOpacity>
@@ -363,15 +363,15 @@ export default function SellerDashboard() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
       <ScrollView
-        className={isDark ? "bg-[#1a1c1d]" : "bg-white"}
+        className={isDark ? "bg-surface-raised" : "bg-white"}
         contentContainerStyle={{ paddingBottom: 60 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "#f0f1f2" : "#000000"} />}
       >
         {/* Time selector (7d / 30d / 90d) + Export menu */}
         <View className="flex-row items-center justify-between px-6 py-4">
-          <View className={`flex-row rounded p-1 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
+          <View className={`flex-row rounded p-1 border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}>
             {([7, 30, 90] as const).map((d) => (
               <TouchableOpacity
                 key={d}
@@ -380,7 +380,7 @@ export default function SellerDashboard() {
                 accessibilityLabel={`${d} days`}
                 accessibilityState={{ selected: windowDays === d }}
               >
-                <Text className={`text-xs font-bold ${windowDays === d ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                <Text className={`text-xs font-bold ${windowDays === d ? "text-white" : isDark ? "text-text-secondary" : "text-tertiary"}`}>
                   {d}d
                 </Text>
               </TouchableOpacity>
@@ -389,21 +389,21 @@ export default function SellerDashboard() {
         </View>
 
         {/* Period label */}
-        <Text className={`text-xs px-6 -mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{periodLabel}</Text>
+        <Text className={`text-xs px-6 -mt-1 text-text-secondary`}>{periodLabel}</Text>
 
         {/* Revenue leads on its own, then the supporting numbers in a row.
             This was four equal bordered boxes with p-6 inside each, and a stray
             4px black bar down the left of one of them — so nothing led, and the
             accent read as a rendering artefact rather than emphasis. */}
         <View className="px-5 pt-4">
-          <Text className={`text-[11px] font-bold uppercase tracking-[1.5px] ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
+          <Text className={`text-[11px] font-bold uppercase tracking-[1.5px] text-text-muted`}>
             Revenue
           </Text>
-          <Text className={`text-[34px] font-bold mt-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className={`text-[34px] font-bold mt-1 text-text-primary`}>
             {formatCurrency(analyticsOverview?.revenue_30d)}
           </Text>
           <View className="flex-row items-center mt-1">
-            <Text className={`text-[13px] ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
+            <Text className={`text-[13px] text-text-muted`}>
               {periodLabel}
             </Text>
             {trendPct !== null && (analyticsOverview?.revenue_30d ?? 0) > 0 ? (
@@ -416,14 +416,14 @@ export default function SellerDashboard() {
             ) : null}
           </View>
           {(analyticsOverview?.revenue_30d ?? 0) === 0 ? (
-            <Text className={`text-[13px] mt-1.5 ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
+            <Text className={`text-[13px] mt-1.5 text-text-muted`}>
               No sales yet — share a product to get started.
             </Text>
           ) : null}
         </View>
 
         <View
-          className={`flex-row mx-5 mt-5 rounded-2xl ${isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]"}`}
+          className={`flex-row mx-5 mt-5 rounded-2xl ${isDark ? "bg-surface-sunken" : "bg-[#F7F7F8]"}`}
         >
           {[
             { label: "Orders", value: String(analyticsOverview?.orders_30d ?? 0) },
@@ -433,13 +433,13 @@ export default function SellerDashboard() {
             <View
               key={stat.label}
               className={`flex-1 py-4 items-center ${i > 0 ? "border-l" : ""} ${
-                isDark ? "border-[#46464e]" : "border-[#E4E4E7]"
+                isDark ? "border-border-strong" : "border-[#E4E4E7]"
               }`}
             >
-              <Text className={`text-[20px] font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`text-[20px] font-bold text-text-primary`}>
                 {stat.value}
               </Text>
-              <Text className={`text-[12px] mt-0.5 ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
+              <Text className={`text-[12px] mt-0.5 text-text-muted`}>
                 {stat.label}
               </Text>
             </View>
@@ -460,9 +460,9 @@ export default function SellerDashboard() {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => nicheFormRef.current?.expand()}
-            className={`mt-3 rounded h-12 items-center justify-center border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+            className={`mt-3 rounded h-12 items-center justify-center border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
           >
-            <Text className={`font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Community</Text>
+            <Text className={`font-bold text-sm text-text-primary`}>Create Community</Text>
           </TouchableOpacity>
         </View>
 
@@ -471,35 +471,35 @@ export default function SellerDashboard() {
           <TouchableOpacity
             accessibilityLabel="orders-quicknav"
             onPress={() => router.push("/(tabs)/sellerOrders")}
-            className={`flex-row items-center rounded h-12 px-6 ${pendingOrderCount > 0 ? "bg-primary border border-primary" : (isDark ? "border-[#46464e] bg-[#2f3132]" : "border border-border bg-white")}`}
+            className={`flex-row items-center rounded h-12 px-6 ${pendingOrderCount > 0 ? "bg-primary border border-primary" : (isDark ? "border-border-strong bg-surface-sunken" : "border border-border bg-white")}`}
           >
-            <Text className={`font-bold text-sm ${pendingOrderCount > 0 ? "text-white" : (isDark ? "text-[#f0f1f2]" : "text-black")}`}>Orders</Text>
+            <Text className={`font-bold text-sm ${pendingOrderCount > 0 ? "text-white" : (isDark ? "text-text-primary" : "text-black")}`}>Orders</Text>
             {pendingOrderCount > 0 && (
-              <View className={`ml-2 min-w-[20px] h-5 rounded items-center justify-center px-1.5 ${isDark ? "bg-[#1a1c1d]" : "bg-primary"}`}>
+              <View className={`ml-2 min-w-[20px] h-5 rounded items-center justify-center px-1.5 ${isDark ? "bg-surface-raised" : "bg-primary"}`}>
                 <Text className={`${isDark ? "text-primary" : "text-white"} text-[10px] font-bold`}>{pendingOrderCount}</Text>
               </View>
             )}
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push("/(tabs)/messages")}
-            className={`rounded h-12 px-6 items-center justify-center border ${isDark ? "border-[#46464e] bg-[#2f3132]" : "border border-border bg-white"}`}
+            className={`rounded h-12 px-6 items-center justify-center border ${isDark ? "border-border-strong bg-surface-sunken" : "border border-border bg-white"}`}
           >
-            <Text className={`font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Chats</Text>
+            <Text className={`font-bold text-sm text-text-primary`}>Chats</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push("/(tabs)/requests")}
-            className={`rounded h-12 px-6 items-center justify-center border ${isDark ? "border-[#46464e] bg-[#2f3132]" : "border border-border bg-white"}`}
+            className={`rounded h-12 px-6 items-center justify-center border ${isDark ? "border-border-strong bg-surface-sunken" : "border border-border bg-white"}`}
           >
-            <Text className={`font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Requests</Text>
+            <Text className={`font-bold text-sm text-text-primary`}>Requests</Text>
           </TouchableOpacity>
         </View>
 
         {/* Sales trends card */}
         <View className="px-6 py-6">
-          <View className={`rounded border p-6 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+          <View className={`rounded border p-6 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
             {/* The figure and trend now lead the screen; repeating them here
                 just made the same number appear twice. */}
-            <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Sales trends</Text>
+            <Text className={`font-bold text-base text-text-primary`}>Sales trends</Text>
             <View className="py-6">
               <LineChart
                 data={(analyticsTimeseries && analyticsTimeseries.series && analyticsTimeseries.series.length > 0) ? {
@@ -533,13 +533,13 @@ export default function SellerDashboard() {
 
         {/* Recent Orders card */}
         <View className="px-6 pt-4">
-          <Text className={`text-xl font-bold px-1 pb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Recent Orders</Text>
+          <Text className={`text-xl font-bold px-1 pb-4 text-text-primary`}>Recent Orders</Text>
           {loading && !sellerRecentOrders.length ? (
-            <Text className={`text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading recent orders...</Text>
+            <Text className={`text-sm px-1 text-text-secondary`}>Loading recent orders...</Text>
           ) : sellerRecentOrders.length === 0 ? (
-            <Text className={`text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No recent orders</Text>
+            <Text className={`text-sm px-1 text-text-secondary`}>No recent orders</Text>
           ) : (
-            <View className={`rounded border overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+            <View className={`rounded border overflow-hidden ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
               <FlatList
                 data={sellerRecentOrders}
                 keyExtractor={(it) => String(it.id)}
@@ -553,7 +553,7 @@ export default function SellerDashboard() {
 
         {/* Low stock */}
         <View className="px-5 pt-8">
-          <Text className={`text-[17px] font-bold pb-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Stock</Text>
+          <Text className={`text-[17px] font-bold pb-3 text-text-primary`}>Stock</Text>
 
           {/* The container only turns red when something is actually wrong.
               "No low stock items" is good news, and it was being rendered as a
@@ -563,15 +563,15 @@ export default function SellerDashboard() {
             className={`rounded-xl overflow-hidden ${
               sellerInventory.filter((item) => (item.stock ?? 0) < 5).length === 0
                 ? isDark
-                  ? "bg-[#2f3132]"
+                  ? "bg-surface-sunken"
                   : "bg-[#F7F7F8]"
                 : isDark
-                  ? "bg-[#2f3132] border border-[#ba1a1a]"
+                  ? "bg-surface-sunken border border-[#ba1a1a]"
                   : "bg-error-bg border border-error"
             }`}
           >
             {sellerInventory.filter((item) => (item.stock ?? 0) < 5).length === 0 ? (
-              <Text className={`text-[14px] px-4 py-4 ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
+              <Text className={`text-[14px] px-4 py-4 text-text-muted`}>
                 Everything's in stock.
               </Text>
             ) : (
@@ -591,12 +591,12 @@ export default function SellerDashboard() {
                         <Text className="text-error font-bold text-xs uppercase tracking-wider">Low stock</Text>
                       </View>
 
-                      <Text className={`font-bold text-base mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{a.name}</Text>
-                      <Text className={`text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Last Updated: {formatDate(a.created_at)}</Text>
-                      <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Stock Left: {a.stock}</Text>
+                      <Text className={`font-bold text-base mt-2 text-text-primary`}>{a.name}</Text>
+                      <Text className={`text-xs mt-1 text-text-secondary`}>Last Updated: {formatDate(a.created_at)}</Text>
+                      <Text className={`text-xs text-text-secondary`}>Stock Left: {a.stock}</Text>
 
                       {/* Visual urgency bar*/}
-                      <View className={`mt-3 h-1.5 rounded overflow-hidden ${isDark ? "bg-[#1a1c1d]" : "bg-error/10"}`}>
+                      <View className={`mt-3 h-1.5 rounded overflow-hidden ${isDark ? "bg-surface-raised" : "bg-error/10"}`}>
                         <View
                           style={{ width: `${Math.min(Number(a.stock ?? 0), 20) * 5}%` }}
                           className="h-1.5 bg-error"
@@ -605,7 +605,7 @@ export default function SellerDashboard() {
                     </View>
 
                     {/* Badge */}
-                    <View className={`rounded px-3 py-1 border ${isDark ? "bg-[#1a1c1d] border-[#ba1a1a]" : "bg-white border-error"}`}>
+                    <View className={`rounded px-3 py-1 border ${isDark ? "bg-surface-raised border-[#ba1a1a]" : "bg-white border-error"}`}>
                       <Text className="text-error font-bold text-[10px] uppercase tracking-wider">Action needed</Text>
                     </View>
                   </View>
@@ -617,15 +617,15 @@ export default function SellerDashboard() {
 
         {/* Inventory search + filters */}
         <View className="px-6 pt-10">
-          <Text className={`text-xl font-bold px-1 pb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Inventory</Text>
-          <View className={`rounded border p-6 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-            <View className={`flex-row items-center rounded overflow-hidden border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
+          <Text className={`text-xl font-bold px-1 pb-4 text-text-primary`}>Inventory</Text>
+          <View className={`rounded border p-6 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
+            <View className={`flex-row items-center rounded overflow-hidden border ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}>
               <View className="w-12 items-center justify-center">
                 <Search size={20} color={isDark ? "#c6c5cf" : "#71717A"} />
               </View>
               <TextInput
                 placeholder="Search products"
-                className={`flex-1 h-12 px-3 text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+                className={`flex-1 h-12 px-3 text-base text-text-primary`}
                 placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
                 value={searchText}
                 onChangeText={setSearchText}
@@ -637,22 +637,22 @@ export default function SellerDashboard() {
               <View>
                 <TouchableOpacity
                   onPress={() => setStatusMenuVisible((v) => !v)}
-                  className={`h-10 items-center justify-center rounded pl-5 pr-4 flex-row gap-2 border ${(invFilter === 'active' || invFilter === 'inactive') ? "bg-primary border-primary" : (isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border")}`}
+                  className={`h-10 items-center justify-center rounded pl-5 pr-4 flex-row gap-2 border ${(invFilter === 'active' || invFilter === 'inactive') ? "bg-primary border-primary" : (isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border")}`}
                 >
-                  <Text className={`font-bold text-sm capitalize ${(invFilter === 'active' || invFilter === 'inactive') ? "text-white" : (isDark ? "text-[#f0f1f2]" : "text-black")}`}>
+                  <Text className={`font-bold text-sm capitalize ${(invFilter === 'active' || invFilter === 'inactive') ? "text-white" : (isDark ? "text-text-primary" : "text-black")}`}>
                     {invFilter === 'active' || invFilter === 'inactive' ? invFilter : 'Status'}
                   </Text>
                   <CaretDown size={16} color={(invFilter === 'active' || invFilter === 'inactive') ? "#ffffff" : (isDark ? "#f0f1f2" : "#000000")} />
                 </TouchableOpacity>
                 {statusMenuVisible && (
-                  <View className={`absolute top-11 left-0 z-10 rounded border overflow-hidden min-w-[130px] ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
+                  <View className={`absolute top-11 left-0 z-10 rounded border overflow-hidden min-w-[130px] ${isDark ? "bg-surface-sunken border-border-strong" : "bg-white border-border"}`}>
                     {(['active', 'inactive'] as const).map((s) => (
                       <TouchableOpacity
                         key={s}
                         onPress={() => { setInvFilter(s); setStatusMenuVisible(false); }}
                         className="px-4 py-3"
                       >
-                        <Text className={`font-bold text-sm capitalize ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{s}</Text>
+                        <Text className={`font-bold text-sm capitalize text-text-primary`}>{s}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -660,9 +660,9 @@ export default function SellerDashboard() {
               </View>
               <TouchableOpacity
                 onPress={() => { setInvFilter('all'); setStatusMenuVisible(false); }}
-                className={`h-10 items-center justify-center rounded px-5 border ${invFilter === 'all' ? "bg-primary border-primary" : (isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border")}`}
+                className={`h-10 items-center justify-center rounded px-5 border ${invFilter === 'all' ? "bg-primary border-primary" : (isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border")}`}
               >
-                <Text className={`font-bold text-sm ${invFilter === 'all' ? "text-white" : (isDark ? "text-[#f0f1f2]" : "text-black")}`}>All</Text>
+                <Text className={`font-bold text-sm ${invFilter === 'all' ? "text-white" : (isDark ? "text-text-primary" : "text-black")}`}>All</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => { setInvFilter(invFilter === 'low' ? 'all' : 'low'); setStatusMenuVisible(false); }}
@@ -677,11 +677,11 @@ export default function SellerDashboard() {
         {/* Inventory list card */}
         <View className="px-6 pt-4">
           {loading && !filteredInventory.length ? (
-            <Text className={`text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading inventory...</Text>
+            <Text className={`text-sm px-1 text-text-secondary`}>Loading inventory...</Text>
           ) : filteredInventory.length === 0 ? (
-            <Text className={`text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No products in inventory</Text>
+            <Text className={`text-sm px-1 text-text-secondary`}>No products in inventory</Text>
           ) : (
-            <View className={`rounded border overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+            <View className={`rounded border overflow-hidden ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
               <FlatList
                 data={filteredInventory}
                 keyExtractor={(it) => String(it.id ?? it.name)}

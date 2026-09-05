@@ -62,12 +62,12 @@ export default function GamificationScreen() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}
+      className="flex-1 bg-surface-page"
       edges={["top", "bottom"]}
     >
       <View
         className={`flex-row items-center px-4 py-3 border-b ${
-          isDark ? "border-[#46464e]" : "border-border"
+          isDark ? "border-border-strong" : "border-border"
         }`}
       >
         <TouchableOpacity onPress={() => router.back()} className="flex-row items-center">
@@ -75,7 +75,7 @@ export default function GamificationScreen() {
         </TouchableOpacity>
         <Text
           className={`text-lg font-bold ml-2 ${
-            isDark ? "text-[#f0f1f2]" : "text-black"
+            isDark ? "text-text-primary" : "text-black"
           }`}
         >
           Your Progress
@@ -96,7 +96,7 @@ export default function GamificationScreen() {
           <View className="items-center py-16 px-6">
             <Text
               className={`text-sm text-center ${
-                isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                isDark ? "text-text-secondary" : "text-tertiary"
               }`}
             >
               {error}
@@ -118,7 +118,7 @@ export default function GamificationScreen() {
             <View className="px-6 pt-6">
               <View
                 className={`rounded border p-6 ${
-                  isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"
+                  isDark ? "bg-surface-sunken border-border-strong" : "bg-white border-border"
                 }`}
               >
                 <TierBadge
@@ -131,14 +131,14 @@ export default function GamificationScreen() {
                 />
                 <Text
                   className={`font-bold text-[40px] mt-4 ${
-                    isDark ? "text-[#f0f1f2]" : "text-black"
+                    isDark ? "text-text-primary" : "text-black"
                   }`}
                 >
                   {data.lifetime_points.toLocaleString()}
                 </Text>
                 <Text
                   className={`text-xs -mt-1 mb-4 ${
-                    isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                    isDark ? "text-text-secondary" : "text-tertiary"
                   }`}
                 >
                   lifetime points
@@ -182,7 +182,7 @@ export default function GamificationScreen() {
               {recent.length === 0 ? (
                 <Text
                   className={`text-sm ${
-                    isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                    isDark ? "text-text-secondary" : "text-tertiary"
                   }`}
                 >
                   No activity yet — earn points by buying, selling and posting.
@@ -192,12 +192,12 @@ export default function GamificationScreen() {
                   <View
                     key={r.id}
                     className={`flex-row items-center justify-between py-3 border-b ${
-                      isDark ? "border-[#46464e]" : "border-border"
+                      isDark ? "border-border-strong" : "border-border"
                     }`}
                   >
                     <Text
                       className={`text-sm ${
-                        isDark ? "text-[#f0f1f2]" : "text-black"
+                        isDark ? "text-text-primary" : "text-black"
                       }`}
                     >
                       {reasonLabel(r.reason)}
@@ -233,13 +233,13 @@ export default function GamificationScreen() {
             />
             <View
               className={`mx-6 rounded border overflow-hidden ${
-                isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"
+                isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"
               }`}
             >
               {preview.length === 0 ? (
                 <Text
                   className={`text-sm p-4 ${
-                    isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                    isDark ? "text-text-secondary" : "text-tertiary"
                   }`}
                 >
                   Leaderboard is warming up.
@@ -273,19 +273,19 @@ function StatTile({
   return (
     <View
       className={`flex-1 rounded border p-4 ${
-        isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"
+        isDark ? "bg-surface-sunken border-border-strong" : "bg-white border-border"
       }`}
     >
       <Text
         className={`text-[10px] font-bold uppercase tracking-wider ${
-          isDark ? "text-[#c6c5cf]" : "text-tertiary"
+          isDark ? "text-text-secondary" : "text-tertiary"
         }`}
       >
         {label}
       </Text>
       <Text
         className={`text-lg font-bold mt-1 ${
-          isDark ? "text-[#f0f1f2]" : "text-black"
+          isDark ? "text-text-primary" : "text-black"
         }`}
       >
         {value}
@@ -309,7 +309,7 @@ function SectionHeader({
     <View className="flex-row items-center justify-between px-6 pt-8 pb-3">
       <Text
         className={`text-xl font-bold ${
-          isDark ? "text-[#f0f1f2]" : "text-black"
+          isDark ? "text-text-primary" : "text-black"
         }`}
       >
         {title}

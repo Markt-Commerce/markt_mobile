@@ -46,12 +46,12 @@ const Button = ({
       text: isDisabled ? "text-tertiary" : "text-white",
     },
     secondary: {
-      container: isDark ? "bg-[#2f3132]" : "bg-surface",
-      text: isDark ? "text-[#f0f1f2]" : "text-secondary",
+      container: isDark ? "bg-surface-sunken" : "bg-surface",
+      text: isDark ? "text-text-primary" : "text-secondary",
     },
     outline: {
-      container: `bg-transparent border ${isDark ? "border-[#46464e]" : "border-border"}`,
-      text: isDark ? "text-[#f0f1f2]" : "text-secondary",
+      container: `bg-transparent border border-border-strong`,
+      text: isDark ? "text-text-primary" : "text-secondary",
     },
   };
 

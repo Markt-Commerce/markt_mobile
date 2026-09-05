@@ -162,22 +162,22 @@ export default function CartScreen() {
   // ---------- States ----------
   if (loading && !refreshing) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
+      <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
         <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
-        <Text className={`mt-3 font-medium ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Loading your cart…</Text>
+        <Text className={`mt-3 font-medium text-text-primary`}>Loading your cart…</Text>
       </SafeAreaView>
     );
   }
 
   if (!cart || cart.items?.length === 0) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
+      <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
         {/* Header */}
-        <View className={`flex-row items-center justify-between px-6 py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-          <TouchableOpacity onPress={() => router.back()} className={`h-10 w-10 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+        <View className={`flex-row items-center justify-between px-6 py-4 border-b ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
+          <TouchableOpacity onPress={() => router.back()} className={`h-10 w-10 rounded items-center justify-center bg-surface-sunken`}>
             <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
           </TouchableOpacity>
-          <Text className={`flex-1 text-center text-xl font-bold pr-10 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Cart</Text>
+          <Text className={`flex-1 text-center text-xl font-bold pr-10 text-text-primary`}>Cart</Text>
         </View>
 
         <ScrollView
@@ -187,8 +187,8 @@ export default function CartScreen() {
           <View className="mb-5">
             <ShoppingCart size={44} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={1.5} />
           </View>
-          <Text className={`text-2xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Your cart is empty</Text>
-          <Text className={`mt-2 text-base text-center leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className={`text-2xl font-bold text-text-primary`}>Your cart is empty</Text>
+          <Text className={`mt-2 text-base text-center leading-6 text-text-secondary`}>
             Explore the marketplace and add items you love.
           </Text>
           <TouchableOpacity
@@ -207,13 +207,13 @@ export default function CartScreen() {
 
   // ---------- Main ----------
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
       {/* Header */}
-      <View className={`flex-row items-center justify-between px-6 py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-        <TouchableOpacity onPress={() => router.back()} className={`h-10 w-10 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+      <View className={`flex-row items-center justify-between px-6 py-4 border-b ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
+        <TouchableOpacity onPress={() => router.back()} className={`h-10 w-10 rounded items-center justify-center bg-surface-sunken`}>
           <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
         </TouchableOpacity>
-        <Text className={`flex-1 text-center text-xl font-bold pr-10 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Cart</Text>
+        <Text className={`flex-1 text-center text-xl font-bold pr-10 text-text-primary`}>Cart</Text>
       </View>
 
       <ScrollView
@@ -223,7 +223,7 @@ export default function CartScreen() {
       >
         {/* Items container */}
         <View className="px-6 mt-6">
-          <View className={`rounded border overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+          <View className={`rounded border overflow-hidden ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
             {cart.items?.map((item, idx) => {
               const image = item.product?.images?.[0]?.media?.original_url ?? "";
               const name = item.product?.name ?? "Product";
@@ -234,32 +234,32 @@ export default function CartScreen() {
               const lineTotal = Number(price) * (item.quantity ?? 1);
 
               return (
-                <View key={item.id} className={`px-4 py-5 ${idx !== cart.items?.length - 1 ? (isDark ? "border-b border-[#46464e]" : "border-b border-border") : ""}`}>
+                <View key={item.id} className={`px-4 py-5 ${idx !== cart.items?.length - 1 ? (isDark ? "border-b border-border-strong" : "border-b border-border") : ""}`}>
                   <View className="flex-row gap-4">
-                    <Image source={{ uri: image }} className={`w-20 h-20 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`} />
+                    <Image source={{ uri: image }} className={`w-20 h-20 rounded bg-surface-sunken`} />
                     <View className="flex-1">
-                      <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+                      <Text className={`font-bold text-base text-text-primary`} numberOfLines={1}>
                         {name}
                       </Text>
-                      <Text className={`text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                      <Text className={`text-xs mt-1 text-text-secondary`}>
                         Variant #{item.variant_id}
                       </Text>
 
                       <View className="mt-3 flex-row items-center justify-between">
-                        <Text className={`font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(price)}</Text>
+                        <Text className={`font-bold text-text-primary`}>{formatMoney(price)}</Text>
 
                         {/* Stepper + remove */}
                         <View className="flex-row items-center gap-2">
                           <TouchableOpacity
                             onPress={() => handleQuantityChange(item, item.quantity - 1)}
-                            className={`w-8 h-8 rounded border items-center justify-center ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+                            className={`w-8 h-8 rounded border items-center justify-center ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
                             activeOpacity={0.8}
                           >
-                            <Text className={`text-lg font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>−</Text>
+                            <Text className={`text-lg font-bold text-text-primary`}>−</Text>
                           </TouchableOpacity>
 
                           <View className="min-w-[32px] items-center justify-center">
-                            <Text className={`font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.quantity}</Text>
+                            <Text className={`font-bold text-text-primary`}>{item.quantity}</Text>
                           </View>
 
                           <TouchableOpacity
@@ -272,7 +272,7 @@ export default function CartScreen() {
 
                           <TouchableOpacity
                             onPress={() => handleRemove(item)}
-                            className={`ml-2 w-8 h-8 rounded border items-center justify-center ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+                            className={`ml-2 w-8 h-8 rounded border items-center justify-center ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
                             activeOpacity={0.8}
                           >
                             <Trash2 size={14} color={isDark ? "#f0f1f2" : "#000000"} />
@@ -281,8 +281,8 @@ export default function CartScreen() {
                       </View>
 
                       <View className="mt-3 flex-row justify-between">
-                        <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Line total</Text>
-                        <Text className={`text-xs font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                        <Text className={`text-xs text-text-secondary`}>Line total</Text>
+                        <Text className={`text-xs font-bold text-text-primary`}>
                           {formatMoney(lineTotal)}
                         </Text>
                       </View>
@@ -310,30 +310,30 @@ export default function CartScreen() {
 
         {/* Summary card */}
         <View className="px-6">
-          <View className={`rounded border p-6 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-lg font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Order Summary</Text>
+          <View className={`rounded border p-6 ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-border"}`}>
+            <Text className={`text-lg font-bold mb-4 text-text-primary`}>Order Summary</Text>
 
             <View className="flex-row justify-between py-2">
-              <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Subtotal</Text>
-              <Text className={`text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(summary?.subtotal)}</Text>
+              <Text className={`text-sm text-text-secondary`}>Subtotal</Text>
+              <Text className={`text-sm font-bold text-text-primary`}>{formatMoney(summary?.subtotal)}</Text>
             </View>
             <View className="flex-row justify-between py-2">
-              <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Discount</Text>
-              <Text className={`text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>−{formatMoney(summary?.discount)}</Text>
+              <Text className={`text-sm text-text-secondary`}>Discount</Text>
+              <Text className={`text-sm font-bold text-text-primary`}>−{formatMoney(summary?.discount)}</Text>
             </View>
             <View className={`h-[1px] my-4 ${isDark ? "bg-[#46464e]" : "bg-border"}`} />
             <View className="flex-row justify-between py-2">
-              <Text className={`text-base font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Total</Text>
-              <Text className={`text-lg font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(summary?.total)}</Text>
+              <Text className={`text-base font-bold text-text-primary`}>Total</Text>
+              <Text className={`text-lg font-bold text-text-primary`}>{formatMoney(summary?.total)}</Text>
             </View>
-            <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`text-xs text-text-secondary`}>
               Service fee, and the reliability fee if you opt in, are shown at the next step.
             </Text>
 
             <View className={`h-[1px] my-4 ${isDark ? "bg-[#46464e]" : "bg-border"}`} />
 
             {/* Fulfilment preference (6): how a substitution is handled if an item can't be fulfilled as ordered */}
-            <Text className={`text-sm font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+            <Text className={`text-sm font-bold mb-2 text-text-primary`}>
               If an item can&apos;t be fulfilled
             </Text>
             <View className="flex-row gap-2">
@@ -353,7 +353,7 @@ export default function CartScreen() {
                       selected
                         ? "border-primary bg-primary/10"
                         : isDark
-                          ? "border-[#46464e]"
+                          ? "border-border-strong"
                           : "border-border"
                     }`}
                     activeOpacity={0.8}
@@ -362,7 +362,7 @@ export default function CartScreen() {
                   >
                     <Text
                       className={`text-xs text-center font-medium ${
-                        selected ? "text-primary font-bold" : isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                        selected ? "text-primary font-bold" : isDark ? "text-text-secondary" : "text-tertiary"
                       }`}
                     >
                       {opt.label}
@@ -381,10 +381,10 @@ export default function CartScreen() {
               accessibilityState={{ checked: reliabilityFeeOptedIn }}
             >
               <View className="flex-1 pr-3">
-                <Text className={`text-sm font-medium ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                <Text className={`text-sm font-medium text-text-primary`}>
                   Guarantee my order
                 </Text>
-                <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                <Text className={`text-xs mt-0.5 text-text-secondary`}>
                   A reliability fee applies only if a substitution happens.
                 </Text>
               </View>
@@ -393,7 +393,7 @@ export default function CartScreen() {
                   reliabilityFeeOptedIn
                     ? "bg-primary border-primary"
                     : isDark
-                      ? "border-[#46464e]"
+                      ? "border-border-strong"
                       : "border-border"
                 }`}
               >
@@ -404,12 +404,12 @@ export default function CartScreen() {
             <TouchableOpacity
               onPress={handleCheckout}
               disabled={processing || !isShippingAddressUsable(shipping.address)}
-              className={`mt-6 h-12 rounded items-center justify-center ${processing || !isShippingAddressUsable(shipping.address) ? (isDark ? "bg-[#2f3132]" : "bg-surface") : "bg-primary"}`}
+              className={`mt-6 h-12 rounded items-center justify-center ${processing || !isShippingAddressUsable(shipping.address) ? (isDark ? "bg-surface-sunken" : "bg-surface") : "bg-primary"}`}
               activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel={processing ? "Processing" : "Proceed to checkout"}
             >
-              <Text className={`text-base font-bold ${processing || !isShippingAddressUsable(shipping.address) ? (isDark ? "text-[#c6c5cf]" : "text-tertiary") : "text-white"}`}>
+              <Text className={`text-base font-bold ${processing || !isShippingAddressUsable(shipping.address) ? (isDark ? "text-text-secondary" : "text-tertiary") : "text-white"}`}>
                 {processing ? "Processing…" : "Proceed to Checkout"}
               </Text>
             </TouchableOpacity>

@@ -39,12 +39,12 @@ export function SettingsSection({
     <View className="mt-2">
       <View className={`px-4 py-2.5 ${dark ? "bg-[#141617]" : "bg-[#F4F4F5]"}`}>
         <Text
-          className={`font-bold text-[13px] ${dark ? "text-[#c6c5cf]" : "text-[#52525B]"}`}
+          className={`font-bold text-[13px] ${dark ? "text-text-secondary" : "text-[#52525B]"}`}
         >
           {title}
         </Text>
       </View>
-      <View className={dark ? "bg-[#1a1c1d]" : "bg-white"}>{children}</View>
+      <View className={dark ? "bg-surface-raised" : "bg-white"}>{children}</View>
     </View>
   );
 }
@@ -52,7 +52,7 @@ export function SettingsSection({
 /** The hairline between rows, inset so it lines up under the label. */
 export function RowDivider({ dark }: { dark: boolean }) {
   return (
-    <View className={`h-px ml-[52px] ${dark ? "bg-[#2f3132]" : "bg-[#EFEFF1]"}`} />
+    <View className={`h-px ml-[52px] ${dark ? "bg-surface-sunken" : "bg-[#EFEFF1]"}`} />
   );
 }
 
@@ -79,7 +79,7 @@ export function SettingsRow({
   const labelColor = destructive
     ? "text-[#DC2626]"
     : dark
-      ? "text-[#f0f1f2]"
+      ? "text-text-primary"
       : "text-black";
   const iconColor = destructive ? "#DC2626" : dark ? "#c6c5cf" : "#3F3F46";
 
@@ -99,7 +99,7 @@ export function SettingsRow({
           <Text className={`text-[16px] ${labelColor}`}>{title}</Text>
           {subtitle ? (
             <Text
-              className={`text-[13px] mt-0.5 leading-[18px] ${dark ? "text-[#8f9195]" : "text-tertiary"}`}
+              className={`text-[13px] mt-0.5 leading-[18px] ${dark ? "text-text-muted" : "text-tertiary"}`}
             >
               {subtitle}
             </Text>
@@ -107,7 +107,7 @@ export function SettingsRow({
         </View>
         {value ? (
           <Text
-            className={`text-[14px] mr-2 ${dark ? "text-[#8f9195]" : "text-tertiary"}`}
+            className={`text-[14px] mr-2 ${dark ? "text-text-muted" : "text-tertiary"}`}
           >
             {value}
           </Text>
@@ -147,12 +147,12 @@ export function SettingsSwitchRow({
       <View className="flex-row items-center px-4 min-h-[56px] py-3">
         <Icon size={20} color={dark ? "#c6c5cf" : "#3F3F46"} strokeWidth={1.8} />
         <View className="flex-1 ml-4 pr-3">
-          <Text className={`text-[16px] ${dark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className={`text-[16px] ${dark ? "text-text-primary" : "text-black"}`}>
             {title}
           </Text>
           {subtitle ? (
             <Text
-              className={`text-[13px] mt-0.5 leading-[18px] ${dark ? "text-[#8f9195]" : "text-tertiary"}`}
+              className={`text-[13px] mt-0.5 leading-[18px] ${dark ? "text-text-muted" : "text-tertiary"}`}
             >
               {subtitle}
             </Text>

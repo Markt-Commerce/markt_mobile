@@ -78,14 +78,14 @@ export default function PaymentResult() {
 
   return (
     <SafeAreaView
-      className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      className={`flex-1 bg-surface-raised`}
       edges={["top", "left", "right", "bottom"]}
     >
       <View className="flex-1 items-center justify-center px-6">
         {loading ? (
           <>
             <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
-            <Text className={`mt-4 text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`mt-4 text-sm text-text-secondary`}>
               Confirming your payment…
             </Text>
           </>
@@ -100,7 +100,7 @@ export default function PaymentResult() {
             )}
 
             <Text
-              className={`mt-6 text-2xl font-bold text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+              className={`mt-6 text-2xl font-bold text-center text-text-primary`}
             >
               {isSuccess
                 ? verified
@@ -110,7 +110,7 @@ export default function PaymentResult() {
             </Text>
 
             <Text
-              className={`mt-2 text-sm text-center ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+              className={`mt-2 text-sm text-center text-text-secondary`}
             >
               {isSuccess
                 ? verified
@@ -125,7 +125,7 @@ export default function PaymentResult() {
 
             {order?.order_number ? (
               <Text
-                className={`mt-4 text-sm font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+                className={`mt-4 text-sm font-semibold text-text-primary`}
               >
                 Order {order.order_number}
               </Text>
@@ -147,12 +147,12 @@ export default function PaymentResult() {
 
           {!isSuccess && resolvedOrderId ? (
             <TouchableOpacity
-              className={`h-12 rounded border items-center justify-center ${isDark ? "border-[#46464e]" : "border-border"}`}
+              className={`h-12 rounded border items-center justify-center border-border-strong`}
               onPress={() =>
                 router.replace(`/checkout/payment-method/${resolvedOrderId}`)
               }
             >
-              <Text className={`font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`font-semibold text-text-primary`}>
                 Retry payment
               </Text>
             </TouchableOpacity>
@@ -162,7 +162,7 @@ export default function PaymentResult() {
             className="h-12 items-center justify-center"
             onPress={() => router.replace("/(tabs)/orders")}
           >
-            <Text className={`font-semibold ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`font-semibold text-text-secondary`}>
               Back to orders
             </Text>
           </TouchableOpacity>

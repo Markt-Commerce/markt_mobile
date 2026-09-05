@@ -41,9 +41,9 @@ export default function LeaderboardRow({
     <View
       accessibilityLabel={`Rank ${row.rank}, ${name}, ${row.points} points`}
       className={`flex-row items-center px-4 py-3 border-b ${
-        isDark ? "border-[#2f3132]" : "border-border-light"
+        isDark ? "border-border" : "border-border-light"
       } ${
-        isCurrentUser ? (isDark ? "bg-[#2f3132]" : "bg-surface") : ""
+        isCurrentUser ? (isDark ? "bg-surface-sunken" : "bg-surface") : ""
       } ${className}`}
     >
       <View className="w-9 items-center">
@@ -59,7 +59,7 @@ export default function LeaderboardRow({
         ) : (
           <Text
             className={`font-semibold text-[14px] ${
-              isDark ? "text-[#8f9195]" : "text-tertiary"
+              isDark ? "text-text-muted" : "text-tertiary"
             }`}
           >
             {row.rank}
@@ -76,12 +76,12 @@ export default function LeaderboardRow({
       ) : (
         <View
           className={`w-9 h-9 rounded-full ml-1 items-center justify-center ${
-            isDark ? "bg-[#1a1c1d]" : "bg-surface"
+            isDark ? "bg-surface-raised" : "bg-surface"
           }`}
         >
           <Text
             className={`font-bold text-sm ${
-              isDark ? "text-[#f0f1f2]" : "text-black"
+              isDark ? "text-text-primary" : "text-black"
             }`}
           >
             {name.charAt(0).toUpperCase()}
@@ -93,7 +93,7 @@ export default function LeaderboardRow({
         <Text
           numberOfLines={1}
           className={`font-bold text-sm ${
-            isDark ? "text-[#f0f1f2]" : "text-black"
+            isDark ? "text-text-primary" : "text-black"
           }`}
         >
           {name}
@@ -113,11 +113,11 @@ export default function LeaderboardRow({
           unit — a bare number left the reader to infer what it counted. */}
       <View className="items-end">
         <Text
-          className={`font-bold text-[15px] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+          className={`font-bold text-[15px] text-text-primary`}
         >
           {row.points.toLocaleString()}
         </Text>
-        <Text className={`text-[11px] ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
+        <Text className={`text-[11px] text-text-muted`}>
           pts
         </Text>
       </View>

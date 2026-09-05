@@ -41,13 +41,13 @@ const TONE_BG: Record<string, [string, string]> = {
   positive: ["bg-[#E7F6EC]", "bg-[#1E3A28]"],
   attention: ["bg-[#FEF3E2]", "bg-[#3A2E18]"],
   negative: ["bg-[#FDECEC]", "bg-[#3A1E1E]"],
-  neutral: ["bg-[#F4F4F5]", "bg-[#2f3132]"],
+  neutral: ["bg-[#F4F4F5]", "bg-surface-sunken"],
 };
 const TONE_TEXT: Record<string, [string, string]> = {
   positive: ["text-[#0F7B3F]", "text-[#7BD9A2]"],
   attention: ["text-[#A15C00]", "text-[#F0B667]"],
   negative: ["text-[#C42B2B]", "text-[#F09A9A]"],
-  neutral: ["text-[#52525B]", "text-[#c6c5cf]"],
+  neutral: ["text-[#52525B]", "text-text-secondary"],
 };
 
 export default function SellerOrderDetail() {
@@ -123,9 +123,9 @@ export default function SellerOrderDetail() {
   };
 
   const bg = isDark ? "#1a1c1d" : "#FFFFFF";
-  const strong = isDark ? "text-[#f0f1f2]" : "text-black";
-  const muted = isDark ? "text-[#8f9195]" : "text-tertiary";
-  const card = isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]";
+  const strong = isDark ? "text-text-primary" : "text-black";
+  const muted = isDark ? "text-text-muted" : "text-tertiary";
+  const card = isDark ? "bg-surface-sunken" : "bg-[#F7F7F8]";
 
   if (loading) {
     return (
@@ -216,7 +216,7 @@ export default function SellerOrderDetail() {
                 />
               ) : (
                 <View
-                  className={`w-16 h-16 rounded-lg items-center justify-center ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+                  className={`w-16 h-16 rounded-lg items-center justify-center bg-surface-raised`}
                 >
                   <ImageIcon size={20} color={isDark ? "#6b6d71" : "#C4C4C8"} />
                 </View>
@@ -250,7 +250,7 @@ export default function SellerOrderDetail() {
               </Text>
               <TouchableOpacity
                 onPress={() => router.push("/(tabs)/messages" as any)}
-                className={`flex-row items-center px-3 h-9 rounded-lg ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+                className={`flex-row items-center px-3 h-9 rounded-lg bg-surface-raised`}
                 accessibilityRole="button"
                 accessibilityLabel={`Message ${buyerName}`}
               >

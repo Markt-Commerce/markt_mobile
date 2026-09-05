@@ -79,14 +79,14 @@ export default function MyNichesScreen() {
         android_ripple={{ color: isDark ? "#ffffff11" : "#00000011" }}
         className="mr-3"
       >
-        <View className={`w-44 rounded-xl overflow-hidden border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-[#e8e4e2]"}`}>
+        <View className={`w-44 rounded-xl overflow-hidden border ${isDark ? "bg-surface-raised border-border-strong" : "bg-white border-[#e8e4e2]"}`}>
           <View>
             {/* Niche Icon/Image */}
-            <View className={`h-20 justify-center items-center ${isDark ? "bg-[#2f3132]" : "bg-[#f5f3f2]"}`}>
+            <View className={`h-20 justify-center items-center ${isDark ? "bg-surface-sunken" : "bg-[#f5f3f2]"}`}>
               {item.image_url ? (
                 <Image source={{ uri: item.image_url }} className="w-full h-full" resizeMode="cover" />
               ) : (
-                <Text className={`text-3xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                <Text className={`text-3xl font-bold text-text-primary`}>
                   {(item.name ?? "").charAt(0).toUpperCase() || "?"}
                 </Text>
               )}
@@ -95,10 +95,10 @@ export default function MyNichesScreen() {
             {/* Content */}
             <View className="p-3">
               <View>
-                <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+                <Text className={`font-bold text-base text-text-primary`} numberOfLines={1}>
                   {item.name ?? "Unnamed"}
                 </Text>
-                <Text className={`text-[11px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={1}>
+                <Text className={`text-[11px] mt-1 text-text-secondary`} numberOfLines={1}>
                   {item.member_count} members · {item.post_count} posts
                 </Text>
               </View>
@@ -112,7 +112,7 @@ export default function MyNichesScreen() {
 
   if (loading && feedLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top"]}>
+      <SafeAreaView className="flex-1 bg-surface-page" edges={["top"]}>
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
         </View>
@@ -121,19 +121,19 @@ export default function MyNichesScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top"]}>
-      <View className={`px-6 pt-6 pb-5 border-b ${isDark ? "border-[#46464e]" : "border-border"}`}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["top"]}>
+      <View className={`px-6 pt-6 pb-5 border-b border-border-strong`}>
         <View className="flex-row items-center justify-between">
           <View className="flex-1">
             <TouchableOpacity
               onPress={() => router.back()}
-              className={`h-10 w-10 rounded border items-center justify-center mb-4 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+              className={`h-10 w-10 rounded border items-center justify-center mb-4 ${isDark ? "bg-surface-sunken border-border-strong" : "bg-surface border-border"}`}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
             </TouchableOpacity>
-            <Text className={`text-2xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>My Niches</Text>
-            <Text className={`text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className={`text-2xl font-bold text-text-primary`}>My Niches</Text>
+            <Text className={`text-sm mt-1 text-text-secondary`}>
               {niches.length} niche{niches.length !== 1 ? "s" : ""} joined
             </Text>
           </View>
@@ -177,10 +177,10 @@ export default function MyNichesScreen() {
               <View className="mb-5">
                 <Compass size={44} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={1.5} />
               </View>
-              <Text className={`font-bold text-xl text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className={`font-bold text-xl text-center text-text-primary`}>
                 {niches.length === 0 ? "No niches yet" : "No posts yet"}
               </Text>
-              <Text className={`text-base mt-2 text-center leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className={`text-base mt-2 text-center leading-6 text-text-secondary`}>
                 {niches.length === 0
                   ? "Join or create a community to connect with others."
                   : "Posts from your communities will appear here."}
@@ -196,7 +196,7 @@ export default function MyNichesScreen() {
         }
         ListHeaderComponent={
           <View className="py-5 pl-6">
-            <Text className={`font-bold text-lg mb-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+            <Text className={`font-bold text-lg mb-3 text-text-primary`}>
               Your communities
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -205,10 +205,10 @@ export default function MyNichesScreen() {
               ))}
               <TouchableOpacity
                 onPress={() => router.push("/discoverNiches")}
-                className={`w-28 h-20 rounded-xl border items-center justify-center mr-6 ${isDark ? "border-[#46464e]" : "border-[#e8e4e2]"}`}
+                className={`w-28 h-20 rounded-xl border items-center justify-center mr-6 ${isDark ? "border-border-strong" : "border-[#e8e4e2]"}`}
               >
                 <Compass size={20} color={isDark ? "#c6c5cf" : "#71717A"} />
-                <Text className={`text-xs font-semibold mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Explore</Text>
+                <Text className={`text-xs font-semibold mt-1 text-text-secondary`}>Explore</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>

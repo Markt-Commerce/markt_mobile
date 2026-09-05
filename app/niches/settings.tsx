@@ -106,15 +106,15 @@ export default function NicheSettingsScreen() {
     }
   };
 
-  const inputClass = `rounded border px-4 py-3 text-base ${isDark ? "bg-[#1a1c1d] border-[#46464e] text-[#f0f1f2]" : "bg-white border-border text-black"}`;
-  const muted = isDark ? "text-[#8f9195]" : "text-tertiary";
+  const inputClass = `rounded border px-4 py-3 text-base ${isDark ? "bg-surface-raised border-border-strong text-text-primary" : "bg-white border-border text-black"}`;
+  const muted = isDark ? "text-text-muted" : "text-tertiary";
 
   if (!niche || !ownerChecked) {
-    return <View className={`flex-1 items-center justify-center ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}><ActivityIndicator /></View>;
+    return <View className={`flex-1 items-center justify-center bg-surface-raised`}><ActivityIndicator /></View>;
   }
 
   return (
-    <View className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+    <View className={`flex-1 bg-surface-raised`}>
       <ScreenHeader title="Community settings" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <SettingsSection title="Community identity" dark={isDark}>
@@ -129,16 +129,16 @@ export default function NicheSettingsScreen() {
         <SettingsSection title="Images" dark={isDark}>
           <TouchableOpacity disabled={saving} onPress={() => changeImage("image_id")} className={`flex-row items-center px-4 py-3 min-h-[72px] ${saving ? "opacity-60" : ""}`}>
             {niche.image_url ? <Image source={{ uri: niche.image_url }} className="w-12 h-12 rounded-xl" /> : <Camera size={22} color={isDark ? "#c6c5cf" : "#3F3F46"} />}
-            <View className="flex-1 ml-4"><Text className={`text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Community profile picture</Text><Text className={`text-[13px] mt-0.5 ${muted}`}>{uploadingField === "image_id" ? "Uploading…" : "Shown beside the community name"}</Text></View>{uploadingField === "image_id" ? <ActivityIndicator size="small" /> : <ImageIcon size={18} color={isDark ? "#8f9195" : "#A1A1AA"} />}
+            <View className="flex-1 ml-4"><Text className={`text-base text-text-primary`}>Community profile picture</Text><Text className={`text-[13px] mt-0.5 ${muted}`}>{uploadingField === "image_id" ? "Uploading…" : "Shown beside the community name"}</Text></View>{uploadingField === "image_id" ? <ActivityIndicator size="small" /> : <ImageIcon size={18} color={isDark ? "#8f9195" : "#A1A1AA"} />}
           </TouchableOpacity>
           <TouchableOpacity disabled={saving} onPress={() => changeImage("banner_id")} className={`flex-row items-center px-4 py-3 min-h-[72px] border-t border-[#EFEFF1] ${saving ? "opacity-60" : ""}`}>
             {niche.banner_url ? <Image source={{ uri: niche.banner_url }} className="w-12 h-12 rounded-xl" /> : <ImageIcon size={22} color={isDark ? "#c6c5cf" : "#3F3F46"} />}
-            <View className="flex-1 ml-4"><Text className={`text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Community banner</Text><Text className={`text-[13px] mt-0.5 ${muted}`}>{uploadingField === "banner_id" ? "Uploading…" : "Shown at the top of the community"}</Text></View>{uploadingField === "banner_id" ? <ActivityIndicator size="small" /> : <ImageIcon size={18} color={isDark ? "#8f9195" : "#A1A1AA"} />}
+            <View className="flex-1 ml-4"><Text className={`text-base text-text-primary`}>Community banner</Text><Text className={`text-[13px] mt-0.5 ${muted}`}>{uploadingField === "banner_id" ? "Uploading…" : "Shown at the top of the community"}</Text></View>{uploadingField === "banner_id" ? <ActivityIndicator size="small" /> : <ImageIcon size={18} color={isDark ? "#8f9195" : "#A1A1AA"} />}
           </TouchableOpacity>
         </SettingsSection>
 
         <SettingsSection title="Posting & privacy" dark={isDark}>
-          <View className="px-4 py-4"><Text className={`text-xs font-bold uppercase tracking-[2px] mb-3 ${muted}`}>Visibility</Text><View className="flex-row gap-2">{(["public", "private", "restricted"] as NicheVisibility[]).map((option) => <TouchableOpacity key={option} onPress={() => setVisibility(option)} className={`px-4 py-2 rounded-full border ${visibility === option ? "bg-primary border-primary" : isDark ? "border-[#46464e]" : "border-border"}`}><Text className={`text-sm capitalize ${visibility === option ? "text-white font-bold" : isDark ? "text-[#c6c5cf]" : "text-secondary"}`}>{option}</Text></TouchableOpacity>)}</View></View>
+          <View className="px-4 py-4"><Text className={`text-xs font-bold uppercase tracking-[2px] mb-3 ${muted}`}>Visibility</Text><View className="flex-row gap-2">{(["public", "private", "restricted"] as NicheVisibility[]).map((option) => <TouchableOpacity key={option} onPress={() => setVisibility(option)} className={`px-4 py-2 rounded-full border ${visibility === option ? "bg-primary border-primary" : isDark ? "border-border-strong" : "border-border"}`}><Text className={`text-sm capitalize ${visibility === option ? "text-white font-bold" : isDark ? "text-text-secondary" : "text-secondary"}`}>{option}</Text></TouchableOpacity>)}</View></View>
           <SettingsSwitchRow icon={Camera} title="Allow buyer posts" value={allowBuyerPosts} onValueChange={setAllowBuyerPosts} dark={isDark} />
           <SettingsSwitchRow icon={Camera} title="Allow seller posts" value={allowSellerPosts} onValueChange={setAllowSellerPosts} dark={isDark} />
           <SettingsSwitchRow icon={Save} title="Approve posts before publishing" subtitle="Review new posts before members can see them." value={requireApproval} onValueChange={setRequireApproval} dark={isDark} last />
