@@ -13,8 +13,10 @@ import { getPaymentDetails, verifyPayment } from "../../../services/sections/pay
 import { useTheme } from "../../../components/themeProvider";
 import { useToast } from "../../../components/ToastProvider";
 import {
+  isPaymentCallbackUrl,
   isPaymentReturnUrl,
   parsePaymentDeepLink,
+  paymentIdFromCallbackUrl,
 } from "../../../utils/paymentDeepLink";
 
 export default function PayScreen() {
@@ -92,6 +94,21 @@ export default function PayScreen() {
   const handleReturnUrl = useCallback(
     (url: string) => {
       if (!isPaymentReturnUrl(url)) return false;
+
+      // Stop at the backend's callback hop rather than letting the WebView try
+      // to load it. That URL's host comes from the server's API_BASE_URL, and
+      // when that is wrong the phone can't reach it -- the customer has already
+      // paid (the webhook completes it either way) but they'd see
+      // ERR_CONNECTION_REFUSED and never reach the result screen. finishPayment
+      // verifies over the API, which doesn't care what API_BASE_URL says.
+      if (isPaymentCallbackUrl(url)) {
+        const paymentId = paymentIdFromCallbackUrl(url);
+        if (paymentId) {
+          finishPayment("success", paymentId);
+          return true;
+        }
+      }
+
       const parsed = parsePaymentDeepLink(url);
       if (!parsed?.paymentId) {
         finishPayment("failed", id as string, parsed?.error ?? "Payment failed");
