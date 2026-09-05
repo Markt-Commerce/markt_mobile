@@ -122,6 +122,10 @@ export default function CartScreen() {
           reliabilityFeeOptedIn
         )
       );
+      // Same reason as the other checkout path: the key exists to make a retry
+      // of *this* attempt safe, and reusing it for the next one replays the
+      // previous order.
+      clearIdempotencyKey("checkout-cart");
       router.push({
         pathname: "/checkout/confirm",
         params: {

@@ -38,6 +38,7 @@ import {
   isShippingAddressUsable,
   missingShippingFields,
 } from "../../utils/shippingAddress";
+import { clearIdempotencyKey } from "../../utils/idempotency";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import ShippingAddressCard from "../../components/shippingAddressCard";
 
@@ -127,6 +128,17 @@ function MyCartTab() {
       const checkout = await checkoutCart(
         buildCheckoutRequest(shipping.address!, "Checkout from mobile")
       );
+      // The attempt is over the moment an order exists, so the key retires
+      // here. It only ever existed to make a *retry of this attempt* safe.
+      //
+      // It used to be cleared solely inside payment-result's try block, after
+      // verifyPayment succeeded — so if the buyer never reached that screen, or
+      // verification threw, the key survived the whole app session. The next
+      // checkout then replayed it and the server correctly returned the FIRST
+      // order: the app jumped to an already-paid order and the cart was never
+      // cleared, because a replay must not touch a cart that now holds
+      // different items.
+      clearIdempotencyKey("checkout-cart");
       show({
         variant: "success",
         title: "Checkout successful",
@@ -165,13 +177,15 @@ function MyCartTab() {
           <View className="mb-5">
             <ShoppingCart size={44} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={1.5} />
           </View>
-        <Text className={`text-xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Your cart is empty</Text>
-        <Text className={`mt-2 text-sm text-center ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+        <Text className={`text-[22px] font-bold text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          Your cart is empty
+        </Text>
+        <Text className={`text-[15px] text-center mt-2 leading-[21px] ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
           Add items from the feed to get started.
         </Text>
         <TouchableOpacity
           onPress={() => router.replace("/(tabs)")}
-          className="mt-6 h-12 px-6 rounded bg-primary items-center justify-center"
+          className="mt-6 h-12 px-7 rounded-xl bg-primary items-center justify-center"
         >
           <Text className="text-white font-semibold">Start shopping</Text>
         </TouchableOpacity>
@@ -359,8 +373,8 @@ export default function OrdersScreen() {
       : [{ id: "ongoing" as const, label: "Orders" }];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "#F4F4F5" }} edges={["left", "right", "bottom"]}>
-      <View className={`border-b px-4 pt-4 pb-2 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }} edges={["left", "right", "bottom"]}>
+      <View className={`px-4 pt-4 pb-2 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
         <View className=" mb-3">
           <Text className={`text-xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Orders</Text>
           <View className="w-10" />

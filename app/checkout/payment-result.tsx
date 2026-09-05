@@ -54,7 +54,6 @@ export default function PaymentResult() {
           if (!cancelled) setOrder(orderData);
         }
         if (effectiveOrderId) clearIdempotencyKey(`pay-${effectiveOrderId}`);
-        clearIdempotencyKey("checkout-cart");
       } catch (err) {
         if (!cancelled) {
           setVerifyError(
@@ -62,6 +61,10 @@ export default function PaymentResult() {
           );
         }
       } finally {
+        // Retired here too, regardless of how verification went. It is
+        // primarily cleared at checkout; leaving it alive after a failed
+        // verify would let the next checkout replay this order.
+        clearIdempotencyKey("checkout-cart");
         if (!cancelled) setLoading(false);
       }
     })();

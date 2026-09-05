@@ -138,6 +138,9 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
                 size="sm"
               />
             )}
+            {topBadges.map((badge) => (
+              <BadgeChip key={badge.slug} badge={badge} size="xs" />
+            ))}
           </Pressable>
           <Text className={`text-[13px] ${isDark ? "text-[#aeb0b7]" : "text-text-secondary"}`}>
             {` · ${compactAge(product.created_at)}${isFollowing ? " · following" : ""}`}
@@ -192,7 +195,6 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
               ★ {product.rating.toFixed(1)}{product.reviews_count > 0 && ` · ${product.reviews_count} reviews`}
             </Text>
           )}
-          {topBadges.map((badge) => <BadgeChip key={badge.slug} badge={badge} size="xs" />)}
           {/* No Follow button. It occupied a full row on every card from a
               seller you hadn't followed, competing with Add to cart and Chat --
               the two things the card exists for. Following is an action you
