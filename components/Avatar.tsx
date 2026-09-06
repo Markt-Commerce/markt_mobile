@@ -41,6 +41,7 @@ interface AvatarProps {
 
 function Avatar({ uri, name, size = 40, className = "", shape = "circle" }: AvatarProps) {
   const [imageError, setImageError] = useState(false);
+  const t = useTokens();
 
   useEffect(() => {
     setImageError(false);
@@ -57,7 +58,7 @@ function Avatar({ uri, name, size = 40, className = "", shape = "circle" }: Avat
         width: size,
         height: size,
         borderRadius: shape === "circle" ? size / 2 : Math.min(12, size * 0.25),
-        backgroundColor: hasValidUri ? useTokens().media : bgColor,
+        backgroundColor: hasValidUri ? t.media : bgColor,
       }}
     >
       {hasValidUri ? (

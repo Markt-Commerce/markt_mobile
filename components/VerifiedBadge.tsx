@@ -49,7 +49,8 @@ export default function VerifiedBadge({
   size = 14,
   label,
 }: Props) {
-  const tone = toneFor(useTokens())[kind];
+  const t = useTokens();
+  const tone = toneFor(t)[kind];
   const text = label ?? tone.label;
 
   if (compact) {

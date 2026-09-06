@@ -81,6 +81,21 @@ const BLIND_RE = new RegExp(
   "g"
 );
 
+/**
+ * `useTokens()` is a hook, so it must be called unconditionally at the top of
+ * a component. Writing it inline — `hasImage ? useTokens().media : bg` — makes
+ * the hook count change between renders, and React throws "Rendered more hooks
+ * than during the previous render". It shipped exactly once, in Avatar, and
+ * crashed the tab bar on launch.
+ *
+ * tsc cannot see this and there is no ESLint in this repo, so the mechanical
+ * migration had nothing stopping it. The rule here is narrow on purpose: the
+ * call must be its own `const x = useTokens();` statement. `tokensFor()` is a
+ * plain function, not a hook, and is unrestricted.
+ */
+const HOOK_CALL = /useTokens\s*\(/;
+const HOOK_BINDING = /^\s*const\s+\w+\s*=\s*useTokens\(\);?\s*$/;
+
 /** What to use instead, named in the failure message. */
 const BLIND_FIX = {
   secondary: "text-text-primary / bg-text-primary",
@@ -136,6 +151,16 @@ for (const dir of DIRS) {
         failures++;
       }
 
+      if (HOOK_CALL.test(line) && !HOOK_BINDING.test(line)) {
+        console.error(`${rel}:${i + 1}: useTokens() must be its own statement`);
+        console.error(`    ${line.trim()}`);
+        console.error(
+          "    a hook cannot be called conditionally — bind it at the top of" +
+            " the component:  const t = useTokens();"
+        );
+        failures++;
+      }
+
       for (const match of line.match(BLIND_RE) ?? []) {
         const name = match.replace(/^(bg|text|border)-/, "");
         console.error(`${rel}:${i + 1}: ${match} is a fixed light-mode colour`);
@@ -148,10 +173,10 @@ for (const dir of DIRS) {
 
 if (failures) {
   console.error(
-    `\n${failures} theme-blind colour(s). Use a token from theme/tokens.ts —` +
+    `\n${failures} theme problem(s) — see each line above for the fix.` +
       `\n  className: bg-surface-raised, text-text-secondary, border-border, ...` +
       `\n  props:     const t = useTokens();  color={t.textSecondary}` +
-      `\nIf the colour really is theme-independent, add it to ALLOWED in this` +
+      `\nIf a colour really is theme-independent, add it to ALLOWED in this` +
       `\nfile with the reason.`
   );
   process.exit(1);

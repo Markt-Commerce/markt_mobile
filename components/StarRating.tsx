@@ -30,7 +30,8 @@ export function StarRating({
   count,
 }: DisplayProps) {
   const safe = Math.max(0, Math.min(5, Number(value) || 0));
-  const empty = useTokens().border;
+  const t = useTokens();
+  const empty = t.border;
 
   return (
     <View
@@ -92,7 +93,8 @@ export function StarRatingInput({
   onChange,
   size = 36,
 }: InputProps) {
-  const empty = useTokens().border;
+  const t = useTokens();
+  const empty = t.border;
   return (
     <View className="flex-row items-center">
       {[1, 2, 3, 4, 5].map((n) => {
