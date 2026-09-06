@@ -123,7 +123,7 @@ export default function OrderCard({ order, isSeller }: OrderCardProps) {
         <View className="items-center gap-2">
           <View className="w-[88px] h-1 rounded overflow-hidden bg-border">
             <View
-              className="h-1 bg-primary"
+              className="h-1 bg-primary-fill"
               style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
             />
           </View>

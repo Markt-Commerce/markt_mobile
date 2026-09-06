@@ -20,9 +20,9 @@ interface InputProps<TFieldValues extends FieldValues = FieldValues> extends Rea
 
 /**
  * Markt form input (Kinetic Minimalist).
- * - 48px height, rounded (8px), bg-background, 1px border-border
- * - Placeholder: text-muted
- * - Error: border-error when invalid
+ * - 48px height, rounded (8px), surface-raised fill, 1px border
+ * - Placeholder uses the secondary text token
+ * - Error: border-danger when invalid
  */
 export function Input<TFieldValues extends FieldValues = FieldValues>({
   name,
@@ -68,7 +68,7 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
               placeholderTextColor={t.textSecondary}
               secureTextEntry={secureTextEntry}
               className={`w-full rounded ${sizeClass} px-4 text-base text-text-primary bg-surface-raised border ${
-                hasError ? "border-error" : "border-border-strong focus:border-text-primary"
+                hasError ? "border-danger" : "border-border-strong focus:border-text-primary"
               }`}
               multiline={multiline}
               numberOfLines={numberOfLines}
@@ -79,7 +79,7 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
               accessibilityState={{ disabled: false }}
             />
             {errorMessage ? (
-              <Text className="mt-1 text-xs text-error" accessibilityLiveRegion="polite">
+              <Text className="mt-1 text-xs text-danger-text" accessibilityLiveRegion="polite">
                 {errorMessage}
               </Text>
             ) : null}
@@ -115,7 +115,7 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
           <>
             <View
               className={`flex-row items-center rounded h-12 px-4 border bg-surface-raised ${
-                hasError ? "border-error" : isFocused ? ("border-text-primary") : "border-border"
+                hasError ? "border-danger" : isFocused ? ("border-text-primary") : "border-border"
               }`}
             >
               <TextInput
@@ -147,7 +147,7 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
               )}
             </View>
             {inputProps.errors?.[inputProps.name!] ? (
-              <Text className="mt-1 text-xs text-error" accessibilityLiveRegion="polite">
+              <Text className="mt-1 text-xs text-danger-text" accessibilityLiveRegion="polite">
                 {inputProps.errors[inputProps.name!]?.message as string}
               </Text>
             ) : null}
@@ -222,7 +222,7 @@ export function OTPInput({ value, onChange, error, digits = 6 }: OTPInputProps) 
             <View
               key={i}
               className={`rounded items-center justify-center border ${
-                error ? "border-error" : "border-transparent"
+                error ? "border-danger" : "border-transparent"
               }`}
               style={{
                 width: `${100 / digits - 2}%`,
@@ -247,7 +247,7 @@ export function OTPInput({ value, onChange, error, digits = 6 }: OTPInputProps) 
           ))}
       </View>
       {error ? (
-        <Text className="mt-2 text-xs text-error" accessibilityLiveRegion="polite">
+        <Text className="mt-2 text-xs text-danger-text" accessibilityLiveRegion="polite">
           {error}
         </Text>
       ) : null}

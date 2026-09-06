@@ -92,7 +92,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
               ? "bg-primary-muted"
               : isDark
                 ? "bg-surface-sunken"
-                : "bg-surface"
+                : "bg-surface-sunken"
           }`}
         >
           <Text

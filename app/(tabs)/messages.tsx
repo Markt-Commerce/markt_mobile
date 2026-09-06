@@ -139,7 +139,7 @@ export default function MessagesScreen() {
                   />
                   {hasUnread && (
                     <View
-                      className="absolute right-0 bottom-0 w-3.5 h-3.5 rounded bg-primary border-2 border-surface-page"
+                      className="absolute right-0 bottom-0 w-3.5 h-3.5 rounded bg-primary-fill border-2 border-surface-page"
                     />
                   )}
                 </View>

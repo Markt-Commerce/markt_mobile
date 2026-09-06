@@ -131,7 +131,7 @@ export default function ProductPicker({
                         : "bg-white border-border"
                       : isDark
                         ? "bg-dark-surface border-transparent"
-                        : "bg-surface border-transparent"
+                        : "bg-surface-sunken border-transparent"
                   } ${disabled ? "opacity-50" : ""}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Select ${item.name}, priced at ${formatNaira(item.price)}`}

@@ -119,7 +119,7 @@ export default function SellerAllocationsScreen() {
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.85}
-      className={`flex-1 h-9 rounded items-center justify-center ${primary ? "bg-primary" : "bg-surface-sunken"} ${disabled ? "opacity-50" : ""}`}
+      className={`flex-1 h-9 rounded items-center justify-center ${primary ? "bg-primary-fill" : "bg-surface-sunken"} ${disabled ? "opacity-50" : ""}`}
     >
       <Text className={`text-xs font-bold ${primary ? "text-white" : "text-text-primary"}`}>
         {label}

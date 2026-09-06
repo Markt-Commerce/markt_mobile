@@ -411,7 +411,7 @@ export default function CommunitiesScreen() {
                   onPress={() => setTab("explore")}
                   activeOpacity={0.85}
                   accessibilityRole="button"
-                  className="mt-5 px-5 h-11 rounded-xl bg-primary items-center justify-center"
+                  className="mt-5 px-5 h-11 rounded-xl bg-primary-fill items-center justify-center"
                 >
                   <Text className="text-white font-semibold text-[15px]">Explore</Text>
                 </TouchableOpacity>

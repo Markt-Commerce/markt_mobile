@@ -35,7 +35,7 @@ export default function LeaderboardScopeTabs({
             onPress={() => onChange(t.id)}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
-            className={`flex-1 py-2 rounded items-center ${active ? "bg-primary" : ""}`}
+            className={`flex-1 py-2 rounded items-center ${active ? "bg-primary-fill" : ""}`}
           >
             <Text
               className={`font-bold text-xs ${

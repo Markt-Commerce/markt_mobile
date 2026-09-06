@@ -147,7 +147,7 @@ export default function PayScreen() {
           Payment link unavailable
         </Text>
         <TouchableOpacity
-          className="mt-4 px-6 py-3 rounded bg-primary"
+          className="mt-4 px-6 py-3 rounded bg-primary-fill"
           onPress={() => router.back()}
         >
           <Text className="text-white font-semibold">Go back</Text>

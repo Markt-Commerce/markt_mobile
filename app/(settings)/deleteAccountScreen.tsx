@@ -220,7 +220,7 @@ export default function DeleteAccountScreen() {
             onPress={handleDelete}
             disabled={!canSubmit}
             activeOpacity={0.85}
-            className={`h-14 rounded items-center justify-center flex-row gap-2 ${canSubmit ? "bg-primary" : "bg-surface-sunken"}`}
+            className={`h-14 rounded items-center justify-center flex-row gap-2 ${canSubmit ? "bg-primary-fill" : "bg-surface-sunken"}`}
             accessibilityRole="button"
             accessibilityState={{ disabled: !canSubmit }}
             accessibilityLabel="Permanently delete my account"

@@ -290,7 +290,7 @@ const addProductToCart = async (product:ProductDetail)=>{
               </TouchableOpacity>
               {canMessageSeller ? (
                 <TouchableOpacity
-                  className="flex-1 bg-primary rounded h-12 justify-center items-center"
+                  className="flex-1 bg-primary-fill rounded h-12 justify-center items-center"
                   disabled={messageSellerBusy}
                   onPress={handleMessageSeller}
                 >
@@ -398,7 +398,7 @@ const addProductToCart = async (product:ProductDetail)=>{
 
           <View className="flex-row justify-end pb-10 pt-6">
             <Link href={`/shopDetails/${product.seller_id}`} asChild>
-            <TouchableOpacity className="bg-primary h-12 rounded px-6 justify-center items-center">
+            <TouchableOpacity className="bg-primary-fill h-12 rounded px-6 justify-center items-center">
               <Text className="text-white font-bold">View Shop</Text>
             </TouchableOpacity>
             </Link>

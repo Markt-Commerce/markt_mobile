@@ -141,7 +141,7 @@ export default function SellerOrders() {
       activeOpacity={0.85}
       className={`h-9 px-4 rounded items-center justify-center border ${
         active
-          ? "bg-primary border-primary"
+          ? "bg-primary-fill border-primary"
           : "bg-surface-sunken border-border"
       }`}
     >
@@ -160,7 +160,7 @@ export default function SellerOrders() {
       onPress={() => setSort(v)}
       className={`h-9 px-4 rounded border ${
         sort === v
-          ? "bg-primary border-primary"
+          ? "bg-primary-fill border-primary"
           : "bg-surface-sunken border-border"
       } items-center justify-center`}
       activeOpacity={0.85}

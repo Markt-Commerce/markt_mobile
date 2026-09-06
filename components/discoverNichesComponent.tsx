@@ -109,7 +109,7 @@ export default function DiscoverNiches() {
                   onPress={() => (isJoined ? handleLeave(niche) : handleJoin(niche))}
                   className={`w-full rounded px-4 py-1.5 border ${
                     isJoined
-                      ? "bg-primary border-primary"
+                      ? "bg-primary-fill border-primary"
                       : "bg-surface-sunken border-border"
                   }`}
                 >

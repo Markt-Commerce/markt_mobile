@@ -260,7 +260,7 @@ export default function SearchPage() {
             activeOpacity={0.8}
             className="mt-3 flex-row items-center gap-3 px-4 py-3 rounded border bg-surface-sunken border-border"
           >
-            <View className="w-9 h-9 rounded-full bg-primary items-center justify-center">
+            <View className="w-9 h-9 rounded-full bg-primary-fill items-center justify-center">
               <Megaphone size={18} color="white" />
             </View>
             <Text className={`flex-1 text-xs leading-5 ${mutedColor}`}>

@@ -285,7 +285,7 @@ export default function AccountInfoScreen() {
                 keyboardType="phone-pad"
               />
               <TouchableOpacity
-                className={`mt-4 h-12 rounded bg-primary items-center justify-center ${
+                className={`mt-4 h-12 rounded bg-primary-fill items-center justify-center ${
                   isGeneralDisabled ? "opacity-50" : ""
                 }`}
                 onPress={onGeneralSubmit}
@@ -312,7 +312,7 @@ export default function AccountInfoScreen() {
                   name="buyername"
                 />
                 <TouchableOpacity
-                  className={`mt-4 h-12 rounded bg-primary items-center justify-center ${
+                  className={`mt-4 h-12 rounded bg-primary-fill items-center justify-center ${
                     isBuyerDisabled ? "opacity-50" : ""
                   }`}
                   onPress={onBuyerSubmit}
@@ -349,7 +349,7 @@ export default function AccountInfoScreen() {
                   />
                 </View>
                 <TouchableOpacity
-                  className={`mt-4 h-12 rounded bg-primary items-center justify-center ${
+                  className={`mt-4 h-12 rounded bg-primary-fill items-center justify-center ${
                     isSellerDisabled ? "opacity-50" : ""
                   }`}
                   onPress={onSellerSubmit}

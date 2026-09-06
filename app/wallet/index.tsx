@@ -286,7 +286,7 @@ export default function WalletScreen() {
   const header = useMemo(
     () => (
       <>
-        <View className="bg-primary px-5 pb-7">
+        <View className="bg-primary-fill px-5 pb-7">
           <View className="flex-row items-center justify-between h-12">
             <TouchableOpacity
               onPress={() => router.back()}
@@ -444,7 +444,7 @@ export default function WalletScreen() {
               <TouchableOpacity
                 onPress={handleStartTopUp}
                 disabled={startingTopUp}
-                className="flex-1 h-14 rounded bg-primary items-center justify-center"
+                className="flex-1 h-14 rounded bg-primary-fill items-center justify-center"
                 accessibilityRole="button"
               >
                 {startingTopUp ? (
@@ -530,7 +530,7 @@ export default function WalletScreen() {
               <TouchableOpacity
                 onPress={handleWithdraw}
                 disabled={withdrawing}
-                className="flex-1 h-14 rounded bg-primary items-center justify-center"
+                className="flex-1 h-14 rounded bg-primary-fill items-center justify-center"
                 accessibilityRole="button"
               >
                 {withdrawing ? (

@@ -349,7 +349,7 @@ export default function SellerDashboard() {
         onPress={() => handleDeleteProduct(item.id)}
         className="rounded px-4 h-9 items-center justify-center border bg-surface-sunken border-border"
       >
-        <Text className="text-error font-bold text-xs">Delete</Text>
+        <Text className="text-danger-text font-bold text-xs">Delete</Text>
       </TouchableOpacity>
     </View>
   );
@@ -368,7 +368,7 @@ export default function SellerDashboard() {
               <TouchableOpacity
                 key={d}
                 onPress={() => { setWindowDays(d); setStatusMenuVisible(false); }}
-                className={`px-5 py-2 rounded ${windowDays === d ? "bg-primary shadow-sm" : "shadow-none"}`}
+                className={`px-5 py-2 rounded ${windowDays === d ? "bg-primary-fill shadow-sm" : "shadow-none"}`}
                 accessibilityLabel={`${d} days`}
                 accessibilityState={{ selected: windowDays === d }}
               >
@@ -400,7 +400,7 @@ export default function SellerDashboard() {
             </Text>
             {trendPct !== null && (analyticsOverview?.revenue_30d ?? 0) > 0 ? (
               <Text
-                className={`text-[13px] font-semibold ml-2 ${trendPct >= 0 ? "text-success" : "text-error"}`}
+                className={`text-[13px] font-semibold ml-2 ${trendPct >= 0 ? "text-success" : "text-danger-text"}`}
               >
                 {trendPct >= 0 ? "+" : ""}
                 {trendPct.toFixed(0)}%
@@ -446,7 +446,7 @@ export default function SellerDashboard() {
           <TouchableOpacity
             accessibilityLabel="create-product-btn"
             onPress={handleCreateProduct}
-            className="rounded h-12 items-center justify-center bg-primary"
+            className="rounded h-12 items-center justify-center bg-primary-fill"
           >
             <Text className="text-white font-bold text-base">Create Product</Text>
           </TouchableOpacity>
@@ -463,11 +463,11 @@ export default function SellerDashboard() {
           <TouchableOpacity
             accessibilityLabel="orders-quicknav"
             onPress={() => router.push("/(tabs)/sellerOrders")}
-            className={`flex-row items-center rounded h-12 px-6 ${pendingOrderCount > 0 ? "bg-primary border border-primary" : ("border border-border bg-surface-raised")}`}
+            className={`flex-row items-center rounded h-12 px-6 ${pendingOrderCount > 0 ? "bg-primary-fill border border-primary" : ("border border-border bg-surface-raised")}`}
           >
             <Text className={`font-bold text-sm ${pendingOrderCount > 0 ? "text-white" : ("text-text-primary")}`}>Orders</Text>
             {pendingOrderCount > 0 && (
-              <View className={`ml-2 min-w-[20px] h-5 rounded items-center justify-center px-1.5 ${isDark ? "bg-surface-raised" : "bg-primary"}`}>
+              <View className={`ml-2 min-w-[20px] h-5 rounded items-center justify-center px-1.5 ${isDark ? "bg-surface-raised" : "bg-primary-fill"}`}>
                 <Text className={`${isDark ? "text-primary" : "text-white"} text-[10px] font-bold`}>{pendingOrderCount}</Text>
               </View>
             )}
@@ -540,7 +540,7 @@ export default function SellerDashboard() {
               />
             </View>
           )}
-          {error ? <Text className="text-error text-sm mt-3 px-1">{error}</Text> : null}
+          {error ? <Text className="text-danger-text text-sm mt-3 px-1">{error}</Text> : null}
         </View>
 
         {/* Low stock */}
@@ -557,7 +557,7 @@ export default function SellerDashboard() {
                 ? "bg-surface-sunken"
                 : isDark
                   ? "bg-surface-sunken border border-danger"
-                  : "bg-error-bg border border-error"
+                  : "bg-danger-muted border border-danger"
             }`}
           >
             {sellerInventory.filter((item) => (item.stock ?? 0) < 5).length === 0 ? (
@@ -568,7 +568,7 @@ export default function SellerDashboard() {
               sellerInventory.filter((item) => (item.stock ?? 0) < 5).map((a, idx, arr) => (
                 <View
                   key={a.id ?? a.name ?? idx}
-                  className={`flex-row items-stretch ${idx < arr.length - 1 ? (isDark ? 'border-b border-danger/20' : 'border-b border-error/20') : ''}`}
+                  className={`flex-row items-stretch ${idx < arr.length - 1 ? (isDark ? 'border-b border-danger/20' : 'border-b border-danger/20') : ''}`}
                 >
                   {/* Left accent bar  */}
                   <LeftAccentPulse />
@@ -578,7 +578,7 @@ export default function SellerDashboard() {
                     <View className="flex-1 pr-4">
                       <View className="flex-row items-center gap-2">
                         <AlertTriangle size={16} color={t.dangerText} />
-                        <Text className="text-error font-bold text-xs uppercase tracking-wider">Low stock</Text>
+                        <Text className="text-danger-text font-bold text-xs uppercase tracking-wider">Low stock</Text>
                       </View>
 
                       <Text className="font-bold text-base mt-2 text-text-primary">{a.name}</Text>
@@ -586,17 +586,17 @@ export default function SellerDashboard() {
                       <Text className="text-xs text-text-secondary">Stock Left: {a.stock}</Text>
 
                       {/* Visual urgency bar*/}
-                      <View className={`mt-3 h-1.5 rounded overflow-hidden ${isDark ? "bg-surface-raised" : "bg-error/10"}`}>
+                      <View className={`mt-3 h-1.5 rounded overflow-hidden ${isDark ? "bg-surface-raised" : "bg-danger/10"}`}>
                         <View
                           style={{ width: `${Math.min(Number(a.stock ?? 0), 20) * 5}%` }}
-                          className="h-1.5 bg-error"
+                          className="h-1.5 bg-danger"
                         />
                       </View>
                     </View>
 
                     {/* Badge */}
                     <View className="rounded px-3 py-1 border bg-surface-raised border-danger">
-                      <Text className="text-error font-bold text-[10px] uppercase tracking-wider">Action needed</Text>
+                      <Text className="text-danger-text font-bold text-[10px] uppercase tracking-wider">Action needed</Text>
                     </View>
                   </View>
                 </View>
@@ -627,7 +627,7 @@ export default function SellerDashboard() {
               <View>
                 <TouchableOpacity
                   onPress={() => setStatusMenuVisible((v) => !v)}
-                  className={`h-10 items-center justify-center rounded pl-5 pr-4 flex-row gap-2 border ${(invFilter === 'active' || invFilter === 'inactive') ? "bg-primary border-primary" : ("bg-surface-sunken border-border")}`}
+                  className={`h-10 items-center justify-center rounded pl-5 pr-4 flex-row gap-2 border ${(invFilter === 'active' || invFilter === 'inactive') ? "bg-primary-fill border-primary" : ("bg-surface-sunken border-border")}`}
                 >
                   <Text className={`font-bold text-sm capitalize ${(invFilter === 'active' || invFilter === 'inactive') ? "text-white" : ("text-text-primary")}`}>
                     {invFilter === 'active' || invFilter === 'inactive' ? invFilter : 'Status'}
@@ -650,15 +650,15 @@ export default function SellerDashboard() {
               </View>
               <TouchableOpacity
                 onPress={() => { setInvFilter('all'); setStatusMenuVisible(false); }}
-                className={`h-10 items-center justify-center rounded px-5 border ${invFilter === 'all' ? "bg-primary border-primary" : ("bg-surface-sunken border-border")}`}
+                className={`h-10 items-center justify-center rounded px-5 border ${invFilter === 'all' ? "bg-primary-fill border-primary" : ("bg-surface-sunken border-border")}`}
               >
                 <Text className={`font-bold text-sm ${invFilter === 'all' ? "text-white" : ("text-text-primary")}`}>All</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => { setInvFilter(invFilter === 'low' ? 'all' : 'low'); setStatusMenuVisible(false); }}
-                className={`h-10 items-center justify-center rounded px-5 border ${invFilter === 'low' ? "bg-error border-error" : ("bg-danger-muted border-danger")}`}
+                className={`h-10 items-center justify-center rounded px-5 border ${invFilter === 'low' ? "bg-danger border-danger" : ("bg-danger-muted border-danger")}`}
               >
-                <Text className={`font-bold text-sm ${invFilter === 'low' ? "text-white" : "text-error"}`}>Low</Text>
+                <Text className={`font-bold text-sm ${invFilter === 'low' ? "text-white" : "text-danger-text"}`}>Low</Text>
               </TouchableOpacity>
             </View>
           </View>

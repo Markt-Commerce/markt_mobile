@@ -246,7 +246,7 @@ export default function StartCards({
                   <View className="flex-1" />
                   <TouchableOpacity
                     activeOpacity={0.9}
-                    className="px-4 h-10 rounded bg-primary items-center justify-center flex-row"
+                    className="px-4 h-10 rounded bg-primary-fill items-center justify-center flex-row"
                   >
                     <Text className="text-white font-semibold text-sm">
                       {card.ctaText || "Open"}

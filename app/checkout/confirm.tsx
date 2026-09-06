@@ -139,7 +139,7 @@ export default function CheckoutConfirm() {
         <TouchableOpacity
           onPress={handlePayNow}
           disabled={proceeding || !payment_id}
-          className={`flex-row items-center justify-center h-12 rounded ${proceeding || !payment_id ? "bg-primary/60" : "bg-primary"}`}
+          className={`flex-row items-center justify-center h-12 rounded ${proceeding || !payment_id ? "bg-primary/60" : "bg-primary-fill"}`}
           activeOpacity={0.85}
           accessibilityRole="button"
         >

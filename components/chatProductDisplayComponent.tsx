@@ -201,7 +201,7 @@ export default function ChatProductDisplayComponent({
       {showAddToCart && onAddToCart && (
         <TouchableOpacity
           onPress={() => onAddToCart(id)}
-          className="mx-3 mb-3 py-2.5 rounded bg-primary flex-row items-center justify-center gap-2"
+          className="mx-3 mb-3 py-2.5 rounded bg-primary-fill flex-row items-center justify-center gap-2"
         >
           <ShoppingCart size={18} color="white" />
           <Text className="text-white font-semibold text-sm">Add to Cart</Text>

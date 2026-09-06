@@ -169,11 +169,11 @@ export default function NotificationsScreen() {
       onPress={onPress}
       activeOpacity={0.85}
       className={`px-4 py-2 rounded ${
-        active ? "bg-primary" : "bg-surface-sunken"
+        active ? "bg-primary-fill" : "bg-surface-sunken"
       }`}
     >
       <Text
-        className={`text-xs font-bold ${active ? "text-white" : "text-tertiary"}`}
+        className={`text-xs font-bold ${active ? "text-white" : "text-text-muted"}`}
       >
         {label}
       </Text>
@@ -192,7 +192,7 @@ export default function NotificationsScreen() {
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.8}
-      className={`flex-1 h-9 rounded items-center justify-center ${primary ? "bg-primary" : "bg-surface-sunken"}`}
+      className={`flex-1 h-9 rounded items-center justify-center ${primary ? "bg-primary-fill" : "bg-surface-sunken"}`}
       accessibilityRole="button"
       accessibilityLabel={label}
     >
@@ -333,7 +333,7 @@ export default function NotificationsScreen() {
           </ScrollView>
           <TouchableOpacity
             onPress={markAllRead}
-            className="h-10 px-4 rounded bg-primary items-center justify-center"
+            className="h-10 px-4 rounded bg-primary-fill items-center justify-center"
             activeOpacity={0.85}
           >
             <Text className="text-[10px] font-bold text-white tracking-widest uppercase">
@@ -359,7 +359,7 @@ export default function NotificationsScreen() {
           <View
             className="rounded border overflow-hidden bg-surface-raised border-border"
           >
-            <Text className="px-6 pt-6 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-tertiary">
+            <Text className="px-6 pt-6 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">
               Recents
             </Text>
             {today?.length ? (
@@ -386,7 +386,7 @@ export default function NotificationsScreen() {
             <View
               className="rounded border overflow-hidden mt-8 bg-surface-raised border-border"
             >
-              <Text className="px-6 pt-6 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-tertiary">
+              <Text className="px-6 pt-6 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">
                 Previous
               </Text>
               {yesterday.map((n, i) => (

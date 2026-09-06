@@ -137,7 +137,7 @@ export default function PaymentResult() {
         <View className="px-6 pb-8 gap-3">
           {resolvedOrderId ? (
             <TouchableOpacity
-              className="h-12 rounded bg-primary items-center justify-center"
+              className="h-12 rounded bg-primary-fill items-center justify-center"
               onPress={() => router.replace(`/orderdetail/${resolvedOrderId}`)}
             >
               <Text className="text-white font-semibold">View order</Text>

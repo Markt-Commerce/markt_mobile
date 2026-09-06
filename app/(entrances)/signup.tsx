@@ -98,7 +98,7 @@ export default function SignupScreen() {
       <TouchableOpacity
         onPress={() => setUserRole("buyer")}
         className={`flex-1 py-2.5 rounded items-center ${
-          role === "buyer" ? "bg-primary shadow-sm" : "shadow-none"
+          role === "buyer" ? "bg-primary-fill shadow-sm" : "shadow-none"
         }`}
       >
         <Text className={`font-bold text-sm ${role === "buyer" ? "text-white" : "text-text-secondary"}`}>
@@ -108,7 +108,7 @@ export default function SignupScreen() {
       <TouchableOpacity
         onPress={() => setUserRole("seller")}
         className={`flex-1 py-2.5 rounded items-center ${
-          role === "seller" ? "bg-primary shadow-sm" : "shadow-none"
+          role === "seller" ? "bg-primary-fill shadow-sm" : "shadow-none"
         }`}
       >
         <Text className={`font-bold text-sm ${role === "seller" ? "text-white" : "text-text-secondary"}`}>
@@ -190,11 +190,11 @@ export default function SignupScreen() {
                       className={`flex-1 h-1 rounded ${
                         i < strength.level
                           ? strength.level <= 1
-                            ? "bg-error"
+                            ? "bg-danger"
                             : strength.level <= 2
-                              ? "bg-tertiary"
+                              ? "bg-warning"
                               : strength.level <= 3
-                                ? "bg-secondary"
+                                ? "bg-primary"
                                 : "bg-success"
                           : "bg-surface-sunken"
                       }`}
@@ -204,25 +204,25 @@ export default function SignupScreen() {
                 <View className="flex-row flex-wrap gap-x-4 gap-y-1 mt-2">
                   <View className="flex-row items-center gap-1">
                     {strength.checks.length ? <Check size={12} color={t.successText} /> : <Circle size={12} color={mutedIconColor} />}
-                    <Text className={`text-[11px] ${strength.checks.length ? "text-success" : "text-tertiary"}`}>
+                    <Text className={`text-[11px] ${strength.checks.length ? "text-success" : "text-text-muted"}`}>
                       8+ chars
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-1">
                     {strength.checks.digit ? <Check size={12} color={t.successText} /> : <Circle size={12} color={mutedIconColor} />}
-                    <Text className={`text-[11px] ${strength.checks.digit ? "text-success" : "text-tertiary"}`}>
+                    <Text className={`text-[11px] ${strength.checks.digit ? "text-success" : "text-text-muted"}`}>
                       1 digit
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-1">
                     {strength.checks.lowercase ? <Check size={12} color={t.successText} /> : <Circle size={12} color={mutedIconColor} />}
-                    <Text className={`text-[11px] ${strength.checks.lowercase ? "text-success" : "text-tertiary"}`}>
+                    <Text className={`text-[11px] ${strength.checks.lowercase ? "text-success" : "text-text-muted"}`}>
                       1 lower
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-1">
                     {strength.checks.uppercase ? <Check size={12} color={t.successText} /> : <Circle size={12} color={mutedIconColor} />}
-                    <Text className={`text-[11px] ${strength.checks.uppercase ? "text-success" : "text-tertiary"}`}>
+                    <Text className={`text-[11px] ${strength.checks.uppercase ? "text-success" : "text-text-muted"}`}>
                       1 upper
                     </Text>
                   </View>

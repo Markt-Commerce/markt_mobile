@@ -134,7 +134,7 @@ export default function SellerOrderDetail() {
           </Text>
           <TouchableOpacity
             onPress={() => router.back()}
-            className="mt-6 px-6 h-11 rounded-lg bg-primary items-center justify-center"
+            className="mt-6 px-6 h-11 rounded-lg bg-primary-fill items-center justify-center"
           >
             <Text className="text-white font-semibold">Go back</Text>
           </TouchableOpacity>
@@ -274,7 +274,7 @@ export default function SellerOrderDetail() {
                     } ${
                       destructive
                         ? "bg-danger-muted"
-                        : "bg-primary"
+                        : "bg-primary-fill"
                     }`}
                   >
                     {working ? (

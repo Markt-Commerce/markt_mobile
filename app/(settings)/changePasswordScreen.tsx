@@ -78,7 +78,7 @@ export default function ChangePasswordScreen() {
           </View>
 
           <TouchableOpacity
-            className={`mt-6 h-12 rounded items-center justify-center bg-primary ${canSubmit ? "" : "opacity-50"}`}
+            className={`mt-6 h-12 rounded items-center justify-center bg-primary-fill ${canSubmit ? "" : "opacity-50"}`}
             onPress={onSubmit}
             disabled={!canSubmit}
             activeOpacity={0.85}

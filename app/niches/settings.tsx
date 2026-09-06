@@ -137,7 +137,7 @@ export default function NicheSettingsScreen() {
         </SettingsSection>
 
         <SettingsSection title="Posting & privacy">
-          <View className="px-4 py-4"><Text className={`text-xs font-bold uppercase tracking-[2px] mb-3 ${muted}`}>Visibility</Text><View className="flex-row gap-2">{(["public", "private", "restricted"] as NicheVisibility[]).map((option) => <TouchableOpacity key={option} onPress={() => setVisibility(option)} className={`px-4 py-2 rounded-full border ${visibility === option ? "bg-primary border-primary" : "border-border"}`}><Text className={`text-sm capitalize ${visibility === option ? "text-white font-bold" : "text-text-secondary"}`}>{option}</Text></TouchableOpacity>)}</View></View>
+          <View className="px-4 py-4"><Text className={`text-xs font-bold uppercase tracking-[2px] mb-3 ${muted}`}>Visibility</Text><View className="flex-row gap-2">{(["public", "private", "restricted"] as NicheVisibility[]).map((option) => <TouchableOpacity key={option} onPress={() => setVisibility(option)} className={`px-4 py-2 rounded-full border ${visibility === option ? "bg-primary-fill border-primary" : "border-border"}`}><Text className={`text-sm capitalize ${visibility === option ? "text-text-on-primary font-bold" : "text-text-secondary"}`}>{option}</Text></TouchableOpacity>)}</View></View>
           <SettingsSwitchRow icon={Camera} title="Allow buyer posts" value={allowBuyerPosts} onValueChange={setAllowBuyerPosts} />
           <SettingsSwitchRow icon={Camera} title="Allow seller posts" value={allowSellerPosts} onValueChange={setAllowSellerPosts} />
           <SettingsSwitchRow icon={Save} title="Approve posts before publishing" subtitle="Review new posts before members can see them." value={requireApproval} onValueChange={setRequireApproval} last />
@@ -146,7 +146,7 @@ export default function NicheSettingsScreen() {
         <SettingsSection title="Community details">
           <View className="p-4"><Text className={`text-xs font-bold uppercase tracking-[2px] mb-2 ${muted}`}>Tags, separated by commas</Text><TextInput value={tags} onChangeText={setTags} className={`${inputClass} mb-4`} placeholder="fashion, tech, food" placeholderTextColor={t.textMuted} /><Text className={`text-xs font-bold uppercase tracking-[2px] mb-2 ${muted}`}>Rules, one per line</Text><TextInput value={rules} onChangeText={setRules} multiline className={`${inputClass} min-h-[100px]`} placeholder="Be respectful\nKeep posts relevant" placeholderTextColor={t.textMuted} /></View>
         </SettingsSection>
-        <TouchableOpacity disabled={saving} onPress={() => save()} className="mx-4 mt-6 h-12 rounded bg-primary flex-row items-center justify-center"><Save size={18} color={t.textOnPrimary} /><Text className="text-white font-bold ml-2">{saving ? "Saving…" : "Save changes"}</Text></TouchableOpacity>
+        <TouchableOpacity disabled={saving} onPress={() => save()} className="mx-4 mt-6 h-12 rounded bg-primary-fill flex-row items-center justify-center"><Save size={18} color={t.textOnPrimary} /><Text className="text-text-on-primary font-bold ml-2">{saving ? "Saving…" : "Save changes"}</Text></TouchableOpacity>
       </ScrollView>
     </View>
   );

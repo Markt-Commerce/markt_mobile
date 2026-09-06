@@ -187,7 +187,7 @@ function MyCartTab() {
         </Text>
         <TouchableOpacity
           onPress={() => router.replace("/(tabs)")}
-          className="mt-6 h-12 px-7 rounded-xl bg-primary items-center justify-center"
+          className="mt-6 h-12 px-7 rounded-xl bg-primary-fill items-center justify-center"
         >
           <Text className="text-white font-semibold">Start shopping</Text>
         </TouchableOpacity>
@@ -233,7 +233,7 @@ function MyCartTab() {
                         </View>
                         <TouchableOpacity
                           onPress={() => handleQuantityChange(item, item.quantity + 1)}
-                          className="w-8 h-8 rounded bg-primary items-center justify-center"
+                          className="w-8 h-8 rounded bg-primary-fill items-center justify-center"
                         >
                           <Text className="text-base font-bold text-white">+</Text>
                         </TouchableOpacity>
@@ -286,7 +286,7 @@ function MyCartTab() {
           <TouchableOpacity
             onPress={handleCheckout}
             disabled={processing || !isShippingAddressUsable(shipping.address)}
-            className={`mt-4 h-12 rounded items-center justify-center ${processing || !isShippingAddressUsable(shipping.address) ? ("bg-surface-sunken") : "bg-primary"}`}
+            className={`mt-4 h-12 rounded items-center justify-center ${processing || !isShippingAddressUsable(shipping.address) ? ("bg-surface-sunken") : "bg-primary-fill"}`}
           >
             <Text className={processing || !isShippingAddressUsable(shipping.address) ? ("text-text-secondary") : "text-white font-semibold"}>
               {processing ? "Processing…" : "Proceed to Checkout"}

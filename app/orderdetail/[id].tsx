@@ -120,7 +120,7 @@ export default function OrderDetail() {
               Order #{order.order_number ?? order.id}
             </Text>
             {orderDate ? (
-              <Text className="text-xs text-tertiary mt-0.5">{orderDate}</Text>
+              <Text className="text-xs text-text-muted mt-0.5">{orderDate}</Text>
             ) : null}
           </View>
         </View>
@@ -138,7 +138,7 @@ export default function OrderDetail() {
           >
             <User size={18} color={mutedColor} />
             <View>
-              <Text className="text-xs font-bold uppercase tracking-wider text-tertiary">
+              <Text className="text-xs font-bold uppercase tracking-wider text-text-muted">
                 Buyer
               </Text>
               <Text className="text-base font-bold mt-1 text-text-primary">
@@ -155,7 +155,7 @@ export default function OrderDetail() {
           >
             <View className="flex-row items-center gap-2">
               <MapPin size={16} color={mutedColor} />
-              <Text className="text-xs font-bold uppercase tracking-wider text-tertiary">
+              <Text className="text-xs font-bold uppercase tracking-wider text-text-muted">
                 Shipping Address
               </Text>
             </View>
@@ -204,7 +204,7 @@ export default function OrderDetail() {
             Items
           </Text>
           {(order.items ?? []).length === 0 ? (
-            <Text className="text-sm text-tertiary">No items on this order.</Text>
+            <Text className="text-sm text-text-muted">No items on this order.</Text>
           ) : (
             order.items!.map((item, index) => (
               <ItemRow
@@ -243,7 +243,7 @@ export default function OrderDetail() {
         <View className="flex pb-10 gap-2.5">
           {order.status === "pending_payment" ? (
             <TouchableOpacity
-              className="bg-primary h-12 rounded-xl justify-center items-center"
+              className="bg-primary-fill h-12 rounded-xl justify-center items-center"
               onPress={() => router.push(`/checkout/payment-method/${order.id}`)}
               accessibilityRole="button"
               accessibilityLabel="Pay for this order"
@@ -254,7 +254,7 @@ export default function OrderDetail() {
             // Only once there's something to track. On an unpaid order this
             // led to a tracking screen with nothing in it.
             <TouchableOpacity
-              className="bg-primary h-12 rounded-xl justify-center items-center flex-row"
+              className="bg-primary-fill h-12 rounded-xl justify-center items-center flex-row"
               onPress={() => router.push(`/orders/${id}/track`)}
               accessibilityRole="button"
               accessibilityLabel="Track this order"
@@ -305,9 +305,9 @@ function ItemRow({
               {name}
             </Text>
             {item.variant_id ? (
-              <Text className="text-xs text-tertiary mt-0.5">Variant #{item.variant_id}</Text>
+              <Text className="text-xs text-text-muted mt-0.5">Variant #{item.variant_id}</Text>
             ) : null}
-            <Text className="text-xs text-tertiary mt-1 capitalize">
+            <Text className="text-xs text-text-muted mt-1 capitalize">
               Qty: {item.quantity} · {formatStatus(item.status)}
             </Text>
           </View>
@@ -316,7 +316,7 @@ function ItemRow({
           <Text className="text-sm font-bold text-text-primary">
             ₦{lineTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </Text>
-          <Text className="text-xs text-tertiary mt-0.5">
+          <Text className="text-xs text-text-muted mt-0.5">
             ₦{(item.price ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} each
           </Text>
         </View>
@@ -339,7 +339,7 @@ function Row({
   return (
     <View className="flex-row justify-between py-2">
       <Text
-        className={`text-sm ${bold ? `font-bold text-text-primary` : "text-tertiary"}`}
+        className={`text-sm ${bold ? `font-bold text-text-primary` : "text-text-muted"}`}
       >
         {label}
       </Text>

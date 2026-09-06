@@ -195,7 +195,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
             activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel="Write a review"
-            className="px-4 h-10 rounded-lg bg-primary items-center justify-center"
+            className="px-4 h-10 rounded-lg bg-primary-fill items-center justify-center"
           >
             <Text className="text-white font-semibold text-[13px]">Write a review</Text>
           </TouchableOpacity>
@@ -240,7 +240,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
             activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityState={{ busy: submitting }}
-            className={`mt-3 h-12 rounded-lg bg-primary items-center justify-center ${
+            className={`mt-3 h-12 rounded-lg bg-primary-fill items-center justify-center ${
               submitting ? "opacity-60" : ""
             }`}
           >

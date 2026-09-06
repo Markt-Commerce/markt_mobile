@@ -226,8 +226,8 @@ export default function Shop() {
                   isFollowing
                     ? isDark
                       ? "bg-dark-elevated"
-                      : "bg-surface"
-                    : "bg-primary"
+                      : "bg-surface-sunken"
+                    : "bg-primary-fill"
                 }`}
                 onPress={handleFollowToggle}
                 disabled={followLoading}

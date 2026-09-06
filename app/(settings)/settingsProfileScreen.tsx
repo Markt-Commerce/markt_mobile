@@ -150,7 +150,7 @@ export default function SettingsProfileScreen() {
           {/* Tint only. The role is the one that matters, so it keeps the
               brand colour and the other two sit back. */}
           <View className="flex-row flex-wrap justify-center gap-2 mt-4">
-            <View className="px-3 py-1.5 rounded-full bg-primary">
+            <View className="px-3 py-1.5 rounded-full bg-primary-fill">
               <Text className="font-bold text-[11px] uppercase tracking-wider text-white">
                 {role}
               </Text>

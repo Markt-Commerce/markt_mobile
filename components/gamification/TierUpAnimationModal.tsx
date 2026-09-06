@@ -60,7 +60,7 @@ export default function TierUpAnimationModal({
 
           <TouchableOpacity
             onPress={onClose}
-            className="bg-primary rounded h-12 items-center justify-center mt-6 w-full"
+            className="bg-primary-fill rounded h-12 items-center justify-center mt-6 w-full"
           >
             <Text className="text-white font-bold">Awesome</Text>
           </TouchableOpacity>

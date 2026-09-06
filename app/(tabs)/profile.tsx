@@ -139,7 +139,7 @@ export default function ProfileScreen() {
           </Text>
 
           <View className="flex-row flex-wrap justify-center gap-2 mt-4">
-            <View className="px-3 py-1.5 rounded-full bg-primary">
+            <View className="px-3 py-1.5 rounded-full bg-primary-fill">
               <Text className="font-bold text-[11px] uppercase tracking-wider text-white">
                 {role}
               </Text>

@@ -267,7 +267,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
 
         <TouchableOpacity
           disabled={sending}
-          className="bg-primary py-4 rounded items-center justify-center"
+          className="bg-primary-fill py-4 rounded items-center justify-center"
           onPress={handleSubmit(onSubmit)}
         >
           <Text className="text-white font-semibold">

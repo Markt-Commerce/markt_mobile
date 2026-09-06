@@ -110,7 +110,7 @@ export default function PointsHistoryScreen() {
             </View>
             <Text
               className={`font-bold text-base ${
-                item.delta >= 0 ? "text-success" : "text-error"
+                item.delta >= 0 ? "text-success" : "text-danger-text"
               }`}
             >
               {item.delta >= 0 ? "+" : ""}

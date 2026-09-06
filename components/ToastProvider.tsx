@@ -20,13 +20,13 @@ export const useToast = () => {
 /**
  * A toast floats above everything, so it sits on `surface-overlay` in both
  * themes. The variant reads from the border, the icon and the title rather
- * than a tinted fill: the fill used to be `bg-error-bg` / `bg-success/10`,
+ * than a tinted fill: the fill used to be `bg-danger-muted` / `bg-success/10`,
  * but an unconditional `bg-white` further along the class string won every
  * time, so the tint never actually rendered and every toast was white —
  * including on a near-black page.
  *
- * Message text stays at `text-secondary` instead of a faded variant colour;
- * `text-error/80` was below AA on both grounds.
+ * Message text stays at `text-text-primary` instead of a faded variant colour;
+ * `text-danger-text/80` was below AA on both grounds.
  */
 const variantUI = {
   error: {

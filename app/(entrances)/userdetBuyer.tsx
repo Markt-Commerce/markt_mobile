@@ -231,7 +231,7 @@ export default function UserInfoScreen() {
                 />
                 <View className="mt-2 h-4">
                   {usernameStatus === "taken" ? (
-                    <Text className="text-xs text-error ">{usernameMessage || "Username is already taken"}</Text>
+                    <Text className="text-xs text-danger-text ">{usernameMessage || "Username is already taken"}</Text>
                   ) : usernameStatus === "available" ? (
                     <View className="flex-row items-center gap-1">
                       <Check size={12} color={t.successText} strokeWidth={3} />

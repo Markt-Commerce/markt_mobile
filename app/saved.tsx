@@ -210,7 +210,7 @@ export default function SavedScreen() {
                   setLoading(true);
                   load({ forFilter: f.key });
                 }}
-                className={`px-4 min-h-[36px] justify-center rounded-full ${active ? "bg-primary" : "bg-surface-sunken"}`}
+                className={`px-4 min-h-[36px] justify-center rounded-full ${active ? "bg-primary-fill" : "bg-surface-sunken"}`}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
                 accessibilityLabel={`Show ${f.label.toLowerCase()}`}
@@ -238,7 +238,7 @@ export default function SavedScreen() {
               setLoading(true);
               load();
             }}
-            className="mt-6 h-12 px-8 rounded bg-primary items-center justify-center flex-row gap-2"
+            className="mt-6 h-12 px-8 rounded bg-primary-fill items-center justify-center flex-row gap-2"
             accessibilityRole="button"
             accessibilityLabel="Try loading your saved items again"
           >
@@ -287,7 +287,7 @@ export default function SavedScreen() {
               </Text>
               <Pressable
                 onPress={() => router.push("/(tabs)")}
-                className="mt-8 h-12 px-8 rounded bg-primary items-center justify-center flex-row gap-2"
+                className="mt-8 h-12 px-8 rounded bg-primary-fill items-center justify-center flex-row gap-2"
                 accessibilityRole="button"
                 accessibilityLabel="Browse the feed"
               >

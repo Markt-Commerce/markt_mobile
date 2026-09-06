@@ -129,7 +129,7 @@ export default function WalletTopUpScreen() {
           Payment link unavailable
         </Text>
         <TouchableOpacity
-          className="mt-4 px-6 py-3 rounded bg-primary"
+          className="mt-4 px-6 py-3 rounded bg-primary-fill"
           onPress={() => router.back()}
           accessibilityRole="button"
         >

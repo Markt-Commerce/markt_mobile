@@ -195,7 +195,7 @@ export default function CartScreen() {
           </Text>
           <TouchableOpacity
             onPress={() => router.replace("/")}
-            className="mt-8 h-12 px-8 rounded bg-primary items-center justify-center"
+            className="mt-8 h-12 px-8 rounded bg-primary-fill items-center justify-center"
             activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel="Start shopping"
@@ -266,7 +266,7 @@ export default function CartScreen() {
 
                           <TouchableOpacity
                             onPress={() => handleQuantityChange(item, item.quantity + 1)}
-                            className="w-8 h-8 rounded bg-primary items-center justify-center"
+                            className="w-8 h-8 rounded bg-primary-fill items-center justify-center"
                             activeOpacity={0.8}
                           >
                             <Text className="text-lg font-bold text-white">+</Text>
@@ -393,7 +393,7 @@ export default function CartScreen() {
               <View
                 className={`w-6 h-6 rounded items-center justify-center border ${
                   reliabilityFeeOptedIn
-                    ? "bg-primary border-primary"
+                    ? "bg-primary-fill border-primary"
                     : isDark
                       ? "border-border-strong"
                       : "border-border"
@@ -406,7 +406,7 @@ export default function CartScreen() {
             <TouchableOpacity
               onPress={handleCheckout}
               disabled={processing || !isShippingAddressUsable(shipping.address)}
-              className={`mt-6 h-12 rounded items-center justify-center ${processing || !isShippingAddressUsable(shipping.address) ? ("bg-surface-sunken") : "bg-primary"}`}
+              className={`mt-6 h-12 rounded items-center justify-center ${processing || !isShippingAddressUsable(shipping.address) ? ("bg-surface-sunken") : "bg-primary-fill"}`}
               activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel={processing ? "Processing" : "Proceed to checkout"}

@@ -1030,7 +1030,7 @@ export default function ChatScreen({
               ) {
                 return (
                   <View
-                    className={`px-4 py-3 min-w-[200px] ${bubbleShape} ${isMe ? "bg-primary" : "bg-surface-raised border border-border"}`}
+                    className={`px-4 py-3 min-w-[200px] ${bubbleShape} ${isMe ? "bg-primary-fill" : "bg-surface-raised border border-border"}`}
                   >
                     <Text
                       className={`text-xs font-medium uppercase tracking-wide ${isMe ? "text-white/80" : "text-text-secondary"}`}
@@ -1081,7 +1081,7 @@ export default function ChatScreen({
               }
               return (
                 <View
-                  className={`px-4 py-2.5 ${bubbleShape} ${isMe ? "bg-primary" : "bg-surface-raised border border-border"}`}
+                  className={`px-4 py-2.5 ${bubbleShape} ${isMe ? "bg-primary-fill" : "bg-surface-raised border border-border"}`}
                 >
                   <Text
                     className={`text-base ${isMe ? "text-white" : "text-text-primary"}`}
@@ -1123,7 +1123,7 @@ export default function ChatScreen({
                     resizeMode="cover"
                   />
                   {item.pending && (
-                    <Text className="text-tertiary text-xs mt-1">Sending…</Text>
+                    <Text className="text-text-muted text-xs mt-1">Sending…</Text>
                   )}
                 </TouchableOpacity>
               );
@@ -1161,7 +1161,7 @@ export default function ChatScreen({
                     />
                   </View>
                   {item.pending && (
-                    <Text className="text-tertiary text-xs mt-1">Sending…</Text>
+                    <Text className="text-text-muted text-xs mt-1">Sending…</Text>
                   )}
                 </View>
               );
@@ -1191,7 +1191,7 @@ export default function ChatScreen({
                 <View className="gap-2">
                   {caption ? (
                     <View
-                      className={`px-4 py-2.5 ${bubbleShape} ${isMe ? "bg-primary" : "bg-surface-raised border border-border"}`}
+                      className={`px-4 py-2.5 ${bubbleShape} ${isMe ? "bg-primary-fill" : "bg-surface-raised border border-border"}`}
                     >
                       <Text
                         className={`text-base ${isMe ? "text-white" : "text-text-primary"}`}
@@ -1253,7 +1253,7 @@ export default function ChatScreen({
                           "accept",
                         )
                       }
-                      className="flex-1 py-2.5 rounded bg-primary items-center"
+                      className="flex-1 py-2.5 rounded bg-primary-fill items-center"
                     >
                       <Text className="text-white font-semibold text-sm">
                         Accept
@@ -1297,7 +1297,7 @@ export default function ChatScreen({
             {/* One timestamp per run, not one per message. A burst of five
                 messages used to stack five identical times down the screen. */}
             {isGroupEnd ? (
-              <Text className="text-tertiary text-[11px]">
+              <Text className="text-text-muted text-[11px]">
                 {formatTime(item.created_at)}
               </Text>
             ) : null}
@@ -1312,7 +1312,7 @@ export default function ChatScreen({
                       r.has_reacted
                         ? isDark
                           ? "bg-dark-elevated border-dark-border-strong"
-                          : "bg-surface border-border"
+                          : "bg-surface-sunken border-border"
                         : isDark
                           ? "bg-dark-surface border-transparent"
                           : "bg-white border-transparent"
@@ -1386,7 +1386,7 @@ export default function ChatScreen({
             )}
           </View>
           {item.pending && (
-            <Text className="text-tertiary text-[10px] mt-0.5">Pending…</Text>
+            <Text className="text-text-muted text-[10px] mt-0.5">Pending…</Text>
           )}
         </View>
         {/* No avatar on your own messages. This is a 1:1 thread -- alignment
@@ -1516,7 +1516,7 @@ export default function ChatScreen({
       <TouchableOpacity
         onPress={handleSendText}
         disabled={sending}
-        className="w-11 h-11 rounded-full bg-primary items-center justify-center"
+        className="w-11 h-11 rounded-full bg-primary-fill items-center justify-center"
         accessibilityRole="button"
         accessibilityLabel="Send message"
       >
@@ -1598,7 +1598,7 @@ export default function ChatScreen({
                           onPress={() =>
                             handleRespondToDiscount(d.id, "accepted")
                           }
-                          className="flex-1 py-2 rounded bg-primary items-center"
+                          className="flex-1 py-2 rounded bg-primary-fill items-center"
                         >
                           <Text className="text-white font-semibold text-sm">
                             Accept

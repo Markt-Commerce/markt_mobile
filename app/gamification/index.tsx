@@ -105,7 +105,7 @@ export default function GamificationScreen() {
             </Text>
             <TouchableOpacity
               onPress={onRefresh}
-              className="mt-3 px-5 py-2 bg-primary rounded"
+              className="mt-3 px-5 py-2 bg-primary-fill rounded"
             >
               <Text className="text-white font-bold text-sm">Retry</Text>
             </TouchableOpacity>
@@ -206,7 +206,7 @@ export default function GamificationScreen() {
                     </Text>
                     <Text
                       className={`font-bold text-sm ${
-                        r.delta >= 0 ? "text-success" : "text-error"
+                        r.delta >= 0 ? "text-success" : "text-danger-text"
                       }`}
                     >
                       {r.delta >= 0 ? "+" : ""}

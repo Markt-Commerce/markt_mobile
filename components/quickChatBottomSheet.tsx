@@ -316,7 +316,7 @@ export default function QuickChatBottomSheet({
                 {roomError}
               </Text>
               <TouchableOpacity
-                className="mt-4 px-4 py-2 rounded bg-primary"
+                className="mt-4 px-4 py-2 rounded bg-primary-fill"
                 onPress={() => fetchRoomData()}
               >
                 <Text className="text-white font-semibold">Try again</Text>

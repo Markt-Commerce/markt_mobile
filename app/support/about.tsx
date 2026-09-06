@@ -28,7 +28,7 @@ export default function AboutScreen() {
       
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-6 py-8">
-          <View className="w-12 h-1 mb-6 rounded-full bg-primary" />
+          <View className="w-12 h-1 mb-6 rounded-full bg-primary-fill" />
           <Text className="font-bold text-4xl tracking-tighter mb-4 text-text-primary">
             Not just products.{"\n"}
             <Text className="text-primary">People.</Text>

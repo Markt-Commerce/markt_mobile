@@ -37,7 +37,7 @@ export default function VerificationScreen() {
           />
 
           <TouchableOpacity
-            className="w-full h-12 bg-primary rounded justify-center items-center"
+            className="w-full h-12 bg-primary-fill rounded justify-center items-center"
             onPress={() => router.push("/login")}
           >
             <Text className="text-white text-base font-bold tracking-[0.015em]">

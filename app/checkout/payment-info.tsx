@@ -120,7 +120,7 @@ export default function PaymentInfo() {
       <View className="px-4 py-3 bg-surface-raised">
         <TouchableOpacity
           onPress={() => router.push("/checkout/confirmation")}
-          className="flex items-center justify-center bg-primary h-12 rounded"
+          className="flex items-center justify-center bg-primary-fill h-12 rounded"
         >
           <Text className="text-white text-base font-bold tracking-[0.015em]">
             Pay

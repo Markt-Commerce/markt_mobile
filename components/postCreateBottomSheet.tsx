@@ -218,7 +218,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
             <Text className="text-sm font-bold text-text-primary">+ Add Categories</Text>
           </TouchableOpacity>
         </View>
-        {errors.category_ids && <Text className="text-error text-xs mt-1">{errors.category_ids.message}</Text>}
+        {errors.category_ids && <Text className="text-danger-text text-xs mt-1">{errors.category_ids.message}</Text>}
 
           {/* Products */}
           <Text className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary">Tag Products</Text>
@@ -250,7 +250,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
 
 
           {/* Submit Button */}
-          <TouchableOpacity className="bg-primary p-3 rounded" onPress={
+          <TouchableOpacity className="bg-primary-fill p-3 rounded" onPress={
               handleSubmit(onSubmit)
           } disabled={sending}>
             <Text className="text-white text-center font-bold">{sending ? "Sending..." : "Create Post"}</Text>

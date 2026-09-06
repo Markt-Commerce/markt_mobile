@@ -216,7 +216,7 @@ export const CategoryAddition = ({
                       key={cat.id.toString()}
                       onPress={() => toggleCategory(cat)}
                       className={`flex-row items-center mr-2 mb-2 px-3 py-2 rounded border
-                        ${isSelected ? "bg-primary border-primary" : "bg-surface-sunken border-border"}
+                        ${isSelected ? "bg-primary-fill border-primary" : "bg-surface-sunken border-border"}
                       `}
                     >
                       {isSelected ? (
@@ -253,7 +253,7 @@ export const CategoryAddition = ({
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleDone}
-                className="flex-1 h-12 rounded items-center justify-center bg-primary active:opacity-90"
+                className="flex-1 h-12 rounded items-center justify-center bg-primary-fill active:opacity-90"
               >
                 <Text className="text-white font-semibold">Done</Text>
               </TouchableOpacity>

@@ -179,7 +179,7 @@ export default function BuyerRequestDetails() {
           <TouchableOpacity
             onPress={fetchData}
             activeOpacity={0.85}
-            className="mt-6 h-12 px-7 rounded bg-primary items-center justify-center"
+            className="mt-6 h-12 px-7 rounded bg-primary-fill items-center justify-center"
           >
             <Text className="text-white font-bold text-[11px] tracking-[2px] uppercase">
               Try again
@@ -207,7 +207,7 @@ export default function BuyerRequestDetails() {
                 ? "bg-primary-muted border-primary/30"
                 : isDark
                   ? "bg-dark-elevated border-dark-border-strong"
-                  : "bg-surface border-border"
+                  : "bg-surface-sunken border-border"
             }`}
           >
             <Text
@@ -331,7 +331,7 @@ export default function BuyerRequestDetails() {
                 @{requestDetails.user?.username ?? "unknown"}
               </Text>
               <View className="mt-1 flex-row items-center">
-                <View className="h-1.5 w-1.5 rounded bg-primary mr-2" />
+                <View className="h-1.5 w-1.5 rounded bg-primary-fill mr-2" />
                 <Text
                   className={`text-[10px] font-bold uppercase tracking-wider ${
                     "text-text-secondary"
@@ -405,7 +405,7 @@ export default function BuyerRequestDetails() {
           <TouchableOpacity
             onPress={() => chatSheetRef.current?.expand()}
             activeOpacity={0.85}
-            className="h-14 rounded bg-primary items-center justify-center flex-row gap-2"
+            className="h-14 rounded bg-primary-fill items-center justify-center flex-row gap-2"
           >
             <MessageCircle size={18} color={t.textOnPrimary} strokeWidth={2} />
             <Text className="text-white font-bold text-[12px] tracking-[2px] uppercase">

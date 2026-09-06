@@ -183,7 +183,7 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
                   <Text className="text-sm text-text-secondary">No image</Text>
                 </View>
               )}
-              <View className="absolute left-3 bottom-3 rounded-full bg-primary px-3 py-1.5">
+              <View className="absolute left-3 bottom-3 rounded-full bg-primary-fill px-3 py-1.5">
                 <Text className="text-sm font-bold text-white">₦{product.price.toLocaleString()}</Text>
               </View>
             </View>

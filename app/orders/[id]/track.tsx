@@ -126,7 +126,7 @@ export default function TrackOrderScreen() {
                 </Text>
               </View>
               <View className="mt-3 h-2 w-full rounded overflow-hidden bg-border">
-                <View className="h-2 bg-primary rounded" style={{ width: `${progressPct}%` }} />
+                <View className="h-2 bg-primary-fill rounded" style={{ width: `${progressPct}%` }} />
               </View>
               <Text className={`mt-2 text-xs capitalize ${labelClass}`}>
                 Status: {tracking.status.replace(/_/g, " ")}

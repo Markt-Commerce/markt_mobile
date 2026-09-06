@@ -274,7 +274,7 @@ export default function PaymentMethod() {
         <TouchableOpacity
           onPress={handleProceed}
           disabled={isProcessing}
-          className={`flex-row items-center justify-center h-12 rounded ${isProcessing ? "bg-primary/60" : "bg-primary"}`}
+          className={`flex-row items-center justify-center h-12 rounded ${isProcessing ? "bg-primary/60" : "bg-primary-fill"}`}
         >
           {isProcessing ? (
             <ActivityIndicator size="small" color={t.textOnPrimary} style={{ marginRight: 8 }} />

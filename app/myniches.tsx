@@ -142,7 +142,7 @@ export default function MyNichesScreen() {
           {role === "seller" && (
             <TouchableOpacity
               onPress={() => nicheFormRef.current?.expand?.()}
-              className="flex-row items-center gap-2 px-6 py-3 rounded bg-primary"
+              className="flex-row items-center gap-2 px-6 py-3 rounded bg-primary-fill"
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel="Create community"
@@ -189,7 +189,7 @@ export default function MyNichesScreen() {
               </Text>
               <TouchableOpacity
                 onPress={() => router.push("/discoverNiches")}
-                className="mt-8 h-12 px-8 rounded bg-primary items-center justify-center"
+                className="mt-8 h-12 px-8 rounded bg-primary-fill items-center justify-center"
               >
                 <Text className="text-white font-bold text-base">Explore communities</Text>
               </TouchableOpacity>

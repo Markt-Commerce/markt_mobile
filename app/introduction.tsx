@@ -90,7 +90,7 @@ export default function MarktLandingScreen() {
         {/* Actions */}
         <View className="px-6 pb-8">
           <TouchableOpacity
-            className="h-12 bg-primary rounded justify-center items-center mb-4 active:opacity-90 shadow-sm"
+            className="h-12 bg-primary-fill rounded justify-center items-center mb-4 active:opacity-90 shadow-sm"
             onPress={() => router.navigate("/signup")}
             accessibilityRole="button"
             accessibilityLabel="Start your first quest"

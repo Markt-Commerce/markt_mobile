@@ -216,7 +216,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
             <Text className="text-sm font-bold text-text-primary">+ Add Categories</Text>
           </TouchableOpacity>
         </View>
-        {errors.category_ids && <Text className="text-error text-xs mt-1">{errors.category_ids.message}</Text>}
+        {errors.category_ids && <Text className="text-danger-text text-xs mt-1">{errors.category_ids.message}</Text>}
 
         {/* Product Images */}
         <Text className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary">Product Images</Text>
@@ -249,7 +249,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         <TouchableOpacity
           disabled={sending}
           onPress={handleSubmit(onSubmit)} // call our merged submit handler
-          className={`bg-primary p-3 rounded mt-4 flex-row items-center justify-center gap-2 ${sending ? "opacity-70" : ""}`}
+          className={`bg-primary-fill p-3 rounded mt-4 flex-row items-center justify-center gap-2 ${sending ? "opacity-70" : ""}`}
         >
           {sending && <ActivityIndicator size="small" color="white" />}
           <Text className="text-white text-center font-bold">

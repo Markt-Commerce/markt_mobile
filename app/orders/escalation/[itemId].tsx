@@ -211,7 +211,7 @@ export default function ItemEscalationScreen() {
                     <TouchableOpacity
                       onPress={() => handleChooseSeller(offer.id)}
                       disabled={busyOfferId === offer.id}
-                      className="h-9 px-4 rounded bg-primary items-center justify-center"
+                      className="h-9 px-4 rounded bg-primary-fill items-center justify-center"
                       activeOpacity={0.85}
                     >
                       <Text className="text-xs font-bold text-white">

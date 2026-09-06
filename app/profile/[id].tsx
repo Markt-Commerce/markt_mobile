@@ -174,7 +174,7 @@ export default function PublicProfileScreen() {
                 onPress={handleFollowToggle}
                 disabled={followBusy}
                 activeOpacity={0.85}
-                className={`mt-6 h-12 px-10 rounded items-center justify-center flex-row gap-2 ${following ? `border border-border-strong` : "bg-primary"}`}
+                className={`mt-6 h-12 px-10 rounded items-center justify-center flex-row gap-2 ${following ? `border border-border-strong` : "bg-primary-fill"}`}
                 accessibilityRole="button"
                 accessibilityLabel={following ? "Unfollow" : "Follow"}
               >

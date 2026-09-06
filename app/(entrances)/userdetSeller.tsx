@@ -222,14 +222,14 @@ const ShopInformationScreen = () => {
               <Input placeholder="markt_handle" control={control} name="userName" errors={errors} autoCapitalize="none" />
               <View className="mt-2 h-4">
                 {usernameStatus === "taken" ? (
-                  <Text className="text-xs text-error ">{usernameMessage}</Text>
+                  <Text className="text-xs text-danger-text ">{usernameMessage}</Text>
                 ) : usernameStatus === "available" ? (
                   <View className="flex-row items-center gap-1">
                     <Check size={12} color={t.successText} />
                     <Text className="text-xs text-success ">Handle is available</Text>
                   </View>
                 ) : usernameStatus === "checking" ? (
-                  <Text className="text-xs text-tertiary italic">Checking...</Text>
+                  <Text className="text-xs text-text-muted italic">Checking...</Text>
                 ) : null}
               </View>
             </View>

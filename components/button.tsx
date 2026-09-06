@@ -36,13 +36,17 @@ const Button = ({
   const t = useTokens();
 
   const variantStyles = {
+    // primary-fill, not primary. `primary` is the brand *swatch*, and in dark
+    // it is a light orange (#F4805F) -- a white label on it measures 2.59:1.
+    // primary-fill exists precisely to be sat on: 5.01:1 in dark. Light is
+    // unchanged at 3.80:1, which is the brand call flagged in DARKMODE_AUDIT.
     primary: {
-      container: isDisabled ? "bg-surface-dim" : "bg-primary",
-      text: isDisabled ? "text-tertiary" : "text-white",
+      container: isDisabled ? "bg-surface-sunken" : "bg-primary-fill",
+      text: isDisabled ? "text-text-muted" : "text-text-on-primary",
     },
     conversion: {
-      container: isDisabled ? "bg-surface-dim" : "bg-primary",
-      text: isDisabled ? "text-tertiary" : "text-white",
+      container: isDisabled ? "bg-surface-sunken" : "bg-primary-fill",
+      text: isDisabled ? "text-text-muted" : "text-text-on-primary",
     },
     secondary: {
       container: "bg-surface-sunken",

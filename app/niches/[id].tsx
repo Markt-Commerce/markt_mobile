@@ -276,7 +276,7 @@ export default function NicheDetailScreen() {
               {isJoined && !isBanned && canPost && (
                 <TouchableOpacity
                   onPress={() => postFormRef.current?.expand?.()}
-                  className="ml-auto mb-1 w-10 h-10 rounded-full bg-primary items-center justify-center"
+                  className="ml-auto mb-1 w-10 h-10 rounded-full bg-primary-fill items-center justify-center"
                   accessibilityRole="button"
                   accessibilityLabel="Create a post in this community"
                 >
@@ -325,7 +325,7 @@ export default function NicheDetailScreen() {
                 className={`h-11 rounded-xl items-center justify-center mt-4 ${
                   isJoined
                     ? "bg-surface-sunken"
-                    : "bg-primary"
+                    : "bg-primary-fill"
                 }`}
               >
                 <Text
@@ -355,8 +355,8 @@ export default function NicheDetailScreen() {
         {/* Error state with retry */}
         {hasError && (
           <View className="mx-4 mt-4 p-3 border rounded items-center bg-danger-muted border-danger">
-            <Text className="text-error text-sm font-semibold">Failed to load posts</Text>
-            <TouchableOpacity onPress={handleRetry} className="mt-2 px-4 py-2 bg-primary rounded">
+            <Text className="text-danger-text text-sm font-semibold">Failed to load posts</Text>
+            <TouchableOpacity onPress={handleRetry} className="mt-2 px-4 py-2 bg-primary-fill rounded">
               <Text className="text-white text-sm font-semibold">Retry</Text>
             </TouchableOpacity>
           </View>

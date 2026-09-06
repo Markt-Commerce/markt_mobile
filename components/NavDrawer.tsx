@@ -232,7 +232,7 @@ export default function NavDrawer({
             </Text>
             <View className="flex-row mt-4 gap-2">
               <View
-                className={`px-3 py-1 rounded ${role === "buyer" ? "bg-primary" : "bg-surface-sunken"}`}
+                className={`px-3 py-1 rounded ${role === "buyer" ? "bg-primary-fill" : "bg-surface-sunken"}`}
               >
                 <Text
                   className={`text-[10px] font-bold uppercase tracking-wider ${role === "buyer" ? "text-white" : "text-text-secondary"}`}
@@ -241,7 +241,7 @@ export default function NavDrawer({
                 </Text>
               </View>
               <View
-                className={`px-3 py-1 rounded ${role === "seller" ? "bg-primary" : "bg-surface-sunken"}`}
+                className={`px-3 py-1 rounded ${role === "seller" ? "bg-primary-fill" : "bg-surface-sunken"}`}
               >
                 <Text
                   className={`text-[10px] font-bold uppercase tracking-wider ${role === "seller" ? "text-white" : "text-text-secondary"}`}
@@ -256,7 +256,7 @@ export default function NavDrawer({
           {isDualRole && (
             <TouchableOpacity
               onPress={handleSwitchMode}
-              className="flex-row items-center gap-3 mx-6 mt-6 h-12 px-6 rounded bg-primary"
+              className="flex-row items-center gap-3 mx-6 mt-6 h-12 px-6 rounded bg-primary-fill"
               activeOpacity={0.85}
             >
               <RefreshCw size={18} color="white" strokeWidth={2} />

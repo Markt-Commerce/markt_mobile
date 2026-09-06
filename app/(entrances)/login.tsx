@@ -162,8 +162,8 @@ export default function LoginScreen() {
             <View className="rounded border px-5 py-8 bg-surface-raised border-border">
               {/* Error banner */}
               {error ? (
-                <View className="mb-6 rounded bg-error-bg px-4 py-3 border border-error/10">
-                  <Text className="text-error text-sm">{error}</Text>
+                <View className="mb-6 rounded bg-danger-muted px-4 py-3 border border-danger/10">
+                  <Text className="text-danger-text text-sm">{error}</Text>
                 </View>
               ) : null}
 
@@ -208,7 +208,7 @@ export default function LoginScreen() {
                     onPress={() => setRole("buyer")}
                     accessibilityRole="button"
                     accessibilityState={{ selected: role === "buyer" }}
-                    className={`flex-1 rounded py-2.5 items-center ${role === "buyer" ? "bg-primary shadow-sm" : "shadow-none"}`}
+                    className={`flex-1 rounded py-2.5 items-center ${role === "buyer" ? "bg-primary-fill shadow-sm" : "shadow-none"}`}
                   >
                     <Text className={`font-bold text-sm ${role === "buyer" ? "text-white" : "text-text-secondary"}`}>
                       Buyer
@@ -219,7 +219,7 @@ export default function LoginScreen() {
                     onPress={() => setRole("seller")}
                     accessibilityRole="button"
                     accessibilityState={{ selected: role === "seller" }}
-                    className={`flex-1 rounded py-2.5 items-center ${role === "seller" ? "bg-primary shadow-sm" : "shadow-none"}`}
+                    className={`flex-1 rounded py-2.5 items-center ${role === "seller" ? "bg-primary-fill shadow-sm" : "shadow-none"}`}
                   >
                     <Text className={`font-bold text-sm ${role === "seller" ? "text-white" : "text-text-secondary"}`}>
                       Seller

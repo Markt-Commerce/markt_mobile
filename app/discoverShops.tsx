@@ -252,7 +252,7 @@ export default function DiscoverShopsScreen() {
             accessibilityRole="tab"
             accessibilityState={{ selected: selectedCategory === null }}
             className={`px-3.5 h-8 rounded-full items-center justify-center ${
-              selectedCategory === null ? "bg-primary" : "bg-surface-sunken"
+              selectedCategory === null ? "bg-primary-fill" : "bg-surface-sunken"
             }`}
           >
             <Text
@@ -276,7 +276,7 @@ export default function DiscoverShopsScreen() {
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
               className={`px-3.5 h-8 rounded-full items-center justify-center ${
-                active ? "bg-primary" : "bg-surface-sunken"
+                active ? "bg-primary-fill" : "bg-surface-sunken"
               }`}
             >
               <Text

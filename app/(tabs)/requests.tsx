@@ -66,7 +66,7 @@ function EmptyRequestsState({
         activeOpacity={0.85}
         accessibilityRole="button"
         accessibilityLabel={actionLabel}
-        className="mt-6 h-12 px-7 rounded-xl bg-primary items-center justify-center"
+        className="mt-6 h-12 px-7 rounded-xl bg-primary-fill items-center justify-center"
       >
         <Text className="text-white font-semibold text-[15px]">{actionLabel}</Text>
       </TouchableOpacity>
@@ -181,7 +181,7 @@ export default function RequestsScreen() {
               activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel="Create a request"
-              className="w-12 h-12 rounded-full bg-primary items-center justify-center"
+              className="w-12 h-12 rounded-full bg-primary-fill items-center justify-center"
             >
               <Plus size={22} color={t.textOnPrimary} strokeWidth={2.4} />
             </TouchableOpacity>

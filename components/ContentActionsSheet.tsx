@@ -345,7 +345,7 @@ export default function ContentActionsSheet({
                   key={r.value}
                   icon={
                     <View
-                      className={`w-5 h-5 rounded-full border-2 items-center justify-center ${reason === r.value ? "border-primary bg-primary" : "border-border"}`}
+                      className={`w-5 h-5 rounded-full border-2 items-center justify-center ${reason === r.value ? "border-primary bg-primary-fill" : "border-border"}`}
                     >
                       {reason === r.value ? <Check size={12} color={t.textOnPrimary} /> : null}
                     </View>
@@ -390,7 +390,7 @@ export default function ContentActionsSheet({
               <Pressable
                 onPress={submitReport}
                 disabled={busy}
-                className={`mt-5 h-14 rounded items-center justify-center ${busy ? "opacity-70" : ""} bg-primary`}
+                className={`mt-5 h-14 rounded items-center justify-center ${busy ? "opacity-70" : ""} bg-primary-fill`}
                 accessibilityRole="button"
                 accessibilityLabel="Send report"
                 accessibilityState={{ disabled: busy, busy }}
@@ -409,7 +409,7 @@ export default function ContentActionsSheet({
 
         {step === "done" && (
           <View className="px-6 pt-6 items-center">
-            <View className="w-14 h-14 rounded-full bg-primary items-center justify-center">
+            <View className="w-14 h-14 rounded-full bg-primary-fill items-center justify-center">
               <Check size={26} color={t.textOnPrimary} />
             </View>
             <Text className={`text-[19px] font-bold mt-4 text-center ${ink}`}>

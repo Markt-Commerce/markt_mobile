@@ -56,6 +56,45 @@ const ALLOWED = {
 
 const HEX = /#[0-9a-fA-F]{3,8}\b/g;
 
+/**
+ * Palette names that are a fixed hex in tailwind.config.js and therefore do
+ * not follow the theme. Using one unconditionally is the same bug as writing
+ * the hex: `text-secondary` is #000000, so it is black text on a dark page.
+ *
+ * Matched as whole class tokens, so `text-text-secondary` (a real token) is
+ * never confused with `text-secondary` (a fixed value).
+ */
+const THEME_BLIND = [
+  "secondary",
+  "surface",
+  "surface-dim",
+  "background",
+  "tertiary",
+  "bg-muted",
+  "bg-elevated",
+  "border-light",
+  "error",
+  "error-bg",
+];
+const BLIND_RE = new RegExp(
+  `(?<![\\w-])(?:bg|text|border)-(?:${THEME_BLIND.join("|")})(?![\\w-])`,
+  "g"
+);
+
+/** What to use instead, named in the failure message. */
+const BLIND_FIX = {
+  secondary: "text-text-primary / bg-text-primary",
+  surface: "bg-surface-sunken",
+  "surface-dim": "bg-surface-sunken",
+  background: "bg-surface-raised",
+  tertiary: "text-text-muted",
+  "bg-muted": "bg-surface-sunken",
+  "bg-elevated": "bg-surface-raised",
+  "border-light": "border-border",
+  error: "danger (text-danger-text / bg-danger / border-danger)",
+  "error-bg": "bg-danger-muted",
+};
+
 function* walk(dir) {
   for (const name of readdirSync(dir)) {
     const p = join(dir, name);
@@ -96,13 +135,20 @@ for (const dir of DIRS) {
         console.error(`    ${line.trim()}`);
         failures++;
       }
+
+      for (const match of line.match(BLIND_RE) ?? []) {
+        const name = match.replace(/^(bg|text|border)-/, "");
+        console.error(`${rel}:${i + 1}: ${match} is a fixed light-mode colour`);
+        console.error(`    use ${BLIND_FIX[name] ?? "a semantic token"}`);
+        failures++;
+      }
     });
   }
 }
 
 if (failures) {
   console.error(
-    `\n${failures} raw colour literal(s). Use a token from theme/tokens.ts —` +
+    `\n${failures} theme-blind colour(s). Use a token from theme/tokens.ts —` +
       `\n  className: bg-surface-raised, text-text-secondary, border-border, ...` +
       `\n  props:     const t = useTokens();  color={t.textSecondary}` +
       `\nIf the colour really is theme-independent, add it to ALLOWED in this` +
@@ -110,4 +156,4 @@ if (failures) {
   );
   process.exit(1);
 }
-console.log("No raw colour literals in app/ or components/.");
+console.log("No raw colour literals or theme-blind classes in app/ or components/.");

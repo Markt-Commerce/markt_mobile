@@ -536,7 +536,7 @@ export default function FeedScreen() {
               </Text>
               <TouchableOpacity
                 onPress={openMenu}
-                className="mt-10 h-14 px-12 rounded bg-primary items-center justify-center"
+                className="mt-10 h-14 px-12 rounded bg-primary-fill items-center justify-center"
                 activeOpacity={0.8}
                 accessibilityRole="button"
                 accessibilityLabel="Create something new"
@@ -646,7 +646,7 @@ export default function FeedScreen() {
       {/* FAB — bottom right, opens create menu */}
       <TouchableOpacity
         onPress={toggleMenu}
-        className="absolute bottom-4 right-4 w-14 h-14 rounded-full bg-primary items-center justify-center shadow-lg"
+        className="absolute bottom-4 right-4 w-14 h-14 rounded-full bg-primary-fill items-center justify-center shadow-lg"
         style={{
           shadowColor: t.textPrimary,
           shadowOffset: { width: 0, height: 4 },

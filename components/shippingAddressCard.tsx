@@ -100,7 +100,7 @@ export default function ShippingAddressCard({
             </Text>
           </TouchableOpacity>
           {locationDenied && (
-            <Text className="text-xs text-error">
+            <Text className="text-xs text-danger-text">
               Location permission denied — enter your address below instead.
             </Text>
           )}

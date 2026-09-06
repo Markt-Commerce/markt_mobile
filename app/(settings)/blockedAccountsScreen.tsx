@@ -97,7 +97,7 @@ export default function BlockedAccountsScreen() {
               setLoading(true);
               load();
             }}
-            className="mt-6 h-12 px-8 rounded bg-primary items-center justify-center flex-row gap-2"
+            className="mt-6 h-12 px-8 rounded bg-primary-fill items-center justify-center flex-row gap-2"
             accessibilityRole="button"
             accessibilityLabel="Try again"
           >
