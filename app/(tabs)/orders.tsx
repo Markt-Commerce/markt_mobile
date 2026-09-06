@@ -5,7 +5,7 @@
  *       Seller orders (seller mode)
  */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState , useEffect} from "react";
 import {
   View,
   Text,
@@ -26,7 +26,7 @@ import {
   getCartSummary,
   checkoutCart,
 } from "../../services/sections/cart";
-import { getBuyerOrders, getSellerOrders } from "../../services/sections/orders";
+import { getBuyerOrders, getSellerOrders , getBuyerPendingCount } from "../../services/sections/orders";
 import { buildCheckoutRequest } from "../../utils/checkoutPayload";
 import { Cart, CartItem, CartSummary } from "../../models/cart";
 import type { Order, SellerOrderItem } from "../../models/orders";
@@ -43,6 +43,7 @@ import { clearIdempotencyKey } from "../../utils/idempotency";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import ShippingAddressCard from "../../components/shippingAddressCard";
 import { isActiveOrder, isPastOrder } from "../../utils/orderStatus";
+import { onBadgeChanged } from "../../utils/badgeEvents";
 
 type TabId = "cart" | "ongoing" | "completed";
 
@@ -366,14 +367,36 @@ export default function OrdersScreen() {
   const isDark = resolvedTheme === "dark";
   const [activeTab, setActiveTab] = useState<TabId>(role === "buyer" ? "cart" : "ongoing");
 
+  // Substitutions waiting on this buyer. Not a count of ongoing orders --
+  // that number would never clear, and a badge that never clears is noise.
+  const [needsAction, setNeedsAction] = useState(0);
+
+  const refreshNeedsAction = useCallback(async () => {
+    if (role !== "buyer") return;
+    try {
+      const res = await getBuyerPendingCount();
+      setNeedsAction(res?.needs_action ?? 0);
+    } catch {
+      // A badge is decoration on a failure; the tab still works without it.
+      setNeedsAction(0);
+    }
+  }, [role]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshNeedsAction();
+    }, [refreshNeedsAction])
+  );
+  useEffect(() => onBadgeChanged(refreshNeedsAction), [refreshNeedsAction]);
+
   const tabs =
     role === "buyer"
       ? [
-        { id: "cart" as const, label: "My Cart" },
-        { id: "ongoing" as const, label: "Ongoing" },
-        { id: "completed" as const, label: "Completed" },
+        { id: "cart" as const, label: "My Cart", badge: 0 },
+        { id: "ongoing" as const, label: "Ongoing", badge: needsAction },
+        { id: "completed" as const, label: "Completed", badge: 0 },
       ]
-      : [{ id: "ongoing" as const, label: "Orders" }];
+      : [{ id: "ongoing" as const, label: "Orders", badge: 0 }];
 
   return (
     <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
@@ -391,9 +414,21 @@ export default function OrdersScreen() {
               onPress={() => setActiveTab(t.id)}
               className={`flex-1 py-2 rounded items-center ${activeTab === t.id ? ("bg-surface-raised") : ""}`}
             >
-              <Text className={`text-sm font-semibold ${activeTab === t.id ? ("text-text-primary") : "text-text-secondary"}`}>
-                {t.label}
-              </Text>
+              <View className="flex-row items-center gap-1.5">
+                <Text className={`text-sm font-semibold ${activeTab === t.id ? ("text-text-primary") : "text-text-secondary"}`}>
+                  {t.label}
+                </Text>
+                {t.badge > 0 ? (
+                  <View
+                    className="min-w-[18px] h-[18px] px-1 rounded-full items-center justify-center bg-primary-fill"
+                    accessibilityLabel={`${t.badge} awaiting your decision`}
+                  >
+                    <Text className="text-[10px] font-bold text-text-on-primary">
+                      {t.badge > 9 ? "9+" : t.badge}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
             </TouchableOpacity>
           ))}
         </View>

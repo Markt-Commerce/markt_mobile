@@ -109,6 +109,21 @@ export async function getBuyerOrders(page = 1, per_page = 10): Promise<Order[]> 
     );
   }
 
+  /**
+   * GET /orders/buyer/pending-count — substitutions awaiting this buyer's
+   * approval, for the Ongoing tab badge.
+   *
+   * Not a count of ongoing orders: an order in transit needs nothing from the
+   * buyer, and a badge that never clears teaches people to ignore badges. This
+   * counts only what they can actually act on, so it clears when they do.
+   */
+  export async function getBuyerPendingCount(): Promise<{ needs_action: number }> {
+    return request<{ needs_action: number }>(
+      `${BASE_URL}/orders/buyer/pending-count`,
+      { method: "GET" }
+    );
+  }
+
   // Update seller order item status
   export async function updateSellerOrderItem(order_item_id: number, data: UpdateOrderItemPayload): Promise<OrderItem> {
     const res = await request<OrderItem>(`${BASE_URL}/orders/seller/items/${order_item_id}`, {
