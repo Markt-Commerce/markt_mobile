@@ -38,7 +38,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --c-surface-page: #0E0F11;
-    --c-surface-raised: #181A1D;
+    --c-surface-raised: #0E0F11;
     --c-surface-overlay: #212428;
     --c-surface-sunken: #16181B;
     --c-text-primary: #EDEEF0;

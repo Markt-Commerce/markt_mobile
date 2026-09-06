@@ -25,7 +25,7 @@ export default function TierUpAnimationModal({
       <View className="flex-1 items-center justify-center px-8" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
         <View
           className={`w-full rounded-2xl items-center px-6 py-8 ${
-            "bg-surface-raised"
+            "bg-surface-overlay"
           }`}
         >
           <Text className="text-3xl mb-2">🚀</Text>

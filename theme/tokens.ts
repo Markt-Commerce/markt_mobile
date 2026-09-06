@@ -105,7 +105,18 @@ export interface ThemeTokens {
  */
 export const darkTokens: ThemeTokens = {
   surfacePage: "#0E0F11",
-  surfaceRaised: "#181A1D",
+  // Equal to the page, exactly as light has surfaceRaised === surfacePage
+  // (#FFFFFF). Separation between list rows and cards comes from the border,
+  // which is what the light design already does and what makes it read as one
+  // clean surface. When these differed, identical markup produced two
+  // different design languages: hairline-separated rows in light, and a stack
+  // of grey blocks on black in dark.
+  //
+  // Elevation is not gone -- surfaceOverlay still steps up for the things that
+  // genuinely float (sheets, modals), and surfaceSunken still steps down for
+  // inputs and chips. Both differ from the page in *both* themes, so they mean
+  // the same thing in each.
+  surfaceRaised: "#0E0F11",
   surfaceOverlay: "#212428",
   surfaceSunken: "#16181B",
 

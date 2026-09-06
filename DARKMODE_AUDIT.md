@@ -204,10 +204,10 @@ Every failure from the "before" table is fixed:
 
 | Was | Then | Now |
 |---|---:|---:|
-| `#8f9195` muted on card | 4.14 | textMuted on raised: **5.48** |
+| `#8f9195` muted on card | 4.14 | textMuted on a card: **6.03** |
 | `#6b6d71` on page | 3.30 | retired |
 | `#71717A` tertiary on page | 3.54 | retired |
-| `#E94C2A` brand on card | 3.44 | primaryText on raised: **6.73** |
+| `#E94C2A` brand on card | 3.44 | primaryText on a card: **7.40** |
 | `#178b1f` success on page | 3.87 | successText: **11.00** |
 | `#ba1a1a` error on page | 2.65 | dangerText: **6.91** |
 
@@ -227,18 +227,37 @@ exception.
 
 ## 4. Surfaces
 
-Page → raised → overlay now step **1.10** and **1.12** in dark.
+**Corrected after seeing both themes on device.** The "before" section above
+treats page === card as the defect, and the first version of this section
+reported a new 1.10 step in dark as the fix. That was the wrong conclusion, and
+the fix made things worse.
 
-The number that matters is the first one. Before, the feed page and the cards
-drawn on it were *both* `#1a1c1d` — a step of exactly **1.00**, with a 1px
-hairline as the only thing separating a post from the page. There is now a
-real step there. The old **1.31** in the table above was page→*elevated*, a
-different tier, which is why cards looked flat despite the palette declaring
-three surfaces.
+Light has `surfaceRaised === surfacePage` (`#FFFFFF`). Rows and cards sit
+directly on the page and are separated by a hairline — which is exactly why
+light reads as one clean surface. Giving dark a real step meant identical
+markup produced two different design languages: tidy hairline-separated rows in
+light, and a stack of grey blocks on black in dark.
 
-These are deliberately small. Elevation on a near-black ground is a nudge, not
-a jump: much more and the "cards" start reading as separate panels rather than
-content on a page.
+So `surfaceRaised` now equals `surfacePage` in **both** themes, and separation
+comes from the border, as light always did.
+
+Elevation is not gone; it moved to the tokens that carry real meaning:
+
+| | light | dark |
+|---|---:|---:|
+| page → sunken (inputs, chips, tracks) | 1.10 | 1.08 |
+| page → overlay (sheets, modals) | 1.00 | 1.23 |
+
+`surfaceSunken` must differ from the page in both themes and is asserted in
+`theme:contrast`. `surfaceOverlay` deliberately is not: a sheet always arrives
+with a dimmed backdrop, and light keeps its sheets white-on-white, which is
+the platform convention. On a near-black page the scrim alone is not enough,
+so dark steps up.
+
+The original observation still stands — the old dark theme *was* flat and its
+declared three-surface scale had collapsed. The error was concluding that the
+fix was to separate page from card, rather than to make dark behave the way
+light already did.
 
 ## 5. Guardrails
 

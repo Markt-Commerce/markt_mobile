@@ -559,7 +559,7 @@ export default function FeedScreen() {
         backgroundStyle={{ backgroundColor: t.surfacePage }}
         handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
       >
-        <BottomSheetView className="flex-1 p-4 bg-surface-raised">
+        <BottomSheetView className="flex-1 p-4 bg-surface-overlay">
           <Text className="text-lg font-bold mb-4 text-text-primary">Create</Text>
 
           {role === "buyer" && (

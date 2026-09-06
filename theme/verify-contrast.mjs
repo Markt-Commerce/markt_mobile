@@ -94,10 +94,41 @@ for (const themeName of ["light", "dark"]) {
   if (!oks) failures++;
   rows.push([themeName, "onSuccessFill", "successFill", rs, oks]);
 
-  // Surfaces must actually differ, or "elevation" is a fiction.
-  const step = ratio(t.surfacePage, t.surfaceRaised);
-  if (themeName === "dark" && step < 1.05) {
-    console.log(`  dark page/raised step is only ${step.toFixed(3)} — not a visible elevation`);
+  // The surfaces that genuinely float must be visible as such. This used to
+  // assert a page/raised step in dark, on the reasoning that page === card was
+  // the defect the audit found. Seeing both themes side by side showed that was
+  // the wrong conclusion: light has surfaceRaised === surfacePage (#FFFFFF) and
+  // separates rows with a hairline, which is what makes it read as one clean
+  // surface. Forcing a step in dark only gave the same markup two different
+  // design languages -- tidy hairlines in light, a stack of grey blocks on
+  // black in dark. Raised now matches the page in both.
+  //
+  // What must still hold is that a *sheet* is distinguishable from the page it
+  // covers, in both themes, and that the quiet fill behind inputs and chips is
+  // distinguishable too. Those two carry real meaning; "raised" did not.
+  // surfaceSunken is a fill you have to be able to see -- an input, a chip, a
+  // segmented track -- so it must differ from the page in both themes.
+  //
+  // surfaceOverlay is deliberately not asserted here. A sheet always arrives
+  // with a dimmed backdrop, and that scrim is what separates it; light keeps
+  // its sheets white-on-white, which is the platform convention. Dark steps
+  // its overlay up because on a near-black page the scrim alone is not enough.
+  const sunkenStep = ratio(t.surfacePage, t.surfaceSunken);
+  if (sunkenStep < 1.05) {
+    console.log(
+      `  ${themeName} page/sunken step is only ${sunkenStep.toFixed(3)} — not visible`
+    );
+    failures++;
+  }
+
+  // And the two themes must treat `raised` the same way, or identical markup
+  // means different things in each.
+  const raisedStep = ratio(t.surfacePage, t.surfaceRaised);
+  if (raisedStep !== 1) {
+    console.log(
+      `  ${themeName} raised differs from page (${raisedStep.toFixed(3)}) — ` +
+        `light and dark must agree, see the note above`
+    );
     failures++;
   }
 }
