@@ -126,7 +126,7 @@ export default function PayScreen() {
   if (loadingUrl || verifying) {
     return (
       <SafeAreaView
-        className="flex-1 items-center justify-center bg-surface-raised"
+        className="flex-1 items-center justify-center bg-surface-page"
       >
         <ActivityIndicator size="large" color={t.textPrimary} />
         <Text className="mt-3 text-sm text-text-secondary">
@@ -139,7 +139,7 @@ export default function PayScreen() {
   if (!checkoutUrl) {
     return (
       <SafeAreaView
-        className="flex-1 items-center justify-center px-6 bg-surface-raised"
+        className="flex-1 items-center justify-center px-6 bg-surface-page"
       >
         <Text
           className="text-center font-semibold text-text-primary"
@@ -158,7 +158,7 @@ export default function PayScreen() {
 
   return (
     <SafeAreaView
-      className="flex-1 bg-surface-raised"
+      className="flex-1 bg-surface-page"
       edges={["top", "left", "right", "bottom"]}
     >
       <View className="flex-row items-center px-4 py-3">

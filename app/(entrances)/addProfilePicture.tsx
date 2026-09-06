@@ -61,7 +61,7 @@ export default function AddProfilePictureScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-raised">
+    <SafeAreaView className="flex-1 bg-surface-page">
       <View className="flex-1 items-center justify-center px-6">
         <Text className="text-[32px] font-bold text-center leading-tight mb-2 text-text-primary">
           Profile picture

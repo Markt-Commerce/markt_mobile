@@ -357,7 +357,7 @@ export default function SellerDashboard() {
   return (
     <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
       <ScrollView
-        className={"bg-surface-raised"}
+        className={"bg-surface-page"}
         contentContainerStyle={{ paddingBottom: 60 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.textPrimary} />}
       >

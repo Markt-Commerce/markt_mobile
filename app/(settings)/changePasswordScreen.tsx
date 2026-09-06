@@ -36,8 +36,8 @@ export default function ChangePasswordScreen() {
   const canSubmit = !!email.trim() && !!code.trim() && !!newPassword.trim() && !isSubmitting;
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-raised">
-      <ScrollView className={"bg-surface-raised"} contentContainerStyle={{ paddingBottom: 32 }}>
+    <SafeAreaView className="flex-1 bg-surface-page">
+      <ScrollView className={"bg-surface-page"} contentContainerStyle={{ paddingBottom: 32 }}>
         <ScreenHeader title="Change Password" onBack={() => nav.back()} />
         <View className="px-6 pt-6">
           <Text className="text-sm leading-6 text-text-secondary">

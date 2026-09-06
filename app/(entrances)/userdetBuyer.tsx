@@ -140,7 +140,7 @@ export default function UserInfoScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-raised">
+    <SafeAreaView className="flex-1 bg-surface-page">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}

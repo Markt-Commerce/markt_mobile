@@ -241,9 +241,9 @@ export default function AccountInfoScreen() {
   const isSellerDisabled = !isSellerValid || loading || imageLoading || !sellerHasChanges;
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-raised" edges={["top", "left", "right", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "left", "right", "bottom"]}>
       <ScrollView
-        className={"flex-1 bg-surface-raised"}
+        className={"flex-1 bg-surface-page"}
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >

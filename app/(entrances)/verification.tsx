@@ -11,7 +11,7 @@ export default function VerificationScreen() {
   const iconColor = t.textPrimary;
 
     return (
-      <SafeAreaView className="flex-1 justify-center items-center px-4 bg-surface-raised">
+      <SafeAreaView className="flex-1 justify-center items-center px-4 bg-surface-page">
         <View className="w-full max-w-[480px]">
           <View className="flex-row items-center mb-8">
             <TouchableOpacity

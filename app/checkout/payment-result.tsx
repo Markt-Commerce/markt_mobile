@@ -77,7 +77,7 @@ export default function PaymentResult() {
 
   return (
     <SafeAreaView
-      className="flex-1 bg-surface-raised"
+      className="flex-1 bg-surface-page"
       edges={["top", "left", "right", "bottom"]}
     >
       <View className="flex-1 items-center justify-center px-6">

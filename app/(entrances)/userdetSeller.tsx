@@ -159,7 +159,7 @@ const ShopInformationScreen = () => {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-raised">
+    <SafeAreaView className="flex-1 bg-surface-page">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{

@@ -111,7 +111,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
       <ScrollView
-        className={"bg-surface-raised"}
+        className={"bg-surface-page"}
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >

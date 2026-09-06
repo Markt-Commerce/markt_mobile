@@ -26,7 +26,7 @@ export default function NotificationsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-surface-raised">
+      <SafeAreaView className="flex-1 bg-surface-page">
         <ScreenHeader title="Notifications" onBack={() => nav.back()} />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="small" color={t.textPrimary} />
@@ -37,8 +37,8 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-raised">
-      <ScrollView className={"bg-surface-raised"} contentContainerStyle={{ paddingBottom: 32 }}>
+    <SafeAreaView className="flex-1 bg-surface-page">
+      <ScrollView className={"bg-surface-page"} contentContainerStyle={{ paddingBottom: 32 }}>
         <ScreenHeader title="Notifications" onBack={() => nav.back()} />
         <View className="px-6 pt-6">
           <Text className="text-sm leading-6 text-text-secondary">

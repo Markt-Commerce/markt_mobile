@@ -184,7 +184,7 @@ export default function PaymentMethod() {
 
   return (
     <SafeAreaView
-      className="flex-1 justify-between bg-surface-raised"
+      className="flex-1 justify-between bg-surface-page"
       edges={["top", "left", "right", "bottom"]}
     >
       <ScrollView>

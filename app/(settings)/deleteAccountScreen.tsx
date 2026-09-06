@@ -116,7 +116,7 @@ export default function DeleteAccountScreen() {
 
   return (
     <SafeAreaView
-      className="flex-1 bg-surface-raised"
+      className="flex-1 bg-surface-page"
       edges={["top", "left", "right", "bottom"]}
     >
       <ScreenHeader title="Delete account" onBack={() => router.back()} />

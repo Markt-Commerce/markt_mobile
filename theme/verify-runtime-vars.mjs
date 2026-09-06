@@ -70,9 +70,36 @@ try {
     process.exit(1);
   }
 
+  // theme/vars.ts injects these same names from React state. If a token is
+  // renamed and only one side is updated, the injection silently sets
+  // variables nothing reads — the theme would then lag the toggle again with
+  // every check still green.
+  const tokensSrc = readFileSync(join(root, "theme/tokens.ts"), "utf8");
+  const block = tokensSrc.match(/export const darkTokens[^{]*\{([\s\S]*?)\n\};/);
+  if (!block) {
+    console.error("Could not read darkTokens from theme/tokens.ts.");
+    process.exit(1);
+  }
+  const injected = [...block[1].matchAll(/^\s{2}([a-zA-Z]+):/gm)].map(
+    (m) => `--c-${m[1].replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`
+  );
+  const declared = new Set(
+    (readFileSync(join(root, "global.css"), "utf8").match(/--c-[a-z-]+(?=:)/g) ?? [])
+  );
+  const orphans = injected.filter((n) => !declared.has(n));
+  if (orphans.length) {
+    console.error("Injected variable names that global.css never declares:");
+    for (const n of orphans) console.error(`  ${n}`);
+    console.error(
+      "\ntheme/vars.ts and theme/generate-css.mjs must produce the same names." +
+        "\nRun 'npm run theme:css' after renaming a token."
+    );
+    process.exit(1);
+  }
+
   console.log(
     `${names.length} theme variables reach the runtime with both light and ` +
-      `dark values.`
+      `dark values; ${injected.length} injected names match global.css.`
   );
 } finally {
   rmSync(tmp, { recursive: true, force: true });

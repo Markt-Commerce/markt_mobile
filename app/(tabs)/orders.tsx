@@ -377,7 +377,7 @@ export default function OrdersScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
-      <View className="px-4 pt-4 pb-2 bg-surface-raised">
+      <View className="px-4 pt-4 pb-2 bg-surface-page">
         <View className=" mb-3">
           <Text className="text-xl font-bold text-text-primary">Orders</Text>
           <View className="w-10" />

@@ -490,7 +490,7 @@ export default function FeedScreen() {
     <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right"]}>
       {header}
       <FlatList
-        className={"bg-surface-raised"}
+        className={"bg-surface-page"}
         data={visibleItems}
         keyExtractor={keyExtractor}
         renderItem={renderItem}

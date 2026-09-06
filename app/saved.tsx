@@ -193,7 +193,7 @@ export default function SavedScreen() {
 
   return (
     <SafeAreaView
-      className="flex-1 bg-surface-raised"
+      className="flex-1 bg-surface-page"
       edges={["top", "left", "right", "bottom"]}
     >
       <ScreenHeader title="Saved" onBack={() => router.back()} />
