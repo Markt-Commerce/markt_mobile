@@ -6,7 +6,12 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "theme:contrast": "node theme/verify-contrast.mjs",
+    "theme:lint": "node theme/check-no-literals.mjs",
+    "theme:css": "node theme/generate-css.mjs",
+    "check": "npm run typecheck && npm run theme:contrast && npm run theme:lint"
   },
   "private": true,
   "dependencies": {

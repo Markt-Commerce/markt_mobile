@@ -153,3 +153,109 @@ worked.
 5. Semantic success/error need dark variants; both fail badly.
 6. The 1,333 literals need to become tokens, or every one of these fixes decays
    the moment someone writes another `#1a1c1d`.
+
+---
+
+# After
+
+Measured on `feat/dark-mode-tokens`, 2026-09-06. Same method as above: counted
+or computed, not estimated. Reproduce with `npm run check`.
+
+## 1. The literals are gone
+
+| Raw hex | Before | After |
+|---|---:|---:|
+| `#f0f1f2` | 416 | 0 |
+| `#c6c5cf` | 272 | 0 |
+| `#46464e` | 197 | 0 |
+| `#1a1c1d` | 190 | 0 |
+| `#2f3132` | 171 | 0 |
+| `#8f9195` | 42 | 0 |
+| `#f5f5f5` | 40 | 0 |
+| `#6b6d71` | 5 | 0 |
+
+**1,333 → 0.** What remains is 30 hex values in five files, each an identity
+palette where the specific hue *is* the meaning — avatar tints hashed from a
+name, niche tiles, gold/silver/bronze medals, star gold — plus white on video
+scrims and the branded intro. Every one is listed in
+`theme/check-no-literals.mjs` with its reason.
+
+A second category the original audit missed: ten names in `tailwind.config.js`
+are fixed hex rather than variables (`secondary` `#000000`, `surface`
+`#F4F4F5`, `tertiary` `#71717A`, `error` `#ba1a1a`). Using one unconditionally
+is the same defect as writing the hex. **71 → 0.**
+
+## 2. Components stopped asking what theme they are in
+
+- `isDark` branches: **1,333-era ubiquity → 11**
+- Files binding `isDark` at all: **93 → 28**
+- Files reading tokens: **0 → 99** (of 125)
+
+The 11 survivors are deliberate: a StatusBar `barStyle`, an `android_ripple`
+alpha, and inverted CTAs where the two themes genuinely differ by design.
+
+## 3. Contrast
+
+`npm run theme:contrast` checks **60 pairs** — every text and accent token
+against every surface, in both themes, plus the two fill/label pairs. All pass
+AA except one recorded exception.
+
+Every failure from the "before" table is fixed:
+
+| Was | Then | Now |
+|---|---:|---:|
+| `#8f9195` muted on card | 4.14 | textMuted on raised: **5.48** |
+| `#6b6d71` on page | 3.30 | retired |
+| `#71717A` tertiary on page | 3.54 | retired |
+| `#E94C2A` brand on card | 3.44 | primaryText on raised: **6.73** |
+| `#178b1f` success on page | 3.87 | successText: **11.00** |
+| `#ba1a1a` error on page | 2.65 | dangerText: **6.91** |
+
+Two failures this work found that the first pass had not:
+
+- **White on `bg-primary` in dark: 2.59:1** — every primary button in the app.
+  The brand swatch is a *light* orange in dark, and the failure hid behind a
+  class name rather than a hex. Labelled fills use `primaryFill`: **5.01**.
+- **A white tick on a green disc in dark: 1.74:1**, found while rebuilding the
+  order status card. `onSuccessFill` inverts the glyph: **11.00**.
+
+**The one remaining exception**, unchanged and deliberate: white on
+`#E94C2A` in *light* is 3.80:1. Fixing it means darkening every button in
+light mode — a brand decision, not a theming one. It is recorded in the
+verifier so it can't be forgotten, and it fails loudly if anyone adds a second
+exception.
+
+## 4. Surfaces
+
+Page → raised → overlay now step **1.10** and **1.12** in dark.
+
+The number that matters is the first one. Before, the feed page and the cards
+drawn on it were *both* `#1a1c1d` — a step of exactly **1.00**, with a 1px
+hairline as the only thing separating a post from the page. There is now a
+real step there. The old **1.31** in the table above was page→*elevated*, a
+different tier, which is why cards looked flat despite the palette declaring
+three surfaces.
+
+These are deliberately small. Elevation on a near-black ground is a nudge, not
+a jump: much more and the "cards" start reading as separate panels rather than
+content on a page.
+
+## 5. Guardrails
+
+Three checks, wired into `npm run check` and a CI job:
+
+- `theme:lint` — no raw hex, no fixed-palette names. Verified by injecting
+  `bg-[#1a1c1d]` and `text-secondary bg-surface` and confirming non-zero exit.
+- `theme:contrast` — the 60 pairs above.
+- generated-CSS freshness — `global.css` is derived from `tokens.ts`; CI fails
+  if the committed copy is stale, which is how the two themes would silently
+  drift apart.
+
+## 6. Not done
+
+- **Visual verification on a device.** Everything above is measured, and
+  measurement is not the same as looking at it. The contrast numbers say the
+  colours are legible; they say nothing about whether the result feels right.
+  That pass still needs a human with a phone.
+- **The floating blue gear** is still not from this app — see §5 above. The
+  check to settle it is one screenshot with Markt closed.
