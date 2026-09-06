@@ -9,6 +9,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Star } from "lucide-react-native";
+import { useTokens } from "../theme/useTokens";
 
 const FILLED = "#F5A623";
 
@@ -20,7 +21,6 @@ type DisplayProps = {
   showValue?: boolean;
   /** e.g. 12 → "(12)". Omitted when undefined. */
   count?: number;
-  dark?: boolean;
 };
 
 export function StarRating({
@@ -28,10 +28,10 @@ export function StarRating({
   size = 14,
   showValue = false,
   count,
-  dark = false,
 }: DisplayProps) {
   const safe = Math.max(0, Math.min(5, Number(value) || 0));
-  const empty = dark ? "#46464e" : "#E4E4E7";
+  const t = useTokens();
+  const empty = t.border;
 
   return (
     <View
@@ -69,7 +69,7 @@ export function StarRating({
       })}
       {showValue ? (
         <Text
-          className={`text-[13px] ml-1.5 ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+          className="text-[13px] ml-1.5 text-text-secondary"
         >
           {safe.toFixed(1)}
           {count != null ? ` (${count})` : ""}
@@ -83,7 +83,6 @@ type InputProps = {
   value: number;
   onChange: (v: number) => void;
   size?: number;
-  dark?: boolean;
 };
 
 /** Tappable stars for writing a review. Whole stars only — asking someone to
@@ -93,9 +92,9 @@ export function StarRatingInput({
   value,
   onChange,
   size = 36,
-  dark = false,
 }: InputProps) {
-  const empty = dark ? "#46464e" : "#E4E4E7";
+  const t = useTokens();
+  const empty = t.border;
   return (
     <View className="flex-row items-center">
       {[1, 2, 3, 4, 5].map((n) => {

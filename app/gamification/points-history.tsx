@@ -11,15 +11,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 
-import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { getPointsHistory } from "../../services/sections/gamification";
 import { reasonLabel } from "../../utils/gamification";
 import type { PointsHistoryItem } from "../../types/gamification";
 
 export default function PointsHistoryScreen() {
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const [items, setItems] = useState<PointsHistoryItem[]>([]);
   const [cursor, setCursor] = useState<number | null>(null);
@@ -64,20 +63,20 @@ export default function PointsHistoryScreen() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}
+      className="flex-1 bg-surface-page"
       edges={["top", "bottom"]}
     >
       <View
         className={`flex-row items-center px-4 py-3 border-b ${
-          isDark ? "border-[#46464e]" : "border-border"
+          "border-border"
         }`}
       >
         <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={20} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
           className={`text-lg font-bold ml-2 ${
-            isDark ? "text-[#f0f1f2]" : "text-black"
+            "text-text-primary"
           }`}
         >
           Points History
@@ -90,20 +89,20 @@ export default function PointsHistoryScreen() {
         renderItem={({ item }) => (
           <View
             className={`flex-row items-center justify-between px-6 py-4 border-b ${
-              isDark ? "border-[#46464e]" : "border-border"
+              "border-border"
             }`}
           >
             <View className="flex-1 pr-3">
               <Text
                 className={`font-bold text-sm ${
-                  isDark ? "text-[#f0f1f2]" : "text-black"
+                  "text-text-primary"
                 }`}
               >
                 {reasonLabel(item.reason)}
               </Text>
               <Text
                 className={`text-xs mt-0.5 ${
-                  isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                  "text-text-secondary"
                 }`}
               >
                 {formatDate(item.created_at)} · balance {item.balance_after.toLocaleString()}
@@ -111,7 +110,7 @@ export default function PointsHistoryScreen() {
             </View>
             <Text
               className={`font-bold text-base ${
-                item.delta >= 0 ? "text-success" : "text-error"
+                item.delta >= 0 ? "text-success" : "text-danger-text"
               }`}
             >
               {item.delta >= 0 ? "+" : ""}
@@ -125,18 +124,18 @@ export default function PointsHistoryScreen() {
           <RefreshControl
             refreshing={loading}
             onRefresh={() => fetchPage(true, null)}
-            tintColor={isDark ? "#f0f1f2" : "#000000"}
+            tintColor={t.textPrimary}
           />
         }
         ListEmptyComponent={
           loading ? (
             <View className="items-center py-16">
-              <ActivityIndicator color={isDark ? "#f0f1f2" : "#000000"} />
+              <ActivityIndicator color={t.textPrimary} />
             </View>
           ) : (
             <Text
               className={`text-center text-sm py-16 ${
-                isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                "text-text-secondary"
               }`}
             >
               No points yet.
@@ -146,7 +145,7 @@ export default function PointsHistoryScreen() {
         ListFooterComponent={
           loadingMore ? (
             <ActivityIndicator
-              color={isDark ? "#f0f1f2" : "#000000"}
+              color={t.textPrimary}
               style={{ marginVertical: 16 }}
             />
           ) : null

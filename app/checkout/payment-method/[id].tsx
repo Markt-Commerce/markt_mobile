@@ -17,6 +17,7 @@ import { getWallet } from "../../../services/sections/wallet";
 import { getOrderDetails } from "../../../services/sections/orders";
 import { useToast } from "../../../components/ToastProvider";
 import { useTheme } from "../../../components/themeProvider";
+import { useTokens } from "../../../theme/useTokens";
 import { getOrCreateIdempotencyKey } from "../../../utils/idempotency";
 import { friendlyErrorMessage } from "../../../utils/errorMessages";
 import type { PaymentMethod } from "../../../models/payments";
@@ -25,6 +26,7 @@ export default function PaymentMethod() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>("card");
   const [orderTotal, setOrderTotal] = useState<number>(0);
   const [orderStatus, setOrderStatus] = useState<string>("");
@@ -160,13 +162,13 @@ export default function PaymentMethod() {
       id: "card",
       title: "Pay with card",
       subtitle: "Instant payment via Paystack",
-      icon: <CreditCard size={20} color={isDark ? "#f0f1f2" : "#000000"} />,
+      icon: <CreditCard size={20} color={t.textPrimary} />,
     },
     {
       id: "bank_transfer",
       title: "Bank transfer",
       subtitle: "Pay via bank transfer on Paystack",
-      icon: <Bank size={20} color={isDark ? "#f0f1f2" : "#000000"} />,
+      icon: <Bank size={20} color={t.textPrimary} />,
     },
     {
       id: "wallet",
@@ -175,31 +177,31 @@ export default function PaymentMethod() {
         walletBalance != null
           ? `Balance: ${formatMoney(walletBalance)}`
           : "Pay instantly from wallet",
-      icon: <Wallet size={20} color={isDark ? "#f0f1f2" : "#000000"} />,
+      icon: <Wallet size={20} color={t.textPrimary} />,
       disabled: walletBalance != null && walletBalance < orderTotal,
     },
   ];
 
   return (
     <SafeAreaView
-      className={`flex-1 justify-between ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      className="flex-1 justify-between bg-surface-page"
       edges={["top", "left", "right", "bottom"]}
     >
       <ScrollView>
         <View
-          className={`flex-row items-center p-4 pb-2 justify-between ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+          className="flex-row items-center p-4 pb-2 justify-between bg-surface-raised"
         >
           <TouchableOpacity
             onPress={() => router.back()}
             className="size-12 items-center justify-center"
           >
-            <X size={24} color={isDark ? "#f0f1f2" : "#000000"} />
+            <X size={24} color={t.textPrimary} />
           </TouchableOpacity>
         </View>
 
         <View className="px-4 pt-4">
           <Text
-            className={`text-lg font-bold mb-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+            className="text-lg font-bold mb-3 text-text-primary"
           >
             Choose payment method
           </Text>
@@ -213,33 +215,33 @@ export default function PaymentMethod() {
                 onPress={() => setSelectedMethod(m.id)}
                 className={`flex-row items-center p-3 rounded mb-3 border ${
                   selected
-                    ? `border-primary ${isDark ? "bg-[#2f3132]" : "bg-surface"}`
+                    ? `border-primary bg-surface-sunken`
                     : isDark
-                      ? "border-[#46464e] bg-[#1a1c1d]"
+                      ? "border-border-strong bg-surface-raised"
                       : "border-border bg-white"
                 } ${m.disabled ? "opacity-50" : ""}`}
                 activeOpacity={0.8}
               >
                 <View
-                  className={`w-9 h-9 rounded items-center justify-center mr-3 border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+                  className="w-9 h-9 rounded items-center justify-center mr-3 border bg-surface-raised border-border"
                 >
                   {m.icon}
                 </View>
                 <View className="flex-1">
                   <Text
-                    className={`text-sm font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+                    className="text-sm font-semibold text-text-primary"
                   >
                     {m.title}
                   </Text>
                   <Text
-                    className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                    className="text-xs text-text-secondary"
                   >
                     {m.subtitle}
                   </Text>
                 </View>
                 {selected ? (
                   <Text
-                    className={`text-xs font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+                    className="text-xs font-bold text-text-primary"
                   >
                     Selected
                   </Text>
@@ -248,18 +250,18 @@ export default function PaymentMethod() {
             );
           })}
 
-          <View className={`mt-4 p-3 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-            <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <View className="mt-4 p-3 rounded bg-surface-sunken">
+            <Text className="text-xs text-text-secondary">
               Order total
             </Text>
             <Text
-              className={`text-xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+              className="text-xl font-bold text-text-primary"
             >
               {orderTotal ? formatMoney(orderTotal) : "NGN 0.00"}
             </Text>
             {selectedMethod !== "wallet" ? (
               <Text
-                className={`text-xs mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                className="text-xs mt-2 text-text-secondary"
               >
                 You will complete payment on Paystack.
               </Text>
@@ -268,14 +270,14 @@ export default function PaymentMethod() {
         </View>
       </ScrollView>
 
-      <View className={`px-4 py-3 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+      <View className="px-4 py-3 bg-surface-raised">
         <TouchableOpacity
           onPress={handleProceed}
           disabled={isProcessing}
-          className={`flex-row items-center justify-center h-12 rounded ${isProcessing ? "bg-primary/60" : "bg-primary"}`}
+          className={`flex-row items-center justify-center h-12 rounded ${isProcessing ? "bg-primary/60" : "bg-primary-fill"}`}
         >
           {isProcessing ? (
-            <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
+            <ActivityIndicator size="small" color={t.textOnPrimary} style={{ marginRight: 8 }} />
           ) : null}
           <Text className="text-white text-sm font-bold tracking-[0.015em]">
             {isProcessing ? "Processing…" : "Proceed"}

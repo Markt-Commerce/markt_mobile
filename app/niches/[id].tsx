@@ -10,7 +10,7 @@ import PostDisplayComponent from "../../components/PostDisplayComponent";
 import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { likePost } from "../../services/sections/post";
-import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import logger from "../../utils/logger";
 
 function dedupeById<T extends { id: string | number }>(items: T[]): T[] {
@@ -26,8 +26,7 @@ export default function NicheDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const [posts, setPosts] = useState<NichePost[]>([]);
   const [niche, setNiche] = useState<Niches | null>(null);
@@ -215,14 +214,14 @@ export default function NicheDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "bottom"]}>
       <View className="flex-1">
         {/* Banner, avatar, name, members, then the action — the X Communities
             shape. It was a back link stacked above the title with the
             description and the Join button in two more bordered strips below,
             so the community had no presence at all. */}
         <View>
-          <View className={`h-32 ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}>
+          <View className="h-32 bg-surface-sunken">
             {niche?.banner_url ? (
               <Image
                 source={{ uri: niche.banner_url }}
@@ -237,7 +236,7 @@ export default function NicheDetailScreen() {
               className="absolute left-4 top-3 w-9 h-9 rounded-full items-center justify-center"
               style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
             >
-              <ArrowLeft size={20} color="#FFFFFF" />
+              <ArrowLeft size={20} color={t.textOnPrimary} />
             </TouchableOpacity>
             {isOwner && (
               <TouchableOpacity
@@ -247,7 +246,7 @@ export default function NicheDetailScreen() {
                 className="absolute right-4 top-3 w-9 h-9 rounded-full items-center justify-center"
                 style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
               >
-                <Settings size={18} color="#FFFFFF" strokeWidth={2} />
+                <Settings size={18} color={t.textOnPrimary} strokeWidth={2} />
               </TouchableOpacity>
             )}
           </View>
@@ -255,7 +254,7 @@ export default function NicheDetailScreen() {
           <View className="px-4 pt-3 pb-4">
             <View className="flex-row items-end" style={{ marginTop: -34 }}>
               <View
-                className={`rounded-2xl p-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+                className="rounded-2xl p-1 bg-surface-raised"
               >
                 {niche?.image_url ? (
                   <Image
@@ -265,9 +264,9 @@ export default function NicheDetailScreen() {
                 ) : (
                   <View
                     style={{ width: 64, height: 64, borderRadius: 16 }}
-                    className={`items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}
+                    className="items-center justify-center bg-surface-sunken"
                   >
-                    <Text className={`text-[22px] font-bold ${isDark ? "text-[#c6c5cf]" : "text-[#52525B]"}`}>
+                    <Text className="text-[22px] font-bold text-text-secondary">
                       {(niche?.name ?? "?").slice(0, 1).toUpperCase()}
                     </Text>
                   </View>
@@ -277,38 +276,38 @@ export default function NicheDetailScreen() {
               {isJoined && !isBanned && canPost && (
                 <TouchableOpacity
                   onPress={() => postFormRef.current?.expand?.()}
-                  className="ml-auto mb-1 w-10 h-10 rounded-full bg-primary items-center justify-center"
+                  className="ml-auto mb-1 w-10 h-10 rounded-full bg-primary-fill items-center justify-center"
                   accessibilityRole="button"
                   accessibilityLabel="Create a post in this community"
                 >
-                  <Plus size={20} color="#fff" strokeWidth={2.4} />
+                  <Plus size={20} color={t.textOnPrimary} strokeWidth={2.4} />
                 </TouchableOpacity>
               )}
             </View>
 
             <Text
-              className={`text-[22px] font-bold mt-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+              className="text-[22px] font-bold mt-3 text-text-primary"
               numberOfLines={2}
             >
               {niche?.name || "Community"}
             </Text>
             <View className="flex-row items-center mt-1">
-              <Users size={13} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
-              <Text className={`text-[13px] ml-1.5 ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
+              <Users size={13} color={t.textMuted} strokeWidth={2} />
+              <Text className="text-[13px] ml-1.5 text-text-muted">
                 {niche?.member_count ?? 0} members · {niche?.post_count ?? 0} posts
               </Text>
             </View>
 
             {niche?.description ? (
               <Text
-                className={`text-[14px] leading-[20px] mt-2.5 ${isDark ? "text-[#c6c5cf]" : "text-[#3F3F46]"}`}
+                className="text-[14px] leading-[20px] mt-2.5 text-text-secondary"
               >
                 {niche.description}
               </Text>
             ) : null}
 
             {niche ? (
-              <Text className={`text-[12px] mt-2 ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
+              <Text className="text-[12px] mt-2 text-text-muted">
                 {niche.allow_buyer_posts && niche.allow_seller_posts
                   ? "Buyers and sellers can post"
                   : niche.allow_buyer_posts
@@ -325,15 +324,13 @@ export default function NicheDetailScreen() {
                 accessibilityLabel={isJoined ? "Leave this community" : "Join this community"}
                 className={`h-11 rounded-xl items-center justify-center mt-4 ${
                   isJoined
-                    ? isDark
-                      ? "bg-[#2f3132]"
-                      : "bg-[#F4F4F5]"
-                    : "bg-primary"
+                    ? "bg-surface-sunken"
+                    : "bg-primary-fill"
                 }`}
               >
                 <Text
                   className={`font-bold text-[15px] ${
-                    isJoined ? (isDark ? "text-[#c6c5cf]" : "text-[#52525B]") : "text-white"
+                    isJoined ? ("text-text-secondary") : "text-white"
                   }`}
                 >
                   {isJoined ? "Joined" : "Join community"}
@@ -345,11 +342,11 @@ export default function NicheDetailScreen() {
 
         {/* Banned Message */}
         {isBanned && (
-          <View className={`mx-4 mb-3 p-3 rounded-xl ${isDark ? "bg-[#3A1E1E]" : "bg-[#FDECEC]"}`}>
-            <Text className="text-[#C42B2B] text-[14px] font-semibold">
+          <View className="mx-4 mb-3 p-3 rounded-xl bg-danger-muted">
+            <Text className="text-danger-text text-[14px] font-semibold">
               You've been removed from this community
             </Text>
-            <Text className="text-[#C42B2B] text-[13px] mt-0.5">
+            <Text className="text-danger-text text-[13px] mt-0.5">
               You can still read it, but you can't post.
             </Text>
           </View>
@@ -357,9 +354,9 @@ export default function NicheDetailScreen() {
 
         {/* Error state with retry */}
         {hasError && (
-          <View className={`mx-4 mt-4 p-3 border rounded items-center ${isDark ? "bg-[#ba1a1a]/10 border-[#ba1a1a]" : "bg-error-bg border-error"}`}>
-            <Text className="text-error text-sm font-semibold">Failed to load posts</Text>
-            <TouchableOpacity onPress={handleRetry} className="mt-2 px-4 py-2 bg-primary rounded">
+          <View className="mx-4 mt-4 p-3 border rounded items-center bg-danger-muted border-danger">
+            <Text className="text-danger-text text-sm font-semibold">Failed to load posts</Text>
+            <TouchableOpacity onPress={handleRetry} className="mt-2 px-4 py-2 bg-primary-fill rounded">
               <Text className="text-white text-sm font-semibold">Retry</Text>
             </TouchableOpacity>
           </View>
@@ -375,20 +372,20 @@ export default function NicheDetailScreen() {
           ListEmptyComponent={
             loading && posts.length === 0 ? (
               <View className="items-center justify-center py-16">
-                <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
-                <Text className={`text-sm mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading posts…</Text>
+                <ActivityIndicator size="large" color={t.textPrimary} />
+                <Text className="text-sm mt-2 text-text-secondary">Loading posts…</Text>
               </View>
             ) : !loading && !hasError ? (
               <View className="items-center justify-center py-16">
-                <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No posts yet</Text>
+                <Text className="text-sm text-text-secondary">No posts yet</Text>
                 {isJoined && !isBanned && (
-                  <Text className={`text-xs mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Be the first to post!</Text>
+                  <Text className="text-xs mt-2 text-text-secondary">Be the first to post!</Text>
                 )}
               </View>
             ) : null
           }
           ListFooterComponent={
-            loading ? <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} style={{ marginVertical: 20 }} /> : null
+            loading ? <ActivityIndicator size="large" color={t.textPrimary} style={{ marginVertical: 20 }} /> : null
           }
         />
       </View>

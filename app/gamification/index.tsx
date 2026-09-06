@@ -12,6 +12,7 @@ import { useRouter } from "expo-router";
 import { ArrowLeft, ChevronRight } from "lucide-react-native";
 
 import { useTheme } from "../../components/themeProvider";
+import { useTokens, tokensFor } from "../../theme/useTokens";
 import { useUser } from "../../hooks/userContextProvider";
 import { useGamificationContext } from "../../hooks/gamificationContext";
 import { getPointsHistory, getLeaderboard } from "../../services/sections/gamification";
@@ -21,12 +22,15 @@ import BadgeGrid from "../../components/gamification/BadgeGrid";
 import LeaderboardRow from "../../components/gamification/LeaderboardRow";
 import { reasonLabel } from "../../utils/gamification";
 import type { PointsHistoryItem, LeaderboardRow as LBRow } from "../../types/gamification";
+import CountUp from "../../components/gamification/CountUp";
+import StreakCard from "../../components/gamification/StreakCard";
 
 export default function GamificationScreen() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const { user } = useUser();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const { profile: data, badges, loading, error, refresh, refreshBadges } = useGamificationContext();
 
@@ -62,20 +66,20 @@ export default function GamificationScreen() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}
+      className="flex-1 bg-surface-page"
       edges={["top", "bottom"]}
     >
       <View
         className={`flex-row items-center px-4 py-3 border-b ${
-          isDark ? "border-[#46464e]" : "border-border"
+          "border-border"
         }`}
       >
         <TouchableOpacity onPress={() => router.back()} className="flex-row items-center">
-          <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={20} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
           className={`text-lg font-bold ml-2 ${
-            isDark ? "text-[#f0f1f2]" : "text-black"
+            "text-text-primary"
           }`}
         >
           Your Progress
@@ -88,7 +92,7 @@ export default function GamificationScreen() {
           <RefreshControl
             refreshing={loading}
             onRefresh={onRefresh}
-            tintColor={isDark ? "#f0f1f2" : "#000000"}
+            tintColor={t.textPrimary}
           />
         }
       >
@@ -96,21 +100,21 @@ export default function GamificationScreen() {
           <View className="items-center py-16 px-6">
             <Text
               className={`text-sm text-center ${
-                isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                "text-text-secondary"
               }`}
             >
               {error}
             </Text>
             <TouchableOpacity
               onPress={onRefresh}
-              className="mt-3 px-5 py-2 bg-primary rounded"
+              className="mt-3 px-5 py-2 bg-primary-fill rounded"
             >
               <Text className="text-white font-bold text-sm">Retry</Text>
             </TouchableOpacity>
           </View>
         ) : !data ? (
           <View className="items-center py-16">
-            <ActivityIndicator color={isDark ? "#f0f1f2" : "#000000"} />
+            <ActivityIndicator color={t.textPrimary} />
           </View>
         ) : (
           <>
@@ -118,7 +122,7 @@ export default function GamificationScreen() {
             <View className="px-6 pt-6">
               <View
                 className={`rounded border p-6 ${
-                  isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"
+                  "bg-surface-raised border-border"
                 }`}
               >
                 <TierBadge
@@ -129,16 +133,17 @@ export default function GamificationScreen() {
                   size="lg"
                   showName
                 />
-                <Text
-                  className={`font-bold text-[40px] mt-4 ${
-                    isDark ? "text-[#f0f1f2]" : "text-black"
-                  }`}
-                >
-                  {data.lifetime_points.toLocaleString()}
-                </Text>
+                {/* Counts to the new total rather than swapping to it. Points
+                    are the most frequent reward in the app and were the least
+                    felt: the number simply differed between renders. */}
+                <CountUp
+                  value={data.lifetime_points}
+                  hapticOnChange
+                  className="font-bold text-[40px] mt-4 text-text-primary"
+                />
                 <Text
                   className={`text-xs -mt-1 mb-4 ${
-                    isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                    "text-text-secondary"
                   }`}
                 >
                   lifetime points
@@ -151,6 +156,15 @@ export default function GamificationScreen() {
                 />
               </View>
             </View>
+
+            {/* Streak. Rendered only when the server sends it, so an older
+                deployment simply shows nothing rather than a zero that looks
+                like a lost streak. */}
+            {data.streak ? (
+              <View className="px-6 pt-4">
+                <StreakCard streak={data.streak} />
+              </View>
+            ) : null}
 
             {/* Quick stats */}
             <View className="flex-row gap-3 px-6 pt-4">
@@ -182,7 +196,7 @@ export default function GamificationScreen() {
               {recent.length === 0 ? (
                 <Text
                   className={`text-sm ${
-                    isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                    "text-text-secondary"
                   }`}
                 >
                   No activity yet — earn points by buying, selling and posting.
@@ -192,19 +206,19 @@ export default function GamificationScreen() {
                   <View
                     key={r.id}
                     className={`flex-row items-center justify-between py-3 border-b ${
-                      isDark ? "border-[#46464e]" : "border-border"
+                      "border-border"
                     }`}
                   >
                     <Text
                       className={`text-sm ${
-                        isDark ? "text-[#f0f1f2]" : "text-black"
+                        "text-text-primary"
                       }`}
                     >
                       {reasonLabel(r.reason)}
                     </Text>
                     <Text
                       className={`font-bold text-sm ${
-                        r.delta >= 0 ? "text-success" : "text-error"
+                        r.delta >= 0 ? "text-success" : "text-danger-text"
                       }`}
                     >
                       {r.delta >= 0 ? "+" : ""}
@@ -233,22 +247,23 @@ export default function GamificationScreen() {
             />
             <View
               className={`mx-6 rounded border overflow-hidden ${
-                isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"
+                "bg-surface-raised border-border"
               }`}
             >
               {preview.length === 0 ? (
                 <Text
                   className={`text-sm p-4 ${
-                    isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                    "text-text-secondary"
                   }`}
                 >
                   Leaderboard is warming up.
                 </Text>
               ) : (
-                preview.map((row) => (
+                preview.map((row, index) => (
                   <LeaderboardRow
                     key={row.user_id}
                     row={row}
+                    index={index}
                     isCurrentUser={row.user_id === user?.user_id}
                   />
                 ))
@@ -273,19 +288,19 @@ function StatTile({
   return (
     <View
       className={`flex-1 rounded border p-4 ${
-        isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"
+        "bg-surface-raised border-border"
       }`}
     >
       <Text
         className={`text-[10px] font-bold uppercase tracking-wider ${
-          isDark ? "text-[#c6c5cf]" : "text-tertiary"
+          "text-text-secondary"
         }`}
       >
         {label}
       </Text>
       <Text
         className={`text-lg font-bold mt-1 ${
-          isDark ? "text-[#f0f1f2]" : "text-black"
+          "text-text-primary"
         }`}
       >
         {value}
@@ -309,7 +324,7 @@ function SectionHeader({
     <View className="flex-row items-center justify-between px-6 pt-8 pb-3">
       <Text
         className={`text-xl font-bold ${
-          isDark ? "text-[#f0f1f2]" : "text-black"
+          "text-text-primary"
         }`}
       >
         {title}
@@ -317,7 +332,7 @@ function SectionHeader({
       {actionLabel && onAction && (
         <TouchableOpacity onPress={onAction} className="flex-row items-center">
           <Text className="text-primary font-bold text-sm">{actionLabel}</Text>
-          <ChevronRight size={16} color="#E94C2A" />
+          <ChevronRight size={16} color={tokensFor(isDark).primaryText} />
         </TouchableOpacity>
       )}
     </View>

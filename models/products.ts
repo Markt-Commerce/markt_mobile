@@ -131,14 +131,28 @@ export interface PlaceholderProduct {
   image?: string;
 }
   
+  /**
+   * Partial update — anything omitted is left as-is. Mirrors
+   * ProductUpdateSchema in app/products/schemas.py.
+   *
+   * This previously described an endpoint that does not exist: `price` as a
+   * string, plus discount_price, category_id, in_stock and `images: File[]`,
+   * none of which the backend accepts. Nothing referenced it, because nothing
+   * called the update endpoint at all.
+   */
   export interface UpdateProductRequest {
     name?: string;
     description?: string;
-    price?: string;
-    discount_price?: string;
-    category_id?: number;
-    in_stock?: boolean;
-    images?: File[]; // optional, may be re-uploaded
+    price?: number;
+    compare_at_price?: number;
+    cost_per_item?: number;
+    stock?: number;
+    sku?: string;
+    barcode?: string;
+    weight?: number;
+    status?: string;
+    category_ids?: number[];
+    tag_ids?: number[];
   }
 
   // /models/product.ts

@@ -14,26 +14,20 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { DrawerProvider, useDrawer } from "../../hooks/drawerContext";
 import AppBar from "../../components/AppBar";
 import NavDrawer from "../../components/NavDrawer";
-import { useTheme } from "../../components/themeProvider";
 import { useUser } from "../../hooks/userContextProvider";
 import { useCart } from "../../hooks/cartContext";
+import { useTokens } from "../../theme/useTokens";
 
 const TAB_BAR_CONTENT_HEIGHT = 52;
 const TAB_BAR_PADDING_TOP = 6;
 const TAB_BAR_PADDING_BOTTOM = 2;
-const SURFACE_WHITE = "#FFFFFF";
-const SURFACE_BORDER = "#E4E4E7";
-const TEXT_BLACK = "#000000";
-const TEXT_MUTED = "#71717A";
-const BRAND_PRIMARY = "#E94C2A";
 
 function TabsWithDrawer() {
   const { isOpen, closeDrawer } = useDrawer();
   const { profile } = useUser();
   const role = profile?.current_role;
   const { itemCount } = useCart();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const insets = useSafeAreaInsets();
   const tabBarBottomInset = Math.max(insets.bottom, Platform.OS === "ios" ? 2 : 0);
   const tabBarHeight =
@@ -45,7 +39,7 @@ function TabsWithDrawer() {
       : profile?.seller_account?.shop_name ?? profile?.username ?? "User";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : SURFACE_WHITE }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.surfacePage }} edges={["top"]}>
       <View style={{ flex: 1 }}>
         <AppBar
           title="Markt"
@@ -64,22 +58,22 @@ function TabsWithDrawer() {
               textTransform: "uppercase",
               letterSpacing: 0.4,
             },
-            tabBarActiveTintColor: BRAND_PRIMARY,
-            tabBarInactiveTintColor: isDark ? "#c6c5cf" : TEXT_MUTED,
+            tabBarActiveTintColor: t.primaryText,
+            tabBarInactiveTintColor: t.textSecondary,
             tabBarItemStyle: {
               flex: 1,
               paddingVertical: 0,
             },
             tabBarStyle: {
-              backgroundColor: isDark ? "#1a1c1d" : SURFACE_WHITE,
+              backgroundColor: t.surfaceRaised,
               borderTopWidth: 1,
-              borderTopColor: isDark ? "#46464e" : SURFACE_BORDER,
+              borderTopColor: t.border,
               paddingTop: TAB_BAR_PADDING_TOP,
               paddingBottom: TAB_BAR_PADDING_BOTTOM + tabBarBottomInset,
               height: tabBarHeight,
               paddingHorizontal: 8,
               elevation: 0,
-              shadowColor: TEXT_BLACK,
+              shadowColor: "#000000", // a shadow is black in both themes
               shadowOffset: {
                 width: 0,
                 height: -4,
@@ -116,8 +110,10 @@ function TabsWithDrawer() {
               // and shove the tab layout around. undefined (not 0) hides it.
               tabBarBadge: itemCount > 0 ? (itemCount > 99 ? "99+" : itemCount) : undefined,
               tabBarBadgeStyle: {
-                backgroundColor: BRAND_PRIMARY,
-                color: SURFACE_WHITE,
+                // primaryFill, not primary: white on #E94C2A is 3.80:1 and
+                // fails AA in both themes.
+                backgroundColor: t.primaryFill,
+                color: t.textOnPrimary,
                 fontSize: 10,
                 fontWeight: "700",
                 minWidth: 18,

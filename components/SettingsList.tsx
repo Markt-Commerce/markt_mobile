@@ -12,6 +12,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Switch } from "react-native";
 import { ArrowRight } from "lucide-react-native";
+import { useTokens } from "../theme/useTokens";
 
 /**
  * (moved from the settings screen)
@@ -27,33 +28,29 @@ import { ArrowRight } from "lucide-react-native";
 export function SettingsSection({
   title,
   children,
-  dark = false,
 }: {
   title: string;
   /** Optional: a section can be just a band, used as a list header above rows
    *  the parent renders itself (the wallet's activity list does this). */
   children?: React.ReactNode;
-  dark?: boolean;
 }) {
   return (
     <View className="mt-2">
-      <View className={`px-4 py-2.5 ${dark ? "bg-[#141617]" : "bg-[#F4F4F5]"}`}>
+      <View className="px-4 py-2.5 bg-surface-sunken">
         <Text
-          className={`font-bold text-[13px] ${dark ? "text-[#c6c5cf]" : "text-[#52525B]"}`}
+          className="font-bold text-[13px] text-text-secondary"
         >
           {title}
         </Text>
       </View>
-      <View className={dark ? "bg-[#1a1c1d]" : "bg-white"}>{children}</View>
+      <View className="bg-surface-raised">{children}</View>
     </View>
   );
 }
 
 /** The hairline between rows, inset so it lines up under the label. */
-export function RowDivider({ dark }: { dark: boolean }) {
-  return (
-    <View className={`h-px ml-[52px] ${dark ? "bg-[#2f3132]" : "bg-[#EFEFF1]"}`} />
-  );
+export function RowDivider() {
+  return <View className="h-px ml-[52px] bg-border" />;
 }
 
 export function SettingsRow({
@@ -63,7 +60,6 @@ export function SettingsRow({
   value,
   onPress,
   last = false,
-  dark = false,
   destructive = false,
 }: {
   icon: React.ElementType;
@@ -73,15 +69,11 @@ export function SettingsRow({
   value?: string;
   onPress: () => void;
   last?: boolean;
-  dark?: boolean;
   destructive?: boolean;
 }) {
-  const labelColor = destructive
-    ? "text-[#DC2626]"
-    : dark
-      ? "text-[#f0f1f2]"
-      : "text-black";
-  const iconColor = destructive ? "#DC2626" : dark ? "#c6c5cf" : "#3F3F46";
+  const t = useTokens();
+  const labelColor = destructive ? "text-danger-text" : "text-text-primary";
+  const iconColor = destructive ? t.dangerText : t.textSecondary;
 
   return (
     <>
@@ -99,7 +91,7 @@ export function SettingsRow({
           <Text className={`text-[16px] ${labelColor}`}>{title}</Text>
           {subtitle ? (
             <Text
-              className={`text-[13px] mt-0.5 leading-[18px] ${dark ? "text-[#8f9195]" : "text-tertiary"}`}
+              className="text-[13px] mt-0.5 leading-[18px] text-text-muted"
             >
               {subtitle}
             </Text>
@@ -107,18 +99,18 @@ export function SettingsRow({
         </View>
         {value ? (
           <Text
-            className={`text-[14px] mr-2 ${dark ? "text-[#8f9195]" : "text-tertiary"}`}
+            className="text-[14px] mr-2 text-text-muted"
           >
             {value}
           </Text>
         ) : null}
         <ArrowRight
           size={18}
-          color={dark ? "#6b6d71" : "#A1A1AA"}
+          color={t.textMuted}
           strokeWidth={2}
         />
       </TouchableOpacity>
-      {last ? null : <RowDivider dark={dark} />}
+      {last ? null : <RowDivider />}
     </>
   );
 }
@@ -131,7 +123,6 @@ export function SettingsSwitchRow({
   onValueChange,
   disabled = false,
   last = false,
-  dark = false,
 }: {
   icon: React.ElementType;
   title: string;
@@ -140,19 +131,19 @@ export function SettingsSwitchRow({
   onValueChange: (v: boolean) => void;
   disabled?: boolean;
   last?: boolean;
-  dark?: boolean;
 }) {
+  const t = useTokens();
   return (
     <>
       <View className="flex-row items-center px-4 min-h-[56px] py-3">
-        <Icon size={20} color={dark ? "#c6c5cf" : "#3F3F46"} strokeWidth={1.8} />
+        <Icon size={20} color={t.textSecondary} strokeWidth={1.8} />
         <View className="flex-1 ml-4 pr-3">
-          <Text className={`text-[16px] ${dark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className="text-[16px] text-text-primary">
             {title}
           </Text>
           {subtitle ? (
             <Text
-              className={`text-[13px] mt-0.5 leading-[18px] ${dark ? "text-[#8f9195]" : "text-tertiary"}`}
+              className="text-[13px] mt-0.5 leading-[18px] text-text-muted"
             >
               {subtitle}
             </Text>
@@ -162,11 +153,11 @@ export function SettingsSwitchRow({
           value={value}
           onValueChange={onValueChange}
           disabled={disabled}
-          trackColor={{ false: dark ? "#46464e" : "#E4E4E7", true: "#E94C2A" }}
-          thumbColor="#FFFFFF"
+          trackColor={{ false: t.border, true: t.primaryFill }}
+          thumbColor={t.textOnPrimary}
         />
       </View>
-      {last ? null : <RowDivider dark={dark} />}
+      {last ? null : <RowDivider />}
     </>
   );
 }

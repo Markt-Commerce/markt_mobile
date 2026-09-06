@@ -15,15 +15,14 @@ import { ArrowLeft, Store, ChevronRight } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getMarkets } from "../../services/sections/markets";
 import type { Market } from "../../services/sections/markets";
-import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 
 export default function MarketsScreen() {
   const router = useRouter();
   const [markets, setMarkets] = useState<Market[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   useEffect(() => {
     let cancelled = false;
@@ -44,11 +43,11 @@ export default function MarketsScreen() {
 
   return (
     <SafeAreaView
-      className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}
+      className="flex-1 bg-surface-page"
       edges={["top"]}
     >
       <View
-        className={`flex-row items-center px-6 py-4 border-b ${isDark ? "border-dark-border" : "border-border"}`}
+        className="flex-row items-center px-6 py-4 border-b border-border"
       >
         <TouchableOpacity
           onPress={() => router.back()}
@@ -56,10 +55,10 @@ export default function MarketsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={24} color={isDark ? "#f5f5f5" : "#000000"} />
+          <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
-          className={`flex-1 text-xl font-bold text-center pr-8 ${isDark ? "text-dark-text" : "text-black"}`}
+          className="flex-1 text-xl font-bold text-center pr-8 text-text-primary"
         >
           Markets
         </Text>
@@ -69,10 +68,10 @@ export default function MarketsScreen() {
         <View className="flex-1 justify-center items-center py-16">
           <ActivityIndicator
             size="large"
-            color={isDark ? "#f5f5f5" : "#000000"}
+            color={t.textPrimary}
           />
           <Text
-            className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm mt-2`}
+            className="text-text-secondary text-sm mt-2"
           >
             Loading markets...
           </Text>
@@ -80,12 +79,12 @@ export default function MarketsScreen() {
       ) : error || markets.length === 0 ? (
         <View className="flex-1 justify-center items-center px-6 py-16">
           <Text
-            className={`font-semibold text-lg text-center ${isDark ? "text-dark-text" : "text-black"}`}
+            className="font-semibold text-lg text-center text-text-primary"
           >
             {error ? "Could not load markets" : "No markets yet"}
           </Text>
           <Text
-            className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm mt-2 text-center`}
+            className="text-text-secondary text-sm mt-2 text-center"
           >
             {error
               ? "Please try again later."
@@ -100,30 +99,30 @@ export default function MarketsScreen() {
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => router.push(`/markets/${item.id}`)}
-              className={`flex-row items-center px-6 py-4 border-b ${isDark ? "bg-dark-page border-dark-border" : "bg-white border-border"}`}
+              className="flex-row items-center px-6 py-4 border-b bg-surface-page border-border"
               activeOpacity={0.7}
               accessibilityRole="button"
               accessibilityLabel={`Browse ${item.name}`}
             >
               <View
-                className={`w-14 h-14 rounded-full items-center justify-center ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+                className="w-14 h-14 rounded-full items-center justify-center bg-media"
               >
-                <Store size={22} color="#E94C2A" strokeWidth={2} />
+                <Store size={22} color={t.primaryText} strokeWidth={2} />
               </View>
               <View className="flex-1 ml-4">
                 <Text
-                  className={`font-bold text-base ${isDark ? "text-dark-text" : "text-black"}`}
+                  className="font-bold text-base text-text-primary"
                   numberOfLines={1}
                 >
                   {item.name}
                 </Text>
                 <Text
-                  className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-xs mt-1`}
+                  className="text-text-secondary text-xs mt-1"
                 >
                   {item.seller_count} seller{item.seller_count !== 1 ? "s" : ""}
                 </Text>
               </View>
-              <ChevronRight size={20} color={isDark ? "#c6c5cf" : "#71717A"} />
+              <ChevronRight size={20} color={t.textSecondary} />
             </TouchableOpacity>
           )}
         />

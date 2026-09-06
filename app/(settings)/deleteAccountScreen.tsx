@@ -20,7 +20,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { AlertTriangle, Trash2 } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
-import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { useUser } from "../../hooks/userContextProvider";
 import { navigateToGuestHome } from "../../utils/authNavigation";
@@ -47,8 +47,7 @@ const RETAINED = [
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
   const { setUser } = useUser();
 
@@ -111,13 +110,13 @@ export default function DeleteAccountScreen() {
     }
   };
 
-  const label = isDark ? "text-[#f0f1f2]" : "text-black";
-  const muted = isDark ? "text-[#c6c5cf]" : "text-tertiary";
-  const card = isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border";
+  const label = "text-text-primary";
+  const muted = "text-text-secondary";
+  const card = "bg-surface-raised border-border";
 
   return (
     <SafeAreaView
-      className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      className="flex-1 bg-surface-page"
       edges={["top", "left", "right", "bottom"]}
     >
       <ScreenHeader title="Delete account" onBack={() => router.back()} />
@@ -128,7 +127,7 @@ export default function DeleteAccountScreen() {
       >
         <View className="px-6 pt-6">
           <View className="flex-row items-start gap-3 mb-6">
-            <AlertTriangle size={22} color="#E94C2A" strokeWidth={2} />
+            <AlertTriangle size={22} color={t.primaryText} strokeWidth={2} />
             <Text className={`flex-1 text-[15px] leading-6 ${label}`}>
               Deleting your account is permanent. It cannot be undone, and you
               will not be able to sign in again.
@@ -137,10 +136,10 @@ export default function DeleteAccountScreen() {
 
           {checking ? (
             <View className="py-10 items-center">
-              <ActivityIndicator size="small" color="#E94C2A" />
+              <ActivityIndicator size="small" color={t.primaryText} />
             </View>
           ) : blocked ? (
-            <View className="rounded border border-[#E94C2A] p-4 mb-6">
+            <View className="rounded border border-primary p-4 mb-6">
               <Text className="font-bold text-[11px] tracking-[2px] uppercase text-primary mb-3">
                 Resolve these first
               </Text>
@@ -195,7 +194,7 @@ export default function DeleteAccountScreen() {
             autoCapitalize="characters"
             autoCorrect={false}
             placeholder={CONFIRM_WORD}
-            placeholderTextColor={isDark ? "#6b6b73" : "#A1A1AA"}
+            placeholderTextColor={t.textMuted}
             className={`h-14 rounded border px-4 text-[15px] mb-5 ${card} ${label}`}
             accessibilityLabel={`Type ${CONFIRM_WORD} to confirm account deletion`}
           />
@@ -212,7 +211,7 @@ export default function DeleteAccountScreen() {
             autoCorrect={false}
             textContentType="password"
             placeholder="Your password"
-            placeholderTextColor={isDark ? "#6b6b73" : "#A1A1AA"}
+            placeholderTextColor={t.textMuted}
             className={`h-14 rounded border px-4 text-[15px] mb-8 ${card} ${label}`}
             accessibilityLabel="Confirm your password to delete your account"
           />
@@ -221,18 +220,18 @@ export default function DeleteAccountScreen() {
             onPress={handleDelete}
             disabled={!canSubmit}
             activeOpacity={0.85}
-            className={`h-14 rounded items-center justify-center flex-row gap-2 ${canSubmit ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
+            className={`h-14 rounded items-center justify-center flex-row gap-2 ${canSubmit ? "bg-primary-fill" : "bg-surface-sunken"}`}
             accessibilityRole="button"
             accessibilityState={{ disabled: !canSubmit }}
             accessibilityLabel="Permanently delete my account"
           >
             {deleting ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={t.textOnPrimary} />
             ) : (
               <>
                 <Trash2
                   size={18}
-                  color={canSubmit ? "#FFFFFF" : isDark ? "#c6c5cf" : "#71717A"}
+                  color={canSubmit ? t.textOnPrimary : t.textSecondary}
                   strokeWidth={1.8}
                 />
                 <Text

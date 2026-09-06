@@ -33,7 +33,7 @@ import {
   Send,
   UserMinus,
 } from "lucide-react-native";
-import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 import { useToast } from "./ToastProvider";
 import {
   reasonsFor,
@@ -78,8 +78,7 @@ export default function ContentActionsSheet({
   onBlocked,
 }: Props) {
   const sheetRef = useRef<BottomSheet>(null);
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
 
   const [step, setStep] = useState<Step>("actions");
@@ -112,10 +111,10 @@ export default function ContentActionsSheet({
     []
   );
 
-  const ink = isDark ? "text-[#f0f1f2]" : "text-black";
-  const muted = isDark ? "text-[#c6c5cf]" : "text-tertiary";
-  const rule = isDark ? "border-[#46464e]" : "border-border";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
+  const ink = "text-text-primary";
+  const muted = "text-text-secondary";
+  const rule = "border-border";
+  const iconColor = t.textPrimary;
 
   const reasons = useMemo(
     () => reasonsFor((target?.type ?? "post") as ReportableType),
@@ -286,8 +285,8 @@ export default function ContentActionsSheet({
       enablePanDownToClose
       onClose={onClose}
       backdropComponent={renderBackdrop}
-      backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "#ffffff" }}
-      handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
+      backgroundStyle={{ backgroundColor: t.surfaceRaised }}
+      handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
     >
       <BottomSheetView className="flex-1">
         {step === "actions" && (
@@ -296,7 +295,7 @@ export default function ContentActionsSheet({
             <Row
               icon={
                 saved ? (
-                  <BookmarkCheck size={20} color="#E94C2A" />
+                  <BookmarkCheck size={20} color={t.primaryText} />
                 ) : (
                   <Bookmark size={20} color={iconColor} />
                 )
@@ -313,7 +312,7 @@ export default function ContentActionsSheet({
               onPress={handleShare}
             />
             <Row
-              icon={<Flag size={20} color="#E94C2A" />}
+              icon={<Flag size={20} color={t.primaryText} />}
               label="Report"
               caption="Tell us what's wrong with this"
               onPress={() => setStep("reasons")}
@@ -322,7 +321,7 @@ export default function ContentActionsSheet({
             />
             {target.authorId && !target.isOwn ? (
               <Row
-                icon={<UserMinus size={20} color="#E94C2A" />}
+                icon={<UserMinus size={20} color={t.primaryText} />}
                 label={`Block ${target.authorName ?? "this person"}`}
                 caption="You'll stop seeing anything they post"
                 onPress={handleBlock}
@@ -346,9 +345,9 @@ export default function ContentActionsSheet({
                   key={r.value}
                   icon={
                     <View
-                      className={`w-5 h-5 rounded-full border-2 items-center justify-center ${reason === r.value ? "border-primary bg-primary" : isDark ? "border-[#46464e]" : "border-border"}`}
+                      className={`w-5 h-5 rounded-full border-2 items-center justify-center ${reason === r.value ? "border-primary bg-primary-fill" : "border-border"}`}
                     >
-                      {reason === r.value ? <Check size={12} color="#fff" /> : null}
+                      {reason === r.value ? <Check size={12} color={t.textOnPrimary} /> : null}
                     </View>
                   }
                   label={r.label}
@@ -383,21 +382,21 @@ export default function ContentActionsSheet({
                 multiline
                 maxLength={2000}
                 placeholder="What happened?"
-                placeholderTextColor={isDark ? "#6b6b73" : "#A1A1AA"}
-                className={`min-h-[110px] rounded border px-4 py-3 text-[15px] ${isDark ? "bg-[#1a1c1d] border-[#46464e] text-[#f0f1f2]" : "bg-white border-border text-black"}`}
+                placeholderTextColor={t.textMuted}
+                className="min-h-[110px] rounded border px-4 py-3 text-[15px] bg-surface-raised border-border text-text-primary"
                 textAlignVertical="top"
                 accessibilityLabel="Add details about your report, optional"
               />
               <Pressable
                 onPress={submitReport}
                 disabled={busy}
-                className={`mt-5 h-14 rounded items-center justify-center ${busy ? "opacity-70" : ""} bg-primary`}
+                className={`mt-5 h-14 rounded items-center justify-center ${busy ? "opacity-70" : ""} bg-primary-fill`}
                 accessibilityRole="button"
                 accessibilityLabel="Send report"
                 accessibilityState={{ disabled: busy, busy }}
               >
                 {busy ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={t.textOnPrimary} />
                 ) : (
                   <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
                     Send report
@@ -410,8 +409,8 @@ export default function ContentActionsSheet({
 
         {step === "done" && (
           <View className="px-6 pt-6 items-center">
-            <View className="w-14 h-14 rounded-full bg-primary items-center justify-center">
-              <Check size={26} color="#FFFFFF" />
+            <View className="w-14 h-14 rounded-full bg-primary-fill items-center justify-center">
+              <Check size={26} color={t.textOnPrimary} />
             </View>
             <Text className={`text-[19px] font-bold mt-4 text-center ${ink}`}>
               Thanks for telling us

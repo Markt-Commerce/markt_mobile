@@ -6,6 +6,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Platform } from "react-native";
 import { Image } from "expo-image";
+import { useTokens } from "../theme/useTokens";
 
 function getInitials(name: string | null | undefined, fallback = "?"): string {
   if (!name || typeof name !== "string") return fallback;
@@ -40,6 +41,7 @@ interface AvatarProps {
 
 function Avatar({ uri, name, size = 40, className = "", shape = "circle" }: AvatarProps) {
   const [imageError, setImageError] = useState(false);
+  const t = useTokens();
 
   useEffect(() => {
     setImageError(false);
@@ -56,7 +58,7 @@ function Avatar({ uri, name, size = 40, className = "", shape = "circle" }: Avat
         width: size,
         height: size,
         borderRadius: shape === "circle" ? size / 2 : Math.min(12, size * 0.25),
-        backgroundColor: hasValidUri ? "#f4f1f0" : bgColor,
+        backgroundColor: hasValidUri ? t.media : bgColor,
       }}
     >
       {hasValidUri ? (

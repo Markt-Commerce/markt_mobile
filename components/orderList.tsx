@@ -84,7 +84,7 @@ export default function OrdersList<T extends Order | OrderItem | SellerOrderItem
       onEndReachedThreshold={0.5}
       refreshing={refreshing}
       onRefresh={onRefresh}
-      ListEmptyComponent={loading ? <ActivityIndicator className="mt-5" /> : <Text className="text-center text-tertiary mt-5">No orders found</Text>}
+      ListEmptyComponent={loading ? <ActivityIndicator className="mt-5" /> : <Text className="text-center text-text-muted mt-5">No orders found</Text>}
     />
   );
 }

@@ -20,7 +20,7 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { Bookmark, Compass, RotateCw } from "lucide-react-native";
 import ScreenHeader from "../components/ScreenHeader";
 import SkeletonImage from "../components/SkeletonImage";
-import { useTheme } from "../components/themeProvider";
+import { useTokens } from "../theme/useTokens";
 import { useToast } from "../components/ToastProvider";
 import { formatNaira } from "../utils/formatCurrency";
 import { friendlyErrorMessage } from "../utils/errorMessages";
@@ -35,8 +35,7 @@ const FILTERS: { key: SavedType | "all"; label: string }[] = [
 
 export default function SavedScreen() {
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
 
   const [items, setItems] = useState<SavedItem[]>([]);
@@ -48,9 +47,9 @@ export default function SavedScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const ink = isDark ? "text-[#f0f1f2]" : "text-black";
-  const muted = isDark ? "text-[#c6c5cf]" : "text-tertiary";
-  const rule = isDark ? "border-[#46464e]" : "border-border";
+  const ink = "text-text-primary";
+  const muted = "text-text-secondary";
+  const rule = "border-border";
 
   const load = useCallback(
     async (opts: { refresh?: boolean; forFilter?: SavedType | "all" } = {}) => {
@@ -151,7 +150,7 @@ export default function SavedScreen() {
       accessibilityLabel={`Open ${item.title ?? item.content_type}`}
     >
       <View
-        className={`w-16 h-16 rounded overflow-hidden ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+        className="w-16 h-16 rounded overflow-hidden bg-surface-sunken"
       >
         {item.image_url ? (
           <SkeletonImage
@@ -162,7 +161,7 @@ export default function SavedScreen() {
           />
         ) : (
           <View className="flex-1 items-center justify-center">
-            <Bookmark size={20} color={isDark ? "#6b6b73" : "#A1A1AA"} />
+            <Bookmark size={20} color={t.textMuted} />
           </View>
         )}
       </View>
@@ -187,14 +186,14 @@ export default function SavedScreen() {
         accessibilityRole="button"
         accessibilityLabel={`Remove ${item.title ?? "this item"} from saved`}
       >
-        <Bookmark size={20} color="#E94C2A" fill="#E94C2A" />
+        <Bookmark size={20} color={t.primaryText} fill={t.primaryText} />
       </Pressable>
     </Pressable>
   );
 
   return (
     <SafeAreaView
-      className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      className="flex-1 bg-surface-page"
       edges={["top", "left", "right", "bottom"]}
     >
       <ScreenHeader title="Saved" onBack={() => router.back()} />
@@ -211,7 +210,7 @@ export default function SavedScreen() {
                   setLoading(true);
                   load({ forFilter: f.key });
                 }}
-                className={`px-4 min-h-[36px] justify-center rounded-full ${active ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                className={`px-4 min-h-[36px] justify-center rounded-full ${active ? "bg-primary-fill" : "bg-surface-sunken"}`}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
                 accessibilityLabel={`Show ${f.label.toLowerCase()}`}
@@ -229,7 +228,7 @@ export default function SavedScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#E94C2A" />
+          <ActivityIndicator size="large" color={t.primaryText} />
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center px-10">
@@ -239,11 +238,11 @@ export default function SavedScreen() {
               setLoading(true);
               load();
             }}
-            className="mt-6 h-12 px-8 rounded bg-primary items-center justify-center flex-row gap-2"
+            className="mt-6 h-12 px-8 rounded bg-primary-fill items-center justify-center flex-row gap-2"
             accessibilityRole="button"
             accessibilityLabel="Try loading your saved items again"
           >
-            <RotateCw size={16} color="#FFFFFF" />
+            <RotateCw size={16} color={t.textOnPrimary} />
             <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
               Try again
             </Text>
@@ -258,7 +257,7 @@ export default function SavedScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => load({ refresh: true })}
-              tintColor="#E94C2A"
+              tintColor={t.primaryText}
             />
           }
           onEndReached={loadMore}
@@ -266,7 +265,7 @@ export default function SavedScreen() {
           ListFooterComponent={
             loadingMore ? (
               <View className="py-6 items-center">
-                <ActivityIndicator size="small" color="#E94C2A" />
+                <ActivityIndicator size="small" color={t.primaryText} />
               </View>
             ) : (
               <View className="h-8" />
@@ -275,9 +274,9 @@ export default function SavedScreen() {
           ListEmptyComponent={
             <View className="items-center justify-center px-10 pt-24">
               <View
-                className={`w-20 h-20 rounded-full items-center justify-center mb-6 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                className="w-20 h-20 rounded-full items-center justify-center mb-6 bg-surface-sunken"
               >
-                <Bookmark size={30} color={isDark ? "#c6c5cf" : "#A1A1AA"} strokeWidth={1.6} />
+                <Bookmark size={30} color={t.textSecondary} strokeWidth={1.6} />
               </View>
               <Text className={`text-xl font-bold text-center ${ink}`}>
                 {filter === "all" ? "Nothing saved yet" : "Nothing here yet"}
@@ -288,11 +287,11 @@ export default function SavedScreen() {
               </Text>
               <Pressable
                 onPress={() => router.push("/(tabs)")}
-                className="mt-8 h-12 px-8 rounded bg-primary items-center justify-center flex-row gap-2"
+                className="mt-8 h-12 px-8 rounded bg-primary-fill items-center justify-center flex-row gap-2"
                 accessibilityRole="button"
                 accessibilityLabel="Browse the feed"
               >
-                <Compass size={16} color="#FFFFFF" />
+                <Compass size={16} color={t.textOnPrimary} />
                 <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
                   Browse feed
                 </Text>

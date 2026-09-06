@@ -40,6 +40,8 @@ export interface GamMe {
   badges_total: number;
   weekly_rank: WeeklyRank | null;
   opt_out_leaderboard: boolean;
+  /** Additive: absent on older servers. */
+  streak?: StreakInfo;
 }
 
 export interface Badge {
@@ -138,4 +140,38 @@ export interface TierChangedEvent {
   old_tier: TierKey;
   new_tier: TierKey;
   stars: number;
+}
+
+/** GET /gamification/me/achievements/unseen */
+export interface UnseenAchievements {
+  badges: Array<{
+    slug: string;
+    name: string;
+    description?: string | null;
+    icon_url?: string | null;
+    category?: string | null;
+    audience: string;
+    priority: number;
+    awarded_at?: string | null;
+  }>;
+  tier_up: {
+    from_tier: string;
+    to_tier: string;
+    tier: { key: string; name: string; color_hex?: string; stars?: number };
+  } | null;
+}
+
+/** Consecutive-day streak, additive on GET /gamification/me. */
+export interface StreakInfo {
+  days: number;
+  longest: number;
+  last_active_date?: string | null;
+  active_today: boolean;
+}
+
+/** Emitted on the gamification socket when the streak advances. */
+export interface StreakAdvancedEvent {
+  streak_days: number;
+  longest_streak: number;
+  is_milestone: boolean;
 }

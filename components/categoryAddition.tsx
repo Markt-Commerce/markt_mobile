@@ -12,7 +12,7 @@ import {
 import { Check, Search, X } from "lucide-react-native";
 import { Category } from "../models/categories";
 import { getAllCategories } from "../services/sections/categories";
-import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 
 interface CategoryAdditionProps {
   visible: boolean;
@@ -60,10 +60,9 @@ export const CategoryAddition = ({
       cancelled = true;
     };
   }, [visible, categories.length, fallbackCategories.length]);
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-  const textColor = isDark ? "#f5f5f5" : "#000000";
-  const mutedColor = isDark ? "#c6c5cf" : "#71717A";
+  const t = useTokens();
+  const textColor = t.textPrimary;
+  const mutedColor = t.textSecondary;
 
   React.useEffect(() => {
     setSelectedCategories(parentSelectedCategories);
@@ -101,21 +100,21 @@ export const CategoryAddition = ({
       <View className="flex-1 bg-black/50">
         {/* Card */}
         <View
-          className={`mt-auto rounded-t overflow-hidden ${isDark ? "bg-dark-surface" : "bg-white"}`}
+          className="mt-auto rounded-t overflow-hidden bg-surface-raised"
         >
           {/* Header */}
           <View
-            className={`px-5 pt-4 pb-3 border-b ${isDark ? "border-dark-border" : "border-border"}`}
+            className="px-5 pt-4 pb-3 border-b border-border"
           >
             <View className="flex-row items-center justify-between">
               <Text
-                className={`text-lg font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+                className="text-lg font-bold text-text-primary"
               >
                 Select Categories
               </Text>
               <TouchableOpacity
                 onPress={onClose}
-                className={`w-9 h-9 rounded items-center justify-center border active:opacity-80 ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border"}`}
+                className="w-9 h-9 rounded items-center justify-center border active:opacity-80 bg-surface-sunken border-border"
               >
                 <X size={18} color={textColor} />
               </TouchableOpacity>
@@ -123,13 +122,13 @@ export const CategoryAddition = ({
 
             {/* Search bar */}
             <View
-              className={`mt-3 flex-row items-center border rounded px-3 h-11 ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border"}`}
+              className="mt-3 flex-row items-center border rounded px-3 h-11 bg-surface-sunken border-border"
             >
               <Search size={18} color={mutedColor} />
               <TextInput
-                className={`flex-1 ml-2 ${isDark ? "text-dark-text" : "text-black"}`}
+                className="flex-1 ml-2 text-text-primary"
                 placeholder="Search categories"
-                placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
+                placeholderTextColor={t.textSecondary}
                 value={query}
                 onChangeText={setQuery}
                 autoCorrect={false}
@@ -137,7 +136,7 @@ export const CategoryAddition = ({
               {query.length > 0 && (
                 <TouchableOpacity onPress={() => setQuery("")} className="pl-2">
                   <Text
-                    className={`text-sm font-semibold ${isDark ? "text-dark-text" : "text-black"}`}
+                    className="text-sm font-semibold text-text-primary"
                   >
                     Clear
                   </Text>
@@ -149,10 +148,10 @@ export const CategoryAddition = ({
             <View className="mt-3 flex-row items-center justify-between">
               <View className="flex-row items-center">
                 <View
-                  className={`px-2 py-1 rounded border ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border"}`}
+                  className="px-2 py-1 rounded border bg-surface-sunken border-border"
                 >
                   <Text
-                    className={`text-xs ${isDark ? "text-dark-text" : "text-black"}`}
+                    className="text-xs text-text-primary"
                   >
                     Selected: {selectedCategories.length}
                   </Text>
@@ -164,7 +163,7 @@ export const CategoryAddition = ({
                   className="active:opacity-80"
                 >
                   <Text
-                    className={`text-sm font-semibold ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                    className="text-sm font-semibold text-text-secondary"
                   >
                     Clear
                   </Text>
@@ -174,7 +173,7 @@ export const CategoryAddition = ({
                   className="active:opacity-80"
                 >
                   <Text
-                    className={`text-sm font-semibold ${isDark ? "text-dark-text" : "text-black"}`}
+                    className="text-sm font-semibold text-text-primary"
                   >
                     Select all
                   </Text>
@@ -193,14 +192,14 @@ export const CategoryAddition = ({
               <View className="py-10 items-center">
                 <ActivityIndicator size="small" color={mutedColor} />
                 <Text
-                  className={`mt-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                  className="mt-3 text-text-secondary"
                 >
                   Loading categories…
                 </Text>
               </View>
             ) : filtered.length === 0 ? (
               <View className="py-10 items-center">
-                <Text className={isDark ? "text-dark-muted" : "text-tertiary"}>
+                <Text className={"text-text-secondary"}>
                   {allCategories.length === 0
                     ? "Couldn't load categories. Please check your connection, close this window, and try again."
                     : `No categories match "${query}".`}
@@ -217,16 +216,16 @@ export const CategoryAddition = ({
                       key={cat.id.toString()}
                       onPress={() => toggleCategory(cat)}
                       className={`flex-row items-center mr-2 mb-2 px-3 py-2 rounded border
-                        ${isSelected ? "bg-primary border-primary" : isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border"}
+                        ${isSelected ? "bg-primary-fill border-primary" : "bg-surface-sunken border-border"}
                       `}
                     >
                       {isSelected ? (
-                        <Check size={16} color="#fff" />
+                        <Check size={16} color={t.textOnPrimary} />
                       ) : (
                         <View className="w-4 h-4 rounded mr-0" />
                       )}
                       <Text
-                        className={`ml-2 text-sm ${isSelected ? "text-white font-semibold" : isDark ? "text-dark-text" : "text-black"}`}
+                        className={`ml-2 text-sm ${isSelected ? "text-white font-semibold" : "text-text-primary"}`}
                       >
                         {cat.name}
                       </Text>
@@ -239,22 +238,22 @@ export const CategoryAddition = ({
 
           {/* Footer actions */}
           <View
-            className={`px-5 pb-6 pt-2 border-t ${isDark ? "border-dark-border" : "border-border"}`}
+            className="px-5 pb-6 pt-2 border-t border-border"
           >
             <View className="flex-row gap-3">
               <TouchableOpacity
                 onPress={onClose}
-                className={`flex-1 h-12 rounded items-center justify-center border active:opacity-90 ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border"}`}
+                className="flex-1 h-12 rounded items-center justify-center border active:opacity-90 bg-surface-sunken border-border"
               >
                 <Text
-                  className={`font-semibold ${isDark ? "text-dark-text" : "text-black"}`}
+                  className="font-semibold text-text-primary"
                 >
                   Cancel
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleDone}
-                className="flex-1 h-12 rounded items-center justify-center bg-primary active:opacity-90"
+                className="flex-1 h-12 rounded items-center justify-center bg-primary-fill active:opacity-90"
               >
                 <Text className="text-white font-semibold">Done</Text>
               </TouchableOpacity>
@@ -263,7 +262,7 @@ export const CategoryAddition = ({
             {/* Subtext hint */}
             <View className="items-center mt-3">
               <Text
-                className={`text-xs ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                className="text-xs text-text-secondary"
               >
                 Tip: pick the best-fitting categories for better discovery.
               </Text>

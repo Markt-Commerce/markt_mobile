@@ -33,6 +33,7 @@ import { setUserSession } from "../services/authStorage";
 import { useToast } from "./ToastProvider";
 import type { UserProfile } from "../models/profile";
 import { useTheme } from "./themeProvider";
+import { useTokens, tokensFor } from "../theme/useTokens";
 
 const DRAWER_WIDTH = Math.min(Dimensions.get("window").width * 0.8, 320);
 
@@ -58,10 +59,10 @@ const Row = ({
     className="flex-row items-center gap-4 px-6 py-4"
     activeOpacity={0.7}
   >
-    <View className={`w-10 h-10 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-      <Icon size={20} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.5} />
+    <View className="w-10 h-10 rounded items-center justify-center bg-surface-sunken">
+      <Icon size={20} color={tokensFor(isDark).textPrimary} strokeWidth={1.5} />
     </View>
-    <Text className={`font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{label}</Text>
+    <Text className="font-bold text-base text-text-primary">{label}</Text>
   </TouchableOpacity>
 );
 
@@ -75,6 +76,7 @@ export default function NavDrawer({
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const slideAnim = React.useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const overlayOpacity = React.useRef(new Animated.Value(0)).current;
 
@@ -194,10 +196,10 @@ export default function NavDrawer({
           top: 0,
           bottom: 0,
           width: DRAWER_WIDTH,
-          backgroundColor: isDark ? "#1a1c1d" : "white",
+          backgroundColor: t.surfacePage,
           zIndex: 999,
           transform: [{ translateX: slideAnim }],
-          shadowColor: "#000",
+          shadowColor: t.textPrimary,
           shadowOffset: { width: 4, height: 0 },
           shadowOpacity: 0.1,
           shadowRadius: 10,
@@ -206,7 +208,7 @@ export default function NavDrawer({
       >
         <View className="flex-1 py-6">
           {/* Header: avatar, name, handle */}
-          <View className={`px-6 pb-6 border-b ${isDark ? "border-[#46464e]" : "border-border"}`}>
+          <View className="px-6 pb-6 border-b border-border-strong">
             <View className="flex-row items-center justify-between mb-6">
               <Avatar
                 uri={profile?.profile_picture_url}
@@ -219,30 +221,30 @@ export default function NavDrawer({
                 className="p-2 -mr-2"
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <X size={24} color={isDark ? "#c6c5cf" : "#71717A"} strokeWidth={1.5} />
+                <X size={24} color={t.textSecondary} strokeWidth={1.5} />
               </TouchableOpacity>
             </View>
-            <Text className={`font-bold text-xl ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+            <Text className="font-bold text-xl text-text-primary" numberOfLines={1}>
               {displayName}
             </Text>
-            <Text className={`text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={1}>
+            <Text className="text-sm mt-1 text-text-secondary" numberOfLines={1}>
               @{profile?.username ?? "user"}
             </Text>
             <View className="flex-row mt-4 gap-2">
               <View
-                className={`px-3 py-1 rounded ${role === "buyer" ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                className={`px-3 py-1 rounded ${role === "buyer" ? "bg-primary-fill" : "bg-surface-sunken"}`}
               >
                 <Text
-                  className={`text-[10px] font-bold uppercase tracking-wider ${role === "buyer" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                  className={`text-[10px] font-bold uppercase tracking-wider ${role === "buyer" ? "text-white" : "text-text-secondary"}`}
                 >
                   Buyer
                 </Text>
               </View>
               <View
-                className={`px-3 py-1 rounded ${role === "seller" ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                className={`px-3 py-1 rounded ${role === "seller" ? "bg-primary-fill" : "bg-surface-sunken"}`}
               >
                 <Text
-                  className={`text-[10px] font-bold uppercase tracking-wider ${role === "seller" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                  className={`text-[10px] font-bold uppercase tracking-wider ${role === "seller" ? "text-white" : "text-text-secondary"}`}
                 >
                   Seller
                 </Text>
@@ -254,7 +256,7 @@ export default function NavDrawer({
           {isDualRole && (
             <TouchableOpacity
               onPress={handleSwitchMode}
-              className="flex-row items-center gap-3 mx-6 mt-6 h-12 px-6 rounded bg-primary"
+              className="flex-row items-center gap-3 mx-6 mt-6 h-12 px-6 rounded bg-primary-fill"
               activeOpacity={0.85}
             >
               <RefreshCw size={18} color="white" strokeWidth={2} />

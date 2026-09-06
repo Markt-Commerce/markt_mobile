@@ -11,7 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { OTPInput } from "../../components/inputs";
 import { useToast } from "../../components/ToastProvider"; // <-- toast
 import Button from "../../components/button";
-import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 
 const schema = z.object({
@@ -26,9 +26,8 @@ const EmailVerification = () => {
   const router = useRouter();
   const { regData } = useRegData();
   const { show } = useToast(); // <-- toast API
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
+  const t = useTokens();
+  const iconColor = t.textPrimary;
 
   const [verificationCodeSent, setVerificationCodeSent] = useState(false);
   const [sending, setSending] = useState(false);
@@ -105,34 +104,34 @@ const EmailVerification = () => {
   };
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-page">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
       >
-        <View className={`flex-1 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
+        <View className="flex-1 bg-surface-raised">
           {/* Header */}
           <View className="flex-row items-center p-4 pb-2 justify-between">
             <TouchableOpacity 
               onPress={() => router.back()} 
-              className={`h-10 w-10 items-center justify-center rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
+              className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <ArrowLeft color={iconColor} size={20} />
             </TouchableOpacity>
-            <Text className={`text-xl font-bold text-center flex-1 pr-10 ${isDark ? "text-[#f0f1f2]" : "text-[#000000]"}`}>Verification</Text>
+            <Text className="text-xl font-bold text-center flex-1 pr-10 text-text-primary">Verification</Text>
           </View>
 
           {/* Body */}
           <View className="flex-1 px-4 justify-center">
-            <View className={`rounded border px-6 py-8 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+            <View className="rounded border px-6 py-8 bg-surface-raised border-border">
               {!verificationCodeSent ? (
                 <>
-                  <Text className={`text-[32px] font-bold leading-tight mb-2 text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                  <Text className="text-[32px] font-bold leading-tight mb-2 text-center text-text-primary">
                     Check your email
                   </Text>
-                  <Text className={`text-center mb-8 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                  <Text className="text-center mb-8 text-text-secondary">
                     We’ll send a one-time 6-digit code to your email address to secure your account.
                   </Text>
 
@@ -145,12 +144,12 @@ const EmailVerification = () => {
                 </>
               ) : (
                 <>
-                  <Text className={`text-[32px] font-bold leading-tight mb-2 text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+                  <Text className="text-[32px] font-bold leading-tight mb-2 text-center text-text-primary">
                     Enter code
                   </Text>
-                  <Text className={`text-center mb-10 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                  <Text className="text-center mb-10 text-text-secondary">
                     We sent a 6-digit code to{"\n"}
-                    <Text className={`font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>{regData?.email}</Text>
+                    <Text className="font-bold text-text-primary">{regData?.email}</Text>
                   </Text>
 
                   {/* Code input */}
@@ -178,10 +177,10 @@ const EmailVerification = () => {
 
                   <View className="mt-8 items-center gap-4">
                     <TouchableOpacity onPress={handleSendVerificationCode}>
-                      <Text className={`font-bold text-sm underline uppercase tracking-widest ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Resend code</Text>
+                      <Text className="font-bold text-sm underline uppercase tracking-widest text-text-primary">Resend code</Text>
                     </TouchableOpacity>
                     
-                    <Text className={`text-xs text-center px-4 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                    <Text className="text-xs text-center px-4 text-text-secondary">
                       Didn’t get it? Check your spam folder or try resending.
                     </Text>
                   </View>

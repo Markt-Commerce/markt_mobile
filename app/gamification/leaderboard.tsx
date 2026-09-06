@@ -12,6 +12,7 @@ import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useUser } from "../../hooks/userContextProvider";
 import { useLeaderboard } from "../../hooks/useLeaderboard";
 import LeaderboardScopeTabs from "../../components/gamification/LeaderboardScopeTabs";
@@ -23,6 +24,7 @@ export default function LeaderboardScreen() {
   const { resolvedTheme } = useTheme();
   const { user } = useUser();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const {
     scope,
@@ -58,23 +60,19 @@ export default function LeaderboardScreen() {
               onPress={() => setPeriod(o.id)}
               className={`px-4 py-2 rounded-full border ${
                 active
-                  ? isDark
-                    ? "bg-[#4a2d25] border-[#784637]"
-                    : "bg-[#fdf0eb] border-[#fdf0eb]"
+                  ? "bg-primary-muted border-primary/40"
                   : isDark
-                  ? "bg-[#2f3132] border-[#46464e]"
-                  : "bg-white border-[#e6e0dd]"
+                  ? "bg-surface-sunken border-border-strong"
+                  : "bg-surface-raised border-border"
               }`}
             >
               <Text
                 className={`font-bold text-xs ${
                   active
-                    ? isDark
-                      ? "text-[#ffd5c7]"
-                      : "text-[#a63d22]"
+                    ? "text-primary-text"
                     : isDark
-                    ? "text-[#c6c5cf]"
-                    : "text-[#3a302c]"
+                    ? "text-text-secondary"
+                    : "text-text-primary"
                 }`}
               >
                 {o.label}
@@ -88,7 +86,7 @@ export default function LeaderboardScreen() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}
+      className="flex-1 bg-surface-page"
       edges={["top", "bottom"]}
     >
       <View className="flex-row items-center px-4 h-12">
@@ -98,10 +96,10 @@ export default function LeaderboardScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={22} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={22} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
-          className={`text-[17px] font-bold ml-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+          className="text-[17px] font-bold ml-3 text-text-primary"
         >
           Leaderboard
         </Text>
@@ -117,13 +115,13 @@ export default function LeaderboardScreen() {
         <View className="px-3.5 pt-4">
           <View
             className={`rounded-2xl px-4 py-3.5 flex-row items-center border ${
-              isDark ? "bg-[#34231f] border-[#784637]" : "bg-[#fff1eb] border-[#f7bca9]"
+              "bg-primary-muted border-primary/40"
             }`}
           >
             <View>
               <Text
                 className={`text-[12px] font-medium uppercase tracking-[0.3px] ${
-                  isDark ? "text-[#ffd5c7]" : "text-[#9e3b22]"
+                  "text-primary-text"
                 }`}
               >
                 Your position
@@ -131,24 +129,24 @@ export default function LeaderboardScreen() {
               <View className="flex-row items-baseline mt-0.5">
                 <Text
                   className={`text-[28px] font-bold ${
-                    isDark ? "text-[#ffd5c7]" : "text-[#9e3b22]"
+                    "text-primary-text"
                   }`}
                 >
                   #{yourRank.rank}
                 </Text>
                 <Text
                   className={`text-[14px] ml-1.5 ${
-                    isDark ? "text-[#e2afa0]" : "text-[#a94a31]"
+                    "text-primary-text"
                   }`}
                 >
                   of {yourRank.out_of.toLocaleString()}
                 </Text>
                 <View
                   className={`ml-2 rounded-full px-2 py-0.5 ${
-                    isDark ? "bg-[#25413a]" : "bg-[#e4f5ef]"
+                    "bg-success-muted"
                   }`}
                 >
-                  <Text className={`text-[12px] ${isDark ? "text-[#b8e8d5]" : "text-[#18805d]"}`}>
+                  <Text className="text-[12px] text-success-text">
                     ↑ 1
                   </Text>
                 </View>
@@ -157,12 +155,12 @@ export default function LeaderboardScreen() {
             <View className="ml-auto items-end">
               <Text
                 className={`text-[14px] font-medium ${
-                  isDark ? "text-[#ffd5c7]" : "text-[#9e3b22]"
+                  "text-primary-text"
                 }`}
               >
                 {pointsToFirst.toLocaleString()} pts to #1
               </Text>
-              <Text className={`text-[14px] ${isDark ? "text-[#e2afa0]" : "text-[#a94a31]"}`}>
+              <Text className="text-[14px] text-primary-text">
                 Keep it going this week
               </Text>
             </View>
@@ -173,8 +171,12 @@ export default function LeaderboardScreen() {
       <FlatList
         data={rows}
         keyExtractor={(r) => r.user_id}
-        renderItem={({ item }) => (
-          <LeaderboardRow row={item} isCurrentUser={item.user_id === user?.user_id} />
+        renderItem={({ item, index }) => (
+          <LeaderboardRow
+            row={item}
+            index={index}
+            isCurrentUser={item.user_id === user?.user_id}
+          />
         )}
         contentContainerStyle={{ paddingTop: 12, paddingBottom: 40 }}
         onEndReached={() => hasMore && loadMore()}
@@ -183,18 +185,18 @@ export default function LeaderboardScreen() {
           <RefreshControl
             refreshing={loading}
             onRefresh={refresh}
-            tintColor={isDark ? "#f0f1f2" : "#000000"}
+            tintColor={t.textPrimary}
           />
         }
         ListEmptyComponent={
           loading ? (
             <View className="items-center py-16">
-              <ActivityIndicator color={isDark ? "#f0f1f2" : "#000000"} />
+              <ActivityIndicator color={t.textPrimary} />
             </View>
           ) : (
             <Text
               className={`text-center text-sm py-16 ${
-                isDark ? "text-[#c6c5cf]" : "text-tertiary"
+                "text-text-secondary"
               }`}
             >
               No one on this leaderboard yet.
@@ -204,7 +206,7 @@ export default function LeaderboardScreen() {
         ListFooterComponent={
           loadingMore ? (
             <ActivityIndicator
-              color={isDark ? "#f0f1f2" : "#000000"}
+              color={t.textPrimary}
               style={{ marginVertical: 16 }}
             />
           ) : null

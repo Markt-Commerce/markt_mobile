@@ -5,7 +5,7 @@
  *       Seller orders (seller mode)
  */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState , useEffect} from "react";
 import {
   View,
   Text,
@@ -26,13 +26,14 @@ import {
   getCartSummary,
   checkoutCart,
 } from "../../services/sections/cart";
-import { getBuyerOrders, getSellerOrders } from "../../services/sections/orders";
+import { getBuyerOrders, getSellerOrders , getBuyerPendingCount } from "../../services/sections/orders";
 import { buildCheckoutRequest } from "../../utils/checkoutPayload";
 import { Cart, CartItem, CartSummary } from "../../models/cart";
 import type { Order, SellerOrderItem } from "../../models/orders";
 import { useToast } from "../../components/ToastProvider";
 import OrdersList from "../../components/orderList";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useShippingAddress } from "../../hooks/useShippingAddress";
 import {
   isShippingAddressUsable,
@@ -41,6 +42,8 @@ import {
 import { clearIdempotencyKey } from "../../utils/idempotency";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import ShippingAddressCard from "../../components/shippingAddressCard";
+import { isActiveOrder, isPastOrder } from "../../utils/orderStatus";
+import { onBadgeChanged } from "../../utils/badgeEvents";
 
 type TabId = "cart" | "ongoing" | "completed";
 
@@ -62,6 +65,7 @@ function MyCartTab() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const [cart, setCart] = useState<Cart | null>(null);
   const [summary, setSummary] = useState<CartSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -166,7 +170,7 @@ function MyCartTab() {
   if (loading && !refreshing) {
     return (
       <View className="flex-1 items-center justify-center py-16">
-        <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+        <ActivityIndicator size="large" color={t.textPrimary} />
       </View>
     );
   }
@@ -175,17 +179,17 @@ function MyCartTab() {
     return (
         <View className="flex-1 items-center justify-center px-6 py-16" >
           <View className="mb-5">
-            <ShoppingCart size={44} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={1.5} />
+            <ShoppingCart size={44} color={t.textMuted} strokeWidth={1.5} />
           </View>
-        <Text className={`text-[22px] font-bold text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+        <Text className="text-[22px] font-bold text-center text-text-primary">
           Your cart is empty
         </Text>
-        <Text className={`text-[15px] text-center mt-2 leading-[21px] ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
+        <Text className="text-[15px] text-center mt-2 leading-[21px] text-text-muted">
           Add items from the feed to get started.
         </Text>
         <TouchableOpacity
           onPress={() => router.replace("/(tabs)")}
-          className="mt-6 h-12 px-7 rounded-xl bg-primary items-center justify-center"
+          className="mt-6 h-12 px-7 rounded-xl bg-primary-fill items-center justify-center"
         >
           <Text className="text-white font-semibold">Start shopping</Text>
         </TouchableOpacity>
@@ -197,12 +201,12 @@ function MyCartTab() {
     <ScrollView
       className="flex-1"
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchCart(); }} tintColor={isDark ? "#f0f1f2" : "#000000"} />
+        <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchCart(); }} tintColor={t.textPrimary} />
       }
       contentContainerStyle={{ paddingBottom: 24 }}
     >
       <View className="px-4">
-        <View className={isDark ? "bg-[#1a1c1d]" : "bg-white"}>
+        <View className={"bg-surface-raised"}>
           {cart.items.map((item, idx) => {
             const image = item.product?.images?.[0]?.media?.original_url ?? "";
             const name = item.product?.name ?? "Product";
@@ -211,41 +215,41 @@ function MyCartTab() {
             return (
               <View
                 key={item.id}
-                className={`px-4 py-3 ${idx !== cart.items!.length - 1 ? (isDark ? "border-b border-[#46464e]" : "border-b border-border") : ""}`}
+                className={`px-4 py-3 ${idx !== cart.items!.length - 1 ? ("border-b border-border") : ""}`}
               >
                 <View className="flex-row gap-3">
-                  <Image source={{ uri: image }} className={`w-16 h-16 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`} />
+                  <Image source={{ uri: image }} className="w-16 h-16 rounded bg-surface-sunken" />
                   <View className="flex-1">
-                    <Text className={`font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>{name}</Text>
+                    <Text className="font-semibold text-text-primary" numberOfLines={1}>{name}</Text>
                     <View className="mt-2 flex-row items-center justify-between">
-                      <Text className={`font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(price)}</Text>
+                      <Text className="font-semibold text-text-primary">{formatMoney(price)}</Text>
                       <View className="flex-row items-center gap-1.5">
                         <TouchableOpacity
                           onPress={() => handleQuantityChange(item, item.quantity - 1)}
-                          className={`w-8 h-8 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                          className="w-8 h-8 rounded items-center justify-center bg-surface-sunken"
                         >
-                          <Text className={`text-base font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>−</Text>
+                          <Text className="text-base font-bold text-text-primary">−</Text>
                         </TouchableOpacity>
-                        <View className={`min-w-[36px] h-8 rounded border items-center justify-center px-2 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-bg-elevated border-border"}`}>
-                          <Text className={`font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.quantity}</Text>
+                        <View className="min-w-[36px] h-8 rounded border items-center justify-center px-2 bg-surface-raised border-border">
+                          <Text className="font-semibold text-text-primary">{item.quantity}</Text>
                         </View>
                         <TouchableOpacity
                           onPress={() => handleQuantityChange(item, item.quantity + 1)}
-                          className="w-8 h-8 rounded bg-primary items-center justify-center"
+                          className="w-8 h-8 rounded bg-primary-fill items-center justify-center"
                         >
                           <Text className="text-base font-bold text-white">+</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           onPress={() => handleRemove(item)}
-                          className={`ml-1 w-8 h-8 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                          className="ml-1 w-8 h-8 rounded items-center justify-center bg-surface-sunken"
                         >
-                          <Trash2 size={16} color={isDark ? "#f0f1f2" : "#000000"} />
+                          <Trash2 size={16} color={t.textPrimary} />
                         </TouchableOpacity>
                       </View>
                     </View>
                     <View className="mt-2 flex-row justify-between">
-                      <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Line total</Text>
-                      <Text className={`text-xs font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(lineTotal)}</Text>
+                      <Text className="text-xs text-text-secondary">Line total</Text>
+                      <Text className="text-xs font-semibold text-text-primary">{formatMoney(lineTotal)}</Text>
                     </View>
                   </View>
                 </View>
@@ -266,27 +270,27 @@ function MyCartTab() {
           updateAddress={shipping.updateAddress}
           isDark={isDark}
         />
-        <View className={`rounded border p-4 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-          <Text className={`text-base font-extrabold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Order Summary</Text>
+        <View className="rounded border p-4 bg-surface-raised border-border">
+          <Text className="text-base font-extrabold mb-2 text-text-primary">Order Summary</Text>
           <View className="flex-row justify-between py-1.5">
-            <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Subtotal</Text>
-            <Text className={`text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(summary?.subtotal)}</Text>
+            <Text className="text-sm text-text-secondary">Subtotal</Text>
+            <Text className="text-sm text-text-primary">{formatMoney(summary?.subtotal)}</Text>
           </View>
           <View className="flex-row justify-between py-1.5">
-            <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Discount</Text>
-            <Text className={`text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>−{formatMoney(summary?.discount)}</Text>
+            <Text className="text-sm text-text-secondary">Discount</Text>
+            <Text className="text-sm text-text-primary">−{formatMoney(summary?.discount)}</Text>
           </View>
-          <View className={`h-px my-2 ${isDark ? "bg-[#46464e]" : "bg-border-light"}`} />
+          <View className="h-px my-2 bg-border" />
           <View className="flex-row justify-between py-1.5">
-            <Text className={`text-sm font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Total</Text>
-            <Text className={`text-sm font-extrabold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatMoney(summary?.total)}</Text>
+            <Text className="text-sm font-semibold text-text-primary">Total</Text>
+            <Text className="text-sm font-extrabold text-text-primary">{formatMoney(summary?.total)}</Text>
           </View>
           <TouchableOpacity
             onPress={handleCheckout}
             disabled={processing || !isShippingAddressUsable(shipping.address)}
-            className={`mt-4 h-12 rounded items-center justify-center ${processing || !isShippingAddressUsable(shipping.address) ? (isDark ? "bg-[#2f3132]" : "bg-surface") : "bg-primary"}`}
+            className={`mt-4 h-12 rounded items-center justify-center ${processing || !isShippingAddressUsable(shipping.address) ? ("bg-surface-sunken") : "bg-primary-fill"}`}
           >
-            <Text className={processing || !isShippingAddressUsable(shipping.address) ? (isDark ? "text-[#c6c5cf]" : "text-tertiary") : "text-white font-semibold"}>
+            <Text className={processing || !isShippingAddressUsable(shipping.address) ? ("text-text-secondary") : "text-white font-semibold"}>
               {processing ? "Processing…" : "Proceed to Checkout"}
             </Text>
           </TouchableOpacity>
@@ -308,18 +312,18 @@ function BuyerOrdersTabs({
   const fetchOrders = useCallback(
     async (page: number) => {
       const data = await getBuyerOrders(page, 10);
-      const ongoingStatuses = ["pending_payment", "confirmed", "processing", "shipped"];
-      if (activeTab === "ongoing") {
-        return data.filter((o) => ongoingStatuses.includes((o.status ?? "").toLowerCase()));
-      }
-      return data.filter((o) => ["delivered", "completed"].includes((o.status ?? "").toLowerCase()));
+      // Complementary by construction, so no status can fall through both
+      // tabs -- which is what hid a paid `ready_for_delivery` order.
+      return data.filter((o) =>
+        activeTab === "ongoing" ? isActiveOrder(o.status) : isPastOrder(o.status)
+      );
     },
     [activeTab]
   );
 
   return (
     <View className="flex-1">
-      <View className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+      <View className="flex-1 bg-surface-raised">
         <OrdersList
           key={activeTab}
           fetchOrders={fetchOrders}
@@ -340,7 +344,7 @@ function SellerOrdersTab({ isDark }: { isDark: boolean }) {
 
   return (
     <View className="flex-1">
-      <View className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+      <View className="flex-1 bg-surface-raised">
         <OrdersList
           fetchOrders={fetchOrders}
           isSeller
@@ -363,34 +367,68 @@ export default function OrdersScreen() {
   const isDark = resolvedTheme === "dark";
   const [activeTab, setActiveTab] = useState<TabId>(role === "buyer" ? "cart" : "ongoing");
 
+  // Substitutions waiting on this buyer. Not a count of ongoing orders --
+  // that number would never clear, and a badge that never clears is noise.
+  const [needsAction, setNeedsAction] = useState(0);
+
+  const refreshNeedsAction = useCallback(async () => {
+    if (role !== "buyer") return;
+    try {
+      const res = await getBuyerPendingCount();
+      setNeedsAction(res?.needs_action ?? 0);
+    } catch {
+      // A badge is decoration on a failure; the tab still works without it.
+      setNeedsAction(0);
+    }
+  }, [role]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshNeedsAction();
+    }, [refreshNeedsAction])
+  );
+  useEffect(() => onBadgeChanged(refreshNeedsAction), [refreshNeedsAction]);
+
   const tabs =
     role === "buyer"
       ? [
-        { id: "cart" as const, label: "My Cart" },
-        { id: "ongoing" as const, label: "Ongoing" },
-        { id: "completed" as const, label: "Completed" },
+        { id: "cart" as const, label: "My Cart", badge: 0 },
+        { id: "ongoing" as const, label: "Ongoing", badge: needsAction },
+        { id: "completed" as const, label: "Completed", badge: 0 },
       ]
-      : [{ id: "ongoing" as const, label: "Orders" }];
+      : [{ id: "ongoing" as const, label: "Orders", badge: 0 }];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }} edges={["left", "right", "bottom"]}>
-      <View className={`px-4 pt-4 pb-2 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
+      <View className="px-4 pt-4 pb-2 bg-surface-page">
         <View className=" mb-3">
-          <Text className={`text-xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Orders</Text>
+          <Text className="text-xl font-bold text-text-primary">Orders</Text>
           <View className="w-10" />
         </View>
 
         {/* Segmented control (Chowdeck-style) */}
-        <View className={`flex-row rounded p-1 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+        <View className="flex-row rounded p-1 bg-surface-sunken">
           {tabs.map((t) => (
             <TouchableOpacity
               key={t.id}
               onPress={() => setActiveTab(t.id)}
-              className={`flex-1 py-2 rounded items-center ${activeTab === t.id ? (isDark ? "bg-[#1a1c1d]" : "bg-white") : ""}`}
+              className={`flex-1 py-2 rounded items-center ${activeTab === t.id ? ("bg-surface-raised") : ""}`}
             >
-              <Text className={`text-sm font-semibold ${activeTab === t.id ? (isDark ? "text-[#f0f1f2]" : "text-black") : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                {t.label}
-              </Text>
+              <View className="flex-row items-center gap-1.5">
+                <Text className={`text-sm font-semibold ${activeTab === t.id ? ("text-text-primary") : "text-text-secondary"}`}>
+                  {t.label}
+                </Text>
+                {t.badge > 0 ? (
+                  <View
+                    className="min-w-[18px] h-[18px] px-1 rounded-full items-center justify-center bg-primary-fill"
+                    accessibilityLabel={`${t.badge} awaiting your decision`}
+                  >
+                    <Text className="text-[10px] font-bold text-text-on-primary">
+                      {t.badge > 9 ? "9+" : t.badge}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
             </TouchableOpacity>
           ))}
         </View>

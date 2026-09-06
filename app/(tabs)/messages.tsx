@@ -18,7 +18,9 @@ import { MessageCircle, Search } from "lucide-react-native";
 import { getRooms } from "../../services/sections/chat";
 import type { RoomListResponse } from "../../models/chat";
 import Avatar from "../../components/Avatar";
-import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
+// develop extracted this into a shared util; the local copy here was
+// byte-identical, so take the shared one.
 import { formatTimeAgo } from "../../utils/formatTimeAgo";
 
 function lastMessagePreview(lastMessage: { content?: string; message_type?: string } | undefined): string {
@@ -38,8 +40,7 @@ export default function MessagesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const fetchRooms = async () => {
     try {
@@ -74,24 +75,24 @@ export default function MessagesScreen() {
   }, [data?.rooms, search]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
-      <View className={`border-b px-6 pt-6 pb-4 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-        <Text className={`text-2xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Messages</Text>
-        <View className={`flex-row items-center rounded mt-4 px-4 py-3 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-          <Search size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
+      <View className="border-b px-6 pt-6 pb-4 bg-surface-raised border-border">
+        <Text className="text-2xl font-bold text-text-primary">Messages</Text>
+        <View className="flex-row items-center rounded mt-4 px-4 py-3 bg-surface-sunken">
+          <Search size={18} color={t.textSecondary} />
           <TextInput
             value={search}
             onChangeText={setSearch}
             placeholder="Search conversations"
-            placeholderTextColor={isDark ? "#c6c5cf" : "#71717A"}
-            className={`flex-1 ml-3 text-base py-0 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+            placeholderTextColor={t.textSecondary}
+            className="flex-1 ml-3 text-base py-0 text-text-primary"
           />
         </View>
       </View>
 
       {loading ? (
-        <View className={`flex-1 items-center justify-center ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
-          <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+        <View className="flex-1 items-center justify-center bg-surface-raised">
+          <ActivityIndicator size="large" color={t.textPrimary} />
         </View>
       ) : rooms.length > 0 ? (
         <FlatList
@@ -116,7 +117,7 @@ export default function MessagesScreen() {
                   })
                 }
                 activeOpacity={0.7}
-                className={`flex-row items-center px-6 py-5 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+                className="flex-row items-center px-6 py-5 border-b bg-surface-raised border-border"
               >
                 <View className="relative">
                   <Avatar
@@ -127,34 +128,37 @@ export default function MessagesScreen() {
                   />
                   {hasUnread && (
                     <View
-                      className={`absolute right-0 bottom-0 w-3.5 h-3.5 rounded bg-primary border-2 ${isDark ? "border-[#1a1c1d]" : "border-white"}`}
+                      className="absolute right-0 bottom-0 w-3.5 h-3.5 rounded bg-primary-fill border-2 border-surface-page"
                     />
                   )}
                 </View>
                 <View className="flex-1 ml-4 min-w-0">
                   <View className="flex-row items-center justify-between mb-0.5">
                     <Text
-                      className={`font-bold text-base ${isDark ? (hasUnread ? "text-[#f0f1f2]" : "text-[#f0f1f2]") : (hasUnread ? "text-black" : "text-black")}`}
+                      // Both hasUnread branches were already identical on
+                      // develop; the name is always bold and unread is carried
+                      // by the timestamp, preview and badge below.
+                      className="font-bold text-base text-text-primary"
                       numberOfLines={1}
                     >
                       {item.other_user?.username ?? "Unknown"}
                     </Text>
                     <Text
-                      className={`text-xs ${hasUnread ? (isDark ? "text-[#f0f1f2] font-bold" : "text-black font-bold") : (isDark ? "text-[#c6c5cf]" : "text-tertiary")}`}
+                      className={`text-xs ${hasUnread ? ("text-text-primary font-bold") : ("text-text-secondary")}`}
                     >
                       {formatTimeAgo(item.last_message_at)}
                     </Text>
                   </View>
                   {item.product && (
                     <Text
-                      className={`text-xs mb-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                      className="text-xs mb-0.5 text-text-secondary"
                       numberOfLines={1}
                     >
                       Re: {item.product.name}
                     </Text>
                   )}
                   <Text
-                    className={`text-sm ${hasUnread ? (isDark ? "text-[#f0f1f2] font-medium" : "text-black font-medium") : (isDark ? "text-[#c6c5cf]" : "text-tertiary")}`}
+                    className={`text-sm ${hasUnread ? ("text-text-primary font-medium") : ("text-text-secondary")}`}
                     numberOfLines={1}
                   >
                     {preview}
@@ -168,19 +172,19 @@ export default function MessagesScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={isDark ? "#f0f1f2" : "#000000"}
+              tintColor={t.textPrimary}
             />
           }
         />
       ) : (
-        <View className={`flex-1 items-center justify-center px-8 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+        <View className="flex-1 items-center justify-center px-8 bg-surface-raised">
           <View className="mb-5">
-            <MessageCircle size={44} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={1.5} />
+            <MessageCircle size={44} color={t.textMuted} strokeWidth={1.5} />
           </View>
-          <Text className={`text-xl font-bold text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className="text-xl font-bold text-center text-text-primary">
             {search.trim() ? "No matches" : "No messages yet"}
           </Text>
-          <Text className={`text-base text-center mt-2 leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className="text-base text-center mt-2 leading-6 text-text-secondary">
             {search.trim()
               ? "Try a different name or product"
               : 'Tap "Chat" on a product or "Message" on a request to start.'}

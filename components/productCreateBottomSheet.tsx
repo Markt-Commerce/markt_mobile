@@ -18,8 +18,8 @@ import { CreateProductRequest } from '../models/products';
 import { createProduct } from '../services/sections/product';
 import { useToast } from './ToastProvider';
 import { friendlyErrorMessage } from '../utils/errorMessages';
-import { useTheme } from './themeProvider';
 import logger from '../utils/logger';
+import { useTokens } from "../theme/useTokens";
 
 
 // Zod Schema for Validation
@@ -57,8 +57,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
 
     const sheetRef = React.useRef<BottomSheet | null>(null);
     React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
-    const { resolvedTheme } = useTheme();
-    const isDark = resolvedTheme === "dark";
+    const t = useTokens();
 
     productSchema.refine(()=> selectedCategories?.length ?? 0 > 0,{
       path: ["category_ids"]
@@ -167,17 +166,17 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
       snapPoints={snapPoints}
       enablePanDownToClose={!sending}
       enableContentPanningGesture={!sending}
-      backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}
-      handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
+      backgroundStyle={{ backgroundColor: t.surfacePage }}
+      handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
     >
       <BottomSheetScrollView className="p-4">
-        <Text className={`text-lg font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Product</Text>
+        <Text className="text-lg font-bold mb-4 text-text-primary">Create Product</Text>
 
         {/* In-flight banner — visible while a slow network keeps us waiting */}
         {sending && (
-          <View className={`flex-row items-center gap-3 rounded border px-4 py-3 mb-4 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-            <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
-            <Text className={`flex-1 text-xs leading-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <View className="flex-row items-center gap-3 rounded border px-4 py-3 mb-4 bg-surface-sunken border-border">
+            <ActivityIndicator size="small" color={t.textPrimary} />
+            <Text className="flex-1 text-xs leading-5 text-text-secondary">
               {stage === "uploading"
                 ? "Uploading images… please keep this sheet open."
                 : "Creating your product… almost done."}
@@ -200,35 +199,35 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         <Input name='description' label='Description' placeholder='Describe your product…' control={control} multiline errors={errors} />
 
         {/* Category IDs */}
-        <Text className={`mb-2 text-xs font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Categories</Text>
+        <Text className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary">Categories</Text>
         <View className="flex-row flex-wrap gap-3 p-3 pr-4">
           {selectedCategories.map(cat => (
-            <View key={cat.id.toString()} className={`flex-row items-center border rounded px-3 py-1 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-              <Text className={`text-sm font-medium mr-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{cat.name}</Text>
+            <View key={cat.id.toString()} className="flex-row items-center border rounded px-3 py-1 bg-surface-sunken border-border">
+              <Text className="text-sm font-medium mr-2 text-text-primary">{cat.name}</Text>
               <TouchableOpacity onPress={() => removeCategory(cat.id)}>
-                <X size={16} color={isDark ? "#f0f1f2" : "#000000"} />
+                <X size={16} color={t.textPrimary} />
               </TouchableOpacity>
             </View>
           ))}
           <TouchableOpacity
             onPress={() => setModalVisible(true)}
-            className={`border rounded px-4 py-2 justify-center items-center ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+            className="border rounded px-4 py-2 justify-center items-center bg-surface-raised border-border"
           >
-            <Text className={`text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>+ Add Categories</Text>
+            <Text className="text-sm font-bold text-text-primary">+ Add Categories</Text>
           </TouchableOpacity>
         </View>
-        {errors.category_ids && <Text className="text-error text-xs mt-1">{errors.category_ids.message}</Text>}
+        {errors.category_ids && <Text className="text-danger-text text-xs mt-1">{errors.category_ids.message}</Text>}
 
         {/* Product Images */}
-        <Text className={`mb-2 text-xs font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Product Images</Text>
+        <Text className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary">Product Images</Text>
         {Array.isArray(Imagevalue) && Imagevalue.length > 0 && (
-          <Text className={`text-xs mb-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Long press on each image to remove it</Text>
+          <Text className="text-xs mb-2 text-text-secondary">Long press on each image to remove it</Text>
         )}
         {/* <<< IMPORTANT: pass value & onChange so we can receive images >>> */}
         <InstagramGrid value={Imagevalue} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} />
 
         {/* Optional forms*/}
-        <Text className={`text-xs font-bold uppercase tracking-[2px] mt-6 mb-3 ${isDark ? "text-[#f0f1f2]" : "text-tertiary"}`}>Optional Details</Text>
+        <Text className="text-xs font-bold uppercase tracking-[2px] mt-6 mb-3 text-text-primary">Optional Details</Text>
 
         {/* Barcode */}
         <Input name='barcode' label='Barcode' placeholder='Scan or enter a barcode' control={control} errors={errors} />
@@ -250,7 +249,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         <TouchableOpacity
           disabled={sending}
           onPress={handleSubmit(onSubmit)} // call our merged submit handler
-          className={`bg-primary p-3 rounded mt-4 flex-row items-center justify-center gap-2 ${sending ? "opacity-70" : ""}`}
+          className={`bg-primary-fill p-3 rounded mt-4 flex-row items-center justify-center gap-2 ${sending ? "opacity-70" : ""}`}
         >
           {sending && <ActivityIndicator size="small" color="white" />}
           <Text className="text-white text-center font-bold">

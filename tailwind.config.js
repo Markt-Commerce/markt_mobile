@@ -2,7 +2,14 @@
 
 module.exports = {
   darkMode: "class",
-  content: ["./components/**/*.{js,jsx,ts,tsx}", "./app/**/*.{js,jsx,ts,tsx}"],
+  // theme/ is scanned too: theme/tone.ts maps order statuses to chip classes,
+  // and without it Tailwind never saw `text-warning-text`, so the "attention"
+  // status chip rendered with no text colour at all.
+  content: [
+    "./components/**/*.{js,jsx,ts,tsx}",
+    "./app/**/*.{js,jsx,ts,tsx}",
+    "./theme/**/*.{js,jsx,ts,tsx}",
+  ],
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
@@ -24,16 +31,35 @@ module.exports = {
         "bg-muted": "#F4F4F5",
         "bg-elevated": "#FFFFFF",
         "border-light": "#F4F4F5",
-        "dark-page": "#0b0b0c",
-        "dark-surface": "#1a1c1d",
-        "dark-elevated": "#2f3132",
-        "dark-border": "#27272a",
-        "dark-border-strong": "#46464e",
-        "dark-text": "#f5f5f5",
-        "dark-muted": "#c6c5cf",
+        // The other vocabulary. 374 uses across the app referred to these
+        // rather than to raw hex, so rather than rewrite every one they now
+        // alias the semantic tokens — which converges both vocabularies on one
+        // set of values and makes those uses theme-aware for free.
+        //
+        // They resolve correctly in *both* themes, not just dark: "dark-text"
+        // means "the primary text colour", and in light mode that is #09090B.
+        // The names are legacy; the behaviour is right.
+        "dark-page": "var(--c-surface-page)",
+        "dark-surface": "var(--c-surface-raised)",
+        "dark-elevated": "var(--c-surface-sunken)",
+        "dark-border": "var(--c-border)",
+        "dark-border-strong": "var(--c-border-strong)",
+        "dark-text": "var(--c-text-primary)",
+        "dark-muted": "var(--c-text-secondary)",
         error: "#ba1a1a",
         success: "#178b1f",
         "error-bg": "#ffdad6",
+
+        // Semantic tokens, generated from theme/tokens.ts — each resolves to a
+        // CSS variable that flips with the .dark class.
+        //
+        // Spread LAST on purpose. It shadows the flat legacy names above that
+        // share a key -- border, primary, text-primary, text-secondary,
+        // text-muted, success -- which means every existing use of those
+        // classes becomes theme-aware without touching a single component.
+        // That's the point: those names were already semantic, they just
+        // pointed at one fixed light-mode value.
+        ...require("./theme/colors.generated.js"),
       },
       spacing: {
         base: "8px",

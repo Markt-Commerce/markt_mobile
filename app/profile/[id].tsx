@@ -22,6 +22,7 @@ import { Store, UserPlus, UserMinus } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
 import Avatar from "../../components/Avatar";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import {
   getUserPublicProfile,
@@ -42,11 +43,11 @@ function Stat({
 }) {
   return (
     <View className="items-center flex-1">
-      <Text className={`text-xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+      <Text className="text-xl font-bold text-text-primary">
         {value.toLocaleString()}
       </Text>
       <Text
-        className={`font-bold text-[10px] tracking-[1.5px] uppercase mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+        className="font-bold text-[10px] tracking-[1.5px] uppercase mt-1 text-text-secondary"
       >
         {label}
       </Text>
@@ -59,6 +60,7 @@ export default function PublicProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
 
   const [profile, setProfile] = useState<PublicProfile | null>(null);
@@ -117,20 +119,20 @@ export default function PublicProfileScreen() {
     }
   };
 
-  const label = isDark ? "text-[#f0f1f2]" : "text-black";
-  const muted = isDark ? "text-[#c6c5cf]" : "text-tertiary";
-  const card = isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border";
+  const label = "text-text-primary";
+  const muted = "text-text-secondary";
+  const card = "bg-surface-raised border-border";
 
   return (
     <SafeAreaView
-      className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      className="flex-1 bg-surface-page"
       edges={["top", "left", "right", "bottom"]}
     >
       <ScreenHeader title="Profile" onBack={() => router.back()} />
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#E94C2A" />
+          <ActivityIndicator size="large" color={t.primaryText} />
         </View>
       ) : !profile ? (
         <View className="flex-1 items-center justify-center px-8">
@@ -145,7 +147,7 @@ export default function PublicProfileScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => load({ refresh: true })}
-              tintColor="#E94C2A"
+              tintColor={t.primaryText}
             />
           }
         >
@@ -172,14 +174,14 @@ export default function PublicProfileScreen() {
                 onPress={handleFollowToggle}
                 disabled={followBusy}
                 activeOpacity={0.85}
-                className={`mt-6 h-12 px-10 rounded items-center justify-center flex-row gap-2 ${following ? `border ${isDark ? "border-[#46464e]" : "border-border"}` : "bg-primary"}`}
+                className={`mt-6 h-12 px-10 rounded items-center justify-center flex-row gap-2 ${following ? `border border-border-strong` : "bg-primary-fill"}`}
                 accessibilityRole="button"
                 accessibilityLabel={following ? "Unfollow" : "Follow"}
               >
                 {following ? (
-                  <UserMinus size={16} color={isDark ? "#f0f1f2" : "#000000"} />
+                  <UserMinus size={16} color={t.textPrimary} />
                 ) : (
-                  <UserPlus size={16} color="#FFFFFF" />
+                  <UserPlus size={16} color={t.textOnPrimary} />
                 )}
                 <Text
                   className={`font-bold text-xs tracking-[2px] uppercase ${following ? label : "text-white"}`}
@@ -208,9 +210,9 @@ export default function PublicProfileScreen() {
             >
               <View className="flex-row items-center gap-3">
                 <View
-                  className={`w-11 h-11 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                  className="w-11 h-11 rounded items-center justify-center bg-surface-sunken"
                 >
-                  <Store size={20} color="#E94C2A" strokeWidth={1.8} />
+                  <Store size={20} color={t.primaryText} strokeWidth={1.8} />
                 </View>
                 <View className="flex-1">
                   <Text className={`font-bold text-[15px] ${label}`} numberOfLines={1}>

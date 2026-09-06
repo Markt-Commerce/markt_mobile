@@ -21,13 +21,18 @@
 import React from "react";
 import { View, Text } from "react-native";
 import { BadgeCheck } from "lucide-react-native";
+import { useTokens } from "../theme/useTokens";
+import type { ThemeTokens } from "../theme/tokens";
 
 export type VerifiedKind = "seller" | "purchase";
 
-const TONE: Record<VerifiedKind, { fg: string; bg: string; label: string }> = {
-  seller: { fg: "#E94C2A", bg: "rgba(233,76,42,0.12)", label: "Verified" },
-  purchase: { fg: "#0F7B3F", bg: "rgba(15,123,63,0.12)", label: "Verified purchase" },
-};
+/** Built per render rather than frozen at module load, so the foreground
+ *  follows the active theme. The tinted backgrounds are alpha over whatever
+ *  surface the chip sits on and work in both. */
+const toneFor = (t: ThemeTokens): Record<VerifiedKind, { fg: string; bg: string; label: string }> => ({
+  seller: { fg: t.primaryText, bg: "rgba(233,76,42,0.12)", label: "Verified" },
+  purchase: { fg: t.successText, bg: "rgba(15,123,63,0.12)", label: "Verified purchase" },
+});
 
 type Props = {
   kind?: VerifiedKind;
@@ -44,7 +49,8 @@ export default function VerifiedBadge({
   size = 14,
   label,
 }: Props) {
-  const tone = TONE[kind];
+  const t = useTokens();
+  const tone = toneFor(t)[kind];
   const text = label ?? tone.label;
 
   if (compact) {

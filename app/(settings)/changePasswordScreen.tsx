@@ -5,8 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import { useRouter } from 'expo-router';
 import { usePasswordResetConfirm } from '../../hooks/useAuth';
-import { useTheme } from '../../components/themeProvider';
 import { friendlyErrorMessage } from '../../utils/errorMessages';
+import { useTokens } from "../../theme/useTokens";
 
 export default function ChangePasswordScreen() {
   const [email, setEmail] = useState('');
@@ -14,8 +14,7 @@ export default function ChangePasswordScreen() {
   const [newPassword, setNewPassword] = useState('');
   const reset = usePasswordResetConfirm();
   const nav = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const onSubmit = async () => {
     try {
@@ -37,49 +36,49 @@ export default function ChangePasswordScreen() {
   const canSubmit = !!email.trim() && !!code.trim() && !!newPassword.trim() && !isSubmitting;
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
-      <ScrollView className={isDark ? "bg-[#1a1c1d]" : "bg-white"} contentContainerStyle={{ paddingBottom: 32 }}>
+    <SafeAreaView className="flex-1 bg-surface-page">
+      <ScrollView className={"bg-surface-page"} contentContainerStyle={{ paddingBottom: 32 }}>
         <ScreenHeader title="Change Password" onBack={() => nav.back()} />
         <View className="px-6 pt-6">
-          <Text className={`text-sm leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className="text-sm leading-6 text-text-secondary">
             Enter the email tied to your account, the reset code you received, and a new password.
           </Text>
 
-          <View className={`mt-6 border rounded p-4 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-sm font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Email</Text>
+          <View className="mt-6 border rounded p-4 bg-surface-raised border-border">
+            <Text className="text-sm font-bold mb-2 text-text-primary">Email</Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
-              className={`border p-3 rounded mb-4 ${isDark ? "border-[#46464e] bg-[#2f3132] text-[#f0f1f2]" : "border-border bg-surface text-black"}`}
+              className="border p-3 rounded mb-4 border-border bg-surface-sunken text-text-primary"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
-              placeholderTextColor={isDark ? "#8f8f98" : "#5b5b64"}
+              placeholderTextColor={t.textMuted}
             />
 
-            <Text className={`text-sm font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Reset Code</Text>
+            <Text className="text-sm font-bold mb-2 text-text-primary">Reset Code</Text>
             <TextInput
               value={code}
               onChangeText={setCode}
-              className={`border p-3 rounded mb-4 ${isDark ? "border-[#46464e] bg-[#2f3132] text-[#f0f1f2]" : "border-border bg-surface text-black"}`}
+              className="border p-3 rounded mb-4 border-border bg-surface-sunken text-text-primary"
               keyboardType="number-pad"
               autoCapitalize="none"
-              placeholderTextColor={isDark ? "#8f8f98" : "#5b5b64"}
+              placeholderTextColor={t.textMuted}
             />
 
-            <Text className={`text-sm font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>New Password</Text>
+            <Text className="text-sm font-bold mb-2 text-text-primary">New Password</Text>
             <TextInput
               value={newPassword}
               onChangeText={setNewPassword}
-              className={`border p-3 rounded ${isDark ? "border-[#46464e] bg-[#2f3132] text-[#f0f1f2]" : "border-border bg-surface text-black"}`}
+              className="border p-3 rounded border-border bg-surface-sunken text-text-primary"
               secureTextEntry
               autoCapitalize="none"
-              placeholderTextColor={isDark ? "#8f8f98" : "#5b5b64"}
+              placeholderTextColor={t.textMuted}
             />
           </View>
 
           <TouchableOpacity
-            className={`mt-6 h-12 rounded items-center justify-center bg-primary ${canSubmit ? "" : "opacity-50"}`}
+            className={`mt-6 h-12 rounded items-center justify-center bg-primary-fill ${canSubmit ? "" : "opacity-50"}`}
             onPress={onSubmit}
             disabled={!canSubmit}
             activeOpacity={0.85}

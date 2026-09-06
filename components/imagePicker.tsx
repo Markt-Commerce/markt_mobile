@@ -144,7 +144,7 @@ export default function InstagramGrid({
       const sizeStyle = { aspectRatio: 1 } as const;
 
       if (item.kind === "placeholder") {
-        return <View className="bg-surface-dim border border-dashed border-border rounded flex-1" style={[sizeStyle, marginStyle]} />;
+        return <View className="bg-surface-sunken border border-dashed border-border rounded flex-1" style={[sizeStyle, marginStyle]} />;
       }
 
       const { img } = item as { kind: "image"; id: string; img: PickedImage };
@@ -161,7 +161,7 @@ export default function InstagramGrid({
       };
 
         return (
-          <Pressable onPress={onPress} onLongPress={onLongPress} android_ripple={{ color: "#00000022" }} className="relative bg-surface rounded overflow-hidden flex-1" style={[sizeStyle, marginStyle]}>
+          <Pressable onPress={onPress} onLongPress={onLongPress} android_ripple={{ color: "#00000022" }} className="relative bg-surface-sunken rounded overflow-hidden flex-1" style={[sizeStyle, marginStyle]}>
             {img.mediaType === "video" ? (
               <>
                 <View style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -192,7 +192,7 @@ export default function InstagramGrid({
 
   return (
     <View className="w-full">
-      {images.length === 0 && !!emptyLabel && <Text className="text-center text-tertiary mb-2">{emptyLabel}</Text>}
+      {images.length === 0 && !!emptyLabel && <Text className="text-center text-text-muted mb-2">{emptyLabel}</Text>}
 
       <View className="w-full" style={{ padding: gap / 2 }}>
         <FlatList
@@ -209,7 +209,7 @@ export default function InstagramGrid({
       </View>
 
       {showFloatingAdd && (
-        <Pressable onPress={handlePick} android_ripple={{ color: "#ffffff55" }} className="absolute right-4 bottom-4 w-14 h-14 rounded items-center justify-center bg-primary">
+        <Pressable onPress={handlePick} android_ripple={{ color: "#ffffff55" }} className="absolute right-4 bottom-4 w-14 h-14 rounded items-center justify-center bg-primary-fill">
           <Plus size={24} color="#ffffff" />
         </Pressable>
       )}

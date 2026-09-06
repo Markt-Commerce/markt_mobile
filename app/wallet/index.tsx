@@ -24,6 +24,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { ArrowDownLeft, ArrowLeft, ArrowUpRight, Plus, Wallet } from "lucide-react-native";
 import { SettingsSection } from "../../components/SettingsList";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens, tokensFor } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { formatNaira } from "../../utils/formatCurrency";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
@@ -62,26 +63,26 @@ function TransactionRow({
 
   return (
     <View
-      className={`flex-row items-center px-6 py-4 border-b ${isDark ? "border-[#46464e]" : "border-border"}`}
+      className="flex-row items-center px-6 py-4 border-b border-border-strong"
     >
       <View
-        className={`w-10 h-10 rounded items-center justify-center mr-3 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+        className="w-10 h-10 rounded items-center justify-center mr-3 bg-surface-sunken"
       >
         {isCredit ? (
-          <ArrowDownLeft size={18} color="#178b1f" strokeWidth={1.8} />
+          <ArrowDownLeft size={18} color={tokensFor(isDark).successText} strokeWidth={1.8} />
         ) : (
-          <ArrowUpRight size={18} color="#E94C2A" strokeWidth={1.8} />
+          <ArrowUpRight size={18} color={tokensFor(isDark).primaryText} strokeWidth={1.8} />
         )}
       </View>
       <View className="flex-1 pr-3">
         <Text
-          className={`font-semibold text-[15px] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+          className="font-semibold text-[15px] text-text-primary"
           numberOfLines={1}
         >
           {label}
         </Text>
         <Text
-          className={`text-[12px] mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+          className="text-[12px] mt-0.5 text-text-secondary"
           numberOfLines={1}
         >
           {tx.description ??
@@ -90,12 +91,12 @@ function TransactionRow({
       </View>
       <View className="items-end">
         <Text
-          className={`font-bold text-[15px] ${isCredit ? "text-[#178b1f]" : isDark ? "text-[#f0f1f2]" : "text-black"}`}
+          className={`font-bold text-[15px] ${isCredit ? "text-success-text" : "text-text-primary"}`}
         >
           {isCredit ? "+" : "−"}
           {formatNaira(tx.amount)}
         </Text>
-        <Text className={`text-[11px] mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+        <Text className="text-[11px] mt-0.5 text-text-secondary">
           {formatNaira(tx.balance_after)}
         </Text>
       </View>
@@ -108,6 +109,7 @@ export default function WalletScreen() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const [balance, setBalance] = useState<number | null>(null);
   const [currency, setCurrency] = useState("NGN");
@@ -274,8 +276,8 @@ export default function WalletScreen() {
 
   const canWithdraw = (balance ?? 0) >= MIN_WITHDRAWAL_AMOUNT;
 
-  const inputClass = `h-14 rounded border px-4 text-[15px] mb-4 ${isDark ? "bg-[#1a1c1d] border-[#46464e] text-[#f0f1f2]" : "bg-white border-border text-black"}`;
-  const placeholderColor = isDark ? "#6b6b73" : "#A1A1AA";
+  const inputClass = `h-14 rounded border px-4 text-[15px] mb-4 bg-surface-raised border-border text-text-primary`;
+  const placeholderColor = t.textMuted;
 
   // A wallet should feel like a wallet, not another settings list. The balance
   // sits on a coloured ground that runs to the top of the screen, the way
@@ -284,7 +286,7 @@ export default function WalletScreen() {
   const header = useMemo(
     () => (
       <>
-        <View className="bg-primary px-5 pb-7">
+        <View className="bg-primary-fill px-5 pb-7">
           <View className="flex-row items-center justify-between h-12">
             <TouchableOpacity
               onPress={() => router.back()}
@@ -292,7 +294,7 @@ export default function WalletScreen() {
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >
-              <ArrowLeft size={22} color="#FFFFFF" />
+              <ArrowLeft size={22} color={t.textOnPrimary} />
             </TouchableOpacity>
             <Text className="text-white text-[17px] font-bold">Wallet</Text>
             <TouchableOpacity
@@ -302,7 +304,7 @@ export default function WalletScreen() {
               accessibilityRole="button"
               accessibilityLabel="Add money to wallet"
             >
-              <Plus size={18} color="#FFFFFF" strokeWidth={2.4} />
+              <Plus size={18} color={t.textOnPrimary} strokeWidth={2.4} />
               <Text className="text-white text-[14px] font-semibold ml-1">Add</Text>
             </TouchableOpacity>
           </View>
@@ -312,7 +314,7 @@ export default function WalletScreen() {
               Available balance · {currency}
             </Text>
             {balance == null ? (
-              <ActivityIndicator size="small" color="#FFFFFF" className="mt-3" />
+              <ActivityIndicator size="small" color={t.textOnPrimary} className="mt-3" />
             ) : (
               <Text className="text-white text-[38px] font-bold mt-1.5">
                 {formatNaira(balance)}
@@ -328,7 +330,7 @@ export default function WalletScreen() {
               accessibilityRole="button"
               accessibilityLabel="Fund wallet"
             >
-              <Plus size={17} color="#E94C2A" strokeWidth={2.4} />
+              <Plus size={17} color={t.primaryText} strokeWidth={2.4} />
               <Text className="text-primary font-bold text-[14px] ml-1.5">Fund</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -342,13 +344,13 @@ export default function WalletScreen() {
               accessibilityState={{ disabled: !canWithdraw }}
               accessibilityLabel="Withdraw to bank account"
             >
-              <ArrowUpRight size={17} color="#FFFFFF" strokeWidth={2.4} />
+              <ArrowUpRight size={17} color={t.textOnPrimary} strokeWidth={2.4} />
               <Text className="text-white font-bold text-[14px] ml-1.5">Withdraw</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <SettingsSection title="Activity" dark={isDark} />
+        <SettingsSection title="Activity" />
       </>
     ),
     [balance, currency, isDark, canWithdraw, router]
@@ -365,7 +367,7 @@ export default function WalletScreen() {
         keyExtractor={(tx) => String(tx.id)}
         renderItem={({ item }) => <TransactionRow tx={item} isDark={isDark} />}
         ListHeaderComponent={header}
-        className={isDark ? "bg-[#1a1c1d]" : "bg-white"}
+        className={"bg-surface-raised"}
         contentContainerStyle={{ paddingBottom: 32 }}
         refreshing={refreshing}
         onRefresh={() => load({ refresh: true })}
@@ -374,7 +376,7 @@ export default function WalletScreen() {
         ListFooterComponent={
           loadingMore ? (
             <View className="py-6 items-center">
-              <ActivityIndicator size="small" color="#E94C2A" />
+              <ActivityIndicator size="small" color={t.primaryText} />
             </View>
           ) : (
             <View className="h-10" />
@@ -383,12 +385,12 @@ export default function WalletScreen() {
         ListEmptyComponent={
           loading ? (
             <View className="py-12 items-center">
-              <ActivityIndicator size="small" color="#E94C2A" />
+              <ActivityIndicator size="small" color={t.primaryText} />
             </View>
           ) : (
             <View className="px-6 py-12 items-center">
               <Text
-                className={`text-[15px] text-center ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                className="text-[15px] text-center text-text-secondary"
               >
                 No wallet activity yet. Fund your wallet to pay for orders
                 instantly.
@@ -410,11 +412,11 @@ export default function WalletScreen() {
           className="flex-1 justify-end"
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         >
-          <View className={`rounded-t-2xl p-6 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
-            <Text className={`text-lg font-bold mb-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <View className="rounded-t-2xl p-6 bg-surface-raised">
+            <Text className="text-lg font-bold mb-1 text-text-primary">
               Fund wallet
             </Text>
-            <Text className={`text-[13px] mb-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className="text-[13px] mb-5 text-text-secondary">
               Minimum {formatNaira(MIN_TOPUP_AMOUNT)}. You'll complete payment with
               Paystack.
             </Text>
@@ -430,11 +432,11 @@ export default function WalletScreen() {
             <View className="flex-row gap-3">
               <TouchableOpacity
                 onPress={() => setTopUpOpen(false)}
-                className={`flex-1 h-14 rounded items-center justify-center border ${isDark ? "border-[#46464e]" : "border-border"}`}
+                className="flex-1 h-14 rounded items-center justify-center border border-border-strong"
                 accessibilityRole="button"
               >
                 <Text
-                  className={`font-bold text-xs tracking-[2px] uppercase ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+                  className="font-bold text-xs tracking-[2px] uppercase text-text-primary"
                 >
                   Cancel
                 </Text>
@@ -442,11 +444,11 @@ export default function WalletScreen() {
               <TouchableOpacity
                 onPress={handleStartTopUp}
                 disabled={startingTopUp}
-                className="flex-1 h-14 rounded bg-primary items-center justify-center"
+                className="flex-1 h-14 rounded bg-primary-fill items-center justify-center"
                 accessibilityRole="button"
               >
                 {startingTopUp ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={t.textOnPrimary} />
                 ) : (
                   <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
                     Continue
@@ -470,11 +472,11 @@ export default function WalletScreen() {
           className="flex-1 justify-end"
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         >
-          <View className={`rounded-t-2xl p-6 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
-            <Text className={`text-lg font-bold mb-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <View className="rounded-t-2xl p-6 bg-surface-raised">
+            <Text className="text-lg font-bold mb-1 text-text-primary">
               Withdraw to bank
             </Text>
-            <Text className={`text-[13px] mb-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <Text className="text-[13px] mb-5 text-text-secondary">
               Minimum {formatNaira(MIN_WITHDRAWAL_AMOUNT)}. Available{" "}
               {formatNaira(balance ?? 0)}.
             </Text>
@@ -516,11 +518,11 @@ export default function WalletScreen() {
             <View className="flex-row gap-3">
               <TouchableOpacity
                 onPress={() => setWithdrawOpen(false)}
-                className={`flex-1 h-14 rounded items-center justify-center border ${isDark ? "border-[#46464e]" : "border-border"}`}
+                className="flex-1 h-14 rounded items-center justify-center border border-border-strong"
                 accessibilityRole="button"
               >
                 <Text
-                  className={`font-bold text-xs tracking-[2px] uppercase ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+                  className="font-bold text-xs tracking-[2px] uppercase text-text-primary"
                 >
                   Cancel
                 </Text>
@@ -528,11 +530,11 @@ export default function WalletScreen() {
               <TouchableOpacity
                 onPress={handleWithdraw}
                 disabled={withdrawing}
-                className="flex-1 h-14 rounded bg-primary items-center justify-center"
+                className="flex-1 h-14 rounded bg-primary-fill items-center justify-center"
                 accessibilityRole="button"
               >
                 {withdrawing ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={t.textOnPrimary} />
                 ) : (
                   <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
                     Withdraw

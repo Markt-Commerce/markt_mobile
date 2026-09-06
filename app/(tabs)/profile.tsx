@@ -18,7 +18,7 @@ import CreateRoleBottomSheet from "../../components/createRoleBottomSheet";
 import { useUser } from "../../hooks/userContextProvider";
 import { useToast } from "../../components/ToastProvider";
 import { switchUserRole } from "../../services/sections/auth";
-import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import {
   SettingsSection as Section,
   SettingsRow as Row,
@@ -30,8 +30,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { role, setRole, profile, setProfile, refreshProfile } = useUser();
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const [switchingRole, setSwitchingRole] = useState(false);
   const [createMode, setCreateMode] = useState<"buyer" | "seller" | null>(null);
   const createRoleRef = useRef<BottomSheet | null>(null);
@@ -110,16 +109,16 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
       <ScrollView
-        className={isDark ? "bg-[#1a1c1d]" : "bg-white"}
+        className={"bg-surface-page"}
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Same identity treatment as Settings: centred, no card. It was a
             bordered box wrapping a bordered avatar and two stacked buttons, on
             a screen whose rows are now full-bleed. */}
-        <View className={`items-center px-6 pt-6 pb-6 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+        <View className="items-center px-6 pt-6 pb-6 bg-surface-raised">
           <Avatar
             uri={profile?.profile_picture_url}
             name={displayName}
@@ -127,20 +126,20 @@ export default function ProfileScreen() {
             className="rounded-full"
           />
           <Text
-            className={`font-bold text-[22px] tracking-tight mt-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+            className="font-bold text-[22px] tracking-tight mt-3 text-text-primary"
             numberOfLines={1}
           >
             {displayName}
           </Text>
           <Text
-            className={`text-[14px] mt-0.5 ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}
+            className="text-[14px] mt-0.5 text-text-muted"
             numberOfLines={1}
           >
             @{profile?.username ?? "user"}
           </Text>
 
           <View className="flex-row flex-wrap justify-center gap-2 mt-4">
-            <View className="px-3 py-1.5 rounded-full bg-primary">
+            <View className="px-3 py-1.5 rounded-full bg-primary-fill">
               <Text className="font-bold text-[11px] uppercase tracking-wider text-white">
                 {role}
               </Text>
@@ -153,9 +152,9 @@ export default function ProfileScreen() {
               activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel="Edit profile"
-              className={`flex-1 h-11 rounded-xl items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}
+              className="flex-1 h-11 rounded-xl items-center justify-center bg-surface-sunken"
             >
-              <Text className={`font-semibold text-[14px] ${isDark ? "text-[#f0f1f2]" : "text-[#3F3F46]"}`}>
+              <Text className="font-semibold text-[14px] text-text-primary">
                 Edit profile
               </Text>
             </TouchableOpacity>
@@ -166,12 +165,12 @@ export default function ProfileScreen() {
               accessibilityRole="button"
               accessibilityState={{ busy: switchingRole }}
               className={`flex-1 h-11 rounded-xl items-center justify-center flex-row ${
-                isDark ? "bg-[#f0f1f2]" : "bg-black"
+                "bg-text-primary"
               } ${switchingRole ? "opacity-60" : ""}`}
             >
-              <ArrowRightLeft size={15} color={isDark ? "#1a1c1d" : "#FFFFFF"} strokeWidth={2.2} />
+              <ArrowRightLeft size={15} color={t.surfacePage} strokeWidth={2.2} />
               <Text
-                className={`font-semibold text-[14px] ml-1.5 ${isDark ? "text-[#1a1c1d]" : "text-white"}`}
+                className="font-semibold text-[14px] ml-1.5 text-surface-page"
                 numberOfLines={1}
               >
                 {switchingRole
@@ -195,7 +194,7 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        <Section title="Role Overview" dark={isDark}>
+        <Section title="Role Overview">
           <Row
             icon={CircleUserRound}
             title="Buyer Identity"
@@ -207,7 +206,6 @@ export default function ProfileScreen() {
             onPress={() => {
               void handleRoleRowPress("buyer");
             }}
-            dark={isDark}
           />
           <Row
             icon={Briefcase}
@@ -221,35 +219,30 @@ export default function ProfileScreen() {
               void handleRoleRowPress("seller");
             }}
             last
-            dark={isDark}
           />
         </Section>
 
-        <Section title="Account Navigation" dark={isDark}>
+        <Section title="Account Navigation">
           <Row
             icon={Trophy}
             title="Rewards & Badges"
             onPress={() => router.push("/gamification" as any)}
-            dark={isDark}
           />
           <Row
             icon={Settings}
             title="Settings"
             onPress={() => router.push("/(settings)/settingsProfileScreen")}
-            dark={isDark}
           />
           <Row
             icon={LayoutGrid}
             title="My Niches"
             onPress={() => router.push("/myniches" as any)}
-            dark={isDark}
           />
           <Row
             icon={ShieldCheck}
             title="Help & Policies"
             onPress={() => router.push("/support/help" as any)}
             last
-            dark={isDark}
           />
         </Section>
       </ScrollView>

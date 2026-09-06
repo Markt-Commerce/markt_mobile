@@ -17,7 +17,7 @@ import { ThumbsUp, Pencil, Trash2, X } from "lucide-react-native";
 import Avatar from "./Avatar";
 import VerifiedBadge from "./VerifiedBadge";
 import { StarRating, StarRatingInput } from "./StarRating";
-import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 import { useToast } from "./ToastProvider";
 import { useUser } from "../hooks/userContextProvider";
 import {
@@ -48,8 +48,7 @@ function relativeDate(iso?: string) {
 }
 
 export default function ProductReviews({ productId, onChanged }: Props) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
   const { user } = useUser();
   const myId = user?.user_id ? String(user.user_id) : "";
@@ -170,9 +169,9 @@ export default function ProductReviews({ productId, onChanged }: Props) {
     ? rated.reduce((sum, r) => sum + (r.rating ?? 0), 0) / rated.length
     : 0;
 
-  const border = isDark ? "border-[#2f3132]" : "border-border-light";
-  const muted = isDark ? "text-[#8f9195]" : "text-tertiary";
-  const strong = isDark ? "text-[#f0f1f2]" : "text-black";
+  const border = "border-border";
+  const muted = "text-text-muted";
+  const strong = "text-text-primary";
 
   return (
     <View className={`border-t ${border} pt-6`}>
@@ -181,7 +180,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
           <Text className={`font-bold text-[18px] ${strong}`}>Reviews</Text>
           {rated.length > 0 ? (
             <View className="flex-row items-center mt-1">
-              <StarRating value={average} size={14} dark={isDark} />
+              <StarRating value={average} size={14} />
               <Text className={`text-[13px] ml-2 ${muted}`}>
                 {average.toFixed(1)} · {rated.length}{" "}
                 {rated.length === 1 ? "review" : "reviews"}
@@ -196,7 +195,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
             activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel="Write a review"
-            className="px-4 h-10 rounded-lg bg-primary items-center justify-center"
+            className="px-4 h-10 rounded-lg bg-primary-fill items-center justify-center"
           >
             <Text className="text-white font-semibold text-[13px]">Write a review</Text>
           </TouchableOpacity>
@@ -204,7 +203,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
       </View>
 
       {composing ? (
-        <View className={`rounded-xl p-4 mb-5 ${isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]"}`}>
+        <View className="rounded-xl p-4 mb-5 bg-surface-sunken">
           <View className="flex-row items-center justify-between mb-3">
             <Text className={`font-semibold text-[15px] ${strong}`}>
               {editingId ? "Edit your review" : "How was it?"}
@@ -215,21 +214,21 @@ export default function ProductReviews({ productId, onChanged }: Props) {
               accessibilityRole="button"
               accessibilityLabel="Cancel"
             >
-              <X size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
+              <X size={18} color={t.textSecondary} />
             </TouchableOpacity>
           </View>
 
-          <StarRatingInput value={rating} onChange={setRating} dark={isDark} />
+          <StarRatingInput value={rating} onChange={setRating} />
 
           <TextInput
             value={content}
             onChangeText={setContent}
             placeholder="What should other buyers know?"
-            placeholderTextColor={isDark ? "#8f9195" : "#A1A1AA"}
+            placeholderTextColor={t.textMuted}
             multiline
             maxLength={1000}
             className={`mt-4 rounded-lg px-3 py-3 text-[15px] min-h-[88px] ${
-              isDark ? "bg-[#1a1c1d] text-[#f0f1f2]" : "bg-white text-black"
+              "bg-surface-raised text-text-primary"
             }`}
             textAlignVertical="top"
             accessibilityLabel="Your review"
@@ -241,12 +240,12 @@ export default function ProductReviews({ productId, onChanged }: Props) {
             activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityState={{ busy: submitting }}
-            className={`mt-3 h-12 rounded-lg bg-primary items-center justify-center ${
+            className={`mt-3 h-12 rounded-lg bg-primary-fill items-center justify-center ${
               submitting ? "opacity-60" : ""
             }`}
           >
             {submitting ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={t.textOnPrimary} />
             ) : (
               <Text className="text-white font-bold text-[15px]">
                 {editingId ? "Save changes" : "Post review"}
@@ -258,7 +257,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
 
       {loading ? (
         <View className="py-8 items-center">
-          <ActivityIndicator color={isDark ? "#f0f1f2" : "#000000"} />
+          <ActivityIndicator color={t.textPrimary} />
         </View>
       ) : reviews.length === 0 ? (
         <View className="py-8 items-center">
@@ -294,7 +293,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
                   </View>
                   <View className="flex-row items-center mt-0.5">
                     {typeof r.rating === "number" ? (
-                      <StarRating value={r.rating} size={12} dark={isDark} />
+                      <StarRating value={r.rating} size={12} />
                     ) : null}
                     <Text className={`text-[12px] ml-2 ${muted}`}>
                       {relativeDate(r.created_at)}
@@ -311,7 +310,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
                       accessibilityRole="button"
                       accessibilityLabel="Edit your review"
                     >
-                      <Pencil size={16} color={isDark ? "#c6c5cf" : "#71717A"} />
+                      <Pencil size={16} color={t.textSecondary} />
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => remove(r.id)}
@@ -320,7 +319,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
                       accessibilityRole="button"
                       accessibilityLabel="Delete your review"
                     >
-                      <Trash2 size={16} color="#DC2626" />
+                      <Trash2 size={16} color={t.dangerText} />
                     </TouchableOpacity>
                   </View>
                 ) : null}
@@ -329,7 +328,7 @@ export default function ProductReviews({ productId, onChanged }: Props) {
               {r.title ? (
                 <Text className={`font-semibold text-[15px] mt-3 ${strong}`}>{r.title}</Text>
               ) : null}
-              <Text className={`text-[14px] leading-[20px] mt-2 ${isDark ? "text-[#c6c5cf]" : "text-[#3F3F46]"}`}>
+              <Text className="text-[14px] leading-[20px] mt-2 text-text-secondary">
                 {r.content}
               </Text>
 
@@ -340,9 +339,9 @@ export default function ProductReviews({ productId, onChanged }: Props) {
                   accessibilityRole="button"
                   accessibilityLabel={`Mark this review helpful. ${r.upvotes ?? 0} so far.`}
                   className="flex-row items-center mt-3 self-start px-3 h-9 rounded-full"
-                  style={{ backgroundColor: isDark ? "#2f3132" : "#F4F4F5" }}
+                  style={{ backgroundColor: t.surfaceSunken }}
                 >
-                  <ThumbsUp size={13} color={isDark ? "#c6c5cf" : "#52525B"} />
+                  <ThumbsUp size={13} color={t.textSecondary} />
                   <Text className={`text-[12px] ml-1.5 font-medium ${muted}`}>
                     Helpful{r.upvotes ? ` · ${r.upvotes}` : ""}
                   </Text>

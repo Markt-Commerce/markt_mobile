@@ -26,6 +26,7 @@ import Avatar from "../../components/Avatar";
 import ProductDisplayComponent from "../../components/productDisplayComponent";
 import PostDisplayComponent from "../../components/PostDisplayComponent";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens, tokensFor } from "../../theme/useTokens";
 import VerifiedBadge, { isVerifiedSeller } from "../../components/VerifiedBadge";
 
 type Tab = "sellers" | "products" | "posts";
@@ -51,7 +52,7 @@ function SellerRow({
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={`flex-row items-center px-6 py-4 border-b ${isDark ? "bg-dark-page border-dark-border" : "bg-white border-border"}`}
+      className="flex-row items-center px-6 py-4 border-b bg-surface-page border-border"
       activeOpacity={0.7}
       accessibilityRole="button"
       accessibilityLabel={`View ${label}`}
@@ -59,14 +60,14 @@ function SellerRow({
       <Avatar uri={seller.user?.profile_picture} name={label} size={48} />
       <View className="flex-1 ml-4">
         <Text
-          className={`font-bold text-base ${isDark ? "text-dark-text" : "text-black"}`}
+          className="font-bold text-base text-text-primary"
           numberOfLines={1}
         >
           {label}
         </Text>
         {seller.stats && (
           <Text
-            className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-xs mt-1`}
+            className="text-text-secondary text-xs mt-1"
           >
             {seller.stats.product_count} products · {seller.stats.follower_count}{" "}
             followers
@@ -83,6 +84,7 @@ export default function MarketDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const [market, setMarket] = useState<Market | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("sellers");
@@ -161,11 +163,11 @@ export default function MarketDetailScreen() {
 
   return (
     <SafeAreaView
-      className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}
+      className="flex-1 bg-surface-page"
       edges={["top"]}
     >
       <View
-        className={`flex-row items-center px-6 py-4 border-b ${isDark ? "border-dark-border" : "border-border"}`}
+        className="flex-row items-center px-6 py-4 border-b border-border"
       >
         <TouchableOpacity
           onPress={() => router.back()}
@@ -173,10 +175,10 @@ export default function MarketDetailScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={24} color={isDark ? "#f5f5f5" : "#000000"} />
+          <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
-          className={`flex-1 text-xl font-bold text-center pr-8 ${isDark ? "text-dark-text" : "text-black"}`}
+          className="flex-1 text-xl font-bold text-center pr-8 text-text-primary"
           numberOfLines={1}
         >
           {market?.name ?? "Market"}
@@ -184,7 +186,7 @@ export default function MarketDetailScreen() {
       </View>
 
       <View
-        className={`flex-row border-b px-6 gap-8 ${isDark ? "border-dark-border" : "border-border"}`}
+        className="flex-row border-b px-6 gap-8 border-border"
       >
         {(["sellers", "products", "posts"] as Tab[]).map((tab) => (
           <TouchableOpacity
@@ -195,7 +197,7 @@ export default function MarketDetailScreen() {
             accessibilityState={{ selected: activeTab === tab }}
           >
             <Text
-              className={`text-sm font-bold ${activeTab === tab ? (isDark ? "text-dark-text" : "text-black") : isDark ? "text-dark-muted" : "text-tertiary"}`}
+              className={`text-sm font-bold ${activeTab === tab ? ("text-text-primary") : "text-text-secondary"}`}
             >
               {tabLabel[tab]}
             </Text>
@@ -207,7 +209,7 @@ export default function MarketDetailScreen() {
         <View className="flex-1 justify-center items-center py-16">
           <ActivityIndicator
             size="large"
-            color={isDark ? "#f5f5f5" : "#000000"}
+            color={t.textPrimary}
           />
         </View>
       ) : activeTab === "sellers" ? (
@@ -265,7 +267,7 @@ function EmptyState({ isDark, label }: { isDark: boolean; label: string }) {
   return (
     <View className="flex-1 justify-center items-center px-6 py-16">
       <Text
-        className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm text-center`}
+        className="text-text-secondary text-sm text-center"
       >
         {label}
       </Text>
@@ -277,7 +279,7 @@ function LoadMoreFooter({ loading, isDark }: { loading: boolean; isDark: boolean
   if (!loading) return null;
   return (
     <View className="py-6 items-center">
-      <ActivityIndicator size="small" color={isDark ? "#f5f5f5" : "#000000"} />
+      <ActivityIndicator size="small" color={tokensFor(isDark).textPrimary} />
     </View>
   );
 }

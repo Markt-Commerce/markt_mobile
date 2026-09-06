@@ -24,7 +24,7 @@ import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { CreateRequestPayload } from "../models/request";
 import { useToast } from "./ToastProvider";
 import { friendlyErrorMessage } from "../utils/errorMessages";
-import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 import logger from "../utils/logger";
 
 // Default expiry: seven days from when the request is placed. The backend
@@ -56,8 +56,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
   const sheetRef = React.useRef<BottomSheetMethods | null>(null);
   React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const snapPoints = React.useMemo(() => ["50%", "85%"], []);
   const [requestImages, setRequestImages] = useState<string[]>([]);
@@ -168,14 +167,14 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
       snapPoints={snapPoints}
       enableDynamicSizing={false}
       enablePanDownToClose={!sending}
-      backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }}
-      handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
+      backgroundStyle={{ backgroundColor: t.surfacePage }}
+      handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
     >
       <BottomSheetScrollView
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
       >
         <Text
-          className={`text-lg font-bold mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
+          className="text-lg font-bold mb-4 text-text-primary"
         >
           Create Buyer Request
         </Text>
@@ -212,7 +211,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
 
         {/* Category IDs */}
         <Text
-          className={`mb-2 text-xs font-bold uppercase tracking-[2px] ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+          className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary"
         >
           Categories
         </Text>
@@ -220,24 +219,24 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
           {selectedCategories.map((cat) => (
             <View
               key={cat.id.toString()}
-              className={`flex-row items-center border rounded px-3 py-1 ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface border-border"}`}
+              className="flex-row items-center border rounded px-3 py-1 bg-surface-sunken border-border"
             >
               <Text
-                className={`text-sm font-medium mr-2 ${isDark ? "text-dark-text" : "text-black"}`}
+                className="text-sm font-medium mr-2 text-text-primary"
               >
                 {cat.name}
               </Text>
               <TouchableOpacity onPress={() => removeCategory(cat.id)}>
-                <X size={16} color={isDark ? "#f5f5f5" : "#000000"} />
+                <X size={16} color={t.textPrimary} />
               </TouchableOpacity>
             </View>
           ))}
           <TouchableOpacity
             onPress={() => setModalVisible(true)}
-            className={`border rounded px-4 py-2 justify-center items-center ${isDark ? "bg-dark-surface border-dark-border-strong" : "bg-white border-border"}`}
+            className="border rounded px-4 py-2 justify-center items-center bg-surface-raised border-border"
           >
             <Text
-              className={`text-sm font-bold ${isDark ? "text-dark-text" : "text-black"}`}
+              className="text-sm font-bold text-text-primary"
             >
               + Add Categories
             </Text>
@@ -246,13 +245,13 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
 
         {/* Images Select */}
         <Text
-          className={`mb-2 text-xs font-bold uppercase tracking-[2px] ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+          className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary"
         >
           Images
         </Text>
         {Array.isArray(Imagevalue) && Imagevalue.length > 0 && (
           <Text
-            className={`text-xs mb-2 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+            className="text-xs mb-2 text-text-secondary"
           >
             Long press on each image to remove it
           </Text>
@@ -268,7 +267,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
 
         <TouchableOpacity
           disabled={sending}
-          className="bg-primary py-4 rounded items-center justify-center"
+          className="bg-primary-fill py-4 rounded items-center justify-center"
           onPress={handleSubmit(onSubmit)}
         >
           <Text className="text-white font-semibold">

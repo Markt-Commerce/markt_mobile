@@ -34,6 +34,7 @@ import { useToast } from "../../components/ToastProvider";
 import { navigateToGuestHome } from "../../utils/authNavigation";
 import { useGamificationContext } from "../../hooks/gamificationContext";
 import { updateGamificationPreferences } from "../../services/sections/gamification";
+import { useTokens } from "../../theme/useTokens";
 
 const LANGUAGE_KEY = "app_lang_v1";
 
@@ -41,7 +42,7 @@ export default function SettingsProfileScreen() {
   const router = useRouter();
   const { user, role, setUser, profile } = useUser();
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
   const [language, setLanguage] = useState("EN");
   const { profile: gamification, refresh: refreshGamification } = useGamificationContext();
@@ -115,9 +116,9 @@ export default function SettingsProfileScreen() {
   };
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`} edges={["top", "left", "right", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "left", "right", "bottom"]}>
       <ScrollView
-        className={isDark ? "flex-1 bg-[#1a1c1d]" : "flex-1 bg-white"}
+        className={"flex-1 bg-surface-page"}
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
@@ -126,7 +127,7 @@ export default function SettingsProfileScreen() {
         {/* Centered identity, no card. This was a bordered box holding three
             more bordered chips -- four outlines stacked in one header. The
             tinted band does the separating, so nothing needs an outline. */}
-        <View className={`items-center px-6 pt-4 pb-6 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
+        <View className="items-center px-6 pt-4 pb-6 bg-surface-raised">
           <Avatar
             uri={profile?.profile_picture_url}
             name={displayName}
@@ -134,13 +135,13 @@ export default function SettingsProfileScreen() {
             className="rounded-full"
           />
           <Text
-            className={`font-bold text-[22px] tracking-tight mt-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+            className="font-bold text-[22px] tracking-tight mt-3 text-text-primary"
             numberOfLines={1}
           >
             {displayName}
           </Text>
           <Text
-            className={`text-[14px] mt-0.5 ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}
+            className="text-[14px] mt-0.5 text-text-muted"
             numberOfLines={1}
           >
             @{profile?.username ?? user?.email ?? "user"}
@@ -149,78 +150,70 @@ export default function SettingsProfileScreen() {
           {/* Tint only. The role is the one that matters, so it keeps the
               brand colour and the other two sit back. */}
           <View className="flex-row flex-wrap justify-center gap-2 mt-4">
-            <View className="px-3 py-1.5 rounded-full bg-primary">
+            <View className="px-3 py-1.5 rounded-full bg-primary-fill">
               <Text className="font-bold text-[11px] uppercase tracking-wider text-white">
                 {role}
               </Text>
             </View>
-            <View className={`px-3 py-1.5 rounded-full ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}>
-              <Text className={`font-bold text-[11px] uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-[#52525B]"}`}>
+            <View className="px-3 py-1.5 rounded-full bg-surface-sunken">
+              <Text className="font-bold text-[11px] uppercase tracking-wider text-text-secondary">
                 {theme}
               </Text>
             </View>
-            <View className={`px-3 py-1.5 rounded-full ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}>
-              <Text className={`font-bold text-[11px] uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-[#52525B]"}`}>
+            <View className="px-3 py-1.5 rounded-full bg-surface-sunken">
+              <Text className="font-bold text-[11px] uppercase tracking-wider text-text-secondary">
                 {language}
               </Text>
             </View>
           </View>
         </View>
 
-        <SettingsSection title="Account Controls" dark={isDark}>
+        <SettingsSection title="Account Controls">
           <SettingsRow
             icon={UserCog}
             title="Account Information"
             onPress={() => router.push("/(settings)/accountInfoScreen")}
-            dark={isDark}
           />
           <SettingsRow
             icon={Lock}
             title="Password & Security"
             onPress={() => router.push("/(settings)/changePasswordScreen")}
-            dark={isDark}
           />
           <SettingsRow
             icon={Wallet}
             title="Wallet"
             onPress={() => router.push("/wallet" as any)}
-            dark={isDark}
           />
           <SettingsRow
             icon={Bookmark}
             title="Saved"
             onPress={() => router.push("/saved" as any)}
-            dark={isDark}
           />
           <SettingsRow
             icon={ShieldOff}
             title="Blocked accounts"
             onPress={() => router.push("/(settings)/blockedAccountsScreen" as any)}
-            dark={isDark}
           />
           <SettingsRow
             icon={Bell}
             title="Notifications"
             onPress={() => router.push("/(settings)/notificationScreen")}
             last
-            dark={isDark}
           />
         </SettingsSection>
 
-        <SettingsSection title="Preferences" dark={isDark}>
+        <SettingsSection title="Preferences">
           <SettingsRow
             icon={Palette}
             title="Appearance"
             value={resolvedTheme.toUpperCase()}
             onPress={handleThemeToggle}
-            dark={isDark}
           />
           <SettingsRow
             icon={Globe}
             title="Language"
             value={language}
             onPress={handleLanguageToggle}
-            dark={isDark}
           />
           <SettingsSwitchRow
             icon={Trophy}
@@ -230,41 +223,36 @@ export default function SettingsProfileScreen() {
             onValueChange={handleLeaderboardToggle}
             disabled={leaderboardUpdating}
             last
-            dark={isDark}
           />
         </SettingsSection>
 
-        <SettingsSection title="Support & Legal" dark={isDark}>
+        <SettingsSection title="Support & Legal">
           <SettingsRow
             icon={HelpCircle}
             title="Help Center"
             onPress={() => router.push("/support/help" as any)}
-            dark={isDark}
           />
           <SettingsRow
             icon={ShieldCheck}
             title="Privacy Policy"
             onPress={() => router.push("/support/privacy" as any)}
-            dark={isDark}
           />
           <SettingsRow
             icon={Lock}
             title="Terms of Use"
             onPress={() => router.push("/support/terms" as any)}
-            dark={isDark}
           />
           <SettingsRow
             icon={Info}
             title="About Markt"
             onPress={() => router.push("/support/about" as any)}
             last
-            dark={isDark}
           />
         </SettingsSection>
 
         {/* Apple App Store 5.1.1(v): account deletion has to be reachable from
             inside the app, not only from a website. */}
-        <SettingsSection title="Danger Zone" dark={isDark}>
+        <SettingsSection title="Danger Zone">
           <SettingsRow
             icon={Trash2}
             destructive
@@ -272,7 +260,6 @@ export default function SettingsProfileScreen() {
             subtitle="Permanently delete your account and personal data."
             onPress={() => router.push("/(settings)/deleteAccountScreen" as any)}
             last
-            dark={isDark}
           />
         </SettingsSection>
 
@@ -282,10 +269,10 @@ export default function SettingsProfileScreen() {
             activeOpacity={0.7}
             accessibilityRole="button"
             accessibilityLabel="Sign out"
-            className={`h-13 py-3.5 rounded-xl items-center justify-center flex-row gap-2 ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}
+            className="h-13 py-3.5 rounded-xl items-center justify-center flex-row gap-2 bg-surface-sunken"
           >
-            <LogOut size={18} color={isDark ? "#f0f1f2" : "#3F3F46"} strokeWidth={1.9} />
-            <Text className={`font-semibold text-[15px] ${isDark ? "text-[#f0f1f2]" : "text-[#3F3F46]"}`}>
+            <LogOut size={18} color={t.textPrimary} strokeWidth={1.9} />
+            <Text className="font-semibold text-[15px] text-text-primary">
               Sign out
             </Text>
           </TouchableOpacity>

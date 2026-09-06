@@ -9,6 +9,7 @@ import {
 } from "../../models/payments";
 import { BASE_URL, request } from "../api";
 import { unwrapApi } from "../../utils/apiUnwrap";
+import { emitBadgeChanged } from "../../utils/badgeEvents";
 
 /** POST /payments/create — card, bank_transfer, wallet (instant when wallet). */
 export const createPayment = async (paymentData: PaymentInit): Promise<Transaction> => {
@@ -97,7 +98,15 @@ export const verifyPayment = async (
   const response = await request<
     VerifyPaymentResponse | { data: VerifyPaymentResponse }
   >(`${BASE_URL}/payments/${paymentId}/verify`, { method: "GET" });
-  return unwrapApi(response);
+  const result = unwrapApi(response);
+
+  // A successful verification is what completes the payment server-side, and
+  // completing it empties the cart. Nothing told the app that: every cart
+  // mutation emitted, but paying — the one that empties it entirely — did not,
+  // so the Orders badge kept counting items the buyer had already bought.
+  emitBadgeChanged();
+
+  return result;
 };
 
 /** @deprecated Use initializePayment or createPayment instead. */

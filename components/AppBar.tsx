@@ -12,7 +12,7 @@ import { Bell } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import Avatar from "./Avatar";
 import { useDrawer } from "../hooks/drawerContext";
-import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 import { useNotificationsBadge } from "../hooks/notificationsContext";
 
 interface AppBarProps {
@@ -32,12 +32,11 @@ export default function AppBar({
 }: AppBarProps) {
   const { openDrawer } = useDrawer();
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { unreadCount } = useNotificationsBadge();
 
   return (
-    <View className={`flex-row items-center justify-between px-4 py-2 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+    <View className="flex-row items-center justify-between px-4 py-2 border-b bg-surface-raised border-border">
       <View className="w-9 h-9 items-center justify-center">
         {showAvatar ? (
           <TouchableOpacity
@@ -53,7 +52,7 @@ export default function AppBar({
           <View className="w-10" />
         )}
       </View>
-      <Text className={`text-xl font-bold flex-1 text-center tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+      <Text className="text-xl font-bold flex-1 text-center tracking-tight text-text-primary" numberOfLines={1}>
         {title}
       </Text>
       <View className="w-9 h-9 items-center justify-center">
@@ -70,12 +69,15 @@ export default function AppBar({
             }
           >
             <View>
-              <Bell size={22} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.75} />
+              <Bell size={22} color={t.textPrimary} strokeWidth={1.75} />
               {unreadCount > 0 && (
+                // primary-fill, not primary: the badge carries a label, and
+                // white on the brand swatch is 2.59:1 in dark. The border is
+                // the bar behind it, so the badge reads as punched out of it.
                 <View
-                  className={`absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full items-center justify-center bg-primary border ${isDark ? "border-[#1a1c1d]" : "border-white"}`}
+                  className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full items-center justify-center bg-primary-fill border border-surface-page"
                 >
-                  <Text className="text-[9px] font-bold text-white">
+                  <Text className="text-[9px] font-bold text-text-on-primary">
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </Text>
                 </View>

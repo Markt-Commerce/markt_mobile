@@ -24,7 +24,7 @@ import {
 } from "../../utils/orderTransitions";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import { Seller } from "../../models/search";
-import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 
 type OrderStatus = "pending" | "shipped" | "delivered" | "canceled";
 
@@ -36,8 +36,7 @@ export default function SellerOrders() {
     "latest"
   );
   const [refreshKey, setRefreshKey] = useState(0);
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const pageSize = 10;
 
@@ -142,13 +141,13 @@ export default function SellerOrders() {
       activeOpacity={0.85}
       className={`h-9 px-4 rounded items-center justify-center border ${
         active
-          ? "bg-primary border-primary"
-          : isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"
+          ? "bg-primary-fill border-primary"
+          : "bg-surface-sunken border-border"
       }`}
     >
       <Text
         className={`text-xs font-bold ${
-          active ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"
+          active ? "text-white" : "text-text-secondary"
         }`}
       >
         {children}
@@ -161,49 +160,49 @@ export default function SellerOrders() {
       onPress={() => setSort(v)}
       className={`h-9 px-4 rounded border ${
         sort === v
-          ? "bg-primary border-primary"
-          : isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"
+          ? "bg-primary-fill border-primary"
+          : "bg-surface-sunken border-border"
       } items-center justify-center`}
       activeOpacity={0.85}
     >
-      <Text className={`text-[10px] font-bold uppercase tracking-wider ${sort === v ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{label}</Text>
+      <Text className={`text-[10px] font-bold uppercase tracking-wider ${sort === v ? "text-white" : "text-text-secondary"}`}>{label}</Text>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
       {/* Header */}
-      <View className={`px-6 py-4 border-b flex-row items-center justify-between ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+      <View className="px-6 py-4 border-b flex-row items-center justify-between bg-surface-raised border-border">
         <View>
-          <Text className={`text-xl font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className="text-xl font-bold text-text-primary">
             Shop Orders
           </Text>
-          <Text className={`text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className="text-xs mt-1 text-text-secondary">
             Manage and fulfill customer orders
           </Text>
         </View>
         <TouchableOpacity
           onPress={() => router.push("/fulfilment/allocations" as any)}
-          className={`h-10 px-3 rounded flex-row items-center gap-1.5 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+          className="h-10 px-3 rounded flex-row items-center gap-1.5 border bg-surface-sunken border-border"
           accessibilityRole="button"
           accessibilityLabel="Pending fulfilment requests"
         >
-          <Clock size={16} color={isDark ? "#c6c5cf" : "#71717A"} />
-          <Text className={`text-xs font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Requests</Text>
+          <Clock size={16} color={t.textSecondary} />
+          <Text className="text-xs font-bold text-text-primary">Requests</Text>
         </TouchableOpacity>
       </View>
 
       {/* Search + Filters */}
       <View className="px-6 pt-6">
         {/* Search */}
-        <View className={`flex-row items-center rounded overflow-hidden border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
+        <View className="flex-row items-center rounded overflow-hidden border bg-surface-sunken border-border">
           <View className="w-12 items-center justify-center">
-            <Search size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
+            <Search size={18} color={t.textSecondary} />
           </View>
           <TextInput
-            className={`flex-1 h-11 px-3 text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+            className="flex-1 h-11 px-3 text-base text-text-primary"
             placeholder="Search product name"
-            placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
+            placeholderTextColor={t.textSecondary}
             value={query}
             onChangeText={setQuery}
             returnKeyType="search"

@@ -3,6 +3,7 @@ import { Control, Controller, FieldErrors, FieldValues, Path } from "react-hook-
 import React, { useRef, useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useTheme } from "./themeProvider";
+import { useTokens, tokensFor } from "../theme/useTokens";
 
 interface InputProps<TFieldValues extends FieldValues = FieldValues> extends React.ComponentProps<typeof TextInput> {
   name?: Path<TFieldValues>;
@@ -19,9 +20,9 @@ interface InputProps<TFieldValues extends FieldValues = FieldValues> extends Rea
 
 /**
  * Markt form input (Kinetic Minimalist).
- * - 48px height, rounded (8px), bg-background, 1px border-border
- * - Placeholder: text-muted
- * - Error: border-error when invalid
+ * - 48px height, rounded (8px), surface-raised fill, 1px border
+ * - Placeholder uses the secondary text token
+ * - Error: border-danger when invalid
  */
 export function Input<TFieldValues extends FieldValues = FieldValues>({
   name,
@@ -41,6 +42,7 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
   const errorMessage = hasError ? (errors[name!]?.message as string) : undefined;
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   // Multiline fields (post caption, request description) render as a taller
   // top-aligned textbox instead of a single-line 48px input.
@@ -49,7 +51,7 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
   return (
     <View className={`w-full ${label ? "mb-5" : ""}`}>
       {label ? (
-        <Text className={`mb-2 text-xs font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+        <Text className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary">
           {label}
         </Text>
       ) : null}
@@ -63,10 +65,10 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
               onBlur={onBlur}
               value={fieldValue}
               placeholder={placeholder}
-              placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
+              placeholderTextColor={t.textSecondary}
               secureTextEntry={secureTextEntry}
-              className={`w-full rounded ${sizeClass} px-4 text-base ${isDark ? "text-[#f0f1f2] bg-[#1a1c1d]" : "text-secondary bg-background"} border ${
-                hasError ? "border-error" : isDark ? "border-[#46464e] focus:border-[#f0f1f2]" : "border-border focus:border-secondary"
+              className={`w-full rounded ${sizeClass} px-4 text-base text-text-primary bg-surface-raised border ${
+                hasError ? "border-danger" : "border-border-strong focus:border-text-primary"
               }`}
               multiline={multiline}
               numberOfLines={numberOfLines}
@@ -77,7 +79,7 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
               accessibilityState={{ disabled: false }}
             />
             {errorMessage ? (
-              <Text className="mt-1 text-xs text-error" accessibilityLiveRegion="polite">
+              <Text className="mt-1 text-xs text-danger-text" accessibilityLiveRegion="polite">
                 {errorMessage}
               </Text>
             ) : null}
@@ -112,8 +114,8 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
         render={({ field: { onChange, onBlur, value: fieldValue } }) => (
           <>
             <View
-              className={`flex-row items-center rounded h-12 px-4 border ${isDark ? "bg-[#1a1c1d]" : "bg-background"} ${
-                hasError ? "border-error" : isFocused ? (isDark ? "border-[#f0f1f2]" : "border-secondary") : isDark ? "border-[#46464e]" : "border-border"
+              className={`flex-row items-center rounded h-12 px-4 border bg-surface-raised ${
+                hasError ? "border-danger" : isFocused ? ("border-text-primary") : "border-border"
               }`}
             >
               <TextInput
@@ -125,9 +127,9 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
                 }}
                 value={fieldValue}
                 placeholder={inputProps.placeholder}
-                placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
+                placeholderTextColor={tokensFor(isDark).textSecondary}
                 secureTextEntry={!visible}
-                className={`flex-1 text-base ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}
+                className="flex-1 text-base text-text-primary"
                 keyboardType={inputProps.keyboardType ?? "default"}
                 textContentType="password"
                 accessibilityLabel={inputProps.placeholder}
@@ -140,12 +142,12 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
                   accessibilityLabel={visible ? "Hide password" : "Show password"}
                   accessibilityRole="button"
                 >
-                  {visible ? <EyeOff size={20} color={isDark ? "#c6c5cf" : "#71717A"} /> : <Eye size={20} color={isDark ? "#c6c5cf" : "#71717A"} />}
+                  {visible ? <EyeOff size={20} color={tokensFor(isDark).textSecondary} /> : <Eye size={20} color={tokensFor(isDark).textSecondary} />}
                 </TouchableOpacity>
               )}
             </View>
             {inputProps.errors?.[inputProps.name!] ? (
-              <Text className="mt-1 text-xs text-error" accessibilityLiveRegion="polite">
+              <Text className="mt-1 text-xs text-danger-text" accessibilityLiveRegion="polite">
                 {inputProps.errors[inputProps.name!]?.message as string}
               </Text>
             ) : null}
@@ -170,6 +172,7 @@ interface OTPInputProps {
  * - Consistent with user reference image
  */
 export function OTPInput({ value, onChange, error, digits = 6 }: OTPInputProps) {
+  const t = useTokens();
   const inputRefs = useRef<Array<TextInput | null>>([]);
   const [digitArray, setDigits] = useState<string[]>(Array(digits).fill(""));
   const { resolvedTheme } = useTheme();
@@ -219,32 +222,32 @@ export function OTPInput({ value, onChange, error, digits = 6 }: OTPInputProps) 
             <View
               key={i}
               className={`rounded items-center justify-center border ${
-                error ? "border-error" : "border-transparent"
+                error ? "border-danger" : "border-transparent"
               }`}
               style={{
                 width: `${100 / digits - 2}%`,
                 aspectRatio: 1,
-                backgroundColor: isDark ? "#2f3132" : "#000000",
+                backgroundColor: isDark ? t.surfaceOverlay : t.textPrimary,
               }}
             >
               <TextInput
                 ref={(ref) => {
                   inputRefs.current[i] = ref;
                 }}
-                className={`text-2xl font-bold text-center w-full h-full ${isDark ? "text-[#f0f1f2]" : "text-white"}`}
+                className={`text-2xl font-bold text-center w-full h-full ${isDark ? "text-text-primary" : "text-white"}`}
                 keyboardType="number-pad"
                 maxLength={1}
                 value={digitArray[i]}
                 onChangeText={(text) => handleChange(text, i)}
                 onKeyPress={(e) => handleKeyPress(e, i)}
-                selectionColor="#FFFFFF"
+                selectionColor={t.textOnPrimary}
                 autoComplete="one-time-code"
               />
             </View>
           ))}
       </View>
       {error ? (
-        <Text className="mt-2 text-xs text-error" accessibilityLiveRegion="polite">
+        <Text className="mt-2 text-xs text-danger-text" accessibilityLiveRegion="polite">
           {error}
         </Text>
       ) : null}

@@ -13,6 +13,7 @@ import { ProductResponse } from "../models/products";
 import { resolveProductImageUri } from "../utils/imageUri";
 import { formatNaira } from "../utils/formatCurrency";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 
 type Product = {
   id: string;
@@ -47,6 +48,7 @@ export default function ProductPicker({
   const snapPoints = useMemo(() => ["60%", "100%"], []);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   if (!visible) return null;
 
@@ -70,9 +72,9 @@ export default function ProductPicker({
       snapPoints={snapPoints}
       onClose={onClose}
       enablePanDownToClose
-      backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }}
+      backgroundStyle={{ backgroundColor: t.surfacePage }}
       handleIndicatorStyle={{
-        backgroundColor: isDark ? "#46464e" : "#E4E4E7",
+        backgroundColor: t.borderStrong,
         width: 40,
         height: 4,
         borderRadius: 8,
@@ -80,7 +82,7 @@ export default function ProductPicker({
     >
       <BottomSheetView className="flex-1 px-4">
         <Text
-          className={`text-lg font-semibold mt-4 mb-2 ${isDark ? "text-dark-text" : "text-black"}`}
+          className="text-lg font-semibold mt-4 mb-2 text-text-primary"
         >
           Select Product
         </Text>
@@ -89,10 +91,10 @@ export default function ProductPicker({
           <View className="flex-1 items-center justify-center py-12">
             <ActivityIndicator
               size="large"
-              color={isDark ? "#f5f5f5" : "#000000"}
+              color={t.textPrimary}
             />
             <Text
-              className={`${isDark ? "text-dark-muted" : "text-tertiary"} text-sm mt-3`}
+              className="text-text-secondary text-sm mt-3"
             >
               Loading products...
             </Text>
@@ -100,12 +102,12 @@ export default function ProductPicker({
         ) : products.length === 0 ? (
           <View className="flex-1 items-center justify-center py-12">
             <Text
-              className={`text-center ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+              className="text-center text-text-secondary"
             >
               No products available.
             </Text>
             <Text
-              className={`text-center text-sm mt-1 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+              className="text-center text-sm mt-1 text-text-secondary"
             >
               Create products in your dashboard first.
             </Text>
@@ -129,7 +131,7 @@ export default function ProductPicker({
                         : "bg-white border-border"
                       : isDark
                         ? "bg-dark-surface border-transparent"
-                        : "bg-surface border-transparent"
+                        : "bg-surface-sunken border-transparent"
                   } ${disabled ? "opacity-50" : ""}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Select ${item.name}, priced at ${formatNaira(item.price)}`}
@@ -140,17 +142,17 @@ export default function ProductPicker({
                         ? { uri: imageUri }
                         : require("../assets/icon.png")
                     }
-                    className={`w-12 h-12 rounded border mr-3 ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-surface-dim border-border"}`}
+                    className="w-12 h-12 rounded border mr-3 bg-surface-sunken border-border"
                   />
 
                   <View className="flex-1">
                     <Text
-                      className={`text-base font-medium ${isDark ? "text-dark-text" : "text-black"}`}
+                      className="text-base font-medium text-text-primary"
                     >
                       {item.name}
                     </Text>
                     <Text
-                      className={`text-sm ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                      className="text-sm text-text-secondary"
                     >
                       {formatNaira(item.price)}
                     </Text>
@@ -159,10 +161,10 @@ export default function ProductPicker({
                   {onRemove && (
                     <TouchableOpacity
                       onPress={() => handleRemove(item)}
-                      className={`p-2 rounded border ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-white border-border"}`}
+                      className="p-2 rounded border bg-surface-raised border-border"
                       accessibilityLabel={`Remove ${item.name}`}
                     >
-                      <Trash2 color="#ba1a1a" size={20} />
+                      <Trash2 color={t.dangerText} size={20} />
                     </TouchableOpacity>
                   )}
                 </TouchableOpacity>

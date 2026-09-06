@@ -13,15 +13,14 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { ShieldOff, RotateCw } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
 import Avatar from "../../components/Avatar";
-import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import { listBlockedUsers, unblockUser, type BlockedUser } from "../../services/sections/moderation";
 
 export default function BlockedAccountsScreen() {
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
 
   const [users, setUsers] = useState<BlockedUser[]>([]);
@@ -30,9 +29,9 @@ export default function BlockedAccountsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const ink = isDark ? "text-[#f0f1f2]" : "text-black";
-  const muted = isDark ? "text-[#c6c5cf]" : "text-tertiary";
-  const rule = isDark ? "border-[#46464e]" : "border-border";
+  const ink = "text-text-primary";
+  const muted = "text-text-secondary";
+  const rule = "border-border";
 
   const load = useCallback(async (opts: { refresh?: boolean } = {}) => {
     if (opts.refresh) setRefreshing(true);
@@ -81,14 +80,14 @@ export default function BlockedAccountsScreen() {
 
   return (
     <SafeAreaView
-      className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      className="flex-1 bg-surface-page"
       edges={["top", "left", "right", "bottom"]}
     >
       <ScreenHeader title="Blocked accounts" onBack={() => router.back()} />
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#E94C2A" />
+          <ActivityIndicator size="large" color={t.primaryText} />
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center px-10">
@@ -98,11 +97,11 @@ export default function BlockedAccountsScreen() {
               setLoading(true);
               load();
             }}
-            className="mt-6 h-12 px-8 rounded bg-primary items-center justify-center flex-row gap-2"
+            className="mt-6 h-12 px-8 rounded bg-primary-fill items-center justify-center flex-row gap-2"
             accessibilityRole="button"
             accessibilityLabel="Try again"
           >
-            <RotateCw size={16} color="#FFFFFF" />
+            <RotateCw size={16} color={t.textOnPrimary} />
             <Text className="text-white font-bold text-xs tracking-[2px] uppercase">
               Try again
             </Text>
@@ -116,7 +115,7 @@ export default function BlockedAccountsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => load({ refresh: true })}
-              tintColor="#E94C2A"
+              tintColor={t.primaryText}
             />
           }
           renderItem={({ item }) => (
@@ -134,7 +133,7 @@ export default function BlockedAccountsScreen() {
                 accessibilityState={{ disabled: busyId === item.user_id }}
               >
                 {busyId === item.user_id ? (
-                  <ActivityIndicator size="small" color="#E94C2A" />
+                  <ActivityIndicator size="small" color={t.primaryText} />
                 ) : (
                   <Text className={`font-bold text-[11px] tracking-[1.5px] uppercase ${ink}`}>
                     Unblock
@@ -146,9 +145,9 @@ export default function BlockedAccountsScreen() {
           ListEmptyComponent={
             <View className="items-center justify-center px-10 pt-24">
               <View
-                className={`w-20 h-20 rounded-full items-center justify-center mb-6 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                className="w-20 h-20 rounded-full items-center justify-center mb-6 bg-surface-sunken"
               >
-                <ShieldOff size={30} color={isDark ? "#c6c5cf" : "#A1A1AA"} strokeWidth={1.6} />
+                <ShieldOff size={30} color={t.textSecondary} strokeWidth={1.6} />
               </View>
               <Text className={`text-xl font-bold text-center ${ink}`}>
                 You haven't blocked anyone

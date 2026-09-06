@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text } from "react-native";
 import BadgeCard from "./BadgeCard";
-import { useTheme } from "../themeProvider";
 import type { UserBadge } from "../../types/gamification";
 
 export interface BadgeGridProps {
@@ -18,13 +17,11 @@ export default function BadgeGrid({
   columns = 3,
   className = "",
 }: BadgeGridProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
 
   if (!badges.length) {
     return (
       <Text
-        className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+        className="text-sm text-text-secondary"
       >
         No badges yet.
       </Text>

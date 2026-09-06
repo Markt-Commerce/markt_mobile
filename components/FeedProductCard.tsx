@@ -16,10 +16,11 @@ import SkeletonImage from "./SkeletonImage";
 import Avatar from "./Avatar";
 import { useUser } from "../hooks/userContextProvider";
 import { useToast } from "./ToastProvider";
-import { useTheme } from "./themeProvider";
 import { useGamificationLookup } from "../hooks/useGamificationLookup";
 import TierBadge from "./gamification/TierBadge";
 import BadgeChip from "./gamification/BadgeChip";
+import { useTokens } from "../theme/useTokens";
+import { formatPrice } from "../utils/money";
 
 interface Props {
   product: FeedProduct;
@@ -46,8 +47,7 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
   const { show } = useToast();
   const [adding, setAdding] = useState(false);
   const [isFollowing, setIsFollowing] = useState(product.seller?.is_followed ?? false);
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const followeeId = product.seller?.user?.id;
   const followerCount = product.seller?.follower_count ?? 0;
@@ -109,7 +109,7 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
   }, [router, product.seller?.id]);
 
   return (
-    <View className={`flex-row px-4 py-3 border-b ${isDark ? "bg-[#1a1c1d] border-[#34363a]" : "bg-white border-border"}`}>
+    <View className="flex-row px-4 py-3 border-b bg-surface-raised border-border">
       <Pressable
         onPress={handleOpenShop}
         disabled={!product.seller?.id}
@@ -127,7 +127,7 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
       <View className="flex-1 min-w-0">
         <View className="flex-row items-center min-h-[22px] mb-0.5">
           <Pressable onPress={handleOpenShop} disabled={!product.seller?.id} className="flex-row items-center flex-shrink gap-1.5">
-            <Text className={`font-bold text-[15px] flex-shrink ${isDark ? "text-[#f0f1f2]" : "text-text-primary"}`} numberOfLines={1}>
+            <Text className="font-bold text-[15px] flex-shrink text-text-primary" numberOfLines={1}>
               {product.seller?.shop_name ?? product.seller?.user?.username ?? "Seller"}
             </Text>
             {sellerGamification && (
@@ -142,7 +142,7 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
               <BadgeChip key={badge.slug} badge={badge} size="xs" />
             ))}
           </Pressable>
-          <Text className={`text-[13px] ${isDark ? "text-[#aeb0b7]" : "text-text-secondary"}`}>
+          <Text className="text-[13px] text-text-secondary">
             {` · ${compactAge(product.created_at)}${isFollowing ? " · following" : ""}`}
           </Text>
           {onOpenActions ? (
@@ -153,7 +153,7 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
               accessibilityRole="button"
               accessibilityLabel={`More options for ${product.name}`}
             >
-              <MoreHorizontal size={20} color={isDark ? "#c6c5cf" : "#876d64"} />
+              <MoreHorizontal size={20} color={t.textSecondary} />
             </Pressable>
           ) : null}
         </View>
@@ -161,13 +161,15 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
         <Link href={`/productDetails/${product.id}`} asChild>
           <Pressable>
             <View className="flex-row items-start gap-2 mb-1.5">
-              <Tag size={17} color="#e26136" strokeWidth={2.2} />
-              <Text className={`flex-1 text-[16px] leading-5 font-semibold ${isDark ? "text-[#f0f1f2]" : "text-text-primary"}`} numberOfLines={2}>
+              <Tag size={17} color={t.dangerText} strokeWidth={2.2} />
+              <Text className="flex-1 text-[16px] leading-5 font-semibold text-text-primary" numberOfLines={2}>
                 {product.name}
               </Text>
             </View>
             <View
-              className={`w-full aspect-square overflow-hidden border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-bg-muted border-border"}`}
+              // bg-media, not a surface: a letterboxed or still-loading image was
+              // sitting on a lighter patch than the card containing it.
+              className="w-full aspect-square overflow-hidden border bg-media border-border"
               style={{ borderRadius: 12 }}
             >
               {imageUrl ? (
@@ -179,11 +181,11 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
                 />
               ) : (
                 <View className="flex-1 items-center justify-center">
-                  <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-text-secondary"}`}>No image</Text>
+                  <Text className="text-sm text-text-secondary">No image</Text>
                 </View>
               )}
-              <View className="absolute left-3 bottom-3 rounded-full bg-primary px-3 py-1.5">
-                <Text className="text-sm font-bold text-white">₦{product.price.toLocaleString()}</Text>
+              <View className="absolute left-3 bottom-3 rounded-full bg-primary-fill px-3 py-1.5">
+                <Text className="text-sm font-bold text-text-on-primary">{formatPrice(product.price)}</Text>
               </View>
             </View>
           </Pressable>
@@ -191,7 +193,7 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
 
         <View className="flex-row items-center mt-2 gap-1.5">
           {(product.rating > 0 || product.reviews_count > 0) && (
-            <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-text-secondary"}`}>
+            <Text className="text-xs text-text-secondary">
               ★ {product.rating.toFixed(1)}{product.reviews_count > 0 && ` · ${product.reviews_count} reviews`}
             </Text>
           )}
@@ -203,28 +205,28 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
         </View>
 
         {isBuyer && (
-          <View className={`flex-row gap-2 mt-2 pt-2 border-t ${isDark ? "border-[#46464e]" : "border-border-light"}`}>
+          <View className="flex-row gap-2 mt-2 pt-2 border-t border-border">
             <TouchableOpacity
               onPress={handleAddToCart}
               disabled={adding}
-              className={`flex-1 flex-row items-center justify-center gap-2 h-10 rounded-full ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
+              className="flex-1 flex-row items-center justify-center gap-2 h-10 rounded-full bg-surface-sunken"
               accessibilityRole="button"
               accessibilityLabel={`Add ${product.name} to cart`}
             >
-              <ShoppingCart size={18} color="#876d64" />
-              <Text className={`font-semibold text-sm ${isDark ? "text-[#f0f1f2]" : "text-text-primary"}`}>
+              <ShoppingCart size={18} color={t.textSecondary} />
+              <Text className="font-semibold text-sm text-text-primary">
                 {adding ? "Adding…" : "Add to cart"}
               </Text>
             </TouchableOpacity>
             {!isOwnProduct && (
               <TouchableOpacity
                 onPress={handleMessageSeller}
-                className={`flex-1 flex-row items-center justify-center gap-2 h-10 rounded-full ${isDark ? "bg-[#2f3132]" : "bg-bg-muted"}`}
+                className="flex-1 flex-row items-center justify-center gap-2 h-10 rounded-full bg-surface-sunken"
                 accessibilityRole="button"
                 accessibilityLabel={`Message seller about ${product.name}`}
               >
-                <MessageCircle size={18} color="#876d64" />
-                <Text className={`font-semibold text-sm ${isDark ? "text-[#f0f1f2]" : "text-text-primary"}`}>Chat</Text>
+                <MessageCircle size={18} color={t.textSecondary} />
+                <Text className="font-semibold text-sm text-text-primary">Chat</Text>
               </TouchableOpacity>
             )}
           </View>

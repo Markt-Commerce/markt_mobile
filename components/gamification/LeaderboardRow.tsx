@@ -1,12 +1,20 @@
-import React from "react";
+import React, { useEffect } from "react";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSpring,
+} from "react-native-reanimated";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { View, Text, Image } from "react-native";
 import TierBadge from "./TierBadge";
-import { useTheme } from "../themeProvider";
 import type { LeaderboardRow as Row, TierKey } from "../../types/gamification";
 
 export interface LeaderboardRowProps {
   row: Row;
   isCurrentUser?: boolean;
+  /** Position in the list, for the staggered entrance. */
+  index?: number;
   className?: string;
 }
 
@@ -30,20 +38,42 @@ function podium(rank: number): [string, string] | null {
 export default function LeaderboardRow({
   row,
   isCurrentUser = false,
+  index = 0,
   className = "",
 }: LeaderboardRowProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const name = row.username ?? "User";
   const podiumColors = podium(row.rank);
+  const reduced = useReducedMotion();
+
+  // Rows settle in sequence rather than appearing all at once, so the board
+  // reads as being placed. Capped at 12 so a long list does not turn into a
+  // slow reveal the user has to wait out -- everything past the first screenful
+  // lands immediately.
+  const enter = useSharedValue(reduced ? 1 : 0);
+  useEffect(() => {
+    if (reduced) {
+      enter.value = 1;
+      return;
+    }
+    enter.value = withDelay(
+      Math.min(index, 12) * 35,
+      withSpring(1, { damping: 18, stiffness: 170, mass: 0.7 })
+    );
+  }, [index, reduced, enter]);
+
+  const enterStyle = useAnimatedStyle(() => ({
+    opacity: enter.value,
+    transform: [{ translateY: (1 - enter.value) * 14 }],
+  }));
 
   return (
-    <View
+    <Animated.View
+      style={enterStyle}
       accessibilityLabel={`Rank ${row.rank}, ${name}, ${row.points} points`}
       className={`flex-row items-center px-4 py-3 border-b ${
-        isDark ? "border-[#2f3132]" : "border-border-light"
+        "border-border"
       } ${
-        isCurrentUser ? (isDark ? "bg-[#2f3132]" : "bg-surface") : ""
+        isCurrentUser ? ("bg-surface-sunken") : ""
       } ${className}`}
     >
       <View className="w-9 items-center">
@@ -59,7 +89,7 @@ export default function LeaderboardRow({
         ) : (
           <Text
             className={`font-semibold text-[14px] ${
-              isDark ? "text-[#8f9195]" : "text-tertiary"
+              "text-text-muted"
             }`}
           >
             {row.rank}
@@ -76,12 +106,12 @@ export default function LeaderboardRow({
       ) : (
         <View
           className={`w-9 h-9 rounded-full ml-1 items-center justify-center ${
-            isDark ? "bg-[#1a1c1d]" : "bg-surface"
+            "bg-surface-sunken"
           }`}
         >
           <Text
             className={`font-bold text-sm ${
-              isDark ? "text-[#f0f1f2]" : "text-black"
+              "text-text-primary"
             }`}
           >
             {name.charAt(0).toUpperCase()}
@@ -93,7 +123,7 @@ export default function LeaderboardRow({
         <Text
           numberOfLines={1}
           className={`font-bold text-sm ${
-            isDark ? "text-[#f0f1f2]" : "text-black"
+            "text-text-primary"
           }`}
         >
           {name}
@@ -113,14 +143,14 @@ export default function LeaderboardRow({
           unit — a bare number left the reader to infer what it counted. */}
       <View className="items-end">
         <Text
-          className={`font-bold text-[15px] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+          className="font-bold text-[15px] text-text-primary"
         >
           {row.points.toLocaleString()}
         </Text>
-        <Text className={`text-[11px] ${isDark ? "text-[#8f9195]" : "text-tertiary"}`}>
+        <Text className="text-[11px] text-text-muted">
           pts
         </Text>
       </View>
-    </View>
+    </Animated.View>
   );
 }

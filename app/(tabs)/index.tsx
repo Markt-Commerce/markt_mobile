@@ -37,6 +37,7 @@ import { getUserProfile } from "../../services/sections/profile";
 import type { Niches } from "../../models/niches";
 import type { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { saveItem, unsaveItem } from "../../services/sections/saved";
 
 // Early launch: only the main feed is live. Discover/Trending/Following are
@@ -74,6 +75,8 @@ export default function FeedScreen() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
+  const tokens = t; // `t` is shadowed by the tab .map((t) => …) below
 
   const { role, user, setRole } = useUser();
   const feedTab = selectedTab;
@@ -347,7 +350,7 @@ export default function FeedScreen() {
         <ShopStrip />
       </Animated.View>
 
-      <View className={`border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+      <View className="border-b bg-surface-raised border-border">
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -363,7 +366,7 @@ export default function FeedScreen() {
               accessibilityLabel={t.label}
             >
               <Text
-                className={`font-semibold text-[15px] ${selectedTab === t.id ? "text-primary" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                className={`font-semibold text-[15px] ${selectedTab === t.id ? "text-primary" : "text-text-secondary"}`}
               >
                 {t.label}
               </Text>
@@ -375,7 +378,7 @@ export default function FeedScreen() {
                     left: 0,
                     right: 0,
                     height: 3,
-                    backgroundColor: "#E94C2A",
+                    backgroundColor: tokens.primaryText,
                   }}
                 />
               )}
@@ -391,7 +394,7 @@ export default function FeedScreen() {
               accessibilityLabel={n.name}
             >
               <Text
-                className={`font-semibold text-[14px] ${selectedTab === n.id ? "text-primary" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                className={`font-semibold text-[14px] ${selectedTab === n.id ? "text-primary" : "text-text-secondary"}`}
                 numberOfLines={1}
                 style={{ maxWidth: 100 }}
               >
@@ -405,7 +408,7 @@ export default function FeedScreen() {
                     left: 0,
                     right: 0,
                     height: 3,
-                    backgroundColor: "#E94C2A",
+                    backgroundColor: tokens.primaryText,
                   }}
                 />
               )}
@@ -417,7 +420,7 @@ export default function FeedScreen() {
             accessibilityRole="button"
             accessibilityLabel="Explore communities"
           >
-            <Compass size={16} color="#E94C2A" strokeWidth={2} />
+            <Compass size={16} color={t.primaryText} strokeWidth={2} />
             <Text className="font-semibold text-[14px] text-primary">Explore</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -426,14 +429,14 @@ export default function FeedScreen() {
             accessibilityRole="button"
             accessibilityLabel="Browse markets"
           >
-            <Store size={16} color="#E94C2A" strokeWidth={2} />
+            <Store size={16} color={t.primaryText} strokeWidth={2} />
             <Text className="font-semibold text-[14px] text-primary">Markets</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
 
       {role === "seller" && loadedStartCards && (
-        <View className={`py-4 px-4 ${isDark ? "bg-[#1a1c1d]" : "bg-surface"}`}>
+        <View className="py-4 px-4 bg-surface-sunken">
           <StartCards onRemoved={() => setLoadedStartCards(false)} />
         </View>
       )}
@@ -484,10 +487,10 @@ export default function FeedScreen() {
 
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right"]}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right"]}>
       {header}
       <FlatList
-        className={isDark ? "bg-[#1a1c1d]" : "bg-white"}
+        className={"bg-surface-page"}
         data={visibleItems}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
@@ -508,32 +511,32 @@ export default function FeedScreen() {
         ListFooterComponent={
           loadingMore ? (
             <View className="py-2 items-center">
-              <ActivityIndicator size="small" color="#E94C2A" />
-              <Text className={`font-bold text-[10px] tracking-widest uppercase mt-4 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Discovering more content</Text>
+              <ActivityIndicator size="small" color={t.primaryText} />
+              <Text className="font-bold text-[10px] tracking-widest uppercase mt-4 text-text-secondary">Discovering more content</Text>
             </View>
           ) : <View className="h-10" />
         }
         ListEmptyComponent={
           initialLoading ? (
             <View className="py-20 items-center">
-              <ActivityIndicator size="large" color="#E94C2A" />
+              <ActivityIndicator size="large" color={t.primaryText} />
             </View>
           ) : (
             <View className="items-center justify-center py-12 px-8">
               <View className="mb-6">
-                <Search size={44} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={1.5} />
+                <Search size={44} color={t.textMuted} strokeWidth={1.5} />
               </View>
-              <Text className={`font-bold text-2xl text-center leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className="font-bold text-2xl text-center leading-tight text-text-primary">
                 {selectedTab === "following" ? "Expand your\ncommunity" : "The gallery is\nempty for now"}
               </Text>
-              <Text className={`text-base mt-4 text-center leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className="text-base mt-4 text-center leading-6 text-text-secondary">
                 {role === "buyer"
                   ? "Explore trending creators or discover unique products curated just for you."
                   : "Start building your presence. Post your first product or share a story."}
               </Text>
               <TouchableOpacity
                 onPress={openMenu}
-                className="mt-10 h-14 px-12 rounded bg-primary items-center justify-center"
+                className="mt-10 h-14 px-12 rounded bg-primary-fill items-center justify-center"
                 activeOpacity={0.8}
                 accessibilityRole="button"
                 accessibilityLabel="Create something new"
@@ -553,59 +556,59 @@ export default function FeedScreen() {
         enablePanDownToClose
         backdropComponent={renderMenuBackdrop}
         onChange={handleMenuChange}
-        backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}
-        handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
+        backgroundStyle={{ backgroundColor: t.surfacePage }}
+        handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
       >
-        <BottomSheetView className={`flex-1 p-4 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
-          <Text className={`text-lg font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create</Text>
+        <BottomSheetView className="flex-1 p-4 bg-surface-overlay">
+          <Text className="text-lg font-bold mb-4 text-text-primary">Create</Text>
 
           {role === "buyer" && (
             <>
-              <TouchableOpacity onPress={() => openForm("request")} className={`border-b py-4 ${isDark ? "border-[#46464e]" : "border-border"}`} activeOpacity={0.7}>
-                <Text className={`font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Buyer Request</Text>
-                <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Describe what you need and your budget.</Text>
+              <TouchableOpacity onPress={() => openForm("request")} className="border-b py-4 border-border-strong" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create Buyer Request</Text>
+                <Text className="text-xs mt-0.5 text-text-secondary">Describe what you need and your budget.</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => openForm("post")} className={`border-b py-4 ${isDark ? "border-[#46464e]" : "border-border"}`} activeOpacity={0.7}>
-                <Text className={`font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Post</Text>
-                <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Share updates, photos, or deals.</Text>
+              <TouchableOpacity onPress={() => openForm("post")} className="border-b py-4 border-border-strong" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create Post</Text>
+                <Text className="text-xs mt-0.5 text-text-secondary">Share updates, photos, or deals.</Text>
               </TouchableOpacity>
             </>
           )}
           {role === "seller" && (
             <>
-              <TouchableOpacity onPress={() => openForm("product")} className={`border-b py-4 ${isDark ? "border-[#46464e]" : "border-border"}`} activeOpacity={0.7}>
-                <Text className={`font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Product</Text>
-                <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Add a new item to your shop.</Text>
+              <TouchableOpacity onPress={() => openForm("product")} className="border-b py-4 border-border-strong" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create Product</Text>
+                <Text className="text-xs mt-0.5 text-text-secondary">Add a new item to your shop.</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => openForm("post")} className={`border-b py-4 ${isDark ? "border-[#46464e]" : "border-border"}`} activeOpacity={0.7}>
-                <Text className={`font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Post</Text>
-                <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Share updates, photos, or deals.</Text>
+              <TouchableOpacity onPress={() => openForm("post")} className="border-b py-4 border-border-strong" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create Post</Text>
+                <Text className="text-xs mt-0.5 text-text-secondary">Share updates, photos, or deals.</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => { closeMenu(); router.push("/(tabs)/requests"); }} className={`border-b py-4 ${isDark ? "border-[#46464e]" : "border-border"}`} activeOpacity={0.7}>
-                <Text className={`font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Make offer</Text>
-                <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Browse requests and submit offers.</Text>
+              <TouchableOpacity onPress={() => { closeMenu(); router.push("/(tabs)/requests"); }} className="border-b py-4 border-border-strong" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Make offer</Text>
+                <Text className="text-xs mt-0.5 text-text-secondary">Browse requests and submit offers.</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => openForm("niche")} className={`border-b py-4 ${isDark ? "border-[#46464e]" : "border-border"}`} activeOpacity={0.7}>
-                <Text className={`font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create community</Text>
-                <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Start a topic-based niche for your audience.</Text>
+              <TouchableOpacity onPress={() => openForm("niche")} className="border-b py-4 border-border-strong" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create community</Text>
+                <Text className="text-xs mt-0.5 text-text-secondary">Start a topic-based niche for your audience.</Text>
               </TouchableOpacity>
             </>
           )}
           {hasBothRoles ? (
             <TouchableOpacity onPress={handleSwitchMode} className="py-4" activeOpacity={0.7}>
-              <Text className={`font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Switch mode</Text>
-              <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Change between Buyer and Seller.</Text>
+              <Text className="font-semibold text-base text-text-primary">Switch mode</Text>
+              <Text className="text-xs mt-0.5 text-text-secondary">Change between Buyer and Seller.</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity onPress={handleCreateAccount} className="py-4" activeOpacity={0.7}>
-              <Text className={`font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className="font-semibold text-base text-text-primary">
                 {role === "buyer" && !profile?.is_seller
                   ? "Create seller account"
                   : role === "seller" && !profile?.is_buyer
                     ? "Create buyer account"
                     : "Switch mode"}
               </Text>
-              <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className="text-xs mt-0.5 text-text-secondary">
                 {!profile?.is_seller
                   ? "Add a seller account to list products and manage a shop."
                   : !profile?.is_buyer
@@ -643,9 +646,9 @@ export default function FeedScreen() {
       {/* FAB — bottom right, opens create menu */}
       <TouchableOpacity
         onPress={toggleMenu}
-        className="absolute bottom-4 right-4 w-14 h-14 rounded-full bg-primary items-center justify-center shadow-lg"
+        className="absolute bottom-4 right-4 w-14 h-14 rounded-full bg-primary-fill items-center justify-center shadow-lg"
         style={{
-          shadowColor: "#000",
+          shadowColor: t.textPrimary,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.2,
           shadowRadius: 6,

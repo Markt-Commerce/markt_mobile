@@ -10,18 +10,19 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { WebView, type WebViewNavigation } from "react-native-webview";
 import { ArrowLeft } from "lucide-react-native";
 import { getPaymentDetails, verifyPayment } from "../../../services/sections/payments";
-import { useTheme } from "../../../components/themeProvider";
+import { useTokens } from "../../../theme/useTokens";
 import { useToast } from "../../../components/ToastProvider";
 import {
+  isPaymentCallbackUrl,
   isPaymentReturnUrl,
   parsePaymentDeepLink,
+  paymentIdFromCallbackUrl,
 } from "../../../utils/paymentDeepLink";
 
 export default function PayScreen() {
   const router = useRouter();
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const { id, authorization_url, order_id } = useLocalSearchParams<{
     id: string;
@@ -92,6 +93,21 @@ export default function PayScreen() {
   const handleReturnUrl = useCallback(
     (url: string) => {
       if (!isPaymentReturnUrl(url)) return false;
+
+      // Stop at the backend's callback hop rather than letting the WebView try
+      // to load it. That URL's host comes from the server's API_BASE_URL, and
+      // when that is wrong the phone can't reach it -- the customer has already
+      // paid (the webhook completes it either way) but they'd see
+      // ERR_CONNECTION_REFUSED and never reach the result screen. finishPayment
+      // verifies over the API, which doesn't care what API_BASE_URL says.
+      if (isPaymentCallbackUrl(url)) {
+        const paymentId = paymentIdFromCallbackUrl(url);
+        if (paymentId) {
+          finishPayment("success", paymentId);
+          return true;
+        }
+      }
+
       const parsed = parsePaymentDeepLink(url);
       if (!parsed?.paymentId) {
         finishPayment("failed", id as string, parsed?.error ?? "Payment failed");
@@ -110,10 +126,10 @@ export default function PayScreen() {
   if (loadingUrl || verifying) {
     return (
       <SafeAreaView
-        className={`flex-1 items-center justify-center ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+        className="flex-1 items-center justify-center bg-surface-page"
       >
-        <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
-        <Text className={`mt-3 text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+        <ActivityIndicator size="large" color={t.textPrimary} />
+        <Text className="mt-3 text-sm text-text-secondary">
           {verifying ? "Confirming payment…" : "Loading Paystack…"}
         </Text>
       </SafeAreaView>
@@ -123,15 +139,15 @@ export default function PayScreen() {
   if (!checkoutUrl) {
     return (
       <SafeAreaView
-        className={`flex-1 items-center justify-center px-6 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+        className="flex-1 items-center justify-center px-6 bg-surface-page"
       >
         <Text
-          className={`text-center font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+          className="text-center font-semibold text-text-primary"
         >
           Payment link unavailable
         </Text>
         <TouchableOpacity
-          className="mt-4 px-6 py-3 rounded bg-primary"
+          className="mt-4 px-6 py-3 rounded bg-primary-fill"
           onPress={() => router.back()}
         >
           <Text className="text-white font-semibold">Go back</Text>
@@ -142,22 +158,22 @@ export default function PayScreen() {
 
   return (
     <SafeAreaView
-      className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      className="flex-1 bg-surface-page"
       edges={["top", "left", "right", "bottom"]}
     >
       <View className="flex-row items-center px-4 py-3">
         <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
-          <ArrowLeft size={24} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
-          className={`ml-3 text-base font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+          className="ml-3 text-base font-semibold text-text-primary"
         >
           Complete payment
         </Text>
       </View>
       <WebView
         source={{ uri: checkoutUrl }}
-        style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}
+        className="flex-1 bg-surface-page"
         onNavigationStateChange={onNavigationChange}
         onShouldStartLoadWithRequest={(request) => {
           if (handleReturnUrl(request.url)) return false;

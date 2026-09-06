@@ -26,6 +26,7 @@ import { useRouter } from "expo-router";
 import { ChevronDown, Mail, Search } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens, tokensFor } from "../../theme/useTokens";
 import { SettingsSection } from "../../components/SettingsList";
 
 const SUPPORT_EMAIL = "support@marktcommerce.com";
@@ -151,27 +152,27 @@ function Accordion({
       >
         <Text
           className={`flex-1 text-[15px] leading-[21px] pr-3 ${
-            isDark ? "text-[#f0f1f2]" : "text-black"
+            "text-text-primary"
           }`}
         >
           {item.q}
         </Text>
         <View style={{ transform: [{ rotate: open ? "180deg" : "0deg" }], marginTop: 2 }}>
-          <ChevronDown size={18} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+          <ChevronDown size={18} color={tokensFor(isDark).textMuted} strokeWidth={2} />
         </View>
       </TouchableOpacity>
       {open ? (
         <View className="px-4 pb-4 -mt-1">
           <Text
             className={`text-[14px] leading-[21px] ${
-              isDark ? "text-[#c6c5cf]" : "text-[#52525B]"
+              "text-text-secondary"
             }`}
           >
             {item.a}
           </Text>
         </View>
       ) : null}
-      <View className={`h-px ml-4 ${isDark ? "bg-[#2f3132]" : "bg-[#EFEFF1]"}`} />
+      <View className="h-px ml-4 bg-surface-sunken" />
     </>
   );
 }
@@ -180,6 +181,7 @@ export default function HelpCenterScreen() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const [query, setQuery] = useState("");
   const [openKey, setOpenKey] = useState<string | null>(null);
 
@@ -196,12 +198,12 @@ export default function HelpCenterScreen() {
     })).filter((g) => g.items.length > 0);
   }, [query]);
 
-  const strong = isDark ? "text-[#f0f1f2]" : "text-black";
-  const muted = isDark ? "text-[#8f9195]" : "text-tertiary";
+  const strong = "text-text-primary";
+  const muted = "text-text-muted";
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }}
+      className="flex-1 bg-surface-page"
       edges={["top", "left", "right", "bottom"]}
     >
       <ScrollView
@@ -217,15 +219,15 @@ export default function HelpCenterScreen() {
           </Text>
           <View
             className={`flex-row items-center h-11 px-3 rounded-xl mt-3 ${
-              isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"
+              "bg-surface-sunken"
             }`}
           >
-            <Search size={17} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+            <Search size={17} color={t.textMuted} strokeWidth={2} />
             <TextInput
               value={query}
               onChangeText={setQuery}
               placeholder="Search help"
-              placeholderTextColor={isDark ? "#8f9195" : "#A1A1AA"}
+              placeholderTextColor={t.textMuted}
               className={`flex-1 ml-2 text-[15px] ${strong}`}
               returnKeyType="search"
               accessibilityLabel="Search help topics"
@@ -244,7 +246,7 @@ export default function HelpCenterScreen() {
           </View>
         ) : (
           groups.map((g) => (
-            <SettingsSection key={g.id} title={g.name} dark={isDark}>
+            <SettingsSection key={g.id} title={g.name}>
               {g.items.map((item, idx) => {
                 const key = `${g.id}:${idx}`;
                 return (
@@ -271,9 +273,9 @@ export default function HelpCenterScreen() {
             activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel={`Email support at ${SUPPORT_EMAIL}`}
-            className="mt-4 h-12 rounded-xl bg-primary items-center justify-center flex-row"
+            className="mt-4 h-12 rounded-xl bg-primary-fill items-center justify-center flex-row"
           >
-            <Mail size={17} color="#FFFFFF" strokeWidth={2.2} />
+            <Mail size={17} color={t.textOnPrimary} strokeWidth={2.2} />
             <Text className="text-white font-semibold text-[15px] ml-2">
               Email support
             </Text>

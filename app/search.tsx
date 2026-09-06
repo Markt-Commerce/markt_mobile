@@ -7,9 +7,13 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
-  SafeAreaView,
   ActivityIndicator,
 } from "react-native";
+// react-native's own SafeAreaView is iOS-only and has no NativeWind mapping,
+// so `className` on it does nothing -- this screen's `bg-surface-page` was
+// silently dropped and the navigator's default light background showed
+// through below the header. Every other screen already uses this one.
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Search, ChevronRight, ChevronLeft, Megaphone } from "lucide-react-native";
 import { Link } from "expo-router";
 import { debounce } from "lodash";
@@ -19,7 +23,7 @@ import ProductDisplayComponent from "../components/productDisplayComponent";
 import PostDisplayComponent from "../components/PostDisplayComponent";
 import BuyerRequestFormBottomSheet from "../components/buyerRequestBottomSheet";
 import { defaultProfilePicture } from "../models/defaults";
-import { useTheme } from "../components/themeProvider";
+import { useTokens } from "../theme/useTokens";
 import { useUser } from "../hooks/userContextProvider";
 import type { Product as FeedProduct } from "../models/feed";
 import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
@@ -46,8 +50,7 @@ export default function SearchPage() {
   const hasMoreRef = useRef(true);
   const loadingMoreRef = useRef(false);
   const { role } = useUser();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const requestFormRef = useRef<BottomSheetMethods>(null);
 
   const performSearch = useCallback(
@@ -157,10 +160,10 @@ export default function SearchPage() {
     posts: "Social Feed",
   };
 
-  const headingColor = isDark ? "text-[#f0f1f2]" : "text-black";
-  const mutedColor = isDark ? "text-[#c6c5cf]" : "text-tertiary";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
-  const mutedIconColor = isDark ? "#c6c5cf" : "#A1A1AA";
+  const headingColor = "text-text-primary";
+  const mutedColor = "text-text-secondary";
+  const iconColor = t.textPrimary;
+  const mutedIconColor = t.textSecondary;
 
   const renderViewAll = (target: Exclude<SearchView, "all">, label: string) => (
     <TouchableOpacity
@@ -181,11 +184,11 @@ export default function SearchPage() {
     <Link key={item.id} href={`/shopDetails/${item.id}`} asChild>
       <TouchableOpacity activeOpacity={0.8} className="mb-4">
         <View
-          className={`flex-row items-center gap-4 p-4 rounded border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}
+          className="flex-row items-center gap-4 p-4 rounded border bg-surface-raised border-border"
         >
           <Image
             source={{ uri: item.profile_picture_url || defaultProfilePicture }}
-            className={`w-14 h-14 rounded-full border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
+            className="w-14 h-14 rounded-full border bg-surface-sunken border-border"
           />
           <View className="flex-1">
             <Text
@@ -233,18 +236,18 @@ export default function SearchPage() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}
+      className="flex-1 bg-surface-page"
     >
       {/* Search Input */}
       <View
-        className={`px-6 pt-6 pb-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+        className="px-6 pt-6 pb-4 border-b bg-surface-raised border-border"
       >
         <View
-          className={`h-14 px-5 flex-row items-center rounded border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+          className="h-14 px-5 flex-row items-center rounded border bg-surface-sunken border-border"
         >
           <Search size={20} color={iconColor} strokeWidth={1.5} />
           <TextInput
-            className={`ml-4 flex-1 font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+            className="ml-4 flex-1 font-semibold text-base text-text-primary"
             placeholder="Search products, sellers, posts…"
             placeholderTextColor={mutedIconColor}
             value={query}
@@ -259,9 +262,9 @@ export default function SearchPage() {
           <TouchableOpacity
             onPress={() => requestFormRef.current?.expand()}
             activeOpacity={0.8}
-            className={`mt-3 flex-row items-center gap-3 px-4 py-3 rounded border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+            className="mt-3 flex-row items-center gap-3 px-4 py-3 rounded border bg-surface-sunken border-border"
           >
-            <View className="w-9 h-9 rounded-full bg-primary items-center justify-center">
+            <View className="w-9 h-9 rounded-full bg-primary-fill items-center justify-center">
               <Megaphone size={18} color="white" />
             </View>
             <Text className={`flex-1 text-xs leading-5 ${mutedColor}`}>
@@ -277,7 +280,7 @@ export default function SearchPage() {
           <View className="mt-3 flex-row items-center gap-3">
             <TouchableOpacity
               onPress={() => setView("all")}
-              className={`flex-row items-center gap-1 px-3 py-1.5 rounded border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+              className="flex-row items-center gap-1 px-3 py-1.5 rounded border bg-surface-sunken border-border"
             >
               <ChevronLeft size={14} color={iconColor} strokeWidth={2} />
               <Text
@@ -363,7 +366,7 @@ export default function SearchPage() {
           {/* Products Section */}
           {showProducts && (
             <View
-              className={`py-6 ${view === "all" && showSellers ? `border-t ${isDark ? "border-[#46464e]" : "border-border"}` : ""}`}
+              className={`py-6 ${view === "all" && showSellers ? `border-t border-border-strong` : ""}`}
             >
               <View className="flex-row items-center justify-between mb-2 px-6">
                 <Text
@@ -383,7 +386,7 @@ export default function SearchPage() {
           {/* Posts Section */}
           {showPosts && (
             <View
-              className={`py-6 ${view === "all" && (showSellers || showProducts) ? `border-t ${isDark ? "border-[#46464e]" : "border-border"}` : ""}`}
+              className={`py-6 ${view === "all" && (showSellers || showProducts) ? `border-t border-border-strong` : ""}`}
             >
               <View className="flex-row items-center justify-between mb-4 px-6">
                 <Text

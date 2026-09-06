@@ -11,6 +11,7 @@ import CategoryAddition from "./categoryAddition";
 import { createBuyer, createSeller } from "../services/sections/auth";
 import { useToast } from "./ToastProvider";
 import { friendlyErrorMessage } from "../utils/errorMessages";
+import { useTokens } from "../theme/useTokens";
 
 type Mode = "buyer" | "seller" | null;
 
@@ -34,6 +35,7 @@ interface Props {
 }
 
 const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mode, onClose, onCreated }, ref) => {
+  const t = useTokens();
   const sheetRef = useRef<BottomSheetMethods | null>(null);
   React.useImperativeHandle(ref, () => sheetRef.current as BottomSheetMethods, []);
 
@@ -146,7 +148,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
     <BottomSheet ref={sheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose={!sending} onClose={onClose}>
       <BottomSheetScrollView contentContainerStyle={{ padding: 16 }}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 12, color: "#000000" }}>
+          <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 12, color: t.textPrimary }}>
             {mode === "buyer" ? "Create Buyer Account" : mode === "seller" ? "Create Seller Account" : "Create Account"}
           </Text>
 
@@ -163,7 +165,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                     onChangeText={onChange}
                     style={{
                       borderWidth: 1,
-                      borderColor: "#E4E4E7",
+                      borderColor: t.border,
                       padding: 10,
                       borderRadius: 8,
                       marginBottom: 6,
@@ -171,13 +173,13 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                   />
                 )}
               />
-              {buyerErrors.buyername && <Text style={{ color: "#ba1a1a", marginBottom: 6 }}>{buyerErrors.buyername.message}</Text>}
+              {buyerErrors.buyername && <Text style={{ color: t.dangerText, marginBottom: 6 }}>{buyerErrors.buyername.message}</Text>}
               <TouchableOpacity
                 disabled={sending}
                 onPress={handleSubmitBuyer(submitBuyer)}
-                style={{ backgroundColor: "#000000", padding: 12, borderRadius: 8, alignItems: "center", opacity: sending ? 0.6 : 1 }}
+                style={{ backgroundColor: t.textPrimary, padding: 12, borderRadius: 8, alignItems: "center", opacity: sending ? 0.6 : 1 }}
               >
-                <Text style={{ color: "#fff", fontWeight: "700" }}>{sending ? "Creating…" : "Create Buyer Account"}</Text>
+                <Text style={{ color: t.textOnPrimary, fontWeight: "700" }}>{sending ? "Creating…" : "Create Buyer Account"}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -195,7 +197,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                     onChangeText={onChange}
                     style={{
                       borderWidth: 1,
-                      borderColor: "#E4E4E7",
+                      borderColor: t.border,
                       padding: 10,
                       borderRadius: 8,
                       marginBottom: 6,
@@ -203,7 +205,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                   />
                 )}
               />
-              {sellerErrors.shop_name && <Text style={{ color: "#ba1a1a", marginBottom: 6 }}>{sellerErrors.shop_name.message}</Text>}
+              {sellerErrors.shop_name && <Text style={{ color: t.dangerText, marginBottom: 6 }}>{sellerErrors.shop_name.message}</Text>}
 
               <Text style={{ marginBottom: 6 }}>Description</Text>
               <Controller
@@ -217,7 +219,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                     multiline
                     style={{
                       borderWidth: 1,
-                      borderColor: "#E4E4E7",
+                      borderColor: t.border,
                       padding: 10,
                       borderRadius: 8,
                       marginBottom: 6,
@@ -227,12 +229,12 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                   />
                 )}
               />
-              {sellerErrors.description && <Text style={{ color: "#ba1a1a", marginBottom: 6 }}>{sellerErrors.description.message}</Text>}
+              {sellerErrors.description && <Text style={{ color: t.dangerText, marginBottom: 6 }}>{sellerErrors.description.message}</Text>}
 
               <Text style={{ marginBottom: 6 }}>Categories</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                 {selectedCategories.map((c) => (
-                  <View key={c.id} style={{ backgroundColor: "#F4F4F5", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, marginRight: 8, marginBottom: 8 }}>
+                  <View key={c.id} style={{ backgroundColor: t.surfaceSunken, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, marginRight: 8, marginBottom: 8 }}>
                     <Text>{c.name}</Text>
                   </View>
                 ))}
@@ -240,7 +242,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
 
               <TouchableOpacity
                 onPress={() => setCategoryModalVisible(true)}
-                style={{ borderWidth: 1, borderColor: "#E4E4E7", padding: 10, borderRadius: 8, marginBottom: 12 }}
+                style={{ borderWidth: 1, borderColor: t.border, padding: 10, borderRadius: 8, marginBottom: 12 }}
               >
                 <Text>Select categories</Text>
               </TouchableOpacity>
@@ -248,9 +250,9 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
               <TouchableOpacity
                 disabled={sending}
                 onPress={handleSubmitSeller(submitSeller)}
-                style={{ backgroundColor: "#000000", padding: 12, borderRadius: 8, alignItems: "center", opacity: sending ? 0.6 : 1 }}
+                style={{ backgroundColor: t.textPrimary, padding: 12, borderRadius: 8, alignItems: "center", opacity: sending ? 0.6 : 1 }}
               >
-                <Text style={{ color: "#fff", fontWeight: "700" }}>{sending ? "Creating…" : "Create Seller Account"}</Text>
+                <Text style={{ color: t.textOnPrimary, fontWeight: "700" }}>{sending ? "Creating…" : "Create Seller Account"}</Text>
               </TouchableOpacity>
 
               <CategoryAddition

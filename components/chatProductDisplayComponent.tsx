@@ -18,7 +18,7 @@ import { ShoppingCart, Package } from "lucide-react-native";
 import { ProductDetail } from "../models/products";
 import { getProductById } from "../services/sections/product";
 import { resolveProductImageUri } from "../utils/imageUri";
-import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 
 type EmbeddedProduct = {
   id: string;
@@ -47,9 +47,8 @@ export default function ChatProductDisplayComponent({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#c6c5cf" : "#71717A";
+  const t = useTokens();
+  const iconColor = t.textSecondary;
 
   const id = embeddedProduct?.id ?? productId;
   const displayName = product?.name ?? embeddedProduct?.name ?? "Product";
@@ -114,24 +113,24 @@ export default function ChatProductDisplayComponent({
   if (loading) {
     return (
       <View
-        className={`rounded overflow-hidden border min-w-[240px] max-w-[280px] p-3 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+        className="rounded overflow-hidden border min-w-[240px] max-w-[280px] p-3 bg-surface-raised border-border"
       >
         <View className="flex-row gap-3 items-stretch">
           <View
-            className={`w-[100px] h-[72px] rounded shrink-0 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+            className="w-[100px] h-[72px] rounded shrink-0 bg-media"
           />
           <View className="flex-1 justify-center">
             <View
-              className={`h-4 rounded w-3/4 mb-2 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+              className="h-4 rounded w-3/4 mb-2 bg-media"
             />
             <View
-              className={`h-3 rounded w-1/3 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+              className="h-3 rounded w-1/3 bg-media"
             />
           </View>
         </View>
         <ActivityIndicator
           size="small"
-          color={isDark ? "#f5f5f5" : "#000000"}
+          color={t.textPrimary}
           className="mt-2"
         />
       </View>
@@ -141,10 +140,10 @@ export default function ChatProductDisplayComponent({
   if (error && !embeddedProduct?.name) {
     return (
       <View
-        className={`rounded border px-4 py-3 ${isDark ? "bg-dark-surface border-dark-border" : "bg-surface border-border"}`}
+        className="rounded border px-4 py-3 bg-surface-sunken border-border"
       >
         <Text
-          className={`text-sm ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+          className="text-sm text-text-secondary"
         >
           Product no longer available
         </Text>
@@ -154,13 +153,13 @@ export default function ChatProductDisplayComponent({
 
   return (
     <View
-      className={`rounded overflow-hidden border min-w-[240px] max-w-[280px] ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+      className="rounded overflow-hidden border min-w-[240px] max-w-[280px] bg-surface-raised border-border"
     >
       <Link href={`/productDetails/${id}`} asChild>
         <TouchableOpacity activeOpacity={0.85}>
           <View className="flex-row p-3 gap-3 items-stretch">
             <View
-              className={`w-[100px] h-[72px] rounded overflow-hidden items-center justify-center shrink-0 ${isDark ? "bg-dark-elevated" : "bg-surface"}`}
+              className="w-[100px] h-[72px] rounded overflow-hidden items-center justify-center shrink-0 bg-media"
             >
               {displayImage && !imageError ? (
                 <Image
@@ -173,7 +172,7 @@ export default function ChatProductDisplayComponent({
                 <View className="items-center justify-center p-2">
                   <Package size={20} color={iconColor} />
                   <Text
-                    className={`text-[9px] mt-0.5 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                    className="text-[9px] mt-0.5 text-text-secondary"
                   >
                     Product
                   </Text>
@@ -182,13 +181,13 @@ export default function ChatProductDisplayComponent({
             </View>
             <View className="flex-1 justify-center min-w-0 py-0.5">
               <Text
-                className={`font-semibold text-sm ${isDark ? "text-dark-text" : "text-black"}`}
+                className="font-semibold text-sm text-text-primary"
                 numberOfLines={2}
               >
                 {displayName}
               </Text>
               <Text
-                className={`font-semibold text-base mt-0.5 ${isDark ? "text-dark-text" : "text-black"}`}
+                className="font-semibold text-base mt-0.5 text-text-primary"
               >
                 ₦
                 {typeof displayPrice === "number"
@@ -202,7 +201,7 @@ export default function ChatProductDisplayComponent({
       {showAddToCart && onAddToCart && (
         <TouchableOpacity
           onPress={() => onAddToCart(id)}
-          className="mx-3 mb-3 py-2.5 rounded bg-primary flex-row items-center justify-center gap-2"
+          className="mx-3 mb-3 py-2.5 rounded bg-primary-fill flex-row items-center justify-center gap-2"
         >
           <ShoppingCart size={18} color="white" />
           <Text className="text-white font-semibold text-sm">Add to Cart</Text>

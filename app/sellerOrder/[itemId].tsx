@@ -24,7 +24,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Image as ImageIcon, MessageSquare } from "lucide-react-native";
 import Avatar from "../../components/Avatar";
-import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { getSellerOrders, updateSellerOrderItem } from "../../services/sections/orders";
 import type { SellerOrderItem } from "../../models/orders";
@@ -36,25 +36,12 @@ import {
   type OrderItemStatus,
 } from "../../utils/orderTransitions";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
-
-const TONE_BG: Record<string, [string, string]> = {
-  positive: ["bg-[#E7F6EC]", "bg-[#1E3A28]"],
-  attention: ["bg-[#FEF3E2]", "bg-[#3A2E18]"],
-  negative: ["bg-[#FDECEC]", "bg-[#3A1E1E]"],
-  neutral: ["bg-[#F4F4F5]", "bg-[#2f3132]"],
-};
-const TONE_TEXT: Record<string, [string, string]> = {
-  positive: ["text-[#0F7B3F]", "text-[#7BD9A2]"],
-  attention: ["text-[#A15C00]", "text-[#F0B667]"],
-  negative: ["text-[#C42B2B]", "text-[#F09A9A]"],
-  neutral: ["text-[#52525B]", "text-[#c6c5cf]"],
-};
+import { TONE_BG, TONE_TEXT } from "../../theme/tone";
 
 export default function SellerOrderDetail() {
   const { itemId } = useLocalSearchParams<{ itemId: string }>();
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
 
   const [item, setItem] = useState<SellerOrderItem | null>(null);
@@ -122,16 +109,16 @@ export default function SellerOrderDetail() {
     );
   };
 
-  const bg = isDark ? "#1a1c1d" : "#FFFFFF";
-  const strong = isDark ? "text-[#f0f1f2]" : "text-black";
-  const muted = isDark ? "text-[#8f9195]" : "text-tertiary";
-  const card = isDark ? "bg-[#2f3132]" : "bg-[#F7F7F8]";
+  const bg = t.surfacePage;
+  const strong = "text-text-primary";
+  const muted = "text-text-muted";
+  const card = "bg-surface-sunken";
 
   if (loading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: bg }} edges={["top", "bottom"]}>
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+          <ActivityIndicator size="large" color={t.textPrimary} />
         </View>
       </SafeAreaView>
     );
@@ -147,7 +134,7 @@ export default function SellerOrderDetail() {
           </Text>
           <TouchableOpacity
             onPress={() => router.back()}
-            className="mt-6 px-6 h-11 rounded-lg bg-primary items-center justify-center"
+            className="mt-6 px-6 h-11 rounded-lg bg-primary-fill items-center justify-center"
           >
             <Text className="text-white font-semibold">Go back</Text>
           </TouchableOpacity>
@@ -171,7 +158,7 @@ export default function SellerOrderDetail() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={22} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={22} color={t.textPrimary} />
         </TouchableOpacity>
         <Text className={`text-[17px] font-bold ml-3 ${strong}`} numberOfLines={1}>
           {item.order?.order_number ?? `Order ${item.order_id ?? ""}`}
@@ -187,7 +174,7 @@ export default function SellerOrderDetail() {
               setRefreshing(true);
               load();
             }}
-            tintColor={isDark ? "#f0f1f2" : "#000000"}
+            tintColor={t.textPrimary}
           />
         }
       >
@@ -197,9 +184,9 @@ export default function SellerOrderDetail() {
               Status
             </Text>
             <View className="flex-row items-center mt-2">
-              <View className={`px-2.5 py-1 rounded-full ${TONE_BG[tone][isDark ? 1 : 0]}`}>
+              <View className={`px-2.5 py-1 rounded-full ${TONE_BG[tone]}`}>
                 <Text
-                  className={`text-[13px] font-semibold ${TONE_TEXT[tone][isDark ? 1 : 0]}`}
+                  className={`text-[13px] font-semibold ${TONE_TEXT[tone]}`}
                 >
                   {formatStatus(item.status)}
                 </Text>
@@ -216,9 +203,9 @@ export default function SellerOrderDetail() {
                 />
               ) : (
                 <View
-                  className={`w-16 h-16 rounded-lg items-center justify-center ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+                  className="w-16 h-16 rounded-lg items-center justify-center bg-surface-raised"
                 >
-                  <ImageIcon size={20} color={isDark ? "#6b6d71" : "#C4C4C8"} />
+                  <ImageIcon size={20} color={t.textMuted} />
                 </View>
               )}
               <View className="flex-1 ml-3">
@@ -250,11 +237,11 @@ export default function SellerOrderDetail() {
               </Text>
               <TouchableOpacity
                 onPress={() => router.push("/(tabs)/messages" as any)}
-                className={`flex-row items-center px-3 h-9 rounded-lg ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+                className="flex-row items-center px-3 h-9 rounded-lg bg-surface-raised"
                 accessibilityRole="button"
                 accessibilityLabel={`Message ${buyerName}`}
               >
-                <MessageSquare size={14} color={isDark ? "#c6c5cf" : "#3F3F46"} />
+                <MessageSquare size={14} color={t.textSecondary} />
                 <Text className={`text-[13px] font-semibold ml-1.5 ${strong}`}>
                   Message
                 </Text>
@@ -286,18 +273,16 @@ export default function SellerOrderDetail() {
                       working ? "opacity-60" : ""
                     } ${
                       destructive
-                        ? isDark
-                          ? "bg-[#3A1E1E]"
-                          : "bg-[#FDECEC]"
-                        : "bg-primary"
+                        ? "bg-danger-muted"
+                        : "bg-primary-fill"
                     }`}
                   >
                     {working ? (
-                      <ActivityIndicator color={destructive ? "#C42B2B" : "#FFFFFF"} />
+                      <ActivityIndicator color={destructive ? t.dangerText : t.textOnPrimary} />
                     ) : (
                       <Text
                         className={`text-[15px] font-bold ${
-                          destructive ? "text-[#C42B2B]" : "text-white"
+                          destructive ? "text-danger-text" : "text-white"
                         }`}
                       >
                         {STATUS_ACTION_LABEL[next] ?? next}

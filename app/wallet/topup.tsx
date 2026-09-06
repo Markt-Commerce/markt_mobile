@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { WebView, type WebViewNavigation } from "react-native-webview";
 import { ArrowLeft } from "lucide-react-native";
-import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { verifyWalletTopUp } from "../../services/sections/wallet";
 import {
@@ -25,8 +25,7 @@ import {
 export default function WalletTopUpScreen() {
   const router = useRouter();
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const { authorization_url, topup_id } = useLocalSearchParams<{
     authorization_url?: string;
@@ -109,10 +108,10 @@ export default function WalletTopUpScreen() {
   if (verifying) {
     return (
       <SafeAreaView
-        className={`flex-1 items-center justify-center ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+        className="flex-1 items-center justify-center bg-surface-page"
       >
-        <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
-        <Text className={`mt-3 text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+        <ActivityIndicator size="large" color={t.textPrimary} />
+        <Text className="mt-3 text-sm text-text-secondary">
           Confirming top-up…
         </Text>
       </SafeAreaView>
@@ -122,15 +121,15 @@ export default function WalletTopUpScreen() {
   if (!authorization_url) {
     return (
       <SafeAreaView
-        className={`flex-1 items-center justify-center px-6 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+        className="flex-1 items-center justify-center px-6 bg-surface-page"
       >
         <Text
-          className={`text-center font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+          className="text-center font-semibold text-text-primary"
         >
           Payment link unavailable
         </Text>
         <TouchableOpacity
-          className="mt-4 px-6 py-3 rounded bg-primary"
+          className="mt-4 px-6 py-3 rounded bg-primary-fill"
           onPress={() => router.back()}
           accessibilityRole="button"
         >
@@ -142,7 +141,7 @@ export default function WalletTopUpScreen() {
 
   return (
     <SafeAreaView
-      className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      className="flex-1 bg-surface-page"
       edges={["top", "left", "right", "bottom"]}
     >
       <View className="flex-row items-center px-4 py-3">
@@ -152,17 +151,17 @@ export default function WalletTopUpScreen() {
           accessibilityRole="button"
           accessibilityLabel="Cancel top-up"
         >
-          <ArrowLeft size={24} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>
         <Text
-          className={`ml-3 text-base font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+          className="ml-3 text-base font-semibold text-text-primary"
         >
           Fund wallet
         </Text>
       </View>
       <WebView
         source={{ uri: authorization_url }}
-        style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}
+        className="flex-1 bg-surface-page"
         onNavigationStateChange={(navState: WebViewNavigation) =>
           handleReturnUrl(navState.url)
         }

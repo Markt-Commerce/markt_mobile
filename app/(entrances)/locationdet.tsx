@@ -14,16 +14,15 @@ import { useToast } from "../../components/ToastProvider";
 import * as Location from 'expo-location';
 import { registerUser } from "../../services/sections/auth";
 import Button from "../../components/button";
-import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 
 export default function AddAddressScreen() {
   const { show } = useToast();
   const router = useRouter();
   const { setUser, setRole } = useUser();
   const { regData, setRegData } = useRegData();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
+  const t = useTokens();
+  const iconColor = t.textPrimary;
   const [location, setLocation] = React.useState<Location.LocationObject | null>(null);
   const [geocoding, setGeocoding] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -141,11 +140,11 @@ export default function AddAddressScreen() {
   };
 
   const Label = ({ children }: { children: React.ReactNode }) => (
-    <Text className={`mb-2 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>{children}</Text>
+    <Text className="mb-2 text-sm font-bold text-text-primary">{children}</Text>
   );
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-page">
       <ScrollView 
         className="flex-1" 
         contentContainerStyle={{ paddingBottom: 40 }}
@@ -157,37 +156,37 @@ export default function AddAddressScreen() {
           <View className="flex-row items-center justify-between pb-8 pt-4 px-6">
             <TouchableOpacity
               onPress={() => router.back()}
-              className={`h-10 w-10 items-center justify-center rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
+              className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
             >
               <ArrowLeft color={iconColor} size={20} />
             </TouchableOpacity>
-            <Text className={`text-xl font-bold text-center flex-1 pr-10 ${isDark ? "text-[#f0f1f2]" : "text-[#000000]"}`}>
+            <Text className="text-xl font-bold text-center flex-1 pr-10 text-text-primary">
               Your location
             </Text>
           </View>
 
           {/* Progress hint */}
           <View className="flex-row gap-2 items-center justify-center mb-10 px-10">
-            <View className={`h-1.5 flex-1 rounded ${isDark ? "bg-[#f0f1f2]" : "bg-secondary"}`} />
-            <View className={`h-1.5 flex-1 rounded ${isDark ? "bg-[#f0f1f2]" : "bg-secondary"}`} />
-            <View className={`h-1.5 flex-1 rounded ${isDark ? "bg-[#f0f1f2]" : "bg-secondary"}`} />
+            <View className="h-1.5 flex-1 rounded bg-text-primary" />
+            <View className="h-1.5 flex-1 rounded bg-text-primary" />
+            <View className="h-1.5 flex-1 rounded bg-text-primary" />
           </View>
 
           <View className="px-4">
-            <View className={`rounded border px-6 py-8 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-              <Text className={`text-[24px] font-bold leading-tight mb-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+            <View className="rounded border px-6 py-8 bg-surface-raised border-border">
+              <Text className="text-[24px] font-bold leading-tight mb-2 text-text-primary">
                 Where are you based?
               </Text>
-              <Text className={`text-sm mb-8 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className="text-sm mb-8 text-text-secondary">
                 This helps us show you relevant products and calculate shipping.
               </Text>
 
               <TouchableOpacity
-                className={`flex-row items-center justify-center rounded h-11 px-6 border mb-8 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+                className="flex-row items-center justify-center rounded h-11 px-6 border mb-8 bg-surface-sunken border-border"
                 onPress={useCurrentLocation}
                 disabled={geocoding}
               >
-                {geocoding ? <ActivityIndicator size="small" color={iconColor} /> : <Text className={`font-bold text-xs tracking-widest uppercase ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Use Current Location</Text>}
+                {geocoding ? <ActivityIndicator size="small" color={iconColor} /> : <Text className="font-bold text-xs tracking-widest uppercase text-text-primary">Use Current Location</Text>}
               </TouchableOpacity>
 
               <View className="gap-6">
@@ -195,7 +194,7 @@ export default function AddAddressScreen() {
                   <Label>Street Address</Label>
                   <Input placeholder="123 Main St" control={control} name="street" errors={errors} />
                   {location && !geocoding && (
-                    <Text className={`text-[10px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Detected near you</Text>
+                    <Text className="text-[10px] mt-1 text-text-secondary">Detected near you</Text>
                   )}
                 </View>
 
@@ -238,7 +237,7 @@ export default function AddAddressScreen() {
                   onPress={onSkip}
                   disabled={isSubmitting}
                 >
-                  <Text className={`text-sm underline ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Skip for now</Text>
+                  <Text className="text-sm underline text-text-secondary">Skip for now</Text>
                 </TouchableOpacity>
               </View>
             </View>

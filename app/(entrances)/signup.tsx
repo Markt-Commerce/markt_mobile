@@ -22,7 +22,7 @@ import { useWatch } from "react-hook-form";
 import { getPasswordStrength } from "../../utils/passwordStrength";
 import Button from "../../components/button";
 import { Check, Circle } from "lucide-react-native";
-import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 
 // --- Validation schema ---
 const schema = z
@@ -49,10 +49,9 @@ export default function SignupScreen() {
   const { setRole, role } = useUser();
   const { regData, setRegData } = useRegData();
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
-  const mutedIconColor = isDark ? "#c6c5cf" : "#A1A1AA";
+  const t = useTokens();
+  const iconColor = t.textPrimary;
+  const mutedIconColor = t.textSecondary;
 
   const {
     control,
@@ -95,24 +94,24 @@ export default function SignupScreen() {
   };
 
   const RoleToggle = () => (
-    <View className={`flex-row items-center rounded p-1 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+    <View className="flex-row items-center rounded p-1 bg-surface-sunken">
       <TouchableOpacity
         onPress={() => setUserRole("buyer")}
         className={`flex-1 py-2.5 rounded items-center ${
-          role === "buyer" ? "bg-primary shadow-sm" : "shadow-none"
+          role === "buyer" ? "bg-primary-fill shadow-sm" : "shadow-none"
         }`}
       >
-        <Text className={`font-bold text-sm ${role === "buyer" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+        <Text className={`font-bold text-sm ${role === "buyer" ? "text-white" : "text-text-secondary"}`}>
           Buyer
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
         onPress={() => setUserRole("seller")}
         className={`flex-1 py-2.5 rounded items-center ${
-          role === "seller" ? "bg-primary shadow-sm" : "shadow-none"
+          role === "seller" ? "bg-primary-fill shadow-sm" : "shadow-none"
         }`}
       >
-        <Text className={`font-bold text-sm ${role === "seller" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+        <Text className={`font-bold text-sm ${role === "seller" ? "text-white" : "text-text-secondary"}`}>
           Seller
         </Text>
       </TouchableOpacity>
@@ -120,7 +119,7 @@ export default function SignupScreen() {
   );
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-page">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -135,7 +134,7 @@ export default function SignupScreen() {
             <View className="flex-row items-center mb-8">
               <TouchableOpacity
                 onPress={() => router.back()}
-                className={`h-10 w-10 items-center justify-center rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
+                className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <ArrowLeft size={20} color={iconColor} />
@@ -144,25 +143,25 @@ export default function SignupScreen() {
 
             {/* Title */}
             <View className="mb-8">
-              <Text className={`text-[32px] font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className="text-[32px] font-bold leading-tight text-text-primary">
                 Create{"\n"}account
               </Text>
-              <Text className={`text-base mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className="text-base mt-2 text-text-secondary">
                 Join Markt to start shopping or selling.
               </Text>
             </View>
 
             {/* Panel */}
-            <View className={`rounded border px-5 py-8 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+            <View className="rounded border px-5 py-8 bg-surface-raised border-border">
               {/* Role selection */}
               <View className="mb-8">
-                <Text className={`mb-3 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>I want to be a</Text>
+                <Text className="mb-3 text-sm font-bold text-text-primary">I want to be a</Text>
                 <RoleToggle />
               </View>
 
               {/* Email */}
               <View className="mb-6">
-                <Text className={`mb-2 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Email Address</Text>
+                <Text className="mb-2 text-sm font-bold text-text-primary">Email Address</Text>
                 <Input
                   placeholder="you@example.com"
                   control={control}
@@ -175,7 +174,7 @@ export default function SignupScreen() {
 
               {/* Password */}
               <View className="mb-6">
-                <Text className={`mb-2 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Password</Text>
+                <Text className="mb-2 text-sm font-bold text-text-primary">Password</Text>
                 <PasswordInput
                   placeholder="Min. 8 characters"
                   control={control}
@@ -191,39 +190,39 @@ export default function SignupScreen() {
                       className={`flex-1 h-1 rounded ${
                         i < strength.level
                           ? strength.level <= 1
-                            ? "bg-error"
+                            ? "bg-danger"
                             : strength.level <= 2
-                              ? "bg-tertiary"
+                              ? "bg-warning"
                               : strength.level <= 3
-                                ? "bg-secondary"
+                                ? "bg-primary"
                                 : "bg-success"
-                          : isDark ? "bg-[#2f3132]" : "bg-surface"
+                          : "bg-surface-sunken"
                       }`}
                     />
                   ))}
                 </View>
                 <View className="flex-row flex-wrap gap-x-4 gap-y-1 mt-2">
                   <View className="flex-row items-center gap-1">
-                    {strength.checks.length ? <Check size={12} color="#178b1f" /> : <Circle size={12} color={mutedIconColor} />}
-                    <Text className={`text-[11px] ${strength.checks.length ? "text-success" : "text-tertiary"}`}>
+                    {strength.checks.length ? <Check size={12} color={t.successText} /> : <Circle size={12} color={mutedIconColor} />}
+                    <Text className={`text-[11px] ${strength.checks.length ? "text-success" : "text-text-muted"}`}>
                       8+ chars
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-1">
-                    {strength.checks.digit ? <Check size={12} color="#178b1f" /> : <Circle size={12} color={mutedIconColor} />}
-                    <Text className={`text-[11px] ${strength.checks.digit ? "text-success" : "text-tertiary"}`}>
+                    {strength.checks.digit ? <Check size={12} color={t.successText} /> : <Circle size={12} color={mutedIconColor} />}
+                    <Text className={`text-[11px] ${strength.checks.digit ? "text-success" : "text-text-muted"}`}>
                       1 digit
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-1">
-                    {strength.checks.lowercase ? <Check size={12} color="#178b1f" /> : <Circle size={12} color={mutedIconColor} />}
-                    <Text className={`text-[11px] ${strength.checks.lowercase ? "text-success" : "text-tertiary"}`}>
+                    {strength.checks.lowercase ? <Check size={12} color={t.successText} /> : <Circle size={12} color={mutedIconColor} />}
+                    <Text className={`text-[11px] ${strength.checks.lowercase ? "text-success" : "text-text-muted"}`}>
                       1 lower
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-1">
-                    {strength.checks.uppercase ? <Check size={12} color="#178b1f" /> : <Circle size={12} color={mutedIconColor} />}
-                    <Text className={`text-[11px] ${strength.checks.uppercase ? "text-success" : "text-tertiary"}`}>
+                    {strength.checks.uppercase ? <Check size={12} color={t.successText} /> : <Circle size={12} color={mutedIconColor} />}
+                    <Text className={`text-[11px] ${strength.checks.uppercase ? "text-success" : "text-text-muted"}`}>
                       1 upper
                     </Text>
                   </View>
@@ -232,7 +231,7 @@ export default function SignupScreen() {
 
               {/* Confirm Password */}
               <View className="mb-8">
-                <Text className={`mb-2 text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Confirm Password</Text>
+                <Text className="mb-2 text-sm font-bold text-text-primary">Confirm Password</Text>
                 <PasswordInput
                   placeholder="Repeat password"
                   control={control}
@@ -254,8 +253,8 @@ export default function SignupScreen() {
                 onPress={() => router.push("/login")}
                 className="mt-8 items-center"
               >
-                <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                  Already have an account? <Text className={`font-bold underline ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Sign in</Text>
+                <Text className="text-sm text-text-secondary">
+                  Already have an account? <Text className="font-bold underline text-text-primary">Sign in</Text>
                 </Text>
               </TouchableOpacity>
             </View>

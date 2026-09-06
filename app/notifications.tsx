@@ -40,6 +40,7 @@ import { useNotificationsBadge } from "../hooks/notificationsContext";
 import { resolveNotificationRoute } from "../utils/notificationDeepLink";
 import { formatTimeAgo } from "../utils/formatTimeAgo";
 import { friendlyErrorMessage } from "../utils/errorMessages";
+import { useTokens } from "../theme/useTokens";
 
 type DecisionState = "pending" | "resolved" | "error";
 
@@ -93,13 +94,14 @@ export default function NotificationsScreen() {
   const [decisionState, setDecisionState] = useState<Record<number, DecisionState>>({});
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
   const { bumpUnread } = useNotificationsBadge();
 
-  const ink = isDark ? "text-[#f0f1f2]" : "text-black";
-  const muted = isDark ? "text-[#c6c5cf]" : "text-tertiary";
-  const rule = isDark ? "border-[#46464e]" : "border-border";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
+  const ink = "text-text-primary";
+  const muted = "text-text-secondary";
+  const rule = "border-border";
+  const iconColor = t.textPrimary;
 
   const load = useCallback(async (opts: { refresh?: boolean } = {}) => {
     if (opts.refresh) setRefreshing(true);
@@ -214,7 +216,7 @@ export default function NotificationsScreen() {
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.8}
-      className={`flex-1 h-9 rounded items-center justify-center ${primary ? "bg-primary" : isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+      className={`flex-1 h-9 rounded items-center justify-center ${primary ? "bg-primary-fill" : "bg-surface-sunken"}`}
       accessibilityRole="button"
       accessibilityLabel={label}
     >
@@ -238,7 +240,7 @@ export default function NotificationsScreen() {
         accessibilityLabel={n.title || n.message}
       >
         <View
-          className={`w-10 h-10 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+          className={`w-10 h-10 rounded items-center justify-center ${"bg-surface-sunken"}`}
         >
           <Icon size={18} color={iconColor} strokeWidth={1.6} />
         </View>
@@ -303,7 +305,7 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView
-      className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
+      className={`flex-1 bg-surface-page`}
       edges={["top", "left", "right", "bottom"]}
     >
       <ScreenHeader
@@ -318,14 +320,14 @@ export default function NotificationsScreen() {
             accessibilityLabel="Mark all as read"
             accessibilityState={{ disabled: !hasUnread }}
           >
-            <CheckCheck size={20} color={hasUnread ? iconColor : isDark ? "#46464e" : "#D4D4D8"} strokeWidth={1.75} />
+            <CheckCheck size={20} color={hasUnread ? iconColor : t.border} strokeWidth={1.75} />
           </TouchableOpacity>
         }
       />
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#E94C2A" />
+          <ActivityIndicator size="large" color={t.primaryText} />
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center px-10">
@@ -339,7 +341,7 @@ export default function NotificationsScreen() {
             accessibilityRole="button"
             accessibilityLabel="Try again"
           >
-            <RotateCw size={16} color="#FFFFFF" />
+            <RotateCw size={16} color={t.textOnPrimary} />
             <Text className="text-white font-bold text-xs tracking-[2px] uppercase">Try again</Text>
           </TouchableOpacity>
         </View>
@@ -352,15 +354,15 @@ export default function NotificationsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => load({ refresh: true })}
-              tintColor="#E94C2A"
+              tintColor={t.primaryText}
             />
           }
           ListEmptyComponent={
             <View className="items-center justify-center px-10 pt-24">
               <View
-                className={`w-20 h-20 rounded-full items-center justify-center mb-6 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+                className={`w-20 h-20 rounded-full items-center justify-center mb-6 ${"bg-surface-sunken"}`}
               >
-                <Bell size={30} color={isDark ? "#c6c5cf" : "#A1A1AA"} strokeWidth={1.6} />
+                <Bell size={30} color={t.textSecondary} strokeWidth={1.6} />
               </View>
               <Text className={`text-xl font-bold text-center ${ink}`}>You're all caught up</Text>
               <Text className={`text-[15px] mt-2 text-center leading-6 ${muted}`}>

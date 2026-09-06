@@ -26,6 +26,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Search, Users, Plus, ArrowUpDown } from "lucide-react-native";
 import { useTheme } from "../components/themeProvider";
+import { useTokens } from "../theme/useTokens";
 import { useToast } from "../components/ToastProvider";
 import { getNiches, joinNiche, leaveNiche } from "../services/sections/niches";
 import type { Niches, NichesListParams } from "../models/niches";
@@ -76,11 +77,11 @@ function CommunityAvatar({
   return (
     <View
       style={{ width: size, height: size, borderRadius: radius }}
-      className={`items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"}`}
+      className="items-center justify-center bg-surface-sunken"
     >
       <Text
         style={{ fontSize: size * 0.36 }}
-        className={`font-bold ${isDark ? "text-[#c6c5cf]" : "text-[#52525B]"}`}
+        className="font-bold text-text-secondary"
       >
         {initials}
       </Text>
@@ -92,6 +93,7 @@ export default function CommunitiesScreen() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
 
   const [tab, setTab] = useState<Tab>("home");
@@ -157,9 +159,9 @@ export default function CommunitiesScreen() {
     }
   };
 
-  const strong = isDark ? "text-[#f0f1f2]" : "text-black";
-  const muted = isDark ? "text-[#8f9195]" : "text-tertiary";
-  const hairline = isDark ? "border-[#2f3132]" : "border-border-light";
+  const strong = "text-text-primary";
+  const muted = "text-text-muted";
+  const hairline = "border-border";
 
   const header = useMemo(
     () => (
@@ -181,7 +183,7 @@ export default function CommunitiesScreen() {
                 accessibilityLabel={`Open ${n.name}`}
                 style={{ width: 108 }}
                 className={`rounded-2xl border p-3 items-center ${hairline} ${
-                  isDark ? "bg-[#1a1c1d]" : "bg-white"
+                  "bg-surface-raised"
                 }`}
               >
                 <CommunityAvatar niche={n} size={52} isDark={isDark} />
@@ -199,15 +201,15 @@ export default function CommunitiesScreen() {
         <View className="px-4 pb-3">
           <View
             className={`flex-row items-center h-11 px-3 rounded-xl ${
-              isDark ? "bg-[#2f3132]" : "bg-[#F4F4F5]"
+              "bg-surface-sunken"
             }`}
           >
-            <Search size={17} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+            <Search size={17} color={t.textMuted} strokeWidth={2} />
             <TextInput
               value={query}
               onChangeText={setQuery}
               placeholder="Search communities"
-              placeholderTextColor={isDark ? "#8f9195" : "#A1A1AA"}
+              placeholderTextColor={t.textMuted}
               className={`flex-1 ml-2 text-[15px] ${strong}`}
               returnKeyType="search"
               accessibilityLabel="Search communities"
@@ -220,7 +222,7 @@ export default function CommunitiesScreen() {
             contentContainerStyle={{ gap: 8, paddingTop: 12 }}
           >
             <View className="flex-row items-center pr-1">
-              <ArrowUpDown size={13} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+              <ArrowUpDown size={13} color={t.textMuted} strokeWidth={2} />
             </View>
             {SORTS.map((s) => {
               const active = sort === s.key;
@@ -232,13 +234,7 @@ export default function CommunitiesScreen() {
                   accessibilityRole="tab"
                   accessibilityState={{ selected: active }}
                   className={`px-3.5 h-8 rounded-full items-center justify-center ${
-                    active
-                      ? isDark
-                        ? "bg-[#f0f1f2]"
-                        : "bg-black"
-                      : isDark
-                        ? "bg-[#2f3132]"
-                        : "bg-[#F4F4F5]"
+                    active ? "bg-text-primary" : "bg-surface-sunken"
                   }`}
                 >
                   <Text
@@ -247,9 +243,7 @@ export default function CommunitiesScreen() {
                         ? isDark
                           ? "text-black"
                           : "text-white"
-                        : isDark
-                          ? "text-[#c6c5cf]"
-                          : "text-[#52525B]"
+                        : "text-text-secondary"
                     }`}
                   >
                     {s.label}
@@ -281,7 +275,7 @@ export default function CommunitiesScreen() {
             {item.name}
           </Text>
           <View className="flex-row items-center mt-0.5">
-            <Users size={12} color={isDark ? "#8f9195" : "#A1A1AA"} strokeWidth={2} />
+            <Users size={12} color={t.textMuted} strokeWidth={2} />
             <Text className={`text-[12px] ml-1 ${muted}`}>
               {compactCount(item.member_count)} members
             </Text>
@@ -303,21 +297,13 @@ export default function CommunitiesScreen() {
           className={`px-4 h-9 rounded-full items-center justify-center ${
             working ? "opacity-60" : ""
           } ${
-            joined
-              ? isDark
-                ? "bg-[#2f3132]"
-                : "bg-[#F4F4F5]"
-              : isDark
-                ? "bg-[#f0f1f2]"
-                : "bg-black"
+            joined ? "bg-surface-sunken" : "bg-text-primary"
           }`}
         >
           <Text
             className={`text-[13px] font-bold ${
               joined
-                ? isDark
-                  ? "text-[#c6c5cf]"
-                  : "text-[#52525B]"
+                ? "text-text-secondary"
                 : isDark
                   ? "text-black"
                   : "text-white"
@@ -332,7 +318,7 @@ export default function CommunitiesScreen() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "#FFFFFF" }}
+      className="flex-1 bg-surface-page"
       edges={["top", "left", "right"]}
     >
       <View className="flex-row items-center px-4 h-12">
@@ -342,7 +328,7 @@ export default function CommunitiesScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={22} color={isDark ? "#f0f1f2" : "#000000"} />
+          <ArrowLeft size={22} color={t.textPrimary} />
         </TouchableOpacity>
         <Text className={`flex-1 text-center text-[17px] font-bold ${strong}`}>
           Communities
@@ -353,7 +339,7 @@ export default function CommunitiesScreen() {
           accessibilityRole="button"
           accessibilityLabel="Create a community"
         >
-          <Plus size={22} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={2.2} />
+          <Plus size={22} color={t.textPrimary} strokeWidth={2.2} />
         </TouchableOpacity>
       </View>
 
@@ -394,7 +380,7 @@ export default function CommunitiesScreen() {
               setRefreshing(true);
               load();
             }}
-            tintColor={isDark ? "#f0f1f2" : "#000000"}
+            tintColor={t.textPrimary}
           />
         }
         contentContainerStyle={{ paddingBottom: 32, flexGrow: 1 }}
@@ -402,7 +388,7 @@ export default function CommunitiesScreen() {
         ListEmptyComponent={
           loading ? (
             <View className="py-16 items-center">
-              <ActivityIndicator color={isDark ? "#f0f1f2" : "#000000"} />
+              <ActivityIndicator color={t.textPrimary} />
             </View>
           ) : (
             <View className="px-8 py-16 items-center">
@@ -425,7 +411,7 @@ export default function CommunitiesScreen() {
                   onPress={() => setTab("explore")}
                   activeOpacity={0.85}
                   accessibilityRole="button"
-                  className="mt-5 px-5 h-11 rounded-xl bg-primary items-center justify-center"
+                  className="mt-5 px-5 h-11 rounded-xl bg-primary-fill items-center justify-center"
                 >
                   <Text className="text-white font-semibold text-[15px]">Explore</Text>
                 </TouchableOpacity>

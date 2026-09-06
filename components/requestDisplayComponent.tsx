@@ -4,6 +4,7 @@ import { MessageSquare } from "lucide-react-native";
 import { BuyerRequest } from "../models/feed";
 import { router } from "expo-router";
 import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 import { useUser } from "../hooks/userContextProvider";
 import Avatar from "./Avatar";
 
@@ -34,6 +35,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
   const { resolvedTheme } = useTheme();
   const { user } = useUser();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   // No messaging yourself about your own request.
   const isOwnRequest =
@@ -60,7 +62,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
       // nothing. The row now runs edge to edge and a single hairline separates
       // one request from the next.
       className={`px-4 py-3 border-b ${
-        isDark ? "bg-[#1a1c1d] border-[#2f3132]" : "bg-white border-border-light"
+        "bg-surface-raised border-border"
       }`}
     >
       {/* Who, and how the request stands */}
@@ -72,10 +74,10 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
         />
         <View className="flex-1 ml-2.5">
           <Text
-            className={`text-[14px] ${isDark ? "text-[#c6c5cf]" : "text-[#52525B]"}`}
+            className="text-[14px] text-text-secondary"
             numberOfLines={1}
           >
-            <Text className={`font-semibold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+            <Text className="font-semibold text-text-primary">
               {req.user?.username || "Unknown buyer"}
             </Text>
             {deadline ? `  ·  ${deadline}` : ""}
@@ -89,13 +91,13 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
             isOpen
               ? "bg-primary-muted"
               : isDark
-                ? "bg-[#2f3132]"
-                : "bg-surface"
+                ? "bg-surface-sunken"
+                : "bg-surface-sunken"
           }`}
         >
           <Text
             className={`text-[10px] font-bold uppercase tracking-wider ${
-              isOpen ? "text-primary" : isDark ? "text-[#8f9195]" : "text-tertiary"
+              isOpen ? "text-primary" : "text-text-muted"
             }`}
           >
             {statusLabel}
@@ -106,7 +108,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
       {/* What they want */}
       <Text
         className={`font-bold text-[16px] leading-[21px] ${
-          isDark ? "text-[#f0f1f2]" : "text-black"
+          "text-text-primary"
         }`}
         numberOfLines={1}
       >
@@ -115,7 +117,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
       {req.description ? (
         <Text
           className={`text-[13px] leading-[18px] mt-0.5 ${
-            isDark ? "text-[#8f9195]" : "text-tertiary"
+            "text-text-muted"
           }`}
           numberOfLines={2}
         >
@@ -129,13 +131,13 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
         <View className="flex-row items-baseline">
           <Text
             className={`text-[10px] font-bold uppercase tracking-[1.2px] mr-1.5 ${
-              isDark ? "text-[#8f9195]" : "text-tertiary"
+              "text-text-muted"
             }`}
           >
             Budget
           </Text>
           <Text
-            className={`text-[16px] font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+            className="text-[16px] font-bold text-text-primary"
           >
             ₦{(req.budget ?? 0).toLocaleString()}
           </Text>
@@ -144,7 +146,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
         {!isOwnRequest && onMessagePress ? (
           <TouchableOpacity
             className={`flex-row items-center px-4 h-9 rounded-lg justify-center ${
-              isDark ? "bg-[#f0f1f2]" : "bg-black"
+              "bg-text-primary"
             }`}
             onPress={onMessagePress}
             activeOpacity={0.85}
@@ -153,11 +155,11 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
           >
             <MessageSquare
               size={14}
-              color={isDark ? "#1a1c1d" : "#FFFFFF"}
+              color={t.surfacePage}
               strokeWidth={2.2}
             />
             <Text
-              className={`text-[13px] font-semibold ml-1.5 ${isDark ? "text-[#1a1c1d]" : "text-white"}`}
+              className="text-[13px] font-semibold ml-1.5 text-surface-page"
             >
               Message
             </Text>

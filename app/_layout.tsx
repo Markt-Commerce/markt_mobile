@@ -8,6 +8,7 @@ import { UserProvider, useUser } from "../hooks/userContextProvider";
 import { RegisterProvider } from "../models/signupSteps";
 import { ToastProvider } from "../components/ToastProvider";
 import { ThemeProvider } from "../components/themeProvider";
+import { useTokens } from "../theme/useTokens";
 import { useTheme } from "../components/themeProvider";
 import { useState } from "react";
 import { RegisterRequest } from "../models/auth";
@@ -18,6 +19,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import PaymentDeepLinkHandler from "../components/PaymentDeepLinkHandler";
 import NotificationsBootstrap from "../components/NotificationsBootstrap";
 import { GamificationProvider } from "../hooks/gamificationContext";
+import { CelebrationProvider } from "../hooks/useCelebration";
+import CelebrationOverlay from "../components/gamification/CelebrationOverlay";
 import { CartProvider } from "../hooks/cartContext";
 import { NotificationsProvider } from "../hooks/notificationsContext";
 
@@ -70,19 +73,20 @@ export function AppStack() {
   const { resolvedTheme } = useTheme();
   const isLoggedIn = !!user;
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   if (isRestoringSession) {
     return (
       <View
-        className={`flex-1 items-center justify-center ${isDark ? "bg-dark-page" : "bg-white"}`}
+        className="flex-1 items-center justify-center bg-surface-page"
       >
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
         <ActivityIndicator
           size="large"
-          color={isDark ? "#f5f5f5" : "#000000"}
+          color={t.textPrimary}
         />
         <Text
-          className={`mt-3 text-sm ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+          className="mt-3 text-sm text-text-secondary"
         >
           Loading...
         </Text>
@@ -96,7 +100,7 @@ export function AppStack() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: isDark ? "#0b0b0c" : "#ffffff" },
+        contentStyle: { backgroundColor: t.surfacePage },
       }}
     >
       <Stack.Protected guard={isLoggedIn}>
@@ -120,7 +124,14 @@ export function AppStack() {
     <>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       {isLoggedIn && <PaymentDeepLinkHandler />}
-      <GamificationProvider>{stack}</GamificationProvider>
+      {/* CelebrationProvider wraps GamificationProvider because the latter
+          queues into it. The overlay renders inside the provider and outside
+          the stack, so a celebration survives navigation instead of being
+          unmounted by the screen that triggered it. */}
+      <CelebrationProvider>
+        <GamificationProvider>{stack}</GamificationProvider>
+        <CelebrationOverlay />
+      </CelebrationProvider>
     </>
   );
 }

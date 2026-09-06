@@ -12,7 +12,7 @@ import {
   FileText,
   Percent,
 } from "lucide-react-native";
-import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
 
 type Props = {
   visible: boolean;
@@ -39,30 +39,29 @@ const OptionCard = ({
   subtitle?: string;
   disabled?: boolean;
 }) => {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.7}
-      className={`flex-1 min-w-[100px] max-w-[110px] rounded border p-4 items-center ${isDark ? "bg-dark-elevated border-dark-border-strong" : "bg-white border-border"} ${disabled ? "opacity-50" : ""}`}
+      className={`flex-1 min-w-[100px] max-w-[110px] rounded border p-4 items-center bg-surface-raised border-border ${disabled ? "opacity-50" : ""}`}
     >
       <View
-        className={`w-14 h-14 rounded items-center justify-center mb-3 ${isDark ? "bg-dark-surface" : "bg-surface"}`}
+        className="w-14 h-14 rounded items-center justify-center mb-3 bg-surface-sunken"
       >
-        <Icon size={28} color={isDark ? "#f5f5f5" : "#000000"} />
+        <Icon size={28} color={t.textPrimary} />
       </View>
       <Text
-        className={`font-semibold text-sm ${isDark ? "text-dark-text" : "text-black"}`}
+        className="font-semibold text-sm text-text-primary"
         numberOfLines={1}
       >
         {label}
       </Text>
       {subtitle && (
         <Text
-          className={`text-[11px] mt-0.5 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+          className="text-[11px] mt-0.5 text-text-secondary"
           numberOfLines={1}
         >
           {subtitle}
@@ -86,8 +85,6 @@ export default function ChatAttachmentSheet({
   useEffect(() => {
     if (visible) Keyboard.dismiss();
   }, [visible]);
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
 
   if (!visible) return null;
 
@@ -114,20 +111,20 @@ export default function ChatAttachmentSheet({
         activeOpacity={1}
       />
       <View
-        className={`absolute bottom-0 left-0 right-0 rounded-t shadow-level-2 overflow-hidden ${isDark ? "bg-dark-surface" : "bg-white"}`}
+        className="absolute bottom-0 left-0 right-0 rounded-t shadow-level-2 overflow-hidden bg-surface-raised"
       >
         <View
-          className={`w-10 h-1 rounded self-center mt-3 mb-2 ${isDark ? "bg-dark-border-strong" : "bg-border"}`}
+          className="w-10 h-1 rounded self-center mt-3 mb-2 bg-border-strong"
         />
         <Text
-          className={`font-bold text-lg px-5 mb-4 ${isDark ? "text-dark-text" : "text-black"}`}
+          className="font-bold text-lg px-5 mb-4 text-text-primary"
         >
           Attach
         </Text>
 
         <View className="px-5 pb-6">
           <Text
-            className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+            className="text-xs font-bold uppercase tracking-wider mb-3 text-text-secondary"
           >
             Media
           </Text>
@@ -152,7 +149,7 @@ export default function ChatAttachmentSheet({
           (role === "buyer" && onRequests) ? (
             <>
               <Text
-                className={`text-xs font-bold uppercase tracking-wider mt-5 mb-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                className="text-xs font-bold uppercase tracking-wider mt-5 mb-3 text-text-secondary"
               >
                 {role === "seller" ? "Share" : "More"}
               </Text>
@@ -190,7 +187,7 @@ export default function ChatAttachmentSheet({
             onDiscounts && (
               <>
                 <Text
-                  className={`text-xs font-bold uppercase tracking-wider mt-5 mb-3 ${isDark ? "text-dark-muted" : "text-tertiary"}`}
+                  className="text-xs font-bold uppercase tracking-wider mt-5 mb-3 text-text-secondary"
                 >
                   Offers
                 </Text>
@@ -207,7 +204,7 @@ export default function ChatAttachmentSheet({
             )
           )}
         </View>
-        <View className={`h-6 ${isDark ? "bg-dark-page" : "bg-surface"}`} />
+        <View className="h-6 bg-surface-page" />
       </View>
     </View>
   );

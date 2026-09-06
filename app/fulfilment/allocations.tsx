@@ -22,7 +22,7 @@ import {
   cancelAllocationAfterAccept,
   SellerAllocation,
 } from "../../services/sections/fulfilment";
-import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 
 type RowAction = "accept" | "decline" | "start-preparing" | "cancel";
@@ -36,8 +36,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function SellerAllocationsScreen() {
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
 
   const [items, setItems] = useState<SellerAllocation[] | null>(null);
@@ -101,9 +100,9 @@ export default function SellerAllocationsScreen() {
     );
   };
 
-  const cardClass = `rounded border p-4 ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`;
-  const labelClass = `text-sm ${isDark ? "text-dark-muted" : "text-tertiary"}`;
-  const valueClass = `text-sm ${isDark ? "text-dark-text" : "text-black"}`;
+  const cardClass = `rounded border p-4 bg-surface-raised border-border`;
+  const labelClass = `text-sm text-text-secondary`;
+  const valueClass = `text-sm text-text-primary`;
 
   const ActionButton = ({
     label,
@@ -120,26 +119,26 @@ export default function SellerAllocationsScreen() {
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.85}
-      className={`flex-1 h-9 rounded items-center justify-center ${primary ? "bg-primary" : isDark ? "bg-dark-elevated" : "bg-surface"} ${disabled ? "opacity-50" : ""}`}
+      className={`flex-1 h-9 rounded items-center justify-center ${primary ? "bg-primary-fill" : "bg-surface-sunken"} ${disabled ? "opacity-50" : ""}`}
     >
-      <Text className={`text-xs font-bold ${primary ? "text-white" : isDark ? "text-dark-text" : "text-black"}`}>
+      <Text className={`text-xs font-bold ${primary ? "text-white" : "text-text-primary"}`}>
         {label}
       </Text>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-dark-page" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-page">
       <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
         <TouchableOpacity
           onPress={() => router.back()}
-          className={`h-10 w-10 rounded items-center justify-center border ${isDark ? "bg-dark-surface border-dark-border" : "bg-white border-border"}`}
+          className="h-10 w-10 rounded items-center justify-center border bg-surface-raised border-border"
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={18} color={isDark ? "#f5f5f5" : "#000000"} />
+          <ArrowLeft size={18} color={t.textPrimary} />
         </TouchableOpacity>
-        <Text className={`flex-1 text-center text-lg font-bold -ml-10 ${isDark ? "text-dark-text" : "text-black"}`}>
+        <Text className="flex-1 text-center text-lg font-bold -ml-10 text-text-primary">
           Fulfilment requests
         </Text>
         <View className="w-10" />
@@ -149,24 +148,24 @@ export default function SellerAllocationsScreen() {
         className="flex-1 px-4"
         contentContainerStyle={{ paddingBottom: 20 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={isDark ? "#f5f5f5" : "#000000"} />
+          <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={t.textPrimary} />
         }
       >
         {loading ? (
           <View className="flex-1 justify-center items-center py-16">
-            <ActivityIndicator size="large" color={isDark ? "#f5f5f5" : "#000000"} />
+            <ActivityIndicator size="large" color={t.textPrimary} />
           </View>
         ) : error ? (
           <View className="flex-1 justify-center items-center py-16">
-            <Text className={`font-semibold text-lg text-center ${isDark ? "text-dark-text" : "text-black"}`}>
+            <Text className="font-semibold text-lg text-center text-text-primary">
               Could not load requests
             </Text>
             <Text className={`${labelClass} mt-2 text-center`}>Pull down to try again.</Text>
           </View>
         ) : !items?.length ? (
           <View className="flex-1 justify-center items-center py-16">
-            <Clock size={32} color={isDark ? "#c6c5cf" : "#71717A"} />
-            <Text className={`font-semibold text-lg text-center mt-4 ${isDark ? "text-dark-text" : "text-black"}`}>
+            <Clock size={32} color={t.textSecondary} />
+            <Text className="font-semibold text-lg text-center mt-4 text-text-primary">
               Nothing pending
             </Text>
             <Text className={`${labelClass} mt-2 text-center px-6`}>
@@ -179,7 +178,7 @@ export default function SellerAllocationsScreen() {
             return (
               <View key={a.id} className={`${cardClass} mb-3`}>
                 <View className="flex-row items-center justify-between">
-                  <Text className={`font-bold flex-1 pr-3 ${isDark ? "text-dark-text" : "text-black"}`} numberOfLines={1}>
+                  <Text className="font-bold flex-1 pr-3 text-text-primary" numberOfLines={1}>
                     {a.product_name ?? `Item #${a.order_item_id}`}
                   </Text>
                   <Text className={labelClass}>Qty {a.quantity}</Text>
