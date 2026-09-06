@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getCart, updateCartItem, deleteCartItem, getCartSummary } from "../../services/sections/cart";
@@ -20,6 +20,7 @@ import {
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import ShippingAddressCard from "../../components/shippingAddressCard";
 import logger from "../../utils/logger";
+import { onBadgeChanged } from "../../utils/badgeEvents";
 
 export default function CartScreen() {
   const router = useRouter();
@@ -63,6 +64,12 @@ export default function CartScreen() {
       fetchCart({ silent: true });
     }, [fetchCart])
   );
+
+  // Focus alone is not enough. Paying empties the cart on the server, and the
+  // buyer can be sitting on this screen underneath the checkout stack when it
+  // happens — no focus change, so the emptied cart never arrived and the paid
+  // item stayed on screen until a manual pull-to-refresh.
+  useEffect(() => onBadgeChanged(() => fetchCart({ silent: true })), [fetchCart]);
 
   const onRefresh = () => {
     setRefreshing(true);

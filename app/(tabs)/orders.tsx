@@ -42,6 +42,7 @@ import {
 import { clearIdempotencyKey } from "../../utils/idempotency";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import ShippingAddressCard from "../../components/shippingAddressCard";
+import { isActiveOrder, isPastOrder } from "../../utils/orderStatus";
 
 type TabId = "cart" | "ongoing" | "completed";
 
@@ -310,11 +311,11 @@ function BuyerOrdersTabs({
   const fetchOrders = useCallback(
     async (page: number) => {
       const data = await getBuyerOrders(page, 10);
-      const ongoingStatuses = ["pending_payment", "confirmed", "processing", "shipped"];
-      if (activeTab === "ongoing") {
-        return data.filter((o) => ongoingStatuses.includes((o.status ?? "").toLowerCase()));
-      }
-      return data.filter((o) => ["delivered", "completed"].includes((o.status ?? "").toLowerCase()));
+      // Complementary by construction, so no status can fall through both
+      // tabs -- which is what hid a paid `ready_for_delivery` order.
+      return data.filter((o) =>
+        activeTab === "ongoing" ? isActiveOrder(o.status) : isPastOrder(o.status)
+      );
     },
     [activeTab]
   );
