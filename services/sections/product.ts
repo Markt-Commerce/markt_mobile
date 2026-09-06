@@ -1,6 +1,7 @@
 // /services/productService.ts
 import { request, BASE_URL } from "../api";
-import { CreateProductRequest, ProductResponse, Product, ProductDetail } from "../../models/products";
+import { CreateProductRequest, UpdateProductRequest, ProductResponse, Product, ProductDetail } from "../../models/products";
+import { emitBadgeChanged } from "../../utils/badgeEvents";
 import { ApiResponse } from "../../models/auth";
 
 /**
@@ -14,6 +15,28 @@ export async function createProduct(payload: CreateProductRequest): Promise<Prod
     body: JSON.stringify(payload),
   });
   console.log("createProduct response:", res);
+  return (res as any).data ?? (res as any);
+}
+
+/**
+ * Update a product (owner only) — PUT /products/<id>.
+ *
+ * The backend has supported this since products existed; the app only ever
+ * called createProduct and deleteProduct, so a seller whose price changed had
+ * to delete the listing and rebuild it, losing its reviews and view count.
+ *
+ * Partial by design: the inventory screen edits price, stock and status, and
+ * sending only those leaves images, variants and categories untouched.
+ */
+export async function updateProduct(
+  productId: string,
+  payload: UpdateProductRequest
+): Promise<ProductResponse> {
+  const res = await request<ApiResponse<ProductResponse>>(
+    `${BASE_URL}/products/${productId}`,
+    { method: "PUT", body: JSON.stringify(payload) }
+  );
+  emitBadgeChanged();
   return (res as any).data ?? (res as any);
 }
 

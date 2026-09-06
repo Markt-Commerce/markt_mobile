@@ -3,7 +3,7 @@ import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'expo-router';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, Dimensions, Animated, Easing, FlatList, RefreshControl } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { Search, ArrowBigDown as CaretDown, AlertTriangle, ChevronRight } from 'lucide-react-native';
+import { Search, ChevronDown, AlertTriangle, ChevronRight, Pencil, Trash2 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSellerAnalyticsOverview, getSellerAnalyticsTimeseries } from '../../services/sections/analytics';
 import { getMyProducts } from '../../services/sections/product';
@@ -25,6 +25,12 @@ import StartCards from '../../components/startCards';
 import { useTheme } from '../../components/themeProvider';
 import { useTokens } from '../../theme/useTokens';
 import { TONE_BG, TONE_TEXT } from "../../theme/tone";
+import InventoryEditSheet from "../../components/InventoryEditSheet";
+import { formatPrice } from "../../utils/money";
+
+// The line between 'fine' and 'running out'. Shared by the Low filter and
+// the per-row chip so the two can never disagree.
+const LOW_STOCK_THRESHOLD = 5;
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -48,10 +54,11 @@ export default function SellerDashboard() {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [windowDays, setWindowDays] = useState<7 | 30 | 90>(30);
-  // Inventory filter: 'all' | 'low' (stock < 5) | product status. 'Status' chip
+  // Inventory filter: 'all' | 'low' (below LOW_STOCK_THRESHOLD) | product status. 'Status' chip
   // opens a small menu to pick active/inactive.
   const [invFilter, setInvFilter] = useState<'all' | 'low' | 'active' | 'inactive'>('all');
   const [statusMenuVisible, setStatusMenuVisible] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
   // Bottom sheet ref for product creation
   const productFormRef = useRef<BottomSheet>(null);
@@ -141,7 +148,7 @@ export default function SellerDashboard() {
     const t = setTimeout(() => {
       let list = sellerInventory;
       if (invFilter === 'low') {
-        list = list.filter((p: any) => (p.stock ?? 0) < 5);
+        list = list.filter((p: any) => (p.stock ?? 0) < LOW_STOCK_THRESHOLD);
       } else if (invFilter === 'active') {
         list = list.filter((p: any) => p.status === 'active');
       } else if (invFilter === 'inactive') {
@@ -336,23 +343,70 @@ export default function SellerDashboard() {
     </TouchableOpacity>
   );
 
-  const renderProductItem = ({ item }: { item: any }) => (
-    <View className="flex-row items-center justify-between px-4 py-4 border-b border-border-strong">
-      <View className="flex-1 pr-3">
-        <Text className="font-bold text-base text-text-primary" numberOfLines={1}>{item.name}</Text>
-        <Text className="text-xs mt-1 text-text-secondary">Status: {item.status}</Text>
-        <Text className="text-xs text-text-secondary">Price: {formatCurrency(item.price)}, Stock: {item.stock}</Text>
-      </View>
+  // A row the width of the screen was carrying "Status: active" and
+  // "Price: X, Stock: Y" as label:value prose, with no product image and one
+  // action. Inventory is scanned, so the things a seller scans for -- is it
+  // live, is it running out, what does it cost -- are now chips and a
+  // thumbnail, and the row itself opens the editor.
+  const renderProductItem = ({ item }: { item: any }) => {
+    const stock = Number(item.stock ?? 0);
+    const isLive = (item.status ?? 'active') === 'active';
+    const out = stock <= 0;
+    const low = !out && stock < LOW_STOCK_THRESHOLD;
+    const thumb = item.images?.[0]?.media?.original_url;
 
+    return (
       <TouchableOpacity
-        accessibilityLabel={`delete-${item.id || item.name}`}
-        onPress={() => handleDeleteProduct(item.id)}
-        className="rounded px-4 h-9 items-center justify-center border bg-surface-sunken border-border"
+        activeOpacity={0.7}
+        onPress={() => setEditingProduct(item)}
+        accessibilityRole="button"
+        accessibilityLabel={`Edit ${item.name}. ${formatPrice(item.price)}, ${stock} in stock, ${isLive ? 'listed' : 'hidden'}.`}
+        className="flex-row items-center gap-3 px-4 py-3 border-b border-border"
       >
-        <Text className="text-danger-text font-bold text-xs">Delete</Text>
+        {thumb ? (
+          <Image source={{ uri: thumb }} className="w-12 h-12 rounded bg-media" />
+        ) : (
+          <View className="w-12 h-12 rounded bg-media" />
+        )}
+
+        <View className="flex-1 min-w-0">
+          <Text className="font-semibold text-[15px] text-text-primary" numberOfLines={1}>
+            {item.name}
+          </Text>
+          <View className="flex-row items-center gap-2 mt-1">
+            <Text className="text-sm font-bold text-text-primary">
+              {formatPrice(item.price)}
+            </Text>
+            <View className={`px-2 py-0.5 rounded-full ${out ? 'bg-danger-muted' : low ? 'bg-warning-muted' : 'bg-surface-sunken'}`}>
+              <Text className={`text-[11px] font-semibold ${out ? 'text-danger-text' : low ? 'text-warning-text' : 'text-text-secondary'}`}>
+                {out ? 'Out of stock' : `${stock} in stock`}
+              </Text>
+            </View>
+            {!isLive ? (
+              <View className="px-2 py-0.5 rounded-full bg-surface-sunken">
+                <Text className="text-[11px] font-semibold text-text-muted">Hidden</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+
+        <View className="flex-row items-center gap-1">
+          <View className="w-9 h-9 items-center justify-center" accessibilityElementsHidden>
+            <Pencil size={17} color={t.textSecondary} />
+          </View>
+          <TouchableOpacity
+            accessibilityLabel={`delete-${item.id || item.name}`}
+            accessibilityRole="button"
+            onPress={() => handleDeleteProduct(item.id)}
+            hitSlop={8}
+            className="w-9 h-9 items-center justify-center"
+          >
+            <Trash2 size={17} color={t.dangerText} />
+          </TouchableOpacity>
+        </View>
       </TouchableOpacity>
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
@@ -632,7 +686,7 @@ export default function SellerDashboard() {
                   <Text className={`font-bold text-sm capitalize ${(invFilter === 'active' || invFilter === 'inactive') ? "text-white" : ("text-text-primary")}`}>
                     {invFilter === 'active' || invFilter === 'inactive' ? invFilter : 'Status'}
                   </Text>
-                  <CaretDown size={16} color={(invFilter === 'active' || invFilter === 'inactive') ? t.textOnPrimary : (t.textPrimary)} />
+                  <ChevronDown size={18} color={(invFilter === 'active' || invFilter === 'inactive') ? t.textOnPrimary : (t.textPrimary)} />
                 </TouchableOpacity>
                 {statusMenuVisible && (
                   <View className="absolute top-11 left-0 z-10 rounded border overflow-hidden min-w-[130px] bg-surface-raised border-border">
@@ -687,6 +741,18 @@ export default function SellerDashboard() {
 
       <ProductFormBottomSheet ref={productFormRef} />
       <CreateNicheBottomSheet ref={nicheFormRef} />
+      <InventoryEditSheet
+        product={editingProduct}
+        visible={editingProduct != null}
+        onClose={() => setEditingProduct(null)}
+        onSaved={(updated) => {
+          // Patch in place rather than refetching the whole dashboard: the
+          // seller is looking at this row and expects it to change now.
+          setSellerInventory((prev: any[]) =>
+            prev.map((p) => (p.id === updated.id ? { ...p, ...updated } : p))
+          );
+        }}
+      />
     </SafeAreaView>
   );
 }
