@@ -20,6 +20,7 @@ import { useGamificationLookup } from "../hooks/useGamificationLookup";
 import TierBadge from "./gamification/TierBadge";
 import BadgeChip from "./gamification/BadgeChip";
 import { useTokens } from "../theme/useTokens";
+import { formatPrice } from "../utils/money";
 
 interface Props {
   product: FeedProduct;
@@ -184,7 +185,7 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
                 </View>
               )}
               <View className="absolute left-3 bottom-3 rounded-full bg-primary-fill px-3 py-1.5">
-                <Text className="text-sm font-bold text-white">₦{product.price.toLocaleString()}</Text>
+                <Text className="text-sm font-bold text-text-on-primary">{formatPrice(product.price)}</Text>
               </View>
             </View>
           </Pressable>
