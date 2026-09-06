@@ -19,20 +19,9 @@ import { getRooms } from "../../services/sections/chat";
 import type { RoomListResponse } from "../../models/chat";
 import Avatar from "../../components/Avatar";
 import { useTokens } from "../../theme/useTokens";
-
-function formatTimeAgo(iso: string) {
-  const d = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-  if (diffMins < 1) return "Now";
-  if (diffMins < 60) return `${diffMins}m`;
-  if (diffHours < 24) return `${diffHours}h`;
-  if (diffDays < 7) return `${diffDays}d`;
-  return d.toLocaleDateString([], { month: "short", day: "numeric" });
-}
+// develop extracted this into a shared util; the local copy here was
+// byte-identical, so take the shared one.
+import { formatTimeAgo } from "../../utils/formatTimeAgo";
 
 function lastMessagePreview(lastMessage: { content?: string; message_type?: string } | undefined): string {
   if (!lastMessage) return "No messages yet";

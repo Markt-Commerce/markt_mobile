@@ -20,6 +20,7 @@ import { useUser } from "../hooks/userContextProvider";
 import { markAppOpened } from "../services/notificationState";
 import { notificationsEnabled } from "../services/notificationSupport";
 import { resolveNotificationRoute } from "../utils/notificationDeepLink";
+import { emitNotificationsChanged } from "../utils/notificationEvents";
 import logger from "../utils/logger";
 
 export default function NotificationsBootstrap() {
@@ -42,6 +43,7 @@ export default function NotificationsBootstrap() {
     }
 
     let responseSub: EventSubscription | undefined;
+    let receivedSub: EventSubscription | undefined;
     let cancelled = false;
 
     (async () => {
@@ -61,6 +63,13 @@ export default function NotificationsBootstrap() {
         await registerBackgroundReminders();
 
         if (cancelled) return;
+
+        // A push arriving while the app is foregrounded still means a new,
+        // unread row exists server-side -- bump the bell badge without
+        // waiting for the user to reopen the Alerts screen.
+        receivedSub = Notifications.addNotificationReceivedListener(() => {
+          emitNotificationsChanged();
+        });
 
         responseSub = Notifications.addNotificationResponseReceivedListener(
           (response) => {
@@ -84,6 +93,7 @@ export default function NotificationsBootstrap() {
     return () => {
       cancelled = true;
       responseSub?.remove();
+      receivedSub?.remove();
       appStateSub.remove();
     };
   }, [enabled]);

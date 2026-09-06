@@ -13,6 +13,7 @@ import { useRouter } from "expo-router";
 import Avatar from "./Avatar";
 import { useDrawer } from "../hooks/drawerContext";
 import { useTokens } from "../theme/useTokens";
+import { useNotificationsBadge } from "../hooks/notificationsContext";
 
 interface AppBarProps {
   title?: string;
@@ -32,6 +33,7 @@ export default function AppBar({
   const { openDrawer } = useDrawer();
   const router = useRouter();
   const t = useTokens();
+  const { unreadCount } = useNotificationsBadge();
 
   return (
     <View className="flex-row items-center justify-between px-4 py-2 border-b bg-surface-raised border-border">
@@ -60,9 +62,27 @@ export default function AppBar({
             className="p-1 -mr-1"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
-            accessibilityLabel="Notifications"
+            accessibilityLabel={
+              unreadCount > 0
+                ? `Notifications, ${unreadCount} unread`
+                : "Notifications"
+            }
           >
-            <Bell size={22} color={t.textPrimary} strokeWidth={1.75} />
+            <View>
+              <Bell size={22} color={t.textPrimary} strokeWidth={1.75} />
+              {unreadCount > 0 && (
+                // primary-fill, not primary: the badge carries a label, and
+                // white on the brand swatch is 2.59:1 in dark. The border is
+                // the bar behind it, so the badge reads as punched out of it.
+                <View
+                  className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full items-center justify-center bg-primary-fill border border-surface-page"
+                >
+                  <Text className="text-[9px] font-bold text-text-on-primary">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
           </TouchableOpacity>
         ) : (
           <View className="w-10" />
