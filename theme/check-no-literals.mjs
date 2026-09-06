@@ -93,6 +93,16 @@ const BLIND_RE = new RegExp(
  * call must be its own `const x = useTokens();` statement. `tokensFor()` is a
  * plain function, not a hook, and is unrestricted.
  */
+/**
+ * react-native's own SafeAreaView is iOS-only and has no NativeWind mapping,
+ * so a `className` on it is silently dropped — the search screen's
+ * `bg-surface-page` did nothing and the navigator's light background showed
+ * through in dark mode. Every other screen imports it from
+ * react-native-safe-area-context.
+ */
+const RN_SAFE_AREA =
+  /import\s*\{[^}]*\bSafeAreaView\b[^}]*\}\s*from\s*["']react-native["']/s;
+
 const HOOK_CALL = /useTokens\s*\(/;
 const HOOK_BINDING = /^\s*const\s+\w+\s*=\s*useTokens\(\);?\s*$/;
 
@@ -124,6 +134,15 @@ for (const dir of DIRS) {
     const rel = relative(ROOT, file);
     const allowed = (ALLOWED[rel] ?? []).map((c) => c.toLowerCase());
     const src = readFileSync(file, "utf8");
+
+    if (RN_SAFE_AREA.test(src)) {
+      console.error(`${rel}: imports SafeAreaView from "react-native"`);
+      console.error(
+        '    it has no NativeWind mapping, so className is ignored — import it' +
+          ' from "react-native-safe-area-context"'
+      );
+      failures++;
+    }
 
     let inBlockComment = false;
     src.split("\n").forEach((line, i) => {

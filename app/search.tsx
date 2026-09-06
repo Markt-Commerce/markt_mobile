@@ -7,9 +7,13 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
-  SafeAreaView,
   ActivityIndicator,
 } from "react-native";
+// react-native's own SafeAreaView is iOS-only and has no NativeWind mapping,
+// so `className` on it does nothing -- this screen's `bg-surface-page` was
+// silently dropped and the navigator's default light background showed
+// through below the header. Every other screen already uses this one.
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Search, ChevronRight, ChevronLeft, Megaphone } from "lucide-react-native";
 import { Link } from "expo-router";
 import { debounce } from "lodash";
