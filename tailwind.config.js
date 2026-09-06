@@ -2,7 +2,14 @@
 
 module.exports = {
   darkMode: "class",
-  content: ["./components/**/*.{js,jsx,ts,tsx}", "./app/**/*.{js,jsx,ts,tsx}"],
+  // theme/ is scanned too: theme/tone.ts maps order statuses to chip classes,
+  // and without it Tailwind never saw `text-warning-text`, so the "attention"
+  // status chip rendered with no text colour at all.
+  content: [
+    "./components/**/*.{js,jsx,ts,tsx}",
+    "./app/**/*.{js,jsx,ts,tsx}",
+    "./theme/**/*.{js,jsx,ts,tsx}",
+  ],
   presets: [require("nativewind/preset")],
   theme: {
     extend: {

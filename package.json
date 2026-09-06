@@ -11,7 +11,8 @@
     "theme:contrast": "node theme/verify-contrast.mjs",
     "theme:lint": "node theme/check-no-literals.mjs",
     "theme:css": "node theme/generate-css.mjs",
-    "check": "npm run typecheck && npm run theme:contrast && npm run theme:lint"
+    "check": "npm run typecheck && npm run theme:contrast && npm run theme:lint && npm run theme:runtime",
+    "theme:runtime": "node theme/verify-runtime-vars.mjs"
   },
   "private": true,
   "dependencies": {

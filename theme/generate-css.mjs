@@ -30,13 +30,36 @@ const kebab = (s) => s.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 const light = parseTheme("lightTokens");
 const dark = parseTheme("darkTokens");
 
-const declare = (tokens) =>
+const declare = (tokens, indent = "  ") =>
   Object.entries(tokens)
-    .map(([k, v]) => `  --c-${kebab(k)}: ${v};`)
+    .map(([k, v]) => `${indent}--c-${kebab(k)}: ${v};`)
     .join("\n");
 
-// Outside @layer base on purpose: a `.dark` rule inside the base layer is
-// dropped by Tailwind's build. Verified, not assumed.
+// Two constraints, both learned the hard way:
+//
+// 1. The rule must live OUTSIDE @layer base. Inside it, Tailwind's build drops
+//    it and the file silently emits light values only.
+//
+// 2. The dark block must be `:root` inside `@media (prefers-color-scheme:
+//    dark)`. Neither `.dark` nor `.dark:root` works, despite
+//    `darkMode: "class"` in the Tailwind config.
+//
+//    react-native-css-interop only treats a class-based dark selector as root
+//    variables when its own `options.darkMode.type === "class"` -- and
+//    NativeWind's metro transform never sets that option (see
+//    nativewind/dist/metro/common.js, which passes only
+//    ignorePropertyWarningRegex and grouping). So it stays at the default
+//    `{ type: "media" }` and the class branch is unreachable. A `.dark`
+//    rule compiles to an ordinary class rule instead, applying only to
+//    elements literally carrying className="dark" -- nothing.
+//
+//    Measured by running the real compiler over both variants:
+//      .dark:root   -> --c-surface-page {"light":"#ffffff"}
+//      media query  -> --c-surface-page {"light":"#ffffff","dark":"#0e0f11"}
+//
+//    In React Native the media query is evaluated against NativeWind's own
+//    colour-scheme state, which themeProvider drives via setColorScheme, so
+//    the manual light/dark/system toggle still works.
 const css = `@tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -48,8 +71,10 @@ const css = `@tailwind base;
 ${declare(light)}
 }
 
-.dark {
-${declare(dark)}
+@media (prefers-color-scheme: dark) {
+  :root {
+${declare(dark, "    ")}
+  }
 }
 `;
 

@@ -37,6 +37,13 @@ jobs:
       - name: Theme tokens
         run: npm run theme:lint
 
+      # The check the others could not do: compiles global.css the way metro
+      # does and asserts every token reaches the app with BOTH a light and a
+      # dark value. Dark mode shipped broken once with all other checks green,
+      # because the CSS text was right and only the runtime mapping was wrong.
+      - name: Theme reaches the runtime
+        run: npm run theme:runtime
+
       # global.css and theme/colors.generated.js are derived from
       # theme/tokens.ts and committed. If regenerating changes them, the
       # committed copies are stale and the two themes have drifted apart.
