@@ -19,6 +19,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import PaymentDeepLinkHandler from "../components/PaymentDeepLinkHandler";
 import NotificationsBootstrap from "../components/NotificationsBootstrap";
 import { GamificationProvider } from "../hooks/gamificationContext";
+import { CelebrationProvider } from "../hooks/useCelebration";
+import CelebrationOverlay from "../components/gamification/CelebrationOverlay";
 import { CartProvider } from "../hooks/cartContext";
 
 // Single app-wide query client. Created once at module scope so it survives
@@ -119,7 +121,14 @@ export function AppStack() {
     <>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       {isLoggedIn && <PaymentDeepLinkHandler />}
-      <GamificationProvider>{stack}</GamificationProvider>
+      {/* CelebrationProvider wraps GamificationProvider because the latter
+          queues into it. The overlay renders inside the provider and outside
+          the stack, so a celebration survives navigation instead of being
+          unmounted by the screen that triggered it. */}
+      <CelebrationProvider>
+        <GamificationProvider>{stack}</GamificationProvider>
+        <CelebrationOverlay />
+      </CelebrationProvider>
     </>
   );
 }

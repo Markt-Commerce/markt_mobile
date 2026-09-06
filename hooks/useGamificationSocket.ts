@@ -5,12 +5,14 @@ import type {
   PointsAwardedEvent,
   BadgeEarnedEvent,
   TierChangedEvent,
+  StreakAdvancedEvent,
 } from "../types/gamification";
 
 export interface GamificationSocketHandlers {
   onPoints?: (e: PointsAwardedEvent) => void;
   onBadge?: (e: BadgeEarnedEvent) => void;
   onTier?: (e: TierChangedEvent) => void;
+  onStreak?: (e: StreakAdvancedEvent) => void;
 }
 
 /**
@@ -32,6 +34,7 @@ export function useGamificationSocket(handlers: GamificationSocketHandlers) {
       gamificationSocket.onPoints((e) => ref.current.onPoints?.(e)),
       gamificationSocket.onBadge((e) => ref.current.onBadge?.(e)),
       gamificationSocket.onTier((e) => ref.current.onTier?.(e)),
+      gamificationSocket.onStreak((e) => ref.current.onStreak?.(e)),
     ];
     return () => offs.forEach((off) => off());
   }, [user?.user_id]);

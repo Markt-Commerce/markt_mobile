@@ -13,6 +13,7 @@ import type {
   LeaderboardScope,
   LeaderboardPeriod,
   TierConfig,
+  UnseenAchievements,
 } from "../../types/gamification";
 
 /** GET /gamification/me — current user's stats, tier, badge count, weekly rank. */
@@ -90,4 +91,35 @@ export async function updateGamificationPreferences(data: {
     `${BASE_URL}/gamification/me/preferences`,
     { method: "PATCH", body: JSON.stringify(data) }
   );
+}
+
+/**
+ * What the user has earned but never been shown.
+ *
+ * A socket event only reaches an app that is running and foregrounded, so a
+ * badge earned while the app was closed would otherwise never be celebrated.
+ * The server holds the acknowledgement; this is the app asking, on open, what
+ * it still owes the user.
+ */
+export async function getUnseenAchievements(): Promise<UnseenAchievements> {
+  return request<UnseenAchievements>(
+    `${BASE_URL}/gamification/me/achievements/unseen`,
+    { method: "GET" }
+  );
+}
+
+/**
+ * Acknowledge celebrations that have actually been shown.
+ *
+ * Called after the animation, not before: if the app dies mid-celebration the
+ * user sees it again, which is the right way round.
+ */
+export async function markAchievementsSeen(payload: {
+  badge_slugs?: string[];
+  tier?: string;
+}): Promise<{ badges_marked: number; tier_marked: boolean }> {
+  return request(`${BASE_URL}/gamification/me/achievements/seen`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }

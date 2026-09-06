@@ -12,6 +12,7 @@ import type {
   PointsAwardedEvent,
   BadgeEarnedEvent,
   TierChangedEvent,
+  StreakAdvancedEvent,
 } from "../types/gamification";
 
 const NAMESPACE_URL = `${SOCKET_BASE_URL}/notification`;
@@ -24,6 +25,7 @@ class GamificationSocket {
   private pointsListeners = new Set<Listener<PointsAwardedEvent>>();
   private badgeListeners = new Set<Listener<BadgeEarnedEvent>>();
   private tierListeners = new Set<Listener<TierChangedEvent>>();
+  private streakListeners = new Set<Listener<StreakAdvancedEvent>>();
 
   async connect(userId: string) {
     this.userId = userId;
@@ -54,6 +56,9 @@ class GamificationSocket {
     this.socket.on("gamification:tier_changed", (d: TierChangedEvent) =>
       this.tierListeners.forEach((fn) => fn(d))
     );
+    this.socket.on("gamification:streak_advanced", (d: StreakAdvancedEvent) =>
+      this.streakListeners.forEach((fn) => fn(d))
+    );
     this.socket.on("connect_error", (e) =>
       logger.error("gamification socket connect_error:", e?.message ?? e)
     );
@@ -82,6 +87,10 @@ class GamificationSocket {
   onTier(cb: Listener<TierChangedEvent>) {
     this.tierListeners.add(cb);
     return () => this.tierListeners.delete(cb);
+  }
+  onStreak(cb: Listener<StreakAdvancedEvent>) {
+    this.streakListeners.add(cb);
+    return () => this.streakListeners.delete(cb);
   }
 }
 
