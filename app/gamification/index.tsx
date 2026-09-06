@@ -22,6 +22,8 @@ import BadgeGrid from "../../components/gamification/BadgeGrid";
 import LeaderboardRow from "../../components/gamification/LeaderboardRow";
 import { reasonLabel } from "../../utils/gamification";
 import type { PointsHistoryItem, LeaderboardRow as LBRow } from "../../types/gamification";
+import CountUp from "../../components/gamification/CountUp";
+import StreakCard from "../../components/gamification/StreakCard";
 
 export default function GamificationScreen() {
   const router = useRouter();
@@ -131,13 +133,14 @@ export default function GamificationScreen() {
                   size="lg"
                   showName
                 />
-                <Text
-                  className={`font-bold text-[40px] mt-4 ${
-                    "text-text-primary"
-                  }`}
-                >
-                  {data.lifetime_points.toLocaleString()}
-                </Text>
+                {/* Counts to the new total rather than swapping to it. Points
+                    are the most frequent reward in the app and were the least
+                    felt: the number simply differed between renders. */}
+                <CountUp
+                  value={data.lifetime_points}
+                  hapticOnChange
+                  className="font-bold text-[40px] mt-4 text-text-primary"
+                />
                 <Text
                   className={`text-xs -mt-1 mb-4 ${
                     "text-text-secondary"
@@ -153,6 +156,15 @@ export default function GamificationScreen() {
                 />
               </View>
             </View>
+
+            {/* Streak. Rendered only when the server sends it, so an older
+                deployment simply shows nothing rather than a zero that looks
+                like a lost streak. */}
+            {data.streak ? (
+              <View className="px-6 pt-4">
+                <StreakCard streak={data.streak} />
+              </View>
+            ) : null}
 
             {/* Quick stats */}
             <View className="flex-row gap-3 px-6 pt-4">
@@ -247,10 +259,11 @@ export default function GamificationScreen() {
                   Leaderboard is warming up.
                 </Text>
               ) : (
-                preview.map((row) => (
+                preview.map((row, index) => (
                   <LeaderboardRow
                     key={row.user_id}
                     row={row}
+                    index={index}
                     isCurrentUser={row.user_id === user?.user_id}
                   />
                 ))

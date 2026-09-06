@@ -1,4 +1,11 @@
-import React from "react";
+import React, { useEffect } from "react";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSpring,
+} from "react-native-reanimated";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { View, Text, Image } from "react-native";
 import TierBadge from "./TierBadge";
 import type { LeaderboardRow as Row, TierKey } from "../../types/gamification";
@@ -6,6 +13,8 @@ import type { LeaderboardRow as Row, TierKey } from "../../types/gamification";
 export interface LeaderboardRowProps {
   row: Row;
   isCurrentUser?: boolean;
+  /** Position in the list, for the staggered entrance. */
+  index?: number;
   className?: string;
 }
 
@@ -29,13 +38,37 @@ function podium(rank: number): [string, string] | null {
 export default function LeaderboardRow({
   row,
   isCurrentUser = false,
+  index = 0,
   className = "",
 }: LeaderboardRowProps) {
   const name = row.username ?? "User";
   const podiumColors = podium(row.rank);
+  const reduced = useReducedMotion();
+
+  // Rows settle in sequence rather than appearing all at once, so the board
+  // reads as being placed. Capped at 12 so a long list does not turn into a
+  // slow reveal the user has to wait out -- everything past the first screenful
+  // lands immediately.
+  const enter = useSharedValue(reduced ? 1 : 0);
+  useEffect(() => {
+    if (reduced) {
+      enter.value = 1;
+      return;
+    }
+    enter.value = withDelay(
+      Math.min(index, 12) * 35,
+      withSpring(1, { damping: 18, stiffness: 170, mass: 0.7 })
+    );
+  }, [index, reduced, enter]);
+
+  const enterStyle = useAnimatedStyle(() => ({
+    opacity: enter.value,
+    transform: [{ translateY: (1 - enter.value) * 14 }],
+  }));
 
   return (
-    <View
+    <Animated.View
+      style={enterStyle}
       accessibilityLabel={`Rank ${row.rank}, ${name}, ${row.points} points`}
       className={`flex-row items-center px-4 py-3 border-b ${
         "border-border"
@@ -118,6 +151,6 @@ export default function LeaderboardRow({
           pts
         </Text>
       </View>
-    </View>
+    </Animated.View>
   );
 }

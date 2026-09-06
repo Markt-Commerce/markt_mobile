@@ -171,8 +171,12 @@ export default function LeaderboardScreen() {
       <FlatList
         data={rows}
         keyExtractor={(r) => r.user_id}
-        renderItem={({ item }) => (
-          <LeaderboardRow row={item} isCurrentUser={item.user_id === user?.user_id} />
+        renderItem={({ item, index }) => (
+          <LeaderboardRow
+            row={item}
+            index={index}
+            isCurrentUser={item.user_id === user?.user_id}
+          />
         )}
         contentContainerStyle={{ paddingTop: 12, paddingBottom: 40 }}
         onEndReached={() => hasMore && loadMore()}
