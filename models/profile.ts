@@ -88,4 +88,15 @@ export interface UpdateSellerProfileRequest {
   policies?: SellerPolicies;
   category_ids?: number[];
   shop_name?: string;
+
+  /**
+   * Where the shop is. This is what the proximity feed ranks against — without
+   * it a seller is unlocated and only ever appears on the nationwide rung.
+   *
+   * Sent as a pair or not at all; the backend refuses a lone coordinate, and
+   * refuses (0, 0) since that is what a failed geocode looks like.
+   */
+  shop_latitude?: number;
+  shop_longitude?: number;
+  shop_address?: Record<string, unknown>;
 }

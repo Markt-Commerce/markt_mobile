@@ -1,9 +1,14 @@
-import React, { useState } from "react";
-import { Text, View, Pressable, TextInput, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import React, { useCallback, useState } from "react";
+import { ActivityIndicator, Text, View, Pressable, TextInput, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useTokens } from "../../theme/useTokens";
 import { SuccessMark } from "../../components/illustrations/MarktIllustration";
+import * as Location from "expo-location";
+import { MapPin } from "lucide-react-native";
+import { updateSellerProfile } from "../../services/sections/profile";
+import * as haptics from "../../utils/haptics";
+import { logger } from "../../utils/logger";
 
 /**
  * The two things a shop cannot open without.
@@ -21,9 +26,68 @@ export default function ShopBasics() {
   const router = useRouter();
   const t = useTokens();
   const [shopName, setShopName] = useState("");
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locationLabel, setLocationLabel] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const valid = shopName.trim().length >= 2;
 
-  const finish = () => {
+  /**
+   * Where the shop is.
+   *
+   * Asked here rather than later because it is what makes the seller findable:
+   * an unlocated shop only ever appears on the feed's nationwide rung, so a new
+   * seller with no coordinate is effectively invisible to the buyers standing
+   * closest to them.
+   */
+  const locate = useCallback(async () => {
+    setLocating(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setLocationLabel(null);
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      setCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+      haptics.tick();
+
+      try {
+        const [addr] = await Location.reverseGeocodeAsync(pos.coords);
+        setLocationLabel(
+          [addr?.city ?? addr?.subregion, addr?.region].filter(Boolean).join(", ") ||
+            "Location set"
+        );
+      } catch {
+        setLocationLabel("Location set");
+      }
+    } catch {
+      setLocationLabel(null);
+    } finally {
+      setLocating(false);
+    }
+  }, []);
+
+  const finish = async () => {
+    if (saving) return;
+    setSaving(true);
+    haptics.celebrate();
+
+    try {
+      await updateSellerProfile({
+        ...(shopName.trim() ? { shop_name: shopName.trim() } : {}),
+        // Only as a pair — the backend refuses a lone coordinate anyway, and
+        // sending one would be a round trip that can only fail.
+        ...(coords ? { shop_latitude: coords.latitude, shop_longitude: coords.longitude } : {}),
+      });
+    } catch (e) {
+      // Best-effort: a failed write must not strand a seller on the last step
+      // of signup. Both values are editable from the dashboard.
+      logger.warn("onboarding: could not save shop details", e);
+    }
+
     // replace, so the onboarding stack is gone for good.
     router.replace("/(tabs)");
   };
@@ -57,6 +121,38 @@ export default function ShopBasics() {
             accessibilityLabel="Shop name"
             className="h-14 mt-8 px-4 rounded border border-border-strong bg-surface-sunken text-[17px] text-text-primary"
           />
+
+          {/* The location ask, in the same breath as the name. */}
+          <Pressable
+            onPress={locate}
+            disabled={locating}
+            accessibilityRole="button"
+            accessibilityLabel={
+              coords ? `Shop location set to ${locationLabel}. Change` : "Set shop location"
+            }
+            className="flex-row items-center gap-3 mt-4 h-14 px-4 rounded-xl bg-surface-sunken"
+          >
+            {locating ? (
+              <ActivityIndicator size="small" color={t.primaryText} />
+            ) : (
+              <MapPin size={19} color={coords ? t.primaryText : t.textSecondary} strokeWidth={2} />
+            )}
+            <View className="flex-1">
+              <Text
+                className={`text-[15px] ${coords ? "font-semibold text-text-primary" : "text-text-secondary"}`}
+                numberOfLines={1}
+              >
+                {locating
+                  ? "Finding your shop…"
+                  : (locationLabel ?? "Set your shop location")}
+              </Text>
+              {coords ? (
+                <Text className="text-[12px] text-text-muted mt-0.5">
+                  Buyers nearby will see you first
+                </Text>
+              ) : null}
+            </View>
+          </Pressable>
 
           <Text className="text-[13px] mt-4 leading-5 text-text-muted">
             You'll add your first product, categories and payout details from

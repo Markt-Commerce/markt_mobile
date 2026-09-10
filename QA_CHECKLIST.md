@@ -77,9 +77,16 @@ The original bug: Street and City both showed "Lagelu".
 - [ ] Set an area with nothing at all → **nationwide results, never empty**
 - [ ] A distant result is never presented as though it were nearby
 
-> **Needs data.** No seller currently has a shop location, so the feed serves
-> the nationwide rung until seller onboarding captures one. To test properly,
-> set `shop_latitude`/`shop_longitude` on a seller near your test area.
+### Seller shop location *(what gives the feed data)*
+- [ ] Sign up as a **seller** → "Set your shop location" on the shop screen
+- [ ] Tap it → permission prompt → the area name appears
+- [ ] Deny permission → no crash, shop still creatable without a location
+- [ ] Finish → check `sellers.shop_latitude` is set for that account
+- [ ] As a **buyer** near that shop → its products rank **nearby** with a distance
+- [ ] Switch the browse area far away → the same products drop to a wider rung
+
+> Before this, no seller could have a location at all — the columns existed but
+> nothing wrote them — so the feed always served the nationwide rung.
 
 ## 6. Social sign-in *(dev build only)*
 
@@ -105,6 +112,5 @@ The original bug: Street and City both showed "Lagelu".
 
 - **Map-first picker not built** — needs a Maps key (see `SETUP_MAPS.md`).
   Current picker: use-my-location + an area list.
-- **No seller shop locations** — the geo path is inert until captured.
 - **Nothing device-tested by me.** Everything above is verified by types, the
   theme checks, unit tests and HTTP-level runs against the real database.
