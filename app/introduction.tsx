@@ -7,6 +7,7 @@ import SocialAuthButtons from "../components/auth/SocialAuthButtons";
 import { useSocialAuth, useAppleAuthAvailable } from "../hooks/useSocialAuth";
 import { useTokens } from "../theme/useTokens";
 import { useUser } from "../hooks/userContextProvider";
+import { MarketHero } from "../components/illustrations/MarktIllustration";
 
 /**
  * The first screen. Replaces `introduction` as the logged-out entry point.
@@ -66,7 +67,10 @@ export default function Welcome() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View className="px-6 pt-16">
+        <View className="px-6 pt-10">
+          <View className="items-center mb-8">
+            <MarketHero size={220} />
+          </View>
           <Text className="text-[34px] font-bold leading-[40px] text-text-primary">
             Buy and sell{"\n"}with people nearby.
           </Text>

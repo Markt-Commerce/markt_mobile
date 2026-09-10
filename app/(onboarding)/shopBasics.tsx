@@ -3,6 +3,7 @@ import { Text, View, Pressable, TextInput, KeyboardAvoidingView, Platform, Scrol
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useTokens } from "../../theme/useTokens";
+import { SuccessMark } from "../../components/illustrations/MarktIllustration";
 
 /**
  * The two things a shop cannot open without.
@@ -34,10 +35,13 @@ export default function ShopBasics() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView className="flex-1 px-6 pt-6" keyboardShouldPersistTaps="handled">
-          <Text className="text-[28px] font-bold leading-9 text-text-primary">
+          <View className="items-center mb-6">
+            <SuccessMark size={92} />
+          </View>
+          <Text className="text-[28px] font-bold leading-9 text-center text-text-primary">
             Name your shop
           </Text>
-          <Text className="text-base mt-2 text-text-secondary">
+          <Text className="text-base mt-2 text-center text-text-secondary">
             This is what buyers see. You can change it later.
           </Text>
 

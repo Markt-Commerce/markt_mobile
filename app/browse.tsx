@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ArrowLeft, PackageOpen, WifiOff } from "lucide-react-native";
+import { ArrowLeft, WifiOff } from "lucide-react-native";
 import ProductDisplayComponent from "../components/productDisplayComponent";
 import { getNearby, scopeNotice, type NearbyFeed } from "../services/sections/location";
 import { useBrowseLocation } from "../hooks/browseLocationContext";
@@ -11,6 +11,7 @@ import { ProductSkeletonRow } from "../components/SkeletonBlock";
 import { useTokens } from "../theme/useTokens";
 import type { Product as FeedProduct } from "../models/feed";
 import type { ProductResponse } from "../models/products";
+import { EmptyStall } from "../components/illustrations/MarktIllustration";
 
 /**
  * Browse without an account.
@@ -121,7 +122,7 @@ export default function Browse() {
         </View>
       ) : items.length === 0 ? (
         <View className="flex-1 items-center justify-center px-10">
-          <PackageOpen size={40} color={t.textMuted} strokeWidth={1.5} />
+          <EmptyStall size={104} label="No products listed yet" />
           <Text className="text-[17px] font-bold mt-4 text-center text-text-primary">
             Nothing listed yet
           </Text>
