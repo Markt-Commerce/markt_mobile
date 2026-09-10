@@ -14,6 +14,12 @@ Work top to bottom. Each step says exactly where the value it produces goes.
 | **Physical iOS device or a simulator signed into an Apple ID** | **Required** to test Apple sign-in. It cannot be tested on Android at all. |
 | **A development build** | **Required for both.** Google and Apple sign-in are native modules and **do not work in Expo Go**. `npx expo run:ios` / `run:android`, or an EAS dev build. |
 
+> **In Expo Go the app still runs** — the two social buttons are simply hidden,
+> and "Continue with email" and "Browse first" work normally. If you open a dev
+> build and the buttons are *still* missing, you are on a build made before
+> these dependencies were added: rebuild rather than debugging the console
+> config.
+
 Your identifiers, already in `app.json`:
 
 - **iOS bundle identifier:** `com.marktcommerce.markt`
@@ -260,6 +266,8 @@ prebuild.
 | Google sheet opens then closes instantly (iOS) | `iosUrlScheme` in `app.json` is wrong — it must be the **reversed** iOS client ID. |
 | Backend returns **503** | The client IDs are not set in `markt_python/.env`. Deliberate: it refuses rather than trusting any token. |
 | Backend returns **401** `OAUTH_BAD_AUDIENCE` | The token's `aud` is not in your env. Usually the platform's client ID is missing. |
-| Apple button missing on iOS | `usesAppleSignIn` not applied — you are on Expo Go, or need a rebuild. |
+| Social buttons missing entirely | Expo Go, or a dev build made before these dependencies were added. Rebuild: `npx expo run:ios` / `run:android`. This is deliberate — they are hidden rather than crashing. |
+| Apple button missing on iOS *(dev build)* | `usesAppleSignIn` not applied — needs a rebuild after the app.json change. |
+| Google button missing *(dev build)* | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` is unset. |
 | Apple sign-in fails at the sheet | **Sign in with Apple** capability not ticked on the App ID (2.2). |
 | **409** on social sign-in | Working as designed: that email is a password account and the provider did not verify the address. Sign in with the password once to link. |
