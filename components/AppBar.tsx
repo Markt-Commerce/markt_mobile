@@ -14,8 +14,11 @@ import Avatar from "./Avatar";
 import { useDrawer } from "../hooks/drawerContext";
 import { useTokens } from "../theme/useTokens";
 import { useNotificationsBadge } from "../hooks/notificationsContext";
+import LocationSwitcher from "./location/LocationSwitcher";
 
 interface AppBarProps {
+  /** Replace the title with the browse-location switcher (the feed does). */
+  showLocation?: boolean;
   title?: string;
   showAvatar?: boolean;
   showNotifications?: boolean;
@@ -24,6 +27,7 @@ interface AppBarProps {
 }
 
 export default function AppBar({
+  showLocation = false,
   title = "Markt",
   showAvatar = true,
   showNotifications = true,
@@ -52,9 +56,21 @@ export default function AppBar({
           <View className="w-10" />
         )}
       </View>
-      <Text className="text-xl font-bold flex-1 text-center tracking-tight text-text-primary" numberOfLines={1}>
-        {title}
-      </Text>
+      {showLocation ? (
+        // On the feed the app's own name is the least useful thing in the
+        // header — the user knows which app they opened. Where they are
+        // shopping is what they may want to change.
+        <View className="flex-1 items-center">
+          <LocationSwitcher />
+        </View>
+      ) : (
+        <Text
+          className="text-xl font-bold flex-1 text-center tracking-tight text-text-primary"
+          numberOfLines={1}
+        >
+          {title}
+        </Text>
+      )}
       <View className="w-9 h-9 items-center justify-center">
         {showNotifications ? (
           <TouchableOpacity

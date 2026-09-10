@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
+import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft, PackageOpen, WifiOff } from "lucide-react-native";
 import ProductDisplayComponent from "../components/productDisplayComponent";
-import { getPublicProducts } from "../services/sections/product";
+import { getNearby, scopeNotice, type NearbyFeed } from "../services/sections/location";
+import { useBrowseLocation } from "../hooks/browseLocationContext";
+import LocationSwitcher from "../components/location/LocationSwitcher";
+import { ProductSkeletonRow } from "../components/SkeletonBlock";
 import { useTokens } from "../theme/useTokens";
 import type { Product as FeedProduct } from "../models/feed";
 import type { ProductResponse } from "../models/products";
@@ -24,22 +27,41 @@ export default function Browse() {
   const router = useRouter();
   const t = useTokens();
   const [items, setItems] = useState<ProductResponse[]>([]);
+  const [feed, setFeed] = useState<Pick<NearbyFeed, "scope" | "radius_km"> | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [refreshing, setRefreshing] = useState(false);
+  const { location, guestId } = useBrowseLocation();
 
-  const load = useCallback(async (opts?: { refresh?: boolean }) => {
-    if (opts?.refresh) setRefreshing(true);
-    else setState("loading");
-    try {
-      setItems(await getPublicProducts(1, 20));
-      setState("ready");
-    } catch {
-      setState("error");
-    } finally {
-      setRefreshing(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (opts?: { refresh?: boolean }) => {
+      if (opts?.refresh) setRefreshing(true);
+      else setState("loading");
+      try {
+        const res = await getNearby({
+          latitude: location?.latitude,
+          longitude: location?.longitude,
+          guestId: guestId ?? undefined,
+          limit: 20,
+        });
+        // The nearby feed returns a lean row; the tile needs the product shape.
+        setItems(
+          (res.items ?? []).map(
+            (i) => ({ id: i.id, name: i.name, price: i.price ?? 0 }) as ProductResponse
+          )
+        );
+        setFeed({ scope: res.scope, radius_km: res.radius_km });
+        setState("ready");
+      } catch {
+        setState("error");
+      } finally {
+        setRefreshing(false);
+      }
+    },
+    [location?.latitude, location?.longitude, guestId]
+  );
 
+  // Re-runs whenever the browse location changes, which is what makes the
+  // header switcher re-scope the feed.
   useEffect(() => {
     load();
   }, [load]);
@@ -60,13 +82,25 @@ export default function Browse() {
         >
           <ArrowLeft size={22} color={t.textPrimary} />
         </Pressable>
-        <Text className="text-[17px] font-bold text-text-primary">Browse Markt</Text>
+        <View className="flex-1">
+          <LocationSwitcher compact />
+        </View>
       </View>
 
+      {/* Never present a distant result as though it were close. */}
+      {state === "ready" && feed && scopeNotice(feed) ? (
+        <View className="px-4 py-2.5 bg-surface-sunken">
+          <Text className="text-[12px] text-text-secondary">{scopeNotice(feed)}</Text>
+        </View>
+      ) : null}
+
       {state === "loading" ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={t.primaryText} />
-          <Text className="text-sm mt-3 text-text-secondary">Loading products…</Text>
+        // Skeletons in the shape of the real grid, so the layout does not jump
+        // when content lands.
+        <View>
+          <ProductSkeletonRow />
+          <ProductSkeletonRow />
+          <ProductSkeletonRow />
         </View>
       ) : state === "error" ? (
         <View className="flex-1 items-center justify-center px-10">

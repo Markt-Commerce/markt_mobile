@@ -20,6 +20,7 @@ import PaymentDeepLinkHandler from "../components/PaymentDeepLinkHandler";
 import NotificationsBootstrap from "../components/NotificationsBootstrap";
 import { GamificationProvider } from "../hooks/gamificationContext";
 import { CelebrationProvider } from "../hooks/useCelebration";
+import { BrowseLocationProvider } from "../hooks/browseLocationContext";
 import CelebrationOverlay from "../components/gamification/CelebrationOverlay";
 import { CartProvider } from "../hooks/cartContext";
 import { NotificationsProvider } from "../hooks/notificationsContext";
@@ -118,6 +119,9 @@ export function AppStack() {
       </Stack.Protected>
 
       <Stack.Screen name="support" />
+      {/* Reachable either side of the auth guard: the browse location is a
+          preference, and a guest choosing an area is the point. */}
+      <Stack.Screen name="location/picker" options={{ presentation: "modal" }} />
     </Stack>
   );
 
@@ -133,10 +137,14 @@ export function AppStack() {
           queues into it. The overlay renders inside the provider and outside
           the stack, so a celebration survives navigation instead of being
           unmounted by the screen that triggered it. */}
+      {/* Above the celebration layer because the feed and the header both read
+          it, and a guest needs it before any auth decision is made. */}
+      <BrowseLocationProvider>
       <CelebrationProvider>
         <GamificationProvider>{stack}</GamificationProvider>
         <CelebrationOverlay />
       </CelebrationProvider>
+      </BrowseLocationProvider>
     </>
   );
 }

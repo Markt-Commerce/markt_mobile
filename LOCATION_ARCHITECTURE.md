@@ -1,6 +1,6 @@
 # ADR: Location-aware content
 
-**Status:** proposed — awaiting sign-off
+**Status:** accepted (Option B, 10 km first radius) — implemented on `feat/location-aware-feed`
 **Date:** 2026-09-10
 
 ---
@@ -125,8 +125,15 @@ Never show an empty feed because of geography:
 
 1. Within **10 km** of the browse location
 2. Widen to **50 km**
-3. Widen to the **state**
+3. Widen to **200 km**
 4. **Nationwide**, newest first
+
+> **Changed during implementation.** Rung 3 was "the state". `Seller` has no
+> state column — the state lives inside a JSON `shop_address` — so that rung
+> would have meant an unindexed JSON filter or a new column plus a backfill.
+> 200 km covers a Nigerian state in practice (most are 100–300 km across) using
+> the same indexed path. Revisit if something needs true administrative
+> boundaries.
 
 The response says which rung it used, so the UI can be honest —
 *"Nothing within 10 km — showing results from across Oyo"* — rather than
