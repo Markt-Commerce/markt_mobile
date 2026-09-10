@@ -183,7 +183,7 @@ const ShopInformationScreen = () => {
           </Text>
         </View>
 
-        <StepProgress step={1} total={2} label="About your shop" className="mb-8" />
+        <StepProgress step={1} total={2} label="About your shop" className="mx-4 mb-8" />
 
         {/* Card */}
         <View className="mx-4">

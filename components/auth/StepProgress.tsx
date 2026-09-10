@@ -57,8 +57,11 @@ export default function StepProgress({
       }
       accessibilityValue={{ min: 1, max: total, now: step }}
     >
-      <View className="flex-row items-baseline justify-between mb-2">
-        <Text className="text-[13px] font-semibold text-text-primary">
+      {/* Deliberately quiet. This is orientation, not content: it sits above
+          the screen's real heading, and at 13px bold with a 6px accent bar it
+          competed with it — two things shouting at the top of every step. */}
+      <View className="flex-row items-baseline justify-between mb-1.5">
+        <Text className="text-[12px] font-medium text-text-secondary">
           {label ?? `Step ${step}`}
         </Text>
         <Text className="text-[12px] text-text-muted">
@@ -66,9 +69,9 @@ export default function StepProgress({
         </Text>
       </View>
 
-      <View className="h-1.5 rounded-full overflow-hidden bg-surface-sunken">
+      <View className="h-1 rounded-full overflow-hidden bg-surface-sunken">
         <Animated.View
-          className="h-1.5 rounded-full"
+          className="h-1 rounded-full"
           style={[{ backgroundColor: t.primaryFill }, fillStyle]}
         />
       </View>

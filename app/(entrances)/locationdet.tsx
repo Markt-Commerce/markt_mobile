@@ -199,7 +199,9 @@ export default function AddAddressScreen() {
             </Text>
           </View>
 
-          <StepProgress step={2} total={2} label="Where you are" className="mb-8" />
+          {/* px-4 to align with the form below, which is what it is measuring
+              progress through — the header above uses px-6. */}
+          <StepProgress step={2} total={2} label="Where you are" className="px-4 mb-8" />
 
           <View className="px-4">
             <View>
