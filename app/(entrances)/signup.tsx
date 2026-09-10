@@ -21,27 +21,27 @@ import { useToast } from "../../components/ToastProvider";
 import { useWatch } from "react-hook-form";
 import { getPasswordStrength } from "../../utils/passwordStrength";
 import Button from "../../components/button";
+import RoleToggle from "../../components/auth/RoleToggle";
 import { Check, Circle } from "lucide-react-native";
 import { useTokens } from "../../theme/useTokens";
 import * as haptics from "../../utils/haptics";
 
 // --- Validation schema ---
-const schema = z
-  .object({
-    email: z.string().email("Invalid email address"),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters long")
-      .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/,
-        "Must contain uppercase, lowercase, and a number"
-      ),
-    confirmPassword: z.string().min(8, "Please confirm your password"),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+// No "confirm password". The field exists to catch a typo you cannot see —
+// but this form already shows the password on demand and grades it live
+// against four rules, which catches the same typo without asking anyone to
+// type a password twice. Two inputs to solve a problem one input already
+// solved is just friction.
+const schema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters long")
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/,
+      "Must contain uppercase, lowercase, and a number"
+    ),
+});
 
 type FormValues = z.infer<typeof schema>;
 
@@ -95,31 +95,6 @@ export default function SignupScreen() {
     }
   };
 
-  const RoleToggle = () => (
-    <View className="flex-row items-center rounded p-1 bg-surface-sunken">
-      <TouchableOpacity
-        onPress={() => setUserRole("buyer")}
-        className={`flex-1 py-2.5 rounded items-center ${
-          role === "buyer" ? "bg-primary-fill shadow-sm" : "shadow-none"
-        }`}
-      >
-        <Text className={`font-bold text-sm ${role === "buyer" ? "text-white" : "text-text-secondary"}`}>
-          Buyer
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        onPress={() => setUserRole("seller")}
-        className={`flex-1 py-2.5 rounded items-center ${
-          role === "seller" ? "bg-primary-fill shadow-sm" : "shadow-none"
-        }`}
-      >
-        <Text className={`font-bold text-sm ${role === "seller" ? "text-white" : "text-text-secondary"}`}>
-          Seller
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
-
   return (
     <SafeAreaView className="flex-1 bg-surface-page">
       <KeyboardAvoidingView
@@ -154,16 +129,18 @@ export default function SignupScreen() {
             </View>
 
             {/* Panel */}
-            <View className="rounded border px-5 py-8 bg-surface-raised border-border">
+            <View>
               {/* Role selection */}
               <View className="mb-8">
-                <Text className="mb-3 text-sm font-bold text-text-primary">I want to be a</Text>
-                <RoleToggle />
+                <Text className="mb-2 text-[13px] font-semibold text-text-secondary">
+                  I’m here for
+                </Text>
+                <RoleToggle value={role} onChange={setUserRole} />
               </View>
 
               {/* Email */}
               <View className="mb-6">
-                <Text className="mb-2 text-sm font-bold text-text-primary">Email Address</Text>
+                <Text className="mb-2 text-[13px] font-semibold text-text-secondary">Email Address</Text>
                 <Input
                   placeholder="you@example.com"
                   control={control}
@@ -176,7 +153,7 @@ export default function SignupScreen() {
 
               {/* Password */}
               <View className="mb-6">
-                <Text className="mb-2 text-sm font-bold text-text-primary">Password</Text>
+                <Text className="mb-2 text-[13px] font-semibold text-text-secondary">Password</Text>
                 <PasswordInput
                   placeholder="Min. 8 characters"
                   control={control}
@@ -229,17 +206,6 @@ export default function SignupScreen() {
                     </Text>
                   </View>
                 </View>
-              </View>
-
-              {/* Confirm Password */}
-              <View className="mb-8">
-                <Text className="mb-2 text-sm font-bold text-text-primary">Confirm Password</Text>
-                <PasswordInput
-                  placeholder="Repeat password"
-                  control={control}
-                  name="confirmPassword"
-                  errors={errors}
-                />
               </View>
 
               {/* CTA */}

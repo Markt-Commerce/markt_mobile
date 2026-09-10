@@ -16,6 +16,7 @@ import { loginUser } from "../../services/sections/auth";
 import { useUser } from "../../hooks/userContextProvider";
 import { Input, PasswordInput } from "../../components/inputs";
 import Button from "../../components/button";
+import RoleToggle from "../../components/auth/RoleToggle";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRegData } from "../../models/signupSteps";
 import { useToast } from "../../components/ToastProvider";
@@ -159,7 +160,7 @@ export default function LoginScreen() {
             </View>
 
             {/* Panel */}
-            <View className="rounded border px-5 py-8 bg-surface-raised border-border">
+            <View>
               {/* Error banner */}
               {error ? (
                 <View className="mb-6 rounded bg-danger-muted px-4 py-3 border border-danger/10">
@@ -169,7 +170,7 @@ export default function LoginScreen() {
 
               {/* Email */}
               <View className="mb-6">
-                <Text className="mb-2 text-sm font-bold text-text-primary">Email Address</Text>
+                <Text className="mb-2 text-[13px] font-semibold text-text-secondary">Email Address</Text>
                 <Input
                   placeholder="Enter your email"
                   control={control}
@@ -184,7 +185,7 @@ export default function LoginScreen() {
 
               {/* Password — eye toggle */}
               <View className="mb-2">
-                <Text className="mb-2 text-sm font-bold text-text-primary">Password</Text>
+                <Text className="mb-2 text-[13px] font-semibold text-text-secondary">Password</Text>
                 <PasswordInput
                   placeholder="Enter your password"
                   control={control}
@@ -202,30 +203,8 @@ export default function LoginScreen() {
 
               {/* Role toggle */}
               <View className="mb-10">
-                <Text className="mb-3 text-sm font-bold text-text-primary">Continue as</Text>
-                <View className="flex-row items-center rounded p-1 bg-surface-sunken">
-                  <TouchableOpacity
-                    onPress={() => setRole("buyer")}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: role === "buyer" }}
-                    className={`flex-1 rounded py-2.5 items-center ${role === "buyer" ? "bg-primary-fill shadow-sm" : "shadow-none"}`}
-                  >
-                    <Text className={`font-bold text-sm ${role === "buyer" ? "text-white" : "text-text-secondary"}`}>
-                      Buyer
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => setRole("seller")}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: role === "seller" }}
-                    className={`flex-1 rounded py-2.5 items-center ${role === "seller" ? "bg-primary-fill shadow-sm" : "shadow-none"}`}
-                  >
-                    <Text className={`font-bold text-sm ${role === "seller" ? "text-white" : "text-text-secondary"}`}>
-                      Seller
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                <Text className="mb-2 text-[13px] font-semibold text-text-secondary">Continue as</Text>
+                <RoleToggle value={role} onChange={setRole} />
               </View>
 
               {/* Submit */}
