@@ -237,7 +237,7 @@ const ShopInformationScreen = () => {
             {/* Phone Number */}
             <View className="mb-6">
               <Label>Contact Number</Label>
-              <Input placeholder="+1 (555) 000-0000" control={control} name="phoneNumber" errors={errors} keyboardType="phone-pad" />
+              <Input placeholder="0801 234 5678" control={control} name="phoneNumber" errors={errors} keyboardType="phone-pad" />
             </View>
 
             {/* Shop Description */}

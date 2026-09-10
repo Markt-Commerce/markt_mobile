@@ -33,7 +33,7 @@ export default function AddAddressScreen() {
     city: z.string().min(1, "City is required"),
     state: z.string().min(1, "State is required"),
     country: z.string().min(1, "Country is required"),
-    postal_code: z.string().min(1, "Postal Code is required")
+    postal_code: z.string().optional()
   });
 
   type LocationFormData = z.infer<typeof locationSchema>;
@@ -51,11 +51,42 @@ export default function AddAddressScreen() {
       });
       if (addr) {
         const a = addr as { street?: string; streetNumber?: string; city?: string; region?: string; country?: string; postalCode?: string; name?: string; district?: string; subregion?: string };
-        setValue("street", a.street ?? a.name ?? "", { shouldValidate: false });
-        setValue("house_number", a.streetNumber ?? a.district ?? "", { shouldValidate: false });
-        setValue("city", a.city ?? a.subregion ?? "", { shouldValidate: false });
-        setValue("state", a.region ?? "", { shouldValidate: false });
-        setValue("country", a.country ?? "", { shouldValidate: false });
+
+        // Each field is filled from *its own* component, and a token is never
+        // written to more than one.
+        //
+        // The bug this replaces: `street` fell back to `a.name` and `city` to
+        // `a.subregion`. In peri-urban Nigeria expo-location returns null for
+        // street and city and the LGA ("Lagelu") for both name and subregion,
+        // so the two chains converged and Street and City showed the same
+        // word. A field left blank is honest; the same token in two fields is
+        // not.
+        const used = new Set<string>();
+        const take = (...candidates: (string | undefined)[]) => {
+          for (const c of candidates) {
+            const v = (c ?? "").trim();
+            if (v && !used.has(v.toLowerCase())) {
+              used.add(v.toLowerCase());
+              return v;
+            }
+          }
+          return "";
+        };
+
+        // Order matters. Unambiguous components are claimed first, then the
+        // administrative ones, and only then does `street` fall back to
+        // `a.name` — which in Nigeria is usually the LGA, not a street. Letting
+        // street take it first put "Lagelu" in the Street box, which is wrong
+        // in a different way from the original bug.
+        setValue("house_number", take(a.streetNumber), { shouldValidate: false });
+        const street = take(a.street);
+        setValue("city", take(a.city, a.subregion, a.district), { shouldValidate: false });
+        setValue("state", take(a.region), { shouldValidate: false });
+        // Only if nothing more specific claimed it.
+        setValue("street", street || take(a.name), { shouldValidate: false });
+        setValue("country", a.country ?? "Nigeria", { shouldValidate: false });
+        // NIPOST codes exist but almost nobody knows theirs, so this is a
+        // convenience when the geocoder supplies one and blank otherwise.
         setValue("postal_code", a.postalCode ?? "", { shouldValidate: false });
       }
     } catch {
@@ -205,7 +236,7 @@ export default function AddAddressScreen() {
                   </View>
                   <View className="flex-[2]">
                     <Label>Postal Code</Label>
-                    <Input placeholder="10001" control={control} name="postal_code" errors={errors} />
+                    <Input placeholder="Optional" control={control} name="postal_code" errors={errors} />
                   </View>
                 </View>
 

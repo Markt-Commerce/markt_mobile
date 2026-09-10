@@ -249,7 +249,7 @@ export default function UserInfoScreen() {
               <View className="mb-10">
                 <Label>Phone Number</Label>
                 <Input
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="0801 234 5678"
                   control={control}
                   name="phone_number"
                   errors={errors}
