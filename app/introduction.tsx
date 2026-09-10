@@ -45,7 +45,7 @@ export default function Welcome() {
 
       // A returning user goes straight in. A new one still needs a name and a
       // role — two taps, not six screens.
-      if (isNew) router.replace("/(entrances)/yourName");
+      if (isNew) router.replace("/(onboarding)/yourName");
     },
     [router, setUser, setRole]
   );

@@ -108,6 +108,14 @@ export function AppStack() {
         <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
       </Stack.Protected>
 
+      {/* Profile completion sits OUTSIDE both guards on purpose.
+          The account exists by the time these run, so they cannot live in the
+          !isLoggedIn group — creating the account would unmount the very
+          screens the user is standing on. Their own layout disables the back
+          gesture, and each step uses `replace`, so a completed step cannot be
+          returned to by swipe or by button. */}
+      <Stack.Screen name="(onboarding)" options={{ gestureEnabled: false }} />
+
       <Stack.Protected guard={!isLoggedIn}>
         <Stack.Screen name="introduction" />
         <Stack.Screen name="(entrances)" />

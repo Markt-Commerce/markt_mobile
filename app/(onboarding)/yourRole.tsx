@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { Text, View, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { ShoppingBag, Store, Check } from "lucide-react-native";
 import StepDots from "../../components/auth/StepDots";
 import { useTokens } from "../../theme/useTokens";
 import { useUser } from "../../hooks/userContextProvider";
+import { updateBuyerProfile } from "../../services/sections/profile";
+import { logger } from "../../utils/logger";
 
 /**
  * Buyer or seller — asked here, not on the signup form.
@@ -36,16 +38,37 @@ export default function YourRole() {
   const router = useRouter();
   const t = useTokens();
   const { setRole } = useUser();
+  const { name } = useLocalSearchParams<{ name?: string }>();
   const [choice, setChoice] = useState<"buyer" | "seller" | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const done = () => {
-    if (!choice) return;
+  const done = async () => {
+    if (!choice || saving) return;
+    setSaving(true);
     setRole(choice);
+
+    // Saved here rather than on the name screen, because only now do we know
+    // the field it belongs in. Best-effort: a failed write must not strand
+    // someone at the last step of signup — the name is editable in settings,
+    // and blocking here would be worse than a missing display name.
+    if (name?.trim() && choice === "buyer") {
+      try {
+        await updateBuyerProfile({ buyername: name.trim() });
+      } catch (e) {
+        logger.warn("onboarding: could not save display name", e);
+      }
+    }
     // `replace`, not `push`: finishing onboarding must not leave the flow in
     // history. The old emailVerification screen pushed, so an iOS swipe-back
     // landed the user right back inside signup.
-    if (choice === "seller") router.replace("/(entrances)/shopBasics");
-    else router.replace("/(tabs)");
+    if (choice === "seller") {
+      router.replace({
+        pathname: "/(onboarding)/shopBasics",
+        params: name ? { name } : {},
+      });
+    } else {
+      router.replace("/(tabs)");
+    }
   };
 
   return (

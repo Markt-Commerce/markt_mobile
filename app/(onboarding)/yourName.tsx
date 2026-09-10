@@ -26,6 +26,21 @@ export default function YourName() {
   const trimmed = name.trim();
   const valid = trimmed.length >= 2;
 
+  // `replace`, and the name travels as a param.
+  //
+  // Two bugs closed at once: this screen used to `push`, so a completed step
+  // stayed on the stack, and it collected the name and then dropped it — the
+  // value was never passed on or saved. It cannot be written to the server
+  // here because which field it maps to (buyername vs shop name) depends on
+  // the role, which is the *next* question.
+  const next = () => {
+    if (!valid) return;
+    router.replace({
+      pathname: "/(onboarding)/yourRole",
+      params: { name: trimmed },
+    });
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "left", "right", "bottom"]}>
       <KeyboardAvoidingView
@@ -51,7 +66,7 @@ export default function YourName() {
             autoCapitalize="words"
             autoComplete="name"
             returnKeyType="next"
-            onSubmitEditing={() => valid && router.push("/(entrances)/yourRole")}
+            onSubmitEditing={() => valid && next()}
             accessibilityLabel="Your name"
             className="h-14 mt-8 px-4 rounded border border-border-strong bg-surface-sunken text-[17px] text-text-primary"
           />
@@ -64,7 +79,7 @@ export default function YourName() {
 
         <View className="px-6 pb-6">
           <Pressable
-            onPress={() => router.push("/(entrances)/yourRole")}
+            onPress={next}
             disabled={!valid}
             accessibilityRole="button"
             accessibilityState={{ disabled: !valid }}
