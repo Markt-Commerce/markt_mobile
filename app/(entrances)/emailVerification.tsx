@@ -125,7 +125,7 @@ const EmailVerification = () => {
 
           {/* Body */}
           <View className="flex-1 px-4 justify-center">
-            <View className="rounded border px-6 py-8 bg-surface-raised border-border">
+            <View>
               {!verificationCodeSent ? (
                 <>
                   <Text className="text-[32px] font-bold leading-tight mb-2 text-center text-text-primary">

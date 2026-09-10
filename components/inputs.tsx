@@ -19,10 +19,11 @@ interface InputProps<TFieldValues extends FieldValues = FieldValues> extends Rea
 }
 
 /**
- * Markt form input (Kinetic Minimalist).
- * - 48px height, rounded (8px), surface-raised fill, 1px border
+ * Markt form input.
+ * - 56px height, 12px radius, a soft `surface-sunken` fill
+ * - The fill carries the field's shape, so a border only ever means an error
+ *   or focus. Hard-bordered boxes on every field read as a wireframe.
  * - Placeholder uses the secondary text token
- * - Error: border-danger when invalid
  */
 export function Input<TFieldValues extends FieldValues = FieldValues>({
   name,
@@ -46,12 +47,12 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
 
   // Multiline fields (post caption, request description) render as a taller
   // top-aligned textbox instead of a single-line 48px input.
-  const sizeClass = multiline ? "min-h-[120px] py-3" : "h-12";
+  const sizeClass = multiline ? "min-h-[120px] py-3" : "h-14";
 
   return (
     <View className={`w-full ${label ? "mb-5" : ""}`}>
       {label ? (
-        <Text className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary">
+        <Text className="mb-2 text-[13px] font-semibold text-text-secondary">
           {label}
         </Text>
       ) : null}
@@ -67,8 +68,10 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
               placeholder={placeholder}
               placeholderTextColor={t.textSecondary}
               secureTextEntry={secureTextEntry}
-              className={`w-full rounded ${sizeClass} px-4 text-base text-text-primary bg-surface-raised border ${
-                hasError ? "border-danger" : "border-border-strong focus:border-text-primary"
+              // Soft filled field rather than a hard-bordered box: the fill
+              // carries the shape, so the border is only ever an error signal.
+              className={`w-full rounded-xl ${sizeClass} px-4 text-[16px] text-text-primary bg-surface-sunken border ${
+                hasError ? "border-danger" : "border-transparent"
               }`}
               multiline={multiline}
               numberOfLines={numberOfLines}
@@ -114,8 +117,8 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
         render={({ field: { onChange, onBlur, value: fieldValue } }) => (
           <>
             <View
-              className={`flex-row items-center rounded h-12 px-4 border bg-surface-raised ${
-                hasError ? "border-danger" : isFocused ? ("border-text-primary") : "border-border"
+              className={`flex-row items-center rounded-xl h-14 px-4 border bg-surface-sunken ${
+                hasError ? "border-danger" : isFocused ? "border-primary" : "border-transparent"
               }`}
             >
               <TextInput
@@ -129,7 +132,7 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
                 placeholder={inputProps.placeholder}
                 placeholderTextColor={tokensFor(isDark).textSecondary}
                 secureTextEntry={!visible}
-                className="flex-1 text-base text-text-primary"
+                className="flex-1 text-[16px] text-text-primary"
                 keyboardType={inputProps.keyboardType ?? "default"}
                 textContentType="password"
                 accessibilityLabel={inputProps.placeholder}

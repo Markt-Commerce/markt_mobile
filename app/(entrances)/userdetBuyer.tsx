@@ -26,6 +26,7 @@ import { useDebouncedCallback } from "../../hooks/useDebouncedCallback";
 import { useWatch } from "react-hook-form";
 import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
+import StepProgress from "../../components/auth/StepProgress";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 const schema = z.object({
@@ -179,15 +180,11 @@ export default function UserInfoScreen() {
               </Text>
             </View>
 
-            {/* Progress hint */}
-            <View className="flex-row gap-2 items-center justify-center mb-10 px-2">
-              <View className="h-1.5 flex-1 rounded bg-text-primary" />
-              <View className="h-1.5 flex-1 rounded bg-surface-sunken" />
-              <View className="h-1.5 flex-1 rounded bg-surface-sunken" />
-            </View>
+            <StepProgress step={1} total={2} label="About you" className="mb-8" />
 
-            {/* Card */}
-            <View className="rounded border px-6 py-8 bg-surface-raised border-border">
+            {/* No card: a bordered panel inside a screen that is already a panel
+                adds an edge without adding meaning. Spacing does the work. */}
+            <View>
               {/* Avatar placeholder with image picker */}
               <View className="items-center mb-10">
                 <TouchableOpacity
@@ -200,7 +197,7 @@ export default function UserInfoScreen() {
                   ) : (
                     <View className="items-center">
                       <ImageIcon size={32} color={mutedIconColor} />
-                      <Text className="text-[10px] font-bold mt-1 text-text-secondary">ADD PHOTO</Text>
+                      <Text className="text-[12px] font-semibold mt-1.5 text-text-secondary">Add photo</Text>
                     </View>
                   )}
                 </TouchableOpacity>

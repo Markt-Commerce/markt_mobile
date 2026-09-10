@@ -27,6 +27,7 @@ import { useDebouncedCallback } from "../../hooks/useDebouncedCallback";
 import { useWatch } from "react-hook-form"; 
 import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
+import StepProgress from "../../components/auth/StepProgress";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 const schema = z.object({
@@ -182,16 +183,11 @@ const ShopInformationScreen = () => {
           </Text>
         </View>
 
-        {/* Progress hint */}
-        <View className="flex-row gap-2 items-center justify-center mb-10 px-8">
-          <View className="h-1.5 flex-1 rounded bg-text-primary" />
-          <View className="h-1.5 flex-1 rounded bg-text-primary" />
-          <View className="h-1.5 flex-1 rounded bg-surface-sunken" />
-        </View>
+        <StepProgress step={1} total={2} label="About your shop" className="mb-8" />
 
         {/* Card */}
         <View className="mx-4">
-          <View className="rounded border px-6 py-8 bg-surface-raised border-border">
+          <View>
             {/* Avatar placeholder with image picker */}
             <View className="items-center mb-10">
               <TouchableOpacity

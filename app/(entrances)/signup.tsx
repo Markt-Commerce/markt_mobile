@@ -23,6 +23,7 @@ import { getPasswordStrength } from "../../utils/passwordStrength";
 import Button from "../../components/button";
 import { Check, Circle } from "lucide-react-native";
 import { useTokens } from "../../theme/useTokens";
+import * as haptics from "../../utils/haptics";
 
 // --- Validation schema ---
 const schema = z
@@ -67,6 +68,7 @@ export default function SignupScreen() {
   const setUserRole = (r: AccountType) => setRole(r);
 
   const onSubmit = async (data: FormValues) => {
+    haptics.tick();
     try {
       setRegData(
         register(regData, {

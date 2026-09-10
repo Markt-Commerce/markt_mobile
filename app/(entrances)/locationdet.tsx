@@ -15,6 +15,8 @@ import * as Location from 'expo-location';
 import { registerUser } from "../../services/sections/auth";
 import Button from "../../components/button";
 import { useTokens } from "../../theme/useTokens";
+import StepProgress from "../../components/auth/StepProgress";
+import * as haptics from "../../utils/haptics";
 
 export default function AddAddressScreen() {
   const { show } = useToast();
@@ -145,6 +147,7 @@ export default function AddAddressScreen() {
   };
 
   const onSubmit = async (data: LocationFormData) => {
+    haptics.tick();
     try {
       setIsSubmitting(true);
 
@@ -196,15 +199,10 @@ export default function AddAddressScreen() {
             </Text>
           </View>
 
-          {/* Progress hint */}
-          <View className="flex-row gap-2 items-center justify-center mb-10 px-10">
-            <View className="h-1.5 flex-1 rounded bg-text-primary" />
-            <View className="h-1.5 flex-1 rounded bg-text-primary" />
-            <View className="h-1.5 flex-1 rounded bg-text-primary" />
-          </View>
+          <StepProgress step={2} total={2} label="Where you are" className="mb-8" />
 
           <View className="px-4">
-            <View className="rounded border px-6 py-8 bg-surface-raised border-border">
+            <View>
               <Text className="text-[24px] font-bold leading-tight mb-2 text-text-primary">
                 Where are you based?
               </Text>
