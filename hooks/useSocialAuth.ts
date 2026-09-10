@@ -1,11 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Platform } from "react-native";
 import * as Crypto from "expo-crypto";
-import * as AppleAuthentication from "expo-apple-authentication";
-import {
-  GoogleSignin,
-  statusCodes,
-} from "@react-native-google-signin/google-signin";
+import { requireOptional } from "../utils/nativeModule";
 import {
   signInWithProvider,
   AccountExistsError,
@@ -17,6 +13,14 @@ import { logger } from "../utils/logger";
 /**
  * Google and Apple sign-in, with every branch mapped to copy a person can act
  * on.
+ *
+ * **Both modules are loaded lazily, on purpose.** A top-level import of a
+ * native module throws at *import* time when the native side is missing, which
+ * takes down whatever imported it — here, the landing screen and therefore the
+ * root layout. That happens in Expo Go and in any development build made
+ * before these dependencies were added, i.e. every teammate's build until they
+ * rebuild. Loading them through requireOptional turns a crash into an absent
+ * button.
  *
  * The rule throughout: a cancel is not an error. Tapping away from the sheet is
  * the most common "failure" there is, and showing an alert for it would punish
@@ -32,6 +36,23 @@ export type SocialAuthState = {
 
 const GENERIC =
   "We couldn't complete that sign-in. Please try again in a moment.";
+
+/** null when the native module isn't in this binary. */
+function googleModule() {
+  return requireOptional("google-signin", () =>
+    require("@react-native-google-signin/google-signin")
+  );
+}
+
+function appleModule() {
+  return requireOptional("apple-authentication", () =>
+    require("expo-apple-authentication")
+  );
+}
+
+/** Whether each provider can be offered at all in this build. */
+export const isGoogleModuleAvailable = () => googleModule() != null;
+export const isAppleModuleAvailable = () => appleModule() != null;
 
 export function useSocialAuth(onSuccess: (user: any, isNew: boolean) => void) {
   const [state, setState] = useState<SocialAuthState>({
@@ -75,6 +96,14 @@ export function useSocialAuth(onSuccess: (user: any, isNew: boolean) => void) {
   );
 
   const signInWithGoogle = useCallback(async () => {
+    const mod = googleModule();
+    if (!mod) {
+      return fail(
+        "Google sign-in isn't available in this build. You can continue with email."
+      );
+    }
+    const { GoogleSignin, statusCodes } = mod;
+
     setState({ busy: "google", error: null, needsPasswordLink: false });
     try {
       GoogleSignin.configure({
@@ -111,6 +140,13 @@ export function useSocialAuth(onSuccess: (user: any, isNew: boolean) => void) {
   }, [finish, fail]);
 
   const signInWithApple = useCallback(async () => {
+    const AppleAuthentication = appleModule();
+    if (!AppleAuthentication) {
+      return fail(
+        "Apple sign-in isn't available in this build. You can continue with email."
+      );
+    }
+
     setState({ busy: "apple", error: null, needsPasswordLink: false });
     try {
       // A raw nonce is sent to Apple hashed; the token echoes the *hash*, and
@@ -163,18 +199,28 @@ export function useSocialAuth(onSuccess: (user: any, isNew: boolean) => void) {
 }
 
 /**
- * Apple only exists on iOS 13+. Android and older iOS never see the button —
- * showing a control that cannot work is worse than not offering it.
+ * Apple only exists on iOS 13+, and only when the native module is in this
+ * build. Android, older iOS and Expo Go never see the button — showing a
+ * control that cannot work is worse than not offering it.
  */
 export function useAppleAuthAvailable(): boolean {
   const [available, setAvailable] = useState(false);
-  const check = useCallback(async () => {
-    if (Platform.OS !== "ios") return setAvailable(false);
-    setAvailable(await AppleAuthentication.isAvailableAsync());
+
+  useEffect(() => {
+    let alive = true;
+    if (Platform.OS !== "ios") return;
+
+    const AppleAuthentication = appleModule();
+    if (!AppleAuthentication) return;
+
+    AppleAuthentication.isAvailableAsync()
+      .then((ok: boolean) => alive && setAvailable(ok))
+      .catch(() => {});
+
+    return () => {
+      alive = false;
+    };
   }, []);
-  // Cheap enough to run on every mount of the welcome screen.
-  useState(() => {
-    check();
-  });
+
   return available;
 }

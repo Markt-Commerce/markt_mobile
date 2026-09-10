@@ -1,7 +1,7 @@
 import React from "react";
 import { ActivityIndicator, Platform, Pressable, Text, View } from "react-native";
-import * as AppleAuthentication from "expo-apple-authentication";
 import Svg, { Path } from "react-native-svg";
+import { requireOptional } from "../../utils/nativeModule";
 import { useTokens } from "../../theme/useTokens";
 import { useTheme } from "../themeProvider";
 import { IS_GOOGLE_CONFIGURED } from "../../services/config";
@@ -20,7 +20,23 @@ import type { OAuthProvider } from "../../services/sections/oauth";
  * the RN package, so it follows Google's identity guidelines directly: the
  * four-colour "G", a neutral surface, and the exact wording "Continue with
  * Google".
+ *
+ * Apple's module is required lazily. A top-level import throws at *import*
+ * time when the native side is missing — in Expo Go, or in any dev build made
+ * before the dependency was added — and that crash propagates to the root
+ * layout rather than failing this one button.
  */
+
+/** null when the native module isn't in this binary. */
+const appleAuth = () =>
+  requireOptional("apple-authentication", () =>
+    require("expo-apple-authentication")
+  );
+
+const googleAuth = () =>
+  requireOptional("google-signin", () =>
+    require("@react-native-google-signin/google-signin")
+  );
 
 const GOOGLE_MARK = [
   { d: "M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z", fill: "#4285F4" },
@@ -53,13 +69,22 @@ export default function SocialAuthButtons({
   const t = useTokens();
   const { resolvedTheme } = useTheme();
   const anyBusy = busy !== null;
+  const AppleAuthentication = appleAuth();
+  const showApple =
+    Platform.OS === "ios" && appleAvailable && AppleAuthentication != null;
+
+  // Both conditions matter and they fail for different reasons: no client id
+  // means nobody configured it, no native module means this build cannot run
+  // it. Either way the button is hidden rather than shown-and-broken — a
+  // control that explains why it cannot work is still a dead end.
+  const showGoogle = IS_GOOGLE_CONFIGURED && googleAuth() != null;
 
   return (
     <View className="gap-3">
       {/* Apple first on iOS. Apple requires Sign in with Apple to be offered
           wherever another social login is, and placing it first is the
           convention iOS users expect. */}
-      {Platform.OS === "ios" && appleAvailable ? (
+      {showApple ? (
         <View>
           <AppleAuthentication.AppleAuthenticationButton
             buttonType={
@@ -87,7 +112,7 @@ export default function SocialAuthButtons({
         </View>
       ) : null}
 
-      {IS_GOOGLE_CONFIGURED ? (
+      {showGoogle ? (
         <Pressable
           onPress={onGoogle}
           disabled={anyBusy}
