@@ -110,6 +110,11 @@ export function AppStack() {
       <Stack.Protected guard={!isLoggedIn}>
         <Stack.Screen name="introduction" />
         <Stack.Screen name="(entrances)" />
+        {/* Value before friction: the product catalogue is public on the
+            backend, so a guest can see what Markt actually sells before being
+            asked to join. Everything that needs an identity — cart, chat,
+            orders — stays behind the guard above. */}
+        <Stack.Screen name="browse" />
       </Stack.Protected>
 
       <Stack.Screen name="support" />

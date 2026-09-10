@@ -108,3 +108,22 @@ export async function reviewProduct(productId: string, orderId: string, rating: 
     body: JSON.stringify({ order_id: orderId, rating, content: comment, title}),
   });
 }
+
+/**
+ * The public catalogue — GET /products/ requires no session.
+ *
+ * This is what makes guest browsing real rather than a teaser: someone can see
+ * actual products and prices before deciding whether to create an account. The
+ * personalised feed is a different endpoint and does require auth.
+ */
+export async function getPublicProducts(
+  page = 1,
+  per_page = 20
+): Promise<ProductResponse[]> {
+  const res = await request<ApiResponse<{ items: ProductResponse[] }>>(
+    `${BASE_URL}/products/?page=${page}&per_page=${per_page}`,
+    { method: "GET" }
+  );
+  const data: any = (res as any).data ?? res;
+  return data?.items ?? data ?? [];
+}
