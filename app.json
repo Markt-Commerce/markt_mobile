@@ -54,7 +54,8 @@
         }
       ],
       "expo-video",
-      "expo-image"
+      "expo-image",
+      "expo-secure-store"
     ],
     "extra": {
       "router": {},
