@@ -19,6 +19,7 @@ import { useGamificationLookup } from "../hooks/useGamificationLookup";
 import TierBadge from "./gamification/TierBadge";
 import PostActionBar from "./PostActionBar";
 import { useTokens } from "../theme/useTokens";
+import { tierColor } from "../theme/tierColors";
 
 interface Props {
   post: FeedPost;
@@ -158,7 +159,7 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
                   <TierBadge
                     tier={authorGamification.tier.key}
                     stars={authorGamification.tier.stars}
-                    colorHex={authorGamification.tier.color_hex}
+                    colorHex={tierColor(authorGamification.tier?.key, t)}
                     size="sm"
                   />
                 )}

@@ -4,6 +4,8 @@ import TierBadge from "./TierBadge";
 import TierProgressBar from "./TierProgressBar";
 import BadgeCard from "./BadgeCard";
 import type { GamMe, UserBadge } from "../../types/gamification";
+import { tierColor } from "../../theme/tierColors";
+import { useTokens } from "../../theme/useTokens";
 
 export interface GamificationStripProps {
   profile: GamMe;
@@ -25,6 +27,7 @@ export default function GamificationStrip({
   onBadgePress,
   className = "",
 }: GamificationStripProps) {
+  const t = useTokens();
   const preview = badges.filter((b) => b.earned).slice(0, 5);
 
   return (
@@ -39,7 +42,7 @@ export default function GamificationStrip({
             tier={profile.tier.key}
             stars={profile.tier.stars}
             name={profile.tier.name}
-            colorHex={profile.tier.color_hex}
+            colorHex={tierColor(profile.tier?.key, t)}
             size="lg"
             showName
           />
@@ -51,7 +54,7 @@ export default function GamificationStrip({
           progress={profile.tier.progress_to_next}
           pointsToNext={profile.tier.points_to_next_tier}
           nextTierName={null}
-          colorHex={profile.tier.color_hex}
+          colorHex={tierColor(profile.tier?.key, t)}
           className="mt-4"
         />
       </TouchableOpacity>

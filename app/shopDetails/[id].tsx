@@ -34,6 +34,7 @@ import BadgeGrid from "../../components/gamification/BadgeGrid";
 import FeedPostCard from "../../components/FeedPostCard";
 import type { FeedPost } from "../../types/feed";
 import { saveItem, unsaveItem } from "../../services/sections/saved";
+import { tierColor } from "../../theme/tierColors";
 
 function ShopPostCard({ post, shop }: { post: ShopPost; shop: ShopData }) {
   const [saved, setSaved] = useState(false);
@@ -197,7 +198,7 @@ export default function Shop() {
                   <TierBadge
                     tier={sellerGamification.tier.key}
                     stars={sellerGamification.tier.stars}
-                    colorHex={sellerGamification.tier.color_hex}
+                    colorHex={tierColor(sellerGamification.tier?.key, t)}
                     size="sm"
                   />
                 )}

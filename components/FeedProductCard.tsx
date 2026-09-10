@@ -21,6 +21,7 @@ import TierBadge from "./gamification/TierBadge";
 import BadgeChip from "./gamification/BadgeChip";
 import { useTokens } from "../theme/useTokens";
 import { formatPrice } from "../utils/money";
+import { tierColor } from "../theme/tierColors";
 
 interface Props {
   product: FeedProduct;
@@ -134,7 +135,7 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
               <TierBadge
                 tier={sellerGamification.tier.key}
                 stars={sellerGamification.tier.stars}
-                colorHex={sellerGamification.tier.color_hex}
+                colorHex={tierColor(sellerGamification.tier?.key, t)}
                 size="sm"
               />
             )}
