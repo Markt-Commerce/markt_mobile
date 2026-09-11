@@ -36,6 +36,29 @@ export interface ShopLite {
   verification_status?: string;
   is_followed?: boolean;
   stats?: ShopStats;
+
+  /** The shop's cover image. Null until the seller uploads one. */
+  banner_url?: string | null;
+
+  /**
+   * Distance from the coordinates the request carried, in km.
+   *
+   * Null when the request had no location, or when this shop has none — most
+   * sellers do not yet. A missing distance is not zero, and must never be
+   * rendered as "0.0 km away".
+   */
+  distance_km?: number | null;
+}
+
+/** How the server scoped a proximity search, echoed back so the UI can say so. */
+export interface ShopsLocationInfo {
+  /** False when no usable coordinates were sent, or nothing was in range. */
+  applied: boolean;
+  /**
+   * The tightest rung of the fallback ladder that contains every result
+   * (10 / 50 / 200 km). Null when the list is not distance-restricted.
+   */
+  radius_km: number | null;
 }
 
 export interface ShopDetail extends ShopLite {
@@ -60,6 +83,8 @@ export interface ShopsResponse {
 }
 
 export interface ShopsListResponse extends ShopsResponse {
+  /** Present on every list response; `applied: false` when not distance-scoped. */
+  location?: ShopsLocationInfo;
   pagination: {
     page: number;
     per_page: number;
@@ -87,7 +112,15 @@ export async function getShops(params: {
   active_only?: boolean;
   verified_only?: boolean;
   category?: string;
-  sort_by?: "rating" | "name" | "recent" | "followers";
+  sort_by?: "rating" | "name" | "recent" | "followers" | "nearby";
+  /**
+   * Where the shopper is. Sent as a pair or not at all — the backend refuses
+   * a lone coordinate, and treats (0, 0) as a failed geocode rather than a
+   * location. `sort_by: "nearby"` without them falls back to rating rather
+   * than erroring, so a denied permission does not break browsing.
+   */
+  latitude?: number;
+  longitude?: number;
 } = {}): Promise<ShopsListResponse> {
   const p = new URLSearchParams();
   if (params.page) p.set("page", String(params.page));
@@ -97,6 +130,13 @@ export async function getShops(params: {
   if (params.verified_only) p.set("verified_only", "true");
   if (params.category) p.set("category", params.category);
   if (params.sort_by) p.set("sort_by", params.sort_by);
+  if (
+    typeof params.latitude === "number" &&
+    typeof params.longitude === "number"
+  ) {
+    p.set("latitude", String(params.latitude));
+    p.set("longitude", String(params.longitude));
+  }
   const query = p.toString();
   return request<ShopsListResponse>(`/users/shops${query ? `?${query}` : ""}`, { method: "GET" });
 }
