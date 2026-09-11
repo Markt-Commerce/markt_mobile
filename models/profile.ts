@@ -51,6 +51,8 @@ export type Address = {
   categories: string;
   verification_status: 'verified' | 'unverified' | 'pending';
   shop_name: string;
+  /** The shop's cover image. Null until the seller uploads one. */
+  banner_url: string | null;
   total_products: number;
   total_raters: number;
   id: number;

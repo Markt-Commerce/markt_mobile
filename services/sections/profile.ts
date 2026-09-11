@@ -1,4 +1,6 @@
 import { BASE_URL, request } from '../api';
+import { appendLocalFile } from '../../utils/formDataFile';
+import { prepareImageForUpload } from '../../utils/imagePrep';
 import {
   UserAddress,
   UserProfile,
@@ -71,4 +73,34 @@ export async function updateUserAddress(data: UserAddress): Promise<UserAddress>
     body: JSON.stringify(data),
   });
   return res;
+}
+
+/**
+ * Uploads a shop's cover image (POST /api/v1/users/profile/seller/banner).
+ *
+ * Separate from the profile picture because they are different images in
+ * different places: the picture is the shop's avatar, the banner is the wide
+ * image behind it on a shop card. Replacing one deletes the file it replaced,
+ * so re-uploading does not leak.
+ */
+export async function uploadShopBanner(
+  uri: string,
+  fileName = 'banner.jpg'
+): Promise<{ urls?: { original?: string } }> {
+  const form = new FormData();
+  // Downscale/re-encode first, then append as a File (Blob) — classic
+  // `{uri, name, type}` parts throw "Unsupported FormDataPart implementation"
+  // under Expo's fetch. Same shape as uploadProfilePicture.
+  const prepped = await prepareImageForUpload({ uri });
+  appendLocalFile(
+    form,
+    'file',
+    prepped.uri,
+    prepped.uri === uri ? fileName : undefined
+  );
+
+  return request(`${BASE_URL}/users/profile/seller/banner`, {
+    method: 'POST',
+    body: form,
+  });
 }

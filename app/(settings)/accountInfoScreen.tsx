@@ -1,6 +1,6 @@
 // screens/AccountInfoScreen.tsx
 import React, { useState, useEffect } from 'react';
-import { Camera } from 'lucide-react-native';
+import { Camera, Image as ImageIcon } from 'lucide-react-native';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Image, ActivityIndicator } from 'react-native';
 import { useUser } from '../../hooks/userContextProvider';
 import { request } from "../../services/api";
@@ -13,7 +13,7 @@ import ScreenHeader from '../../components/ScreenHeader';
 import { Input } from '../../components/inputs';
 import * as ImagePicker from 'expo-image-picker';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getUserProfile } from '../../services/sections/profile';
+import { getUserProfile, uploadShopBanner } from '../../services/sections/profile';
 import { UserProfile } from '../../models/profile';
 import { attemptMultipleUpload } from '../../services/sections/media';
 import { isArray } from 'lodash';
@@ -45,6 +45,8 @@ export default function AccountInfoScreen() {
   const [currentProfilePic, setCurrentProfilePic] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [imageLoading, setImageLoading] = useState(false);
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
+  const [bannerLoading, setBannerLoading] = useState(false);
   const nav = useRouter();
 
   const {
@@ -99,6 +101,7 @@ export default function AccountInfoScreen() {
               shop_name: profile.seller_account?.shop_name || '',
               description: profile.seller_account?.description || '',
             });
+            setBannerUrl(profile.seller_account?.banner_url || null);
           }
           resetGeneral({ phone_number: profile.phone_number || '' });
           return profile;
@@ -171,6 +174,50 @@ export default function AccountInfoScreen() {
     }
   };
 
+
+  /**
+   * The shop's cover image, which is what makes a shop card a card rather
+   * than a row. Separate from the profile picture: that one is the shop's
+   * avatar and sits *on top of* this.
+   */
+  const changeBanner = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert("Permission to access camera roll is required!");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      // Wide, because that is the shape it is displayed in — cropping here
+      // beats cropping in a card the seller never sees.
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.85,
+    });
+    if (result.canceled) return;
+
+    try {
+      setBannerLoading(true);
+      const media = await uploadShopBanner(result.assets[0].uri);
+      const url = media?.urls?.original;
+      // Cache-bust: the CDN reuses the URL, so the old image would stick.
+      setBannerUrl(url ? `${url}${url.includes("?") ? "&" : "?"}v=${Date.now()}` : null);
+      show({
+        variant: "success",
+        title: "Cover updated",
+        message: "Shoppers will see this behind your shop name.",
+      });
+    } catch (err: any) {
+      show({
+        variant: "error",
+        title: "Could not update cover",
+        message: friendlyErrorMessage(err, "Please try another image."),
+      });
+    } finally {
+      setBannerLoading(false);
+    }
+  };
 
   const changeImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -333,6 +380,36 @@ export default function AccountInfoScreen() {
                 Seller information
               </Text>
               <View className="rounded p-4 border bg-surface-raised border-border">
+                {/* Cover image */}
+                <TouchableOpacity
+                  onPress={changeBanner}
+                  disabled={bannerLoading}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="Change shop cover image"
+                  className="mb-4 h-28 w-full overflow-hidden rounded-xl bg-primary-muted items-center justify-center"
+                >
+                  {bannerUrl ? (
+                    <Image
+                      source={{ uri: bannerUrl }}
+                      className="h-full w-full"
+                      resizeMode="cover"
+                    />
+                  ) : null}
+                  {bannerLoading ? (
+                    <View className="absolute inset-0 items-center justify-center">
+                      <ActivityIndicator color={t.textOnPrimary} />
+                    </View>
+                  ) : !bannerUrl ? (
+                    <View className="items-center">
+                      <ImageIcon size={22} color={t.primaryText} strokeWidth={1.8} />
+                      <Text className="mt-1.5 text-[12px] font-semibold text-primary-text">
+                        Add a cover image
+                      </Text>
+                    </View>
+                  ) : null}
+                </TouchableOpacity>
+
                 <Input
                   placeholder="Shop Name"
                   control={sellerControl}
