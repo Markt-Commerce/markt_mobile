@@ -112,7 +112,7 @@ export default function ShopBasics() {
           <TextInput
             value={shopName}
             onChangeText={setShopName}
-            placeholder="e.g. Tech Haven"
+            placeholder="e.g. Amaka Fabrics"
             placeholderTextColor={t.textMuted}
             autoFocus
             autoCapitalize="words"

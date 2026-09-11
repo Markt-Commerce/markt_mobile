@@ -40,7 +40,7 @@ const schema = z.object({
 });
 
 const ShopInformationScreen = () => {
-  const { setUser } = useUser();
+  const { setUser, refreshProfile } = useUser();
   const router = useRouter();
   const { show } = useToast(); // <-- toast API
   const t = useTokens();
@@ -145,6 +145,10 @@ const ShopInformationScreen = () => {
       if (profilePictureUri) {
         try {
           await uploadProfilePicture(profilePictureUri, "profile.jpg");
+          // Pull the new URL into context. Without this the avatar stayed
+          // blank everywhere until the next sign-in, because nothing told
+          // the app the picture it had just uploaded existed.
+          await refreshProfile();
         } catch (e) {
           logger.warn("signup: could not upload profile picture", e);
         }
@@ -188,7 +192,7 @@ const ShopInformationScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View className="flex-row items-center justify-between pb-8 pt-4 px-6">
+        <View className="flex-row items-center justify-between pb-4 pt-2 px-4">
           {/* The step before this one is verification, which a verified
               account cannot re-enter — it would only 400 with "already
               verified". Shown only when there is somewhere real to go. */}
@@ -208,17 +212,17 @@ const ShopInformationScreen = () => {
           </Text>
         </View>
 
-        <StepProgress step={1} total={2} label="About your shop" className="mx-4 mb-8" />
+        <StepProgress step={1} total={2} label="About your shop" className="mx-4 mb-6" />
 
         {/* Card */}
         <View className="mx-4">
           <View>
             {/* Avatar placeholder with image picker */}
-            <View className="items-center mb-10">
+            <View className="items-center mb-8">
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={changeProfilePicture}
-                className="h-24 w-24 rounded-full border-2 border-dashed items-center justify-center overflow-hidden bg-surface-sunken border-border"
+                className="h-24 w-24 rounded-full border items-center justify-center overflow-hidden bg-surface-sunken border-border"
               >
                 {profilePictureUri ? (
                   <Image source={{ uri: profilePictureUri }} className="w-full h-full" />
@@ -234,13 +238,13 @@ const ShopInformationScreen = () => {
             {/* Shop Name */}
             <View className="mb-6">
               <Label>Shop Name</Label>
-              <Input placeholder="e.g. Vintage Market" control={control} name="shopName" errors={errors} />
+              <Input placeholder="e.g. Amaka Fabrics" control={control} name="shopName" errors={errors} />
             </View>
 
             {/* Username — debounced check */}
             <View className="mb-6">
               <Label>Shop Username</Label>
-              <Input placeholder="markt_handle" control={control} name="userName" errors={errors} autoCapitalize="none" />
+              <Input placeholder="amaka_fabrics" control={control} name="userName" errors={errors} autoCapitalize="none" />
               <View className="mt-2 h-4">
                 {usernameStatus === "taken" ? (
                   <Text className="text-xs text-danger-text ">{usernameMessage}</Text>
@@ -264,12 +268,12 @@ const ShopInformationScreen = () => {
             {/* Shop Description */}
             <View className="mb-10">
               <Label>Shop Description</Label>
-              <Input placeholder="Tell us what you sell..." control={control} name="shopDescription" errors={errors} multiline />
+              <Input placeholder="e.g. Ankara, lace and aso-oke, cut to order." control={control} name="shopDescription" errors={errors} multiline />
             </View>
 
             {/* Categories */}
             <View className="mb-10">
-              <Text className="mb-4 text-sm font-bold uppercase tracking-widest text-text-primary">Niches & Categories</Text>
+              <Text className="mb-2 text-[13px] font-semibold text-text-secondary">What do you sell?</Text>
               <View className="flex-row flex-wrap gap-3">
                 {selectedCategories.map((cat) => (
                   <View key={cat.id.toString()} className="flex-row items-center rounded px-4 py-2 border bg-surface-sunken border-border">

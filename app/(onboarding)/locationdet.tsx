@@ -42,6 +42,10 @@ export default function AddAddressScreen() {
 
   const { register, control, handleSubmit, setValue, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<LocationFormData>({
     resolver: zodResolver(locationSchema),
+    // Markt is Nigeria-only — prices are in naira and phone numbers are
+    // validated as Nigerian — so asking every user to type the country is a
+    // required field with exactly one correct answer. Still editable.
+    defaultValues: { country: "Nigeria" },
   });
 
   const reverseGeocodeAndAutofill = async (loc: Location.LocationObject) => {
@@ -169,9 +173,14 @@ export default function AddAddressScreen() {
         title: "All set",
         message: "Welcome to Markt.",
       });
+      // Straight into the app. There used to be a standalone "Profile
+      // picture" screen after this, but both profile screens already have a
+      // photo picker in the form — so it asked a second time for something
+      // already given, at the point people most want to be finished.
+      //
       // `replace`: signup must not stay in history, or an iOS swipe-back
       // lands the user in the middle of a flow they have finished.
-      router.replace("/addProfilePicture");
+      router.replace("/(tabs)");
     } catch (error) {
       show({
         variant: "error",
@@ -217,7 +226,7 @@ export default function AddAddressScreen() {
 
           {/* px-4 to align with the form below, which is what it is measuring
               progress through — the header above uses px-6. */}
-          <StepProgress step={2} total={2} label="Where you are" className="px-4 mb-8" />
+          <StepProgress step={2} total={2} label="Where you are" className="px-4 mb-6" />
 
           <View className="px-4">
             <View>
@@ -233,13 +242,13 @@ export default function AddAddressScreen() {
                 onPress={useCurrentLocation}
                 disabled={geocoding}
               >
-                {geocoding ? <ActivityIndicator size="small" color={iconColor} /> : <Text className="font-bold text-xs tracking-widest uppercase text-text-primary">Use Current Location</Text>}
+                {geocoding ? <ActivityIndicator size="small" color={iconColor} /> : <Text className="font-semibold text-[14px] text-text-primary">Use my current location</Text>}
               </TouchableOpacity>
 
               <View className="gap-6">
                 <View>
                   <Label>Street Address</Label>
-                  <Input placeholder="123 Main St" control={control} name="street" errors={errors} />
+                  <Input placeholder="12 Allen Avenue" control={control} name="street" errors={errors} />
                   {location && !geocoding && (
                     <Text className="text-[10px] mt-1 text-text-secondary">Detected near you</Text>
                   )}
@@ -248,7 +257,7 @@ export default function AddAddressScreen() {
                 <View className="flex-row gap-4">
                   <View className="flex-1">
                     <Label>House No.</Label>
-                    <Input placeholder="A-1" control={control} name="house_number" errors={errors} />
+                    <Input placeholder="12B" control={control} name="house_number" errors={errors} />
                   </View>
                   <View className="flex-[2]">
                     <Label>Postal Code</Label>
@@ -258,17 +267,17 @@ export default function AddAddressScreen() {
 
                 <View>
                   <Label>City</Label>
-                  <Input placeholder="New York" control={control} name="city" errors={errors} />
+                  <Input placeholder="Ikeja" control={control} name="city" errors={errors} />
                 </View>
 
                 <View>
                   <Label>State / Region</Label>
-                  <Input placeholder="NY" control={control} name="state" errors={errors} />
+                  <Input placeholder="Lagos" control={control} name="state" errors={errors} />
                 </View>
 
                 <View className="mb-4">
                   <Label>Country</Label>
-                  <Input placeholder="United States" control={control} name="country" errors={errors} />
+                  <Input placeholder="Nigeria" control={control} name="country" errors={errors} />
                 </View>
               </View>
 

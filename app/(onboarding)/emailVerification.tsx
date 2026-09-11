@@ -234,7 +234,7 @@ const EmailVerification = () => {
                   accessibilityState={{ disabled: sending || cooldown > 0 }}
                 >
                   <Text
-                    className={`font-bold text-sm underline uppercase tracking-widest ${
+                    className={`font-semibold text-[14px] underline ${
                       cooldown > 0 || sending ? "text-text-muted" : "text-text-primary"
                     }`}
                   >

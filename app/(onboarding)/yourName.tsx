@@ -60,7 +60,7 @@ export default function YourName() {
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="Your name"
+            placeholder="e.g. Amaka Obi"
             placeholderTextColor={t.textMuted}
             autoFocus
             autoCapitalize="words"

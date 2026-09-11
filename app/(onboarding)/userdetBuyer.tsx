@@ -38,7 +38,7 @@ const schema = z.object({
 });
 
 export default function UserInfoScreen() {
-  const { setUser } = useUser();
+  const { setUser, refreshProfile } = useUser();
   const router = useRouter();
   const { show } =  useToast();
   const t = useTokens();
@@ -125,6 +125,10 @@ export default function UserInfoScreen() {
         // someone at the end of signup.
         try {
           await uploadProfilePicture(profilePictureUri, "profile.jpg");
+          // Pull the new URL into context. Without this the avatar stayed
+          // blank everywhere until the next sign-in, because nothing told
+          // the app the picture it had just uploaded existed.
+          await refreshProfile();
         } catch (e) {
           logger.warn("signup: could not upload profile picture", e);
         }
@@ -168,7 +172,9 @@ export default function UserInfoScreen() {
           className="flex-1"
           contentContainerStyle={{
             flexGrow: 1,
-            justifyContent: "center",
+            // Not `center`: these forms are taller than the screen, so
+            // centring pushed the first field below the fold and left a gap
+            // above the header that looked like a rendering fault.
             alignItems: "center",
             paddingHorizontal: 16,
           }}
@@ -177,7 +183,7 @@ export default function UserInfoScreen() {
         >
           <View className="w-full max-w-[520px]">
             {/* Header */}
-            <View className="flex-row items-center justify-between pb-8 pt-4">
+            <View className="flex-row items-center justify-between pb-4 pt-2">
               {/* The step before this one is verification, which a verified
                   account cannot re-enter — it would only 400 with "already
                   verified". Shown only when there is somewhere real to go. */}
@@ -195,26 +201,26 @@ export default function UserInfoScreen() {
             </View>
 
             {/* Title */}
-            <View className="mb-8">
-              <Text className="text-[32px] font-bold leading-tight text-text-primary">
-                Your{"\n"}profile
+            <View className="mb-5">
+              <Text className="text-[28px] font-bold leading-9 text-text-primary">
+                Your profile
               </Text>
-              <Text className="text-base mt-2 text-text-secondary">
+              <Text className="text-[15px] mt-1.5 text-text-secondary">
                 Let's get to know you better.
               </Text>
             </View>
 
-            <StepProgress step={1} total={2} label="About you" className="mb-8" />
+            <StepProgress step={1} total={2} label="About you" className="mb-6" />
 
             {/* No card: a bordered panel inside a screen that is already a panel
                 adds an edge without adding meaning. Spacing does the work. */}
             <View>
               {/* Avatar placeholder with image picker */}
-              <View className="items-center mb-10">
+              <View className="items-center mb-8">
                 <TouchableOpacity
                   activeOpacity={0.85}
                   onPress={changeProfilePicture}
-                  className="h-24 w-24 rounded-full border-2 border-dashed items-center justify-center overflow-hidden bg-surface-sunken border-border"
+                  className="h-24 w-24 rounded-full border items-center justify-center overflow-hidden bg-surface-sunken border-border"
                 >
                   {profilePictureUri ? (
                     <Image source={{ uri: profilePictureUri }} className="w-full h-full" />
@@ -231,7 +237,7 @@ export default function UserInfoScreen() {
               <View className="mb-6">
                 <Label>Full Name</Label>
                 <Input
-                  placeholder="e.g. John Doe"
+                  placeholder="e.g. Amaka Obi"
                   control={control}
                   name="Buyername"
                   errors={errors}
@@ -243,7 +249,7 @@ export default function UserInfoScreen() {
               <View className="mb-6">
                 <Label>Username</Label>
                 <Input
-                  placeholder="choose_a_unique_id"
+                  placeholder="amaka_obi"
                   control={control}
                   name="username"
                   errors={errors}
