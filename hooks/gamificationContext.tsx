@@ -11,6 +11,7 @@ import React, {
   useContext,
   useEffect,
   useRef,
+  useState,
 } from "react";
 import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -72,53 +73,67 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
    * and losing the very first reward the app gives anyone to a backgrounded
    * app is exactly the sort of thing nobody ever notices is broken.
    */
-  const pendingPointsRef = useRef<{ delta: number; reason: string } | null>(null);
+  type HeldPoints = { delta: number; reason: string };
+
+  // State, not just a ref. The ref alone had a hole: restoring a held award
+  // from AsyncStorage on mount could not re-trigger the payout effect, which
+  // had already run — so points earned in a previous run were only ever paid
+  // out if the user happened to walk back into onboarding and out again.
+  const [pendingPoints, setPendingPoints] = useState<HeldPoints | null>(null);
+  // The ref shadows it so the socket callback can read and accumulate without
+  // re-subscribing on every change.
+  const pendingPointsRef = useRef<HeldPoints | null>(null);
+
   const segments = useSegments();
   const inOnboarding =
     segments[0] === "(onboarding)" || segments[0] === "(entrances)";
   const deferPointsRef = useRef(inOnboarding);
   deferPointsRef.current = inOnboarding;
 
-  const persistPendingPoints = useCallback(
-    async (value: { delta: number; reason: string } | null) => {
+  const holdPoints = useCallback((next: HeldPoints | null) => {
+    pendingPointsRef.current = next;
+    setPendingPoints(next);
+    (async () => {
       try {
-        if (value) await AsyncStorage.setItem(PENDING_POINTS_KEY, JSON.stringify(value));
+        if (next) await AsyncStorage.setItem(PENDING_POINTS_KEY, JSON.stringify(next));
         else await AsyncStorage.removeItem(PENDING_POINTS_KEY);
       } catch {
         // A lost celebration is not worth surfacing. Worst case it is simply
         // not shown, which is where we started.
       }
-    },
-    []
-  );
+    })();
+  }, []);
 
   // Restore anything held from a previous run, once, on mount.
   useEffect(() => {
     (async () => {
       try {
         const raw = await AsyncStorage.getItem(PENDING_POINTS_KEY);
-        if (raw && !pendingPointsRef.current) pendingPointsRef.current = JSON.parse(raw);
+        if (raw && !pendingPointsRef.current) {
+          const parsed = JSON.parse(raw) as HeldPoints;
+          if (typeof parsed?.delta === "number" && parsed.delta > 0) {
+            pendingPointsRef.current = parsed;
+            setPendingPoints(parsed);
+          }
+        }
       } catch {
         /* nothing held */
       }
     })();
   }, []);
 
-  // Pay out on arrival. `inOnboarding` flipping false is the moment the user
-  // lands in the app, whether that is the end of signup or a relaunch.
+  // Pay out on arrival. Either the user has just left onboarding, or they
+  // relaunched straight into the app carrying something from last time.
   useEffect(() => {
-    if (inOnboarding || !user?.user_id) return;
-    const held = pendingPointsRef.current;
-    if (!held) return;
-    pendingPointsRef.current = null;
-    void persistPendingPoints(null);
+    if (inOnboarding || !user?.user_id || !pendingPoints) return;
+    holdPoints(null);
     celebrate({
       kind: "points",
-      id: `points-${held.reason}-${held.delta}`,
-      title: `+${held.delta} points`,
-      subtitle: reasonLabel(held.reason),
+      id: `points-${pendingPoints.reason}-${pendingPoints.delta}`,
+      title: `+${pendingPoints.delta} points`,
+      subtitle: reasonLabel(pendingPoints.reason),
     });
-  }, [inOnboarding, user?.user_id, celebrate, persistPendingPoints]);
+  }, [inOnboarding, user?.user_id, pendingPoints, celebrate, holdPoints]);
 
   const drainUnseen = useCallback(async () => {
     if (!user?.user_id) return;
@@ -203,11 +218,10 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
         // else, the toast is still the right weight: points arrive often, and
         // a full-screen celebration for every one of them would be noise.
         if (deferPointsRef.current) {
-          pendingPointsRef.current = {
+          holdPoints({
             delta: (pendingPointsRef.current?.delta ?? 0) + e.delta,
             reason: e.reason,
-          };
-          void persistPendingPoints(pendingPointsRef.current);
+          });
           haptics.tick();
           return;
         }
@@ -219,7 +233,7 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
           message: reasonLabel(e.reason),
         });
       },
-      [bump, show]
+      [bump, show, holdPoints]
     ),
     onBadge: useCallback(
       (e) => {
