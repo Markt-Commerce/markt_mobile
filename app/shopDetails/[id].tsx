@@ -168,14 +168,21 @@ export default function Shop() {
           </TouchableOpacity>
         </View>
 
-        {/* Cover Image */}
-        <ImageBackground
-          source={{
-            uri: shop?.user.profile_picture || defaultProfilePicture,
-          }}
-          className="w-full h-56 overflow-hidden bg-media"
-          resizeMode="cover"
-        />
+        {/* Cover image.
+            This used to render the shop's *avatar* blown up to full width, so
+            every shop page showed the same picture twice — once stretched
+            across the top and once as the circle sitting on it. Sellers now
+            have a real banner; when there is none, a tinted block is a better
+            answer than the avatar again. */}
+        {shop?.banner_url ? (
+          <ImageBackground
+            source={{ uri: shop.banner_url }}
+            className="w-full h-56 overflow-hidden bg-media"
+            resizeMode="cover"
+          />
+        ) : (
+          <View className="w-full h-56 bg-primary-muted" />
+        )}
 
         {/* Profile Section */}
         <View className="px-6 py-6">

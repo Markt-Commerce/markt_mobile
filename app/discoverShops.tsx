@@ -245,10 +245,16 @@ export default function DiscoverShopsScreen() {
       </View>
 
       {/* Sort, then categories, on one rail — two stacked rails ate a third of
-          the screen before a single shop appeared. */}
+          the screen before a single shop appeared.
+
+          `flexGrow: 0` is doing real work: a horizontal ScrollView in a
+          column has no intrinsic height, so it stretched to fill whatever
+          the list below it did not claim, leaving the chips floating in the
+          middle of a tall empty band with gaps above and below. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={{ flexGrow: 0, flexShrink: 0 }}
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingBottom: 12,
@@ -295,7 +301,7 @@ export default function DiscoverShopsScreen() {
       {loading ? (
         // Skeletons rather than a spinner: the shape of what is coming is
         // itself information, and it stops the list jumping when it lands.
-        <View className="px-4">
+        <View className="flex-1 px-4">
           {[0, 1, 2].map((i) => (
             <ProductSkeletonRow key={i} />
           ))}
@@ -326,6 +332,7 @@ export default function DiscoverShopsScreen() {
         </View>
       ) : (
         <FlatList
+          className="flex-1"
           data={shops}
           keyExtractor={(item) => String(item.id)}
           renderItem={({ item }) => (
