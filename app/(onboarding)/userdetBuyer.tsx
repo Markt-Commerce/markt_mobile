@@ -17,7 +17,9 @@ import { Input } from "../../components/inputs";
 import { useUser } from "../../hooks/userContextProvider";
 import { checkUsername } from "../../services/sections/auth";
 import { useRouter } from "expo-router";
-import { SignupStepTwo, register, useRegData } from "../../models/signupSteps";
+import { updateUserProfile, updateBuyerProfile } from "../../services/sections/profile";
+import { uploadProfilePicture } from "../../services/sections/auth";
+import { logger } from "../../utils/logger";
 import Button from "../../components/button";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useToast } from "../../components/ToastProvider";
@@ -37,7 +39,6 @@ const schema = z.object({
 
 export default function UserInfoScreen() {
   const { setUser } = useUser();
-  const { regData, setRegData } = useRegData();
   const router = useRouter();
   const { show } =  useToast();
   const t = useTokens();
@@ -46,6 +47,7 @@ export default function UserInfoScreen() {
   const [profilePictureUri, setProfilePictureUri] = React.useState<string | null>(null);
   const [usernameStatus, setUsernameStatus] = React.useState<"idle" | "checking" | "available" | "taken">("idle");
   const [usernameMessage, setUsernameMessage] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
 
   const {
     control,
@@ -76,9 +78,6 @@ export default function UserInfoScreen() {
     checkUsernameDebounced(username);
   }, [username]);
 
-  // Change this to the actual next screen in your flow if different
-  const NEXT_ROUTE = "/emailVerification";
-
   const changeProfilePicture = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
@@ -97,43 +96,61 @@ export default function UserInfoScreen() {
     }
   };
 
+  /**
+   * Saves to the account, which exists by the time this screen opens.
+   *
+   * It used to merge into an in-memory context that was POSTed two screens
+   * later, so an app kill here lost everything typed — and a failure two
+   * screens later reported as "registration failed" with no clue which field
+   * caused it.
+   */
   const handleSubmitForm = async (data: z.infer<typeof schema>) => {
-    const userData: SignupStepTwo = {
-      buyer_data: {
-        buyername: data.Buyername,
-        shipping_address: {}, // will be collected in a later step
-      },
-      username: data.username,
-      phone_number: data.phone_number,
-    };
-
-    // Merge step data into the registration payload
-    const updatedRegData = register(regData, userData);
-    delete updatedRegData.seller_data; // ensure we’re on the buyer path
-    setRegData(updatedRegData);
-
-    // send the user data to the backend here
-    // may move this later to a another signup step
+    if (saving) return;
+    setSaving(true);
     try {
-      //store user in secure store
-      /* await SecureStore.setItemAsync('user', JSON.stringify({
-        email: regData.email,
-        password: regData.password,
-        userType: regData.account_type,
-      })); */
+      // Two calls because they are two resources: the handle lives on the
+      // user, the display name on the buyer profile. The handle goes first —
+      // it is the one that can be refused, and being told "that's taken"
+      // after the rest has saved is worse than before.
+      if (data.username) {
+        await updateUserProfile({
+          username: data.username,
+          phone_number: data.phone_number,
+        });
+      }
+      await updateBuyerProfile({ buyername: data.Buyername });
+
+      if (profilePictureUri) {
+        // Best-effort: a photo is optional, and failing it must not block
+        // someone at the end of signup.
+        try {
+          await uploadProfilePicture(profilePictureUri, "profile.jpg");
+        } catch (e) {
+          logger.warn("signup: could not upload profile picture", e);
+        }
+      }
+
       show({
         variant: "success",
-        title: "Registration Successful",
-        message: "Well done! Your information has been saved.",
-      })
+        title: "Profile saved",
+        message: "Where should we show you things from?",
+      });
       router.push("/locationdet");
-    } catch (error) {
+    } catch (error: any) {
+      const taken = error?.status === 409;
       show({
         variant: "error",
-        title: "Registration Failed",
-        message: friendlyErrorMessage(error, "Could not save your information. Please review it and try again."),
+        title: taken ? "That username is taken" : "Could not save your details",
+        message: taken
+          ? "Pick another one and try again."
+          : friendlyErrorMessage(
+              error,
+              "Could not save your information. Please review it and try again."
+            ),
       });
-  }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const Label = ({ children }: { children: React.ReactNode }) => (
@@ -161,13 +178,20 @@ export default function UserInfoScreen() {
           <View className="w-full max-w-[520px]">
             {/* Header */}
             <View className="flex-row items-center justify-between pb-8 pt-4">
-              <TouchableOpacity
-                onPress={() => router.back()}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
-              >
-                <ArrowLeft size={20} color={iconColor} />
-              </TouchableOpacity>
+              {/* The step before this one is verification, which a verified
+                  account cannot re-enter — it would only 400 with "already
+                  verified". Shown only when there is somewhere real to go. */}
+              {router.canGoBack() ? (
+                <TouchableOpacity
+                  onPress={() => router.back()}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
+                >
+                  <ArrowLeft size={20} color={iconColor} />
+                </TouchableOpacity>
+              ) : (
+                <View className="h-10 w-10" />
+              )}
             </View>
 
             {/* Title */}
@@ -258,7 +282,8 @@ export default function UserInfoScreen() {
               {/* CTA — disable if username taken */}
               <Button
                 onPress={handleSubmit(handleSubmitForm)}
-                disabled={!isValid || usernameStatus === "taken" || usernameStatus === "checking"}
+                disabled={!isValid || saving || usernameStatus === "taken" || usernameStatus === "checking"}
+              loading={saving}
                 text="Continue"
                 variant="primary"
               />

@@ -16,6 +16,9 @@ import { useUser } from "../../hooks/userContextProvider";
 import { AccountType } from "../../models/auth";
 import { useRouter } from "expo-router";
 import { register, useRegData } from "../../models/signupSteps";
+import { registerUser } from "../../services/sections/auth";
+import { RegisterRequest } from "../../models/auth";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useToast } from "../../components/ToastProvider";
 import { useWatch } from "react-hook-form";
@@ -47,11 +50,12 @@ type FormValues = z.infer<typeof schema>;
 
 export default function SignupScreen() {
   const router = useRouter();
-  const { setRole, role } = useUser();
+  const { setRole, role, setUser } = useUser();
   const { regData, setRegData } = useRegData();
   const { show } = useToast();
   const t = useTokens();
   const iconColor = t.textPrimary;
+  const [submitting, setSubmitting] = React.useState(false);
   const mutedIconColor = t.textSecondary;
 
   const {
@@ -67,31 +71,70 @@ export default function SignupScreen() {
   const strength = getPasswordStrength(password);
   const setUserRole = (r: AccountType) => setRole(r);
 
+  /**
+   * This screen creates the account, rather than stashing three fields and
+   * creating it three screens later.
+   *
+   * That ordering was the source of three separate bugs: nothing survived an
+   * app kill, a duplicate email surfaced at the end instead of on the field
+   * that caused it, and the account was created logged-in but unverified
+   * while login refuses an unverified account — so closing the app mid-signup
+   * locked you out of the account you had just made.
+   */
   const onSubmit = async (data: FormValues) => {
+    if (submitting) return;
     haptics.tick();
+    setSubmitting(true);
     try {
+      const account = await registerUser({
+        email: data.email,
+        password: data.password,
+        account_type: role || "buyer",
+      } as RegisterRequest);
+
+      const accountType = (account.current_role ??
+        account.account_type ??
+        role ??
+        "buyer") as AccountType;
+      setUser({
+        email: account.email.toLowerCase(),
+        account_type: accountType,
+        user_id: account.id,
+      });
+      setRole(accountType);
+
+      // Kept only so the verification screen knows which address to show and
+      // resend to. Everything else it used to carry is now on the server.
       setRegData(
         register(regData, {
           email: data.email,
           password: data.password,
-          account_type: role || "buyer",
+          account_type: accountType,
         })
       );
 
       show({
         variant: "success",
-        title: "Account details saved",
-        message: role === "seller" ? "Let’s set up your seller profile." : "Let’s set up your buyer profile.",
+        title: "Account created",
+        message: `We sent a 6-digit code to ${data.email}.`,
       });
-
-      if (role === "seller") router.navigate("/userdetSeller");
-      else router.navigate("/userdetBuyer");
+      router.push({ pathname: "/emailVerification", params: { sent: "1" } });
     } catch (error: any) {
+      // 409 is the one worth naming: it is the whole reason this moved to the
+      // first screen, so it must land as advice, not as "something failed".
+      const taken = error?.status === 409;
       show({
         variant: "error",
-        title: "Sign up failed",
-        message: "Please check your details and try again.",
+        title: taken ? "That email is already registered" : "Sign up failed",
+        message: taken
+          ? "Sign in instead, or use a different address."
+          : friendlyErrorMessage(
+              error,
+              "Please check your details and try again."
+            ),
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -210,9 +253,10 @@ export default function SignupScreen() {
 
               {/* CTA */}
               <Button
-                text="Next"
+                text="Create account"
                 onPress={handleSubmit(onSubmit)}
-                disabled={!isValid}
+                disabled={!isValid || submitting}
+                loading={submitting}
                 variant="primary"
               />
 

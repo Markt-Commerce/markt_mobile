@@ -2,7 +2,11 @@ import React from "react";
 import { Stack } from "expo-router";
 
 /**
- * Profile completion, after the account exists.
+ * Everything that happens after the account exists.
+ *
+ * That is now most of signup: verification, the profile step, the address,
+ * and the photo — plus the shorter path OAuth users take, which skips
+ * straight to a name and a role.
  *
  * A separate group from `(entrances)` because these screens run on the *other*
  * side of authentication. `(entrances)` is guarded `!isLoggedIn`, so the moment

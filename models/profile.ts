@@ -1,3 +1,22 @@
+
+/**
+ * Where this account stands in signup.
+ *
+ * The server owns this rather than the client inferring it from blank
+ * fields: registration now happens on the first screen, so the app can be
+ * killed at any point afterwards and has to know where to resume.
+ */
+export type OnboardingStep =
+  | 'verify_email'
+  | 'buyer_profile'
+  | 'seller_profile';
+
+export interface OnboardingState {
+  email_verified: boolean;
+  profile_complete: boolean;
+  /** null when the account is finished and ready to use. */
+  next_step: OnboardingStep | null;
+}
 // models/user.ts
 export type Address = {
     house_number?: string;
@@ -39,6 +58,9 @@ export type Address = {
 }
 
   export interface UserProfile {
+  /** What this account still needs before it can be used. */
+  onboarding?: OnboardingState;
+
   id: string;
   username: string;
   email: string;
@@ -74,6 +96,13 @@ export interface SellerPolicies {
 export interface UpdateProfileRequest {
   phone_number?: string;
   profile_picture?: string;
+
+  /**
+   * Registration mints a handle when none is sent, and the screen that asks
+   * for one now runs after the account exists — so this is where a chosen
+   * handle lands. Refused with 409 when taken or reserved.
+   */
+  username?: string;
 }
 
 /** Request body for PATCH /api/v1/users/profile/buyer */
@@ -99,4 +128,16 @@ export interface UpdateSellerProfileRequest {
   shop_latitude?: number;
   shop_longitude?: number;
   shop_address?: Record<string, unknown>;
+}
+
+/** Body and response for PATCH /api/v1/users/address. */
+export interface UserAddress {
+  house_number?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postal_code?: string;
+  latitude?: number;
+  longitude?: number;
 }

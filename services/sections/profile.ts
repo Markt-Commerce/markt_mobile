@@ -1,5 +1,6 @@
 import { BASE_URL, request } from '../api';
 import {
+  UserAddress,
   UserProfile,
   UpdateProfileRequest,
   UpdateBuyerProfileRequest,
@@ -51,6 +52,21 @@ export async function updateBuyerProfile(data: UpdateBuyerProfileRequest): Promi
  */
 export async function updateSellerProfile(data: UpdateSellerProfileRequest): Promise<UserProfile> {
   const res = await request<UserProfile>(`${BASE_URL}/users/profile/seller`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+  return res;
+}
+
+/**
+ * Sets the user's address (PATCH /api/v1/users/address).
+ *
+ * This is the delivery/pickup address on the account. It is not the browse
+ * location — that is a separate concept with its own storage, because where
+ * you shop from and where you want things sent are different questions.
+ */
+export async function updateUserAddress(data: UserAddress): Promise<UserAddress> {
+  const res = await request<UserAddress>(`${BASE_URL}/users/address`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });

@@ -12,7 +12,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useUser } from "../../hooks/userContextProvider";
-import { SignupStepTwo, register, useRegData } from "../../models/signupSteps";
+import { updateUserProfile, updateSellerProfile } from "../../services/sections/profile";
+import { uploadProfilePicture } from "../../services/sections/auth";
+import { logger } from "../../utils/logger";
 import { getAllCategories } from "../../services/sections/categories";
 import { Category } from "../../models/categories";
 import { useRouter } from "expo-router";
@@ -39,7 +41,6 @@ const schema = z.object({
 
 const ShopInformationScreen = () => {
   const { setUser } = useUser();
-  const { regData, setRegData } = useRegData();
   const router = useRouter();
   const { show } = useToast(); // <-- toast API
   const t = useTokens();
@@ -50,6 +51,7 @@ const ShopInformationScreen = () => {
   const [selectedCategories, setSelectedCategories] = React.useState<Category[]>([]);
   const [modalVisible, setModalVisible] = React.useState(false);
   const [profilePictureUri, setProfilePictureUri] = React.useState<string | null>(null);
+  const [saving, setSaving] = React.useState(false);
   const [usernameStatus, setUsernameStatus] = React.useState<"idle" | "checking" | "available" | "taken">("idle");
   const [usernameMessage, setUsernameMessage] = React.useState("");
 
@@ -116,42 +118,58 @@ const ShopInformationScreen = () => {
     }
   };
 
+  /**
+   * Saves to the account, which exists by the time this screen opens.
+   *
+   * Previously this merged into an in-memory context POSTed on the location
+   * screen, so a shop's whole description could be lost to a backgrounded app.
+   */
   const handleSubmitForm = async (data: z.infer<typeof schema>) => {
-    const shopData: SignupStepTwo = {
-      username: data.userName,
-      phone_number: data.phoneNumber,
-      seller_data: {
-        policies: {}, // later
-        description: data.shopDescription,
-        shop_name: data.shopName,
-        category_ids: selectedCategories.map((c) => c.id),
-      },
-    };
-
-    const updatedRegData = register(regData, shopData);
-    delete updatedRegData.buyer_data;
-    
-    // Store local image URI if selected (will be uploaded in locationdet)
-    if (profilePictureUri) {
-      (updatedRegData as any).profile_picture_local = profilePictureUri;
-    }
-    
-    setRegData(updatedRegData);
-
+    if (saving) return;
+    setSaving(true);
     try {
+      // The handle first: it is the one the server can refuse, and being told
+      // "that's taken" after the shop has saved is worse than before it.
+      if (data.userName) {
+        await updateUserProfile({
+          username: data.userName,
+          phone_number: data.phoneNumber,
+        });
+      }
+      await updateSellerProfile({
+        shop_name: data.shopName,
+        description: data.shopDescription,
+        category_ids: selectedCategories.map((c) => c.id),
+      });
+
+      if (profilePictureUri) {
+        try {
+          await uploadProfilePicture(profilePictureUri, "profile.jpg");
+        } catch (e) {
+          logger.warn("signup: could not upload profile picture", e);
+        }
+      }
+
       show({
         variant: "success",
-        title: "Shop details saved",
-        message: "Well done! Your shop information has been saved.",
+        title: "Shop saved",
+        message: "Now, where is your shop?",
       });
-
       router.push("/locationdet");
     } catch (error: any) {
+      const taken = error?.status === 409;
       show({
         variant: "error",
-        title: "Could not complete signup",
-        message: friendlyErrorMessage(error, "Could not save your shop details. Please review them and try again."),
+        title: taken ? "That username is taken" : "Could not save your shop",
+        message: taken
+          ? "Pick another one and try again."
+          : friendlyErrorMessage(
+              error,
+              "Could not save your shop details. Please review them and try again."
+            ),
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -171,13 +189,20 @@ const ShopInformationScreen = () => {
       >
         {/* Header */}
         <View className="flex-row items-center justify-between pb-8 pt-4 px-6">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
-          >
-            <ArrowLeft size={20} color={iconColor} />
-          </TouchableOpacity>
+          {/* The step before this one is verification, which a verified
+              account cannot re-enter — it would only 400 with "already
+              verified". Shown only when there is somewhere real to go. */}
+          {router.canGoBack() ? (
+            <TouchableOpacity
+              onPress={() => router.back()}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
+            >
+              <ArrowLeft size={20} color={iconColor} />
+            </TouchableOpacity>
+          ) : (
+            <View className="h-10 w-10" />
+          )}
           <Text className="text-xl font-bold text-center flex-1 pr-10 text-text-primary">
             Shop setup
           </Text>
@@ -271,7 +296,8 @@ const ShopInformationScreen = () => {
             {/* Save / Next */}
             <Button 
               onPress={handleSubmit(handleSubmitForm)} 
-              disabled={!isValid || usernameStatus === "taken" || usernameStatus === "checking"} 
+              disabled={!isValid || saving || usernameStatus === "taken" || usernameStatus === "checking"}
+              loading={saving} 
               text="Next" 
               variant="conversion"
             />

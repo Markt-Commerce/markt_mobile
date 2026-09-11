@@ -20,7 +20,8 @@ import RoleToggle from "../../components/auth/RoleToggle";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRegData } from "../../models/signupSteps";
 import { useToast } from "../../components/ToastProvider";
-import { navigateToAppHome } from "../../utils/authNavigation"; 
+import { navigateToAppHome, navigateToOnboardingStep } from "../../utils/authNavigation";
+import { getUserProfile } from "../../services/sections/profile";
 import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 
@@ -73,7 +74,15 @@ export default function LoginScreen() {
         message: `Signed in as ${userData.email.toLowerCase()}`,
       });
 
-      navigateToAppHome();
+      // Resume an interrupted signup rather than dropping someone into the
+      // tabs with a half-built account. Best-effort: a failed profile read
+      // must not block a successful sign-in.
+      try {
+        const profile = await getUserProfile();
+        navigateToOnboardingStep(profile.onboarding?.next_step);
+      } catch {
+        navigateToAppHome();
+      }
     } catch (error: any) {
       const errMsg = friendlyErrorMessage(
         error,

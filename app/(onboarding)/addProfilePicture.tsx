@@ -1,6 +1,10 @@
 /**
- * Step 4: Profile picture (post-registration)
- * After successful registration, before entering the main app.
+ * The last step of signup.
+ *
+ * It used to sit before email verification, which meant the code was asked
+ * for after a photo upload — five screens after the address it was sent to.
+ * Verification now happens second, so this is genuinely the optional tail of
+ * the flow and both exits lead into the app.
  */
 
 import React, { useState } from "react";
@@ -52,12 +56,12 @@ export default function AddProfilePictureScreen() {
       show({ variant: "error", title: "Upload failed", message: "You can add a profile picture later in settings." });
     } finally {
       setUploading(false);
-      router.replace("/emailVerification");
+      router.replace("/(tabs)");
     }
   };
 
   const handleSkip = () => {
-    router.replace("/emailVerification");
+    router.replace("/(tabs)");
   };
 
   return (

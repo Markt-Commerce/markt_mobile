@@ -8,11 +8,12 @@ import { Input } from "../../components/inputs";
 import { useUser } from "../../hooks/userContextProvider";
 import { AccountType } from "../../models/auth";
 import { useRouter } from "expo-router";
-import { useRegData } from "../../models/signupSteps";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useToast } from "../../components/ToastProvider";
 import * as Location from 'expo-location';
-import { registerUser } from "../../services/sections/auth";
+import { updateUserAddress, updateSellerProfile } from "../../services/sections/profile";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
+import { logger } from "../../utils/logger";
 import Button from "../../components/button";
 import { useTokens } from "../../theme/useTokens";
 import StepProgress from "../../components/auth/StepProgress";
@@ -21,8 +22,7 @@ import * as haptics from "../../utils/haptics";
 export default function AddAddressScreen() {
   const { show } = useToast();
   const router = useRouter();
-  const { setUser, setRole } = useUser();
-  const { regData, setRegData } = useRegData();
+  const { role } = useUser();
   const t = useTokens();
   const iconColor = t.textPrimary;
   const [location, setLocation] = React.useState<Location.LocationObject | null>(null);
@@ -122,59 +122,75 @@ export default function AddAddressScreen() {
     setLocation(loc);
   };
 
-  const onSkip = async () => {
-    try {
-      setIsSubmitting(true);
-      const userRegResult = await registerUser(regData);
-      const accountType = (userRegResult.current_role ?? userRegResult.account_type) as "buyer" | "seller";
-      setUser({
-        email: userRegResult.email.toLowerCase(),
-        account_type: accountType,
-        user_id: userRegResult.id,
-      });
-      setRole(accountType);
-      show({ variant: "success", title: "Registration complete", message: "Add your profile picture (optional)." });
-      router.push("/addProfilePicture");
-    } catch (error) {
-      show({
-        variant: "error",
-        message: "Failed to complete registration. Please try again.",
-        title: "Error"
-      });
-    } finally {
-      setIsSubmitting(false);
+  /**
+   * The account already exists by the time this screen opens, so both paths
+   * here are updates rather than the registration call this used to make.
+   *
+   * That call was the last step of a four-screen form, which meant a
+   * duplicate email or a rejected password surfaced here — with every field
+   * that caused it three screens behind the user.
+   */
+  const saveAddress = async (data?: LocationFormData) => {
+    const coords = location?.coords;
+    await updateUserAddress({
+      ...(data ?? {}),
+      ...(coords
+        ? { latitude: coords.latitude, longitude: coords.longitude }
+        : {}),
+    });
+
+    // A seller's shop location is a different column from their delivery
+    // address, and it is the one the proximity feed ranks against. Sent only
+    // as a pair, and only when the device actually gave us a fix — the
+    // typed-in address has no coordinates to offer.
+    if (role === "seller" && coords) {
+      try {
+        await updateSellerProfile({
+          shop_latitude: coords.latitude,
+          shop_longitude: coords.longitude,
+          ...(data ? { shop_address: data } : {}),
+        });
+      } catch (e) {
+        // Not worth blocking signup: an unlocated shop still works, it just
+        // only ever appears on the wider rungs until it is set in settings.
+        logger.warn("signup: could not set shop location", e);
+      }
     }
   };
 
-  const onSubmit = async (data: LocationFormData) => {
+  const finish = async (data?: LocationFormData) => {
+    if (isSubmitting) return;
     haptics.tick();
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
-
-      const finalRegData = { ...regData, address: data };
-      const userRegResult = await registerUser(finalRegData);
-      const accountType = (userRegResult.current_role ?? userRegResult.account_type) as "buyer" | "seller";
-      setUser({
-        email: userRegResult.email.toLowerCase(),
-        account_type: accountType,
-        user_id: userRegResult.id,
+      await saveAddress(data);
+      show({
+        variant: "success",
+        title: "All set",
+        message: "Welcome to Markt.",
       });
-      setRole(accountType);
-      show({ variant: "success", title: "Registration complete", message: "Add your profile picture (optional)." });
-      router.push("/addProfilePicture");
+      // `replace`: signup must not stay in history, or an iOS swipe-back
+      // lands the user in the middle of a flow they have finished.
+      router.replace("/addProfilePicture");
     } catch (error) {
       show({
         variant: "error",
-        message: "Failed to save address and complete registration. Please try again.",
-        title: "Error"
+        title: "Could not save your address",
+        message: friendlyErrorMessage(
+          error,
+          "Please check the details and try again."
+        ),
       });
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const onSkip = () => finish();
+  const onSubmit = (data: LocationFormData) => finish(data);
 
   const Label = ({ children }: { children: React.ReactNode }) => (
-    <Text className="mb-2 text-sm font-bold text-text-primary">{children}</Text>
+    <Text className="mb-2 text-[13px] font-semibold text-text-secondary">{children}</Text>
   );
 
   return (
