@@ -187,6 +187,7 @@ export default function LoginScreen() {
                   errors={errors}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  autoCorrect={false}
                   autoComplete="email"
                   textContentType="emailAddress"
                 />

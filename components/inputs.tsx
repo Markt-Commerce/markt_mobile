@@ -38,6 +38,16 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
   numberOfLines,
   keyboardType = "default",
   style,
+  // Everything else goes straight to the TextInput.
+  //
+  // It used to be dropped. The props interface extends TextInput's, so call
+  // sites had been passing `autoCapitalize="none"` on every email and
+  // username field for a long time and it had never once reached the input —
+  // which is how someone typing their address on iOS got "Ife@..." when they
+  // meant "ife@...", and ended up with two accounts on one inbox. Same for
+  // autoComplete and textContentType, so none of these fields ever offered
+  // the right keyboard autofill either.
+  ...rest
 }: InputProps<TFieldValues>) {
   const hasError = name && errors?.[name];
   const errorMessage = hasError ? (errors[name!]?.message as string) : undefined;
@@ -62,6 +72,7 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
         render={({ field: { onChange, onBlur, value: fieldValue } }) => (
           <>
             <TextInput
+              {...rest}
               onChangeText={onChange}
               onBlur={onBlur}
               value={fieldValue}
@@ -135,6 +146,13 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
                 className="flex-1 text-[16px] text-text-primary"
                 keyboardType={inputProps.keyboardType ?? "default"}
                 textContentType="password"
+                // Explicit, because iOS otherwise capitalises the first
+                // character of a password the same way it does a sentence —
+                // and with the field masked there is nothing to see it in.
+                // The show/hide toggle only helps once you suspect something.
+                autoCapitalize="none"
+                autoCorrect={false}
+                spellCheck={false}
                 accessibilityLabel={inputProps.placeholder}
                 accessibilityState={{ disabled: false }}
               />
@@ -169,17 +187,23 @@ interface OTPInputProps {
 }
 
 /**
- * Highly stylized OTP/Verification code input.
- * - Dark, rounded boxes (Kinetic Minimalist)
- * - Auto-focus management
- * - Consistent with user reference image
+ * The 6-digit verification code input.
+ *
+ * The boxes used to be filled with `textPrimary` — which is black in light
+ * mode, so six solid black squares sat in the middle of an otherwise white
+ * screen, looking like images that had failed to load. They were also the
+ * only input in the app that inverted its colours, while every other field
+ * uses a soft `surface-sunken` fill.
+ *
+ * Now they match: sunken fill, transparent border that turns primary on focus
+ * and danger on error, with the digit in normal text. The focused box is the
+ * only thing that moves, which is what tells you where you are.
  */
 export function OTPInput({ value, onChange, error, digits = 6 }: OTPInputProps) {
   const t = useTokens();
   const inputRefs = useRef<Array<TextInput | null>>([]);
   const [digitArray, setDigits] = useState<string[]>(Array(digits).fill(""));
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const [focused, setFocused] = useState<number | null>(null);
 
   useEffect(() => {
     if (value && value.length === digits) {
@@ -224,27 +248,35 @@ export function OTPInput({ value, onChange, error, digits = 6 }: OTPInputProps) 
           .map((_, i) => (
             <View
               key={i}
-              className={`rounded items-center justify-center border ${
-                error ? "border-danger" : "border-transparent"
+              className={`rounded-xl items-center justify-center border-2 bg-surface-sunken ${
+                error
+                  ? "border-danger"
+                  : focused === i
+                    ? "border-primary"
+                    : "border-transparent"
               }`}
               style={{
                 width: `${100 / digits - 2}%`,
-                aspectRatio: 1,
-                backgroundColor: isDark ? t.surfaceOverlay : t.textPrimary,
+                // Not a square: a 1:1 box at this width is taller than any
+                // other field on the screen and dominates it.
+                aspectRatio: 0.82,
               }}
             >
               <TextInput
                 ref={(ref) => {
                   inputRefs.current[i] = ref;
                 }}
-                className={`text-2xl font-bold text-center w-full h-full ${isDark ? "text-text-primary" : "text-white"}`}
+                className="text-[22px] font-bold text-center w-full h-full text-text-primary"
                 keyboardType="number-pad"
                 maxLength={1}
                 value={digitArray[i]}
                 onChangeText={(text) => handleChange(text, i)}
                 onKeyPress={(e) => handleKeyPress(e, i)}
-                selectionColor={t.textOnPrimary}
+                onFocus={() => setFocused(i)}
+                onBlur={() => setFocused((f) => (f === i ? null : f))}
+                selectionColor={t.primaryText}
                 autoComplete="one-time-code"
+                textContentType="oneTimeCode"
               />
             </View>
           ))}
