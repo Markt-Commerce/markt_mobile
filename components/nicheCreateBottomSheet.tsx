@@ -9,6 +9,8 @@ import {
   Switch,
 } from "react-native";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { useKeyboardOverlap, keyboardScrollPadding } from '../hooks/useKeyboardOverlap';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -40,6 +42,10 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
   React.useImperativeHandle(ref, () => sheetRef.current as BottomSheetMethods, []);
 
   const snapPoints = useMemo(() => ["50%", "80%"], []);
+
+  const insets = useSafeAreaInsets();
+
+  const keyboardOverlap = useKeyboardOverlap();
   const { show } = useToast();
   const t = useTokens();
 
@@ -119,11 +125,17 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
       // Every form sheet in the app had the same gap: the sheet did not know
       // the keyboard existed, so a field in the lower half was hidden behind
       // it the moment it gained focus.
-      keyboardBehavior="interactive"
+      keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
     >
-      <BottomSheetScrollView contentContainerStyle={{ padding: 16 }}>
+      <BottomSheetScrollView
+        contentContainerStyle={{
+          padding: 16,
+          paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 32),
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 12, color: t.textPrimary }}>Create Niche</Text>
 

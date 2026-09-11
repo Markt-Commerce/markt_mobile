@@ -1,8 +1,10 @@
 import 'react-native-reanimated';
 import React, { useRef, useMemo, forwardRef, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import SheetBusyOverlay from './SheetBusyOverlay';
+import { useKeyboardOverlap, keyboardScrollPadding } from '../hooks/useKeyboardOverlap';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useForm } from 'react-hook-form';
 import { z } from "zod";
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -65,6 +67,8 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
     });
 
   const snapPoints = useMemo(() => ['50%', '90%'], []);
+  const insets = useSafeAreaInsets();
+  const keyboardOverlap = useKeyboardOverlap();
   const { show } = useToast();
 
 
@@ -173,22 +177,26 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
       enableContentPanningGesture={!sending}
       backgroundStyle={{ backgroundColor: t.surfacePage }}
       handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
-      // Without these three the keyboard simply covers whatever you are
-      // typing into: the sheet does not know the keyboard exists, so a field
-      // in the lower half is hidden behind it the moment it gains focus.
-      // `interactive` moves the sheet with the keyboard rather than jumping
-      // to a snap point, so the field you tapped stays where you tapped it.
-      keyboardBehavior="interactive"
+      // `extend` rather than `interactive`. Interactive works by moving the
+      // sheet up, and this one opens at 90% — there is nowhere left to move,
+      // so the bottom of the form stayed under the keyboard however the sheet
+      // behaved. Extending pins it at its largest snap point and the padding
+      // below does the actual work.
+      keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
     >
       <BottomSheetScrollView
         className="p-4"
-        // Room to scroll the last field clear of the keyboard. Without it the
-        // bottom of the form can never be brought above the keyboard at all,
-        // however far you scroll.
-        contentContainerStyle={{ paddingBottom: 120 }}
+        // Measured, not a guess. A fixed 120px is smaller than any real
+        // keyboard, so the last few fields could never be scrolled clear of
+        // it — which is exactly what a numeric keypad over "Compare at Price"
+        // looked like. See hooks/useKeyboardOverlap.
+        contentContainerStyle={{
+          paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 32),
+        }}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
       >
         <Text className="text-lg font-bold mb-4 text-text-primary">Create Product</Text>
 

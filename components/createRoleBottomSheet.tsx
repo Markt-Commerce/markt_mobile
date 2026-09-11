@@ -1,6 +1,8 @@
 import React, { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from "react-native";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { useKeyboardOverlap, keyboardScrollPadding } from '../hooks/useKeyboardOverlap';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -40,6 +42,10 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
   React.useImperativeHandle(ref, () => sheetRef.current as BottomSheetMethods, []);
 
   const snapPoints = useMemo(() => ["45%", "80%"], []);
+
+  const insets = useSafeAreaInsets();
+
+  const keyboardOverlap = useKeyboardOverlap();
   const { show } = useToast();
   const [sending, setSending] = useState(false);
 
@@ -154,12 +160,15 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
       // Every form sheet in the app had the same gap: the sheet did not know
       // the keyboard existed, so a field in the lower half was hidden behind
       // it the moment it gained focus.
-      keyboardBehavior="interactive"
+      keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
     >
       <BottomSheetScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+        contentContainerStyle={{
+          padding: 16,
+          paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 32),
+        }}
         keyboardShouldPersistTaps="handled"
       >
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>

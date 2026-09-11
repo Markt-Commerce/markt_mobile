@@ -1,6 +1,8 @@
 import 'react-native-reanimated';
 import React, { forwardRef, useMemo, useState } from "react";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { useKeyboardOverlap, keyboardScrollPadding } from '../hooks/useKeyboardOverlap';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -58,6 +60,10 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
     const [postStatus, setPostStatus] = useState<"active" | "draft">("active")
 
     const snapPoints = useMemo(() => ["50%", "85%"], []);
+
+    const insets = useSafeAreaInsets();
+
+    const keyboardOverlap = useKeyboardOverlap();
     const { control, handleSubmit, reset, formState: { errors } } = useForm<PostFormData>({
       resolver: zodResolver(postSchema) as any
     });
@@ -187,11 +193,15 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
       // Every form sheet in the app had the same gap: the sheet did not know
       // the keyboard existed, so a field in the lower half was hidden behind
       // it the moment it gained focus.
-      keyboardBehavior="interactive"
+      keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
       >
-        <BottomSheetScrollView className="p-4">
+        <BottomSheetScrollView
+          className="p-4"
+          contentContainerStyle={{ paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 32) }}
+          keyboardShouldPersistTaps="handled"
+        >
         <Text className="text-lg font-bold mb-3 text-text-primary">Create Post</Text>
 
           {/* Caption */}

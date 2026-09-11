@@ -1,5 +1,7 @@
 import React, { Ref, useState } from "react";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { useKeyboardOverlap, keyboardScrollPadding } from '../hooks/useKeyboardOverlap';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View,
   Text,
@@ -59,6 +61,10 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
   const t = useTokens();
 
   const snapPoints = React.useMemo(() => ["50%", "85%"], []);
+
+  const insets = useSafeAreaInsets();
+
+  const keyboardOverlap = useKeyboardOverlap();
   const [requestImages, setRequestImages] = useState<string[]>([]);
 
   requestSchema.refine(() => selectedCategories?.length ?? 0 > 0, {
@@ -172,12 +178,16 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
       // Every form sheet in the app had the same gap: the sheet did not know
       // the keyboard existed, so a field in the lower half was hidden behind
       // it the moment it gained focus.
-      keyboardBehavior="interactive"
+      keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
     >
       <BottomSheetScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 32),
+        }}
+        keyboardShouldPersistTaps="handled"
       >
         <Text
           className="text-lg font-bold mb-4 text-text-primary"
