@@ -88,6 +88,27 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
           },
         });
       }
+
+      // The streak needs this path more than the others do. Its socket event
+      // is emitted inside the login request — before this client has a user
+      // id, and so before it has connected its socket — which means signing
+      // in, the one moment the celebration is for, is the one moment the
+      // realtime event cannot arrive.
+      if (unseen.streak) {
+        const streak = unseen.streak;
+        celebrate({
+          kind: "streak",
+          id: `streak-${streak.streak_days}`,
+          title: `${streak.streak_days}-day streak!`,
+          subtitle:
+            streak.streak_days >= streak.longest_streak
+              ? "That is your best run yet."
+              : "Keep it going.",
+          onAcknowledge: () => {
+            markAchievementsSeen({ streak: streak.streak_days }).catch(() => {});
+          },
+        });
+      }
     } catch {
       // A missed celebration must never surface as an error. The server still
       // holds it, so the next open tries again.
@@ -168,6 +189,12 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
             e.streak_days >= e.longest_streak
               ? "That is your best run yet."
               : "Keep it going.",
+          onAcknowledge: () => {
+            // Without this the server still owes the celebration and would
+            // replay it on the next foreground. The queue de-duplicates by
+            // id within a session; only the server stops it across them.
+            markAchievementsSeen({ streak: e.streak_days }).catch(() => {});
+          },
         });
       },
       [celebrate]
