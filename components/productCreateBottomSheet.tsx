@@ -39,7 +39,7 @@ const productSchema = z.object({
     name: z.string().min(1, "Variant name is required")
   })).optional(),
   sku: z.string().max(100).optional(),
-  compare_at_price: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()).default(0.01),
+  compare_at_price: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()),
   cost_per_item: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()).default(0.01),
   status: z.enum(['active', 'inactive']).optional(),
   tag_ids: z.array(z.number()).optional(),
@@ -124,9 +124,13 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         ? (data as any).category_ids
         : selectedCategories.map(c => c.id);
 
-      //server requires cost_per_item and compare_at_price to be equal or greater than 0.01
-      data.compare_at_price = data.compare_at_price ?? 0.01;
-      data.cost_per_item = data.cost_per_item ?? 0.01;
+      // Both are optional on the server; it only validates them when present
+      // (>= 0.01). Defaulting them to 0.01 recorded "this used to cost one
+      // kobo" on every product where the seller left the field blank, which
+      // is why the discount UI had to compare the two numbers rather than
+      // simply check whether a compare-at price exists. Omitted now.
+      if (!data.compare_at_price) delete (data as any).compare_at_price;
+      if (!data.cost_per_item) delete (data as any).cost_per_item;
 
       const payload: CreateProductRequest = {
         ...data,
@@ -243,7 +247,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         <Input name='sku' label='SKU' placeholder='Your stock-keeping code' control={control} errors={errors} />
 
         {/* Compare at Price */}
-        <Input name='compare_at_price' label='Compare at Price (₦)' placeholder='Original price, if discounted' control={control} keyboardType='numeric' errors={errors} />
+        <Input name='compare_at_price' label='Compare at Price (₦)' placeholder='Leave blank if not on sale' control={control} keyboardType='numeric' errors={errors} />
 
         {/* Cost per Item */}
         <Input name='cost_per_item' label='Cost per Item (₦)' placeholder='What it costs you' control={control} keyboardType='numeric' errors={errors} />

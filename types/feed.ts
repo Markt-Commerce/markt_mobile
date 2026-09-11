@@ -113,6 +113,8 @@ export interface FeedProduct {
   name: string;
   description: string | null;
   price: number;
+  /** The was-price, when this product is marked down. Null otherwise. */
+  compare_at_price?: number | null;
   seller: FeedProductSeller;
   images: FeedProductImage[];
   rating: number;

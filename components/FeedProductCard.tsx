@@ -21,6 +21,7 @@ import TierBadge from "./gamification/TierBadge";
 import BadgeChip from "./gamification/BadgeChip";
 import { useTokens } from "../theme/useTokens";
 import { formatPrice } from "../utils/money";
+import { discountPercent } from "./Price";
 import { tierColor } from "../theme/tierColors";
 
 interface Props {
@@ -185,8 +186,21 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
                   <Text className="text-sm text-text-secondary">No image</Text>
                 </View>
               )}
-              <View className="absolute left-3 bottom-3 rounded-full bg-primary-fill px-3 py-1.5">
-                <Text className="text-sm font-bold text-text-on-primary">{formatPrice(product.price)}</Text>
+              <View className="absolute left-3 bottom-3 flex-row items-center gap-1.5">
+                <View className="rounded-full bg-primary-fill px-3 py-1.5">
+                  <Text className="text-sm font-bold text-text-on-primary">{formatPrice(product.price)}</Text>
+                </View>
+                {/* Compact here on purpose: a struck-through price and a
+                    badge do not fit over an image without covering it. The
+                    saving is the part worth carrying to the card; the old
+                    price belongs on the product page. */}
+                {discountPercent(product.price, product.compare_at_price) !== null ? (
+                  <View className="rounded-full bg-success-fill px-2 py-1">
+                    <Text className="text-[11px] font-bold text-on-success-fill">
+                      {discountPercent(product.price, product.compare_at_price)}% off
+                    </Text>
+                  </View>
+                ) : null}
               </View>
             </View>
           </Pressable>
