@@ -2,6 +2,7 @@ import 'react-native-reanimated';
 import React, { useRef, useMemo, forwardRef, useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import SheetBusyOverlay from './SheetBusyOverlay';
 import { useForm } from 'react-hook-form';
 import { z } from "zod";
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -168,21 +169,24 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
       enableContentPanningGesture={!sending}
       backgroundStyle={{ backgroundColor: t.surfacePage }}
       handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
+      // Without these three the keyboard simply covers whatever you are
+      // typing into: the sheet does not know the keyboard exists, so a field
+      // in the lower half is hidden behind it the moment it gains focus.
+      // `interactive` moves the sheet with the keyboard rather than jumping
+      // to a snap point, so the field you tapped stays where you tapped it.
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
     >
-      <BottomSheetScrollView className="p-4">
+      <BottomSheetScrollView
+        className="p-4"
+        // Room to scroll the last field clear of the keyboard. Without it the
+        // bottom of the form can never be brought above the keyboard at all,
+        // however far you scroll.
+        contentContainerStyle={{ paddingBottom: 120 }}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text className="text-lg font-bold mb-4 text-text-primary">Create Product</Text>
-
-        {/* In-flight banner — visible while a slow network keeps us waiting */}
-        {sending && (
-          <View className="flex-row items-center gap-3 rounded border px-4 py-3 mb-4 bg-surface-sunken border-border">
-            <ActivityIndicator size="small" color={t.textPrimary} />
-            <Text className="flex-1 text-xs leading-5 text-text-secondary">
-              {stage === "uploading"
-                ? "Uploading images… please keep this sheet open."
-                : "Creating your product… almost done."}
-            </Text>
-          </View>
-        )}
 
         <View pointerEvents={sending ? "none" : "auto"}>
 
@@ -271,6 +275,16 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
           onConfirm={(selected) => setSelectedCategories(selected)}
           />
       </BottomSheetScrollView>
+
+      <SheetBusyOverlay
+        visible={sending}
+        title={stage === "uploading" ? "Uploading images" : "Creating your product"}
+        subtitle={
+          stage === "uploading"
+            ? "Keep this sheet open until it finishes."
+            : "Almost done."
+        }
+      />
     </BottomSheet>
   );
 }

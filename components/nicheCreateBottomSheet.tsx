@@ -116,6 +116,12 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
       onClose={onClose}
       backgroundStyle={{ backgroundColor: t.surfacePage }}
       handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
+      // Every form sheet in the app had the same gap: the sheet did not know
+      // the keyboard existed, so a field in the lower half was hidden behind
+      // it the moment it gained focus.
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
     >
       <BottomSheetScrollView contentContainerStyle={{ padding: 16 }}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>

@@ -145,8 +145,23 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
   };
 
   return (
-    <BottomSheet ref={sheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose={!sending} onClose={onClose}>
-      <BottomSheetScrollView contentContainerStyle={{ padding: 16 }}>
+    <BottomSheet
+      ref={sheetRef}
+      index={-1}
+      snapPoints={snapPoints}
+      enablePanDownToClose={!sending}
+      onClose={onClose}
+      // Every form sheet in the app had the same gap: the sheet did not know
+      // the keyboard existed, so a field in the lower half was hidden behind
+      // it the moment it gained focus.
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
+    >
+      <BottomSheetScrollView
+        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+        keyboardShouldPersistTaps="handled"
+      >
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 12, color: t.textPrimary }}>
             {mode === "buyer" ? "Create Buyer Account" : mode === "seller" ? "Create Seller Account" : "Create Account"}

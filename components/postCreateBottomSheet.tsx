@@ -184,6 +184,12 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
         enablePanDownToClose={!sending}
         backgroundStyle={{ backgroundColor: t.surfacePage }}
         handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
+      // Every form sheet in the app had the same gap: the sheet did not know
+      // the keyboard existed, so a field in the lower half was hidden behind
+      // it the moment it gained focus.
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
       >
         <BottomSheetScrollView className="p-4">
         <Text className="text-lg font-bold mb-3 text-text-primary">Create Post</Text>
