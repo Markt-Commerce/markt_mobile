@@ -70,7 +70,7 @@ export default function RootLayout() {
 }
 
 export function AppStack() {
-  const { user, isRestoringSession } = useUser();
+  const { user, isRestoringSession, needsEmailVerification } = useUser();
   const { resolvedTheme } = useTheme();
   const isLoggedIn = !!user;
   const isDark = resolvedTheme === "dark";
@@ -104,7 +104,17 @@ export function AppStack() {
         contentStyle: { backgroundColor: t.surfacePage },
       }}
     >
-      <Stack.Protected guard={isLoggedIn}>
+      {/* Signed in is not the same as allowed in.
+          The account exists from the first signup screen — it has to, or the
+          code has nothing to attach to and closing the app loses everything —
+          but an account that has not proved it owns its address must not
+          reach the marketplace. Guarding only on `isLoggedIn` meant the tabs
+          mounted underneath the verification screen, so the back arrow popped
+          straight onto the dashboard.
+          `!== true` rather than `=== false`: while the profile is still
+          loading the answer is unknown, and locking a returning verified user
+          out for that beat is worse than the beat itself. */}
+      <Stack.Protected guard={isLoggedIn && needsEmailVerification !== true}>
         <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
       </Stack.Protected>
 
