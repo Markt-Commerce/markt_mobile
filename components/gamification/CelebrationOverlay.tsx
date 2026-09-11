@@ -9,7 +9,7 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
-import { Award, Flame, Star } from "lucide-react-native";
+import { Award, Flame, Sparkles, Star } from "lucide-react-native";
 import { useTokens } from "../../theme/useTokens";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { useCelebration, type CelebrationKind } from "../../hooks/useCelebration";
@@ -35,6 +35,7 @@ const ICONS: Record<CelebrationKind, React.ElementType> = {
   badge: Award,
   tier: Star,
   streak: Flame,
+  points: Sparkles,
 };
 
 export default function CelebrationOverlay() {
@@ -54,7 +55,7 @@ export default function CelebrationOverlay() {
     // Haptic first: it lands with the entrance rather than after it, and it
     // fires regardless of reduced motion — someone who has turned motion off
     // should still feel the achievement.
-    if (current?.kind === "streak") haptics.tick();
+    if (current?.kind === "streak" || current?.kind === "points") haptics.tick();
     else haptics.celebrate();
 
     if (reduced) {

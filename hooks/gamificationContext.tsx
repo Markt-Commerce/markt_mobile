@@ -5,13 +5,16 @@
  * user is on, instead of only inside the gamification hub.
  */
 import React, {
-  createContext,
-  useContext,
-  useCallback,
-  useEffect,
   ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
 } from "react";
 import { AppState } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSegments } from "expo-router";
 import { useGamificationProfile } from "./useGamificationProfile";
 import { useBadges } from "./useBadges";
 import { useGamificationSocket } from "./useGamificationSocket";
@@ -25,6 +28,9 @@ import {
 } from "../services/sections/gamification";
 import * as haptics from "../utils/haptics";
 import type { GamMe, UserBadge } from "../types/gamification";
+
+/** Survives an app kill between earning the points and reaching the app. */
+const PENDING_POINTS_KEY = "markt_pending_points_v1";
 
 /** "top_seller" -> "Top Seller". The socket sends a key, not a label. */
 const tierLabel = (key: string) =>
@@ -57,6 +63,63 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
    * while it was closed would never be celebrated. The queue de-duplicates by
    * id, so an achievement that arrives both ways is still shown once.
    */
+  /**
+   * Points earned while the user is still inside signup.
+   *
+   * Held rather than shown, and paid out when they reach the dashboard —
+   * see onPoints. Persisted because the gap between earning and arriving can
+   * contain an app kill: the address step is the last thing before the tabs,
+   * and losing the very first reward the app gives anyone to a backgrounded
+   * app is exactly the sort of thing nobody ever notices is broken.
+   */
+  const pendingPointsRef = useRef<{ delta: number; reason: string } | null>(null);
+  const segments = useSegments();
+  const inOnboarding =
+    segments[0] === "(onboarding)" || segments[0] === "(entrances)";
+  const deferPointsRef = useRef(inOnboarding);
+  deferPointsRef.current = inOnboarding;
+
+  const persistPendingPoints = useCallback(
+    async (value: { delta: number; reason: string } | null) => {
+      try {
+        if (value) await AsyncStorage.setItem(PENDING_POINTS_KEY, JSON.stringify(value));
+        else await AsyncStorage.removeItem(PENDING_POINTS_KEY);
+      } catch {
+        // A lost celebration is not worth surfacing. Worst case it is simply
+        // not shown, which is where we started.
+      }
+    },
+    []
+  );
+
+  // Restore anything held from a previous run, once, on mount.
+  useEffect(() => {
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(PENDING_POINTS_KEY);
+        if (raw && !pendingPointsRef.current) pendingPointsRef.current = JSON.parse(raw);
+      } catch {
+        /* nothing held */
+      }
+    })();
+  }, []);
+
+  // Pay out on arrival. `inOnboarding` flipping false is the moment the user
+  // lands in the app, whether that is the end of signup or a relaunch.
+  useEffect(() => {
+    if (inOnboarding || !user?.user_id) return;
+    const held = pendingPointsRef.current;
+    if (!held) return;
+    pendingPointsRef.current = null;
+    void persistPendingPoints(null);
+    celebrate({
+      kind: "points",
+      id: `points-${held.reason}-${held.delta}`,
+      title: `+${held.delta} points`,
+      subtitle: reasonLabel(held.reason),
+    });
+  }, [inOnboarding, user?.user_id, celebrate, persistPendingPoints]);
+
   const drainUnseen = useCallback(async () => {
     if (!user?.user_id) return;
     try {
@@ -129,6 +192,26 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
     onPoints: useCallback(
       (e) => {
         bump(e.delta);
+
+        // Points earned mid-signup used to land as a toast on whichever form
+        // the user happened to be filling in — "+50 pts, Profile completed"
+        // slid over the address fields on the last step of onboarding, where
+        // it was both a distraction and completely wasted. It is the first
+        // reward the app ever gives anyone, and it was spent on a form.
+        //
+        // So it is held instead, and paid out on the dashboard. Anywhere
+        // else, the toast is still the right weight: points arrive often, and
+        // a full-screen celebration for every one of them would be noise.
+        if (deferPointsRef.current) {
+          pendingPointsRef.current = {
+            delta: (pendingPointsRef.current?.delta ?? 0) + e.delta,
+            reason: e.reason,
+          };
+          void persistPendingPoints(pendingPointsRef.current);
+          haptics.tick();
+          return;
+        }
+
         haptics.tick();
         show({
           variant: "success",

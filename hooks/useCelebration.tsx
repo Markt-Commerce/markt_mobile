@@ -25,7 +25,7 @@ import React, {
  * celebrations is worse than either one alone. They play in sequence.
  */
 
-export type CelebrationKind = "badge" | "tier" | "streak";
+export type CelebrationKind = "badge" | "tier" | "streak" | "points";
 
 export interface Celebration {
   /** Drives the visual treatment and the haptic weight. */
