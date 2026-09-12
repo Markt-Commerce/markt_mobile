@@ -6,6 +6,10 @@ export interface GeocodeHit {
   /** City/state, shown under the name so a buyer can see at a glance that a
    * result is nowhere near them. */
   context: string | null;
+  /** Kept separately as well as in `context`, because an order's shipping
+   * address still requires them as fields. */
+  city: string | null;
+  state: string | null;
   latitude: number;
   longitude: number;
 }
@@ -74,6 +78,8 @@ export async function searchAddresses(
       return {
         formatted_address: name || p.city || query,
         context: [p.city, p.state].filter(Boolean).join(", ") || null,
+        city: p.city ?? null,
+        state: p.state ?? null,
         latitude: lat,
         longitude: lng,
       };
@@ -101,6 +107,8 @@ export async function searchAddresses(
       return found.slice(0, 5).map((r) => ({
         formatted_address: query,
         context: null,
+        city: null,
+        state: null,
         latitude: r.latitude,
         longitude: r.longitude,
       }));

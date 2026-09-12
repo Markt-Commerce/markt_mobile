@@ -49,6 +49,10 @@ export default function AddressesScreen() {
         formatted_address: found.formatted_address,
         latitude: found.latitude,
         longitude: found.longitude,
+        // Carried so checkout can fill the order's shipping address, which
+        // still requires a city and state as fields.
+        city: found.city ?? null,
+        state: found.state ?? null,
       });
       // Straight into the editor, because a place that has just been found
       // has no label, no entry code and no directions — and this is the one

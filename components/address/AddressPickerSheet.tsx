@@ -75,6 +75,10 @@ export default function AddressPickerSheet({
         formatted_address: found.formatted_address,
         latitude: found.latitude,
         longitude: found.longitude,
+        // Carried so checkout can fill the order's shipping address, which
+        // still requires a city and state as fields.
+        city: found.city ?? null,
+        state: found.state ?? null,
       });
       onChoose(saved);
       onClose();

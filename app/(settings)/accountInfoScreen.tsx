@@ -123,6 +123,25 @@ export default function AccountInfoScreen() {
           const profile = sharedProfile ?? await getUserProfile();
           setProfileData(profile);
           setCurrentProfilePic(profile.profile_picture_url || profile.profile_picture || null);
+          // Show what is already set rather than an empty row. These were
+          // only ever populated after a save, so a returning user could not
+          // tell a saved address from an unset one and had to re-set it to
+          // find out.
+          const addr = (profile as any).address;
+          if (addr) {
+            setAddressLabel(
+              [addr.street, addr.city, addr.state].filter(Boolean).join(", ") ||
+                "Location saved"
+            );
+          }
+          const sellerAcct = profile.seller_account as any;
+          if (sellerAcct?.shop_latitude != null && sellerAcct?.shop_longitude != null) {
+            setShopLocLabel(
+              `${Number(sellerAcct.shop_latitude).toFixed(5)}, ` +
+                `${Number(sellerAcct.shop_longitude).toFixed(5)}`
+            );
+          }
+
           if (role === 'buyer') {
             resetBuyer({ buyername: profile.buyer_account?.buyername || '' });
             //setShippingAddress(profile.buyer_account.shipping_address || '');

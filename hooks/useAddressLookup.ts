@@ -7,6 +7,8 @@ export interface LookupResult {
   formatted_address: string;
   /** City/state, so a result nowhere near the buyer is visibly wrong. */
   context?: string | null;
+  city?: string | null;
+  state?: string | null;
   latitude: number;
   longitude: number;
 }
@@ -74,8 +76,10 @@ export function useAddressLookup() {
         accuracy: Location.Accuracy.Balanced,
       });
       let label = "My current location";
+      let reverse: Location.LocationGeocodedAddress | null = null;
       try {
         const [addr] = await Location.reverseGeocodeAsync(pos.coords);
+        reverse = addr ?? null;
         if (addr) {
           // Whatever the geocoder could give, in the order a person reads it.
           label =
@@ -93,6 +97,8 @@ export function useAddressLookup() {
       };
       return {
         formatted_address: label,
+        city: reverse?.city ?? null,
+        state: reverse?.region ?? null,
         latitude: pos.coords.latitude,
         longitude: pos.coords.longitude,
       };

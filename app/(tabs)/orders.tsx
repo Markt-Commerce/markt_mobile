@@ -46,7 +46,7 @@ import { getCombinedQuote, createDeliveryQuote } from "../../services/sections/d
 import type { CartGroup } from "../../models/cart";
 import type { SavedAddress } from "../../models/addresses";
 import type { CombinedDeliveryQuote } from "../../models/delivery";
-import { useDeliveryQuote } from "../../hooks/useDeliveryQuote";
+import { useGroupQuotes } from "../../hooks/useGroupQuotes";
 import { isActiveOrder, isPastOrder } from "../../utils/orderStatus";
 import { onBadgeChanged } from "../../utils/badgeEvents";
 
@@ -80,6 +80,7 @@ function MyCartTab() {
   // reads as the whole basket being bought at once -- the opposite of what
   // splitting the cart is for.
   const [checkingOut, setCheckingOut] = useState<number | null>(null);
+  const { user } = useUser();
   const shipping = useShippingAddress();
   // Checkout creates the order and empties the cart before payment, so an
   // abandoned attempt leaves the buyer looking at "your cart is empty" with
@@ -95,7 +96,11 @@ function MyCartTab() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [combined, setCombined] = useState<CombinedDeliveryQuote | null>(null);
   const [combineOptIn, setCombineOptIn] = useState(false);
-  const delivery = useDeliveryQuote(cart, shipping.address, shipping.source);
+  // One quote per shop. A single cart-wide quote is meaningless once the
+  // basket is split, and it was being suppressed entirely for multi-shop
+  // baskets -- which left every Checkout enabled regardless of whether we
+  // could deliver.
+  const groupQuotes = useGroupQuotes(groups, address);
   // Never inferred: the buyer has to choose to share, because under
   // charge-then-refund their money leaves and comes back.
   const [batchOptIn, setBatchOptIn] = useState(false);
@@ -199,20 +204,25 @@ function MyCartTab() {
     }
     try {
       setCheckingOut(group.seller_id ?? -1);
-      const quote = await createDeliveryQuote({
-        seller_id: group.seller_id!,
-        dropoff_latitude: address.latitude,
-        dropoff_longitude: address.longitude,
-        item_count: group.item_count,
-      }).catch(() => null);
+      // Already priced by useGroupQuotes; re-quoting here would charge for a
+      // second quote row and could hand back a different number than the one
+      // on the card.
+      const quote =
+        group.seller_id != null ? groupQuotes[group.seller_id]?.quote : null;
 
       const checkout = await checkoutCart({
         ...buildCheckoutRequest(
           {
-            recipient_name: address.contact_name ?? undefined,
+            // An order's shipping address still requires these as fields, and
+            // sending them empty is what produced "Missing required shipping
+            // address field(s)" on tap. The name falls back to the account
+            // holder, which is who the address belongs to.
+            // Left unset when the address does not name someone: the server
+            // fills in the buyer's own name, which it already knows.
+            recipient_name: address.contact_name || undefined,
             street_address: address.formatted_address,
-            city: "",
-            state: "",
+            city: address.city || "—",
+            state: address.state || "—",
             country: "Nigeria",
             latitude: address.latitude,
             longitude: address.longitude,
@@ -401,13 +411,13 @@ function MyCartTab() {
               combineOptIn && combined?.available
                 ? (combined.shares.find((s) => s.seller_id === g.seller_id)
                     ?.charged_minor ?? 0) / 100
-                : delivery.quote
-                  ? delivery.quote.fee_minor / 100
+                : g.seller_id != null && groupQuotes[g.seller_id]?.quote
+                  ? groupQuotes[g.seller_id]!.quote!.fee_minor / 100
                   : null
             }
             blockedReason={
-              delivery.blocked && groups.length === 1
-                ? delivery.blocked.message
+              g.seller_id != null
+                ? (groupQuotes[g.seller_id]?.blocked?.message ?? null)
                 : null
             }
             busy={checkingOut === (g.seller_id ?? -1)}
@@ -435,8 +445,13 @@ function MyCartTab() {
           </CartGroupCard>
         ))}
 
+        {/* Batching shares a run between buyers; it is priced against a
+            real quote, so it hangs off the first shop that has one rather
+            than a cart-wide quote that no longer exists. */}
         <BatchDeliveryOption
-          quote={delivery.quote}
+          quote={
+            Object.values(groupQuotes).find((q) => q.quote)?.quote ?? null
+          }
           value={batchOptIn}
           onChange={setBatchOptIn}
         />

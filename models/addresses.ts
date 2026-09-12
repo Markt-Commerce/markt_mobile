@@ -19,6 +19,11 @@ export interface SavedAddress {
   formatted_address: string;
   latitude: number;
   longitude: number;
+  /** As the geocoder reported them. Not used to find the place — the
+   * coordinate does that — but an order's shipping address still requires
+   * them as fields. */
+  city: string | null;
+  state: string | null;
   building_type: BuildingType;
   /** Gate code, or whatever gets someone past the door. */
   entry_code: string | null;
@@ -37,6 +42,8 @@ export interface SavedAddressInput {
   formatted_address: string;
   latitude: number;
   longitude: number;
+  city?: string | null;
+  state?: string | null;
   building_type?: BuildingType;
   entry_code?: string | null;
   directions?: string | null;
