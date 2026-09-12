@@ -45,7 +45,7 @@ import ShopCard from "../components/shops/ShopCard";
 import LocationSwitcher from "../components/location/LocationSwitcher";
 import { useBrowseLocation } from "../hooks/browseLocationContext";
 import { useTokens } from "../theme/useTokens";
-import { ProductSkeletonRow } from "../components/SkeletonBlock";
+import { ShopSkeletonCard } from "../components/SkeletonBlock";
 
 type SortKey = "nearby" | "rating" | "followers" | "recent";
 
@@ -256,7 +256,7 @@ export default function DiscoverShopsScreen() {
         // itself information, and it stops the list jumping when it lands.
         <View className="flex-1 px-4">
           {[0, 1, 2].map((i) => (
-            <ProductSkeletonRow key={i} />
+            <ShopSkeletonCard key={i} />
           ))}
         </View>
       ) : shops.length === 0 ? (
