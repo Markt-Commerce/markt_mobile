@@ -18,6 +18,7 @@ import { isOwnProductListing } from "../../utils/chatGuards";
 import { normalizeUri, resolveMediaUri } from "../../utils/imageUri";
 import Avatar from "../../components/Avatar";
 import { useTokens } from "../../theme/useTokens";
+import CartFab from "../../components/CartFab";
 import { StarRating } from "../../components/StarRating";
 import ProductReviews from "../../components/ProductReviews";
 import { runMessageSellerFlow } from "../../utils/messageSellerFlow";
@@ -553,6 +554,9 @@ const addProductToCart = async (product:ProductDetail)=>{
       }
     />
 
+    {/* The way back to the basket from a screen with no tab bar, and the
+        acknowledgement that the thing you just added went somewhere. */}
+    <CartFab />
   </SafeAreaView>
 );
 

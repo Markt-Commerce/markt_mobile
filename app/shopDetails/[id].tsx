@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "expo-router";
 import {
   View,
@@ -22,11 +22,14 @@ import { ProductResponse } from "../../models/products";
 import { ShopData, Post as ShopPost } from "../../models/user";
 import { useToast } from "../../components/ToastProvider";
 import { useUser } from "../../hooks/userContextProvider";
+import { addToCart } from "../../services/sections/cart";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
 import ProductDisplayComponent from "../../components/productDisplayComponent";
 import { Product } from "../../models/feed";
 import { defaultProfilePicture } from "../../models/defaults";
 import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
+import CartFab from "../../components/CartFab";
 import VerifiedBadge, { isVerifiedSeller } from "../../components/VerifiedBadge";
 import { useGamificationLookup } from "../../hooks/useGamificationLookup";
 import { useBadges } from "../../hooks/useBadges";
@@ -87,6 +90,37 @@ export default function Shop() {
   // own catalogue.
   const isOwnShop =
     !!user?.user_id && !!shop?.user?.id && shop.user.id === user.user_id;
+
+  // The Add button on these tiles rendered but was wired to nothing: the
+  // component takes onAdd and neither section passed it, so tapping it did
+  // exactly nothing and looked like a dead app.
+  const [addingId, setAddingId] = useState<string | null>(null);
+  const handleAddToCart = useCallback(
+    async (product: { id: string; name?: string }) => {
+      if (addingId) return;
+      setAddingId(product.id);
+      try {
+        await addToCart({ product_id: product.id, variant_id: 0, quantity: 1 });
+        show({
+          variant: "success",
+          title: "Added to cart",
+          message: `${product.name ?? "Item"} has been added to your cart.`,
+        });
+      } catch (error) {
+        show({
+          variant: "error",
+          title: "Could not add to cart",
+          message: friendlyErrorMessage(
+            error,
+            "Please try again in a moment."
+          ),
+        });
+      } finally {
+        setAddingId(null);
+      }
+    },
+    [addingId, show]
+  );
 
   const { profile: sellerGamification } = useGamificationLookup(shop?.user?.id);
   const { badges: sellerBadges } = useBadges(shop?.user?.id);
@@ -394,6 +428,8 @@ export default function Shop() {
               <ProductDisplayComponent
                 key={idx}
                 isOwnShop={isOwnShop}
+                onAdd={handleAddToCart}
+                onChat={() => router.push(`/chat/${shop?.user?.id}` as any)}
                 products={
                   item.map((p) => ({
                     ...p,
@@ -425,6 +461,12 @@ export default function Shop() {
               {shopProducts.map((item, i) => (
                 <ProductDisplayComponent
                   key={i}
+                  // Was missing here: the own-shop guard only reached the
+                  // Featured section, so a seller's own catalogue still
+                  // offered Add and Chat further down the same screen.
+                  isOwnShop={isOwnShop}
+                  onAdd={handleAddToCart}
+                  onChat={() => router.push(`/chat/${shop?.user?.id}` as any)}
                   products={
                     item.map((p) => ({
                       ...p,
@@ -453,6 +495,9 @@ export default function Shop() {
 
         <View className="h-10" />
       </ScrollView>
+
+      {/* Outside the ScrollView so it stays put while the page moves. */}
+      <CartFab />
     </SafeAreaView>
   );
 }
