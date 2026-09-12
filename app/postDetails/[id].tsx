@@ -22,6 +22,7 @@ import logger from "../../utils/logger";
 import { PostMediaGrid, mediaTypeOf, type MediaItem } from "../../components/postMedia";
 import PostActionBar from "../../components/PostActionBar";
 import { saveItem, unsaveItem } from "../../services/sections/saved";
+import { parseServerDate } from "../../utils/datetime";
 
 
 
@@ -34,15 +35,11 @@ function sameCommentGroup(a?: CommentItem, b?: CommentItem) {
   if (!a || !b) return false;
   if (String(a.user?.id ?? "") !== String(b.user?.id ?? "")) return false;
   if (!a.user?.id) return false;
-  const ta = new Date(a.created_at);
-  const tb = new Date(b.created_at);
-  if (isNaN(ta.getTime()) || isNaN(tb.getTime())) return false;
+  const ta = parseServerDate(a.created_at);
+  const tb = parseServerDate(b.created_at);
+  if (!ta || !tb) return false;
   return (
-    ta.getFullYear() === tb.getFullYear() &&
-    ta.getMonth() === tb.getMonth() &&
-    ta.getDate() === tb.getDate() &&
-    ta.getHours() === tb.getHours() &&
-    ta.getMinutes() === tb.getMinutes()
+    Math.floor(ta.getTime() / 60_000) === Math.floor(tb.getTime() / 60_000)
   );
 }
 

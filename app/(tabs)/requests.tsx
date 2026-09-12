@@ -26,6 +26,7 @@ import QuickChatBottomSheet from "../../components/quickChatBottomSheet";
 import { useTheme } from "../../components/themeProvider";
 import { useTokens, tokensFor } from "../../theme/useTokens";
 import { getMyRequests } from "../../services/sections/request";
+import { hasPassed } from "../../utils/datetime";
 
 function EmptyRequestsState({
   title,
@@ -123,8 +124,7 @@ export default function RequestsScreen() {
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     return items.filter((r) => {
-      const expired =
-        !!r.expires_at && new Date(r.expires_at).getTime() < Date.now();
+      const expired = hasPassed(r.expires_at);
       const isOpen = (r.status ?? "OPEN").toUpperCase() === "OPEN" && !expired;
       if (filter === "open" && !isOpen) return false;
       if (filter === "closed" && isOpen) return false;

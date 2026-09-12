@@ -31,6 +31,7 @@ import {
   type PublicProfile,
 } from "../../services/sections/users";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
+import { formatMonthYear } from "../../utils/datetime";
 
 function Stat({
   value,
@@ -162,10 +163,7 @@ export default function PublicProfileScreen() {
             </Text>
             {profile.joined_at && (
               <Text className={`text-[13px] mt-1 ${muted}`}>
-                Joined {new Date(profile.joined_at).toLocaleDateString(undefined, {
-                  month: "long",
-                  year: "numeric",
-                })}
+                Joined {formatMonthYear(profile.joined_at)}
               </Text>
             )}
 

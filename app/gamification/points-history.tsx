@@ -15,6 +15,7 @@ import { useTokens } from "../../theme/useTokens";
 import { getPointsHistory } from "../../services/sections/gamification";
 import { reasonLabel } from "../../utils/gamification";
 import type { PointsHistoryItem } from "../../types/gamification";
+import { formatDate } from "../../utils/datetime";
 
 export default function PointsHistoryScreen() {
   const router = useRouter();
@@ -52,14 +53,6 @@ export default function PointsHistoryScreen() {
   useEffect(() => {
     fetchPage(true, null);
   }, [fetchPage]);
-
-  const formatDate = (iso: string) => {
-    try {
-      return new Date(iso).toLocaleDateString();
-    } catch {
-      return "";
-    }
-  };
 
   return (
     <SafeAreaView

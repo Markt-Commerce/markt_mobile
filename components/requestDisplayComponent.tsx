@@ -7,6 +7,7 @@ import { useTheme } from "./themeProvider";
 import { useTokens } from "../theme/useTokens";
 import { useUser } from "../hooks/userContextProvider";
 import Avatar from "./Avatar";
+import { hasPassed, msUntil } from "../utils/datetime";
 
 type Props = {
   req: BuyerRequest;
@@ -16,10 +17,8 @@ type Props = {
 /** "3 days left" reads better than a date when the point is urgency. */
 const formatDeadline = (d?: string | number | Date) => {
   if (!d) return null;
-  const date = d instanceof Date ? d : new Date(d);
-  if (isNaN(date.getTime())) return null;
-
-  const msLeft = date.getTime() - Date.now();
+  const msLeft = msUntil(d);
+  if (msLeft === null) return null;
   if (msLeft <= 0) return "Closed";
 
   const days = Math.floor(msLeft / 86_400_000);
@@ -41,8 +40,7 @@ const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
   const isOwnRequest =
     !!user?.user_id && String(req.user?.id ?? req.user_id) === String(user.user_id);
 
-  const isExpired =
-    !!req.expires_at && new Date(req.expires_at).getTime() < Date.now();
+  const isExpired = hasPassed(req.expires_at);
   const statusRaw = (req.status ?? "OPEN").toUpperCase();
   const statusLabel = statusRaw === "OPEN" && isExpired ? "EXPIRED" : statusRaw;
   const isOpen = statusLabel === "OPEN";

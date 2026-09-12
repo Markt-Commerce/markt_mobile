@@ -1,5 +1,8 @@
+import { formatDate, parseServerDate } from "./datetime";
+
 export function formatTimeAgo(iso: string): string {
-  const d = new Date(iso);
+  const d = parseServerDate(iso);
+  if (!d) return "";
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -9,5 +12,5 @@ export function formatTimeAgo(iso: string): string {
   if (diffMins < 60) return `${diffMins}m`;
   if (diffHours < 24) return `${diffHours}h`;
   if (diffDays < 7) return `${diffDays}d`;
-  return d.toLocaleDateString([], { month: "short", day: "numeric" });
+  return formatDate(d);
 }

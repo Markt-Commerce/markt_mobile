@@ -1,6 +1,13 @@
+import { parseServerDate } from './datetime';
+
+/**
+ * Relative time ("3 days ago"). Zone-independent once the instant is right —
+ * which is the whole reason it goes through parseServerDate: the API's naive
+ * UTC strings were being read as device-local, so this was an hour out.
+ */
 export const parseDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Invalid date';
+    const date = parseServerDate(dateString);
+    if (!date) return 'Invalid date';
 
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();

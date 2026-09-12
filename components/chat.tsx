@@ -89,6 +89,12 @@ import { useTheme } from "./themeProvider";
 import { useTokens } from "../theme/useTokens";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { InlineVideo, MediaViewerModal } from "./postMedia";
+import {
+  formatDate as watDate,
+  formatTime as watTime,
+  isSameWatDay,
+  parseServerDate,
+} from "../utils/datetime";
 
 export type ChatScreenVariant = "screen" | "sheet";
 
@@ -140,30 +146,20 @@ function getReactionIcon(type: string) {
 function isSameGroup(a?: ChatMessage, b?: ChatMessage) {
   if (!a || !b) return false;
   if (String(a.sender_id) !== String(b.sender_id)) return false;
-  const ta = new Date(a.created_at);
-  const tb = new Date(b.created_at);
-  if (isNaN(ta.getTime()) || isNaN(tb.getTime())) return false;
-  return (
-    ta.getFullYear() === tb.getFullYear() &&
-    ta.getMonth() === tb.getMonth() &&
-    ta.getDate() === tb.getDate() &&
-    ta.getHours() === tb.getHours() &&
-    ta.getMinutes() === tb.getMinutes()
-  );
+  const ta = parseServerDate(a.created_at);
+  const tb = parseServerDate(b.created_at);
+  if (!ta || !tb) return false;
+  // Same minute, same sender — the whole grouping rule. Compared as instants
+  // rather than as local fields, so it no longer depends on the device zone.
+  return Math.floor(ta.getTime() / 60_000) === Math.floor(tb.getTime() / 60_000);
 }
 
 function formatTime(iso: string) {
-  const d = new Date(iso);
-  const now = new Date();
-  const isToday = d.toDateString() === now.toDateString();
-  if (isToday)
-    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  return d.toLocaleDateString([], {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  // Today gets a bare clock time; anything older carries its date, and both
+  // read in Lagos time whatever zone the phone is in.
+  return isSameWatDay(iso, new Date())
+    ? watTime(iso)
+    : `${watDate(iso)}, ${watTime(iso)}`;
 }
 
 /** User-facing text above a product card (excludes bare product ids / share labels). */
@@ -269,7 +265,8 @@ export default function ChatScreen({
       .map((m) => enrichChatMessage(m, avatarCtx))
       .sort(
         (a, b) =>
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+          (parseServerDate(a.created_at)?.getTime() ?? 0) -
+          (parseServerDate(b.created_at)?.getTime() ?? 0),
       );
   }, [messages, avatarCtx]);
 

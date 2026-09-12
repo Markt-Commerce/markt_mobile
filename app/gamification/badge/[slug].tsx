@@ -7,6 +7,7 @@ import { ArrowLeft, Award, Lock, CheckCircle2 } from "lucide-react-native";
 import { useTokens } from "../../../theme/useTokens";
 import { useUser } from "../../../hooks/userContextProvider";
 import { useBadges } from "../../../hooks/useBadges";
+import { formatDate } from "../../../utils/datetime";
 
 export default function BadgeDetailScreen() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function BadgeDetailScreen() {
   );
 
   const awardedDate = badge?.awarded_at
-    ? new Date(badge.awarded_at).toLocaleDateString()
+    ? formatDate(badge.awarded_at, { withYear: true })
     : null;
 
   return (

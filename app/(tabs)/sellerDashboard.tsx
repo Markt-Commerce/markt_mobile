@@ -33,6 +33,7 @@ import { useTokens } from '../../theme/useTokens';
 import { TONE_BG, TONE_TEXT } from "../../theme/tone";
 import InventoryEditSheet from "../../components/InventoryEditSheet";
 import { formatPrice } from "../../utils/money";
+import { formatDate as watDate, formatMonthShort as watMonthShort } from "../../utils/datetime";
 
 // The line between 'fine' and 'running out'. Shared by the Low filter and
 // the per-row chip so the two can never disagree.
@@ -67,7 +68,6 @@ export default function SellerDashboard() {
   //chart width
   const chartWidth = Math.min(screenWidth - 32, 800);
 
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   const [analyticsTimeseries, setAnalyticsTimeseries] = useState<SellerAnalyticsTimeseries | null>(null);
   const [analyticsOverview, setAnalyticsOverview] = useState<SellerAnalyticsOverview | null>(null);
@@ -237,15 +237,10 @@ export default function SellerDashboard() {
     }
   }, []);
 
-  const formatDate = useCallback((iso?: string) => {
-    if (!iso) return '';
-    try {
-      const d = new Date(iso);
-      return d.toLocaleDateString();
-    } catch {
-      return iso;
-    }
-  }, []);
+  const formatDate = useCallback(
+    (iso?: string) => watDate(iso, { withYear: true }) || (iso ?? ''),
+    []
+  );
 
   // Stable pulsing accent (memoized)
   const LeftAccentPulse = useMemo(() => {
@@ -683,7 +678,7 @@ export default function SellerDashboard() {
               <LineChart
                 data={(analyticsTimeseries && analyticsTimeseries.series && analyticsTimeseries.series.length > 0) ? {
                   labels: analyticsTimeseries.series.map(d => {
-                    try { return months[new Date(d.bucket_start).getMonth()]; } catch { return ''; }
+                    return watMonthShort(d.bucket_start);
                   }),
                   datasets: [{ data: analyticsTimeseries.series.map(d => d.value || 0), strokeWidth: 3 }]
                 } : {

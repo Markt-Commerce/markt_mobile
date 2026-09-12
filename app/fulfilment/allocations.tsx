@@ -24,6 +24,7 @@ import {
 } from "../../services/sections/fulfilment";
 import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
+import { formatTime } from "../../utils/datetime";
 
 type RowAction = "accept" | "decline" | "start-preparing" | "cancel";
 
@@ -186,7 +187,7 @@ export default function SellerAllocationsScreen() {
                 <Text className={`${labelClass} mt-1`}>
                   {STATUS_LABEL[a.status] ?? a.status}
                   {a.status === "awaiting_seller" && a.seller_response_deadline
-                    ? ` · respond by ${new Date(a.seller_response_deadline).toLocaleTimeString()}`
+                    ? ` · respond by ${formatTime(a.seller_response_deadline)}`
                     : ""}
                 </Text>
 

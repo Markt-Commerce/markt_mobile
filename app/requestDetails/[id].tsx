@@ -28,6 +28,7 @@ import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import { defaultProfilePicture } from "../../models/defaults";
 import Avatar from "../../components/Avatar";
+import { formatDate, hasPassed } from "../../utils/datetime";
 
 const { width } = Dimensions.get("window");
 
@@ -96,9 +97,7 @@ export default function BuyerRequestDetails() {
   };
 
   const imageUrls = resolveImageUrls(requestDetails?.images);
-  const isExpired =
-    requestDetails?.expires_at != null &&
-    new Date(requestDetails.expires_at).getTime() < Date.now();
+  const isExpired = hasPassed(requestDetails?.expires_at);
   const statusRaw = (requestDetails?.status ?? "OPEN").toUpperCase();
   const statusLabel =
     statusRaw === "OPEN" && isExpired ? "EXPIRED" : statusRaw;
@@ -297,11 +296,7 @@ export default function BuyerRequestDetails() {
                   }`}
                 >
                   {requestDetails.expires_at
-                    ? new Date(requestDetails.expires_at).toLocaleDateString(undefined, {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })
+                    ? formatDate(requestDetails.expires_at, { withYear: true })
                     : "No deadline"}
                 </Text>
               </View>

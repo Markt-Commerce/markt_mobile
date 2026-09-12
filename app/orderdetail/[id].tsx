@@ -13,14 +13,13 @@ import { useTheme } from "../../components/themeProvider";
 import { useTokens, tokensFor } from "../../theme/useTokens";
 import { formatStatus } from "../../utils/formatStatus";
 import OrderProgress from "../../components/OrderProgress";
+import { formatDate, formatTime, parseServerDate } from "../../utils/datetime";
 
 function formatOrderDate(dateString?: string): string {
   if (!dateString) return "";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "";
-  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) +
-    " · " +
-    date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const date = parseServerDate(dateString);
+  if (!date) return "";
+  return `${formatDate(date, { withYear: true })} · ${formatTime(date)}`;
 }
 
 function formatShippingAddress(addr?: Record<string, any>): string {

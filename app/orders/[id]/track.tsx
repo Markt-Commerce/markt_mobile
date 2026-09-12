@@ -15,6 +15,7 @@ import { trackOrder } from "../../../services/sections/orders";
 import { OrderTracking } from "../../../models/orders";
 import { useTheme } from "../../../components/themeProvider";
 import { useTokens, tokensFor } from "../../../theme/useTokens";
+import { formatDateTime } from "../../../utils/datetime";
 
 // Overall-order stage order, used only to compute the progress bar --
 // the timeline itself is rendered directly from the backend's entries.
@@ -157,7 +158,7 @@ export default function TrackOrderScreen() {
                       </Text>
                       {!!s.timestamp && (
                         <Text className={`text-xs mt-1 ${labelClass}`}>
-                          {new Date(s.timestamp).toLocaleString()}
+                          {formatDateTime(s.timestamp, { withYear: true })}
                         </Text>
                       )}
                     </View>

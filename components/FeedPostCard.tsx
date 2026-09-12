@@ -20,6 +20,7 @@ import TierBadge from "./gamification/TierBadge";
 import PostActionBar from "./PostActionBar";
 import { useTokens } from "../theme/useTokens";
 import { tierColor } from "../theme/tierColors";
+import { parseServerDate } from "../utils/datetime";
 
 interface Props {
   post: FeedPost;
@@ -31,8 +32,9 @@ interface Props {
 }
 
 function compactAge(value: string) {
-  const timestamp = new Date(value).getTime();
-  if (!Number.isFinite(timestamp)) return "";
+  const parsed = parseServerDate(value);
+  if (!parsed) return "";
+  const timestamp = parsed.getTime();
   const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
   if (seconds < 60) return "now";
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;

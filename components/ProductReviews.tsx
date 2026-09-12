@@ -28,6 +28,7 @@ import {
   upvoteReview,
   type ProductReview,
 } from "../services/sections/reviews";
+import { parseServerDate } from "../utils/datetime";
 
 type Props = {
   productId: string;
@@ -36,9 +37,9 @@ type Props = {
 };
 
 function relativeDate(iso?: string) {
-  if (!iso) return "";
-  const then = new Date(iso).getTime();
-  if (isNaN(then)) return "";
+  const parsed = parseServerDate(iso);
+  if (!parsed) return "";
+  const then = parsed.getTime();
   const days = Math.floor((Date.now() - then) / 86_400_000);
   if (days <= 0) return "Today";
   if (days === 1) return "Yesterday";

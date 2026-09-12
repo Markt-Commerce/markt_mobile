@@ -28,6 +28,7 @@ import { useTokens, tokensFor } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { formatNaira } from "../../utils/formatCurrency";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
+import { formatDate, parseServerDate } from "../../utils/datetime";
 import {
   getWallet,
   getWalletTransactions,
@@ -59,7 +60,7 @@ function TransactionRow({
 }) {
   const isCredit = tx.type === "credit";
   const label = REFERENCE_LABELS[tx.reference_type] ?? tx.reference_type;
-  const date = tx.created_at ? new Date(tx.created_at) : null;
+  const date = parseServerDate(tx.created_at);
 
   return (
     <View
@@ -86,7 +87,7 @@ function TransactionRow({
           numberOfLines={1}
         >
           {tx.description ??
-            (date ? date.toLocaleDateString() : tx.reference_id)}
+            (date ? formatDate(date, { withYear: true }) : tx.reference_id)}
         </Text>
       </View>
       <View className="items-end">
