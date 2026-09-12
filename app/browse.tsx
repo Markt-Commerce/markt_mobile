@@ -29,7 +29,7 @@ import { EmptyStall } from "../components/illustrations/MarktIllustration";
 export default function Browse() {
   const router = useRouter();
   const t = useTokens();
-  const { add: addProductToCart } = useAddToCart();
+  const { add: addProductToCart, addingId } = useAddToCart();
   const [items, setItems] = useState<ProductResponse[]>([]);
   const [feed, setFeed] = useState<Pick<NearbyFeed, "scope" | "radius_km"> | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
@@ -140,6 +140,7 @@ export default function Browse() {
           renderItem={({ item }) => (
             <ProductDisplayComponent
               onAdd={addProductToCart}
+              addingId={addingId}
               // The tile carries no seller user id, so a room cannot be
               // resolved from here. Opening the product is where chat has
               // the context to work, and beats a button that does nothing.

@@ -18,10 +18,6 @@ import {
   StyleSheet,
 } from "react-native";
 import {
-  BottomSheetFlatList,
-  BottomSheetTextInput,
-} from "@gorhom/bottom-sheet";
-import {
   ArrowLeft,
   Check,
   DollarSign,
@@ -1394,8 +1390,20 @@ export default function ChatScreen({
     );
   }
 
-  const ListComponent = embedInSheet ? BottomSheetFlatList : FlatList;
-  const InputComponent = embedInSheet ? BottomSheetTextInput : TextInput;
+  // Plain FlatList and TextInput in both modes now.
+  //
+  // The sheet variant used BottomSheetFlatList and BottomSheetTextInput,
+  // which call useBottomSheetInternal and therefore require a @gorhom
+  // BottomSheet ancestor. The quick chat stopped being one -- it is a
+  // full-screen Modal, because a 90% sheet could not get its input clear of
+  // the keyboard -- so those components threw "'useBottomSheetInternal'
+  // cannot be used out of the BottomSheet!" the moment the list rendered.
+  //
+  // Nothing else renders this in a BottomSheet, so there is no mode left that
+  // needs them. `embedInSheet` still means what it always meant: no header of
+  // its own, and the input bar handed to the parent.
+  const ListComponent = FlatList;
+  const InputComponent = TextInput;
   // Sheet mode: the footer sits flush with the screen bottom (bottomInset=0 in
   // QuickChatBottomSheet), so the safe-area gap is padded inside the bar itself.
   const inputBottomPad = embedInSheet || !keyboardVisible

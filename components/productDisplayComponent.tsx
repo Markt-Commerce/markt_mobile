@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ImageBackground, TouchableOpacity } from "react-native";
+import { View, Text, ImageBackground, TouchableOpacity , ActivityIndicator } from "react-native";
 import { Link } from "expo-router";
 import { ShoppingCart, MessageCircle } from "lucide-react-native";
 import { Product } from "../models/feed";
@@ -12,6 +12,10 @@ type Props = {
   products: Product[];
   onAdd?: (product: Product) => void;
   onChat?: (product: Product) => void;
+  /** The product currently being added, so its tile can say so. Without it
+   * the button gave no feedback at all and the obvious read was that it had
+   * not worked -- so people tapped it again, and again. */
+  addingId?: string | null;
   /** These products belong to the person looking at them.
    *
    * Role is not enough on its own: a seller browsing in *buyer* mode is a
@@ -25,6 +29,7 @@ const ProductDisplayComponent: React.FC<Props> = ({
   products,
   onAdd,
   onChat,
+  addingId = null,
   isOwnShop = false,
 }) => {
   const t = useTokens();
@@ -82,16 +87,30 @@ const ProductDisplayComponent: React.FC<Props> = ({
                     <View className="flex-row justify-between mt-2 gap-2">
                       <TouchableOpacity
                         onPress={() => onAdd?.(product)}
-                        className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full min-h-[36px] justify-center bg-surface-sunken"
+                        disabled={addingId === product.id}
+                        className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full min-h-[36px] justify-center ${
+                          addingId === product.id
+                            ? "bg-surface-raised"
+                            : "bg-surface-sunken"
+                        }`}
                         activeOpacity={0.7}
                         accessibilityRole="button"
+                        accessibilityState={{ busy: addingId === product.id }}
                         accessibilityLabel={`Add ${product.name} to cart`}
                       >
-                        <ShoppingCart size={16} color={mutedIconColor} />
+                        {addingId === product.id ? (
+                          <ActivityIndicator size="small" color={mutedIconColor} />
+                        ) : (
+                          <ShoppingCart size={16} color={mutedIconColor} />
+                        )}
                         <Text
-                          className="text-xs font-medium text-text-primary"
+                          className={`text-xs font-medium ${
+                            addingId === product.id
+                              ? "text-text-muted"
+                              : "text-text-primary"
+                          }`}
                         >
-                          Add
+                          {addingId === product.id ? "Adding…" : "Add"}
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity

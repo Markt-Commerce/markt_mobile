@@ -55,7 +55,7 @@ export default function SearchPage() {
   const { role } = useUser();
   const t = useTokens();
   const router = useRouter();
-  const { add: addProductToCart } = useAddToCart();
+  const { add: addProductToCart, addingId } = useAddToCart();
   const requestFormRef = useRef<BottomSheetMethods>(null);
 
   const performSearch = useCallback(
@@ -221,6 +221,7 @@ export default function SearchPage() {
       {chunkPairs(items).map((pair, idx) => (
         <ProductDisplayComponent
               onAdd={addProductToCart}
+              addingId={addingId}
               // The tile carries no seller user id, so a room cannot be
               // resolved from here. Opening the product is where chat has
               // the context to work, and beats a button that does nothing.
