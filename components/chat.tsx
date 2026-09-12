@@ -60,6 +60,7 @@ import ProductPicker from "./productPicker";
 import RequestPicker from "./requestPicker";
 import ChatAttachmentSheet from "./chatAttachmentSheet";
 import DiscountOfferSheet from "./chat/DiscountOfferSheet";
+import DiscountMessageCard from "./chat/DiscountMessageCard";
 import type { BuyerRequest } from "../models/feed";
 import { getBuyerRequests } from "../services/sections/feed";
 import { attemptMultipleUpload } from "../services/sections/media";
@@ -160,6 +161,19 @@ function formatTime(iso: string) {
   return isSameWatDay(iso, new Date())
     ? watTime(iso)
     : `${watDate(iso)}, ${watTime(iso)}`;
+}
+
+/** The seller's note out of a discount message body.
+ *
+ * The server appends it after a blank line, under the generated sentence.
+ * Newer messages also carry it in message_data; this is for the ones already
+ * sent, so an old offer does not lose the only human part of it. */
+function discountNoteFromContent(content?: string | null): string | null {
+  const parts = (content ?? "").split("\n\n").map((p) => p.trim()).filter(Boolean);
+  // First block is the generated headline; anything with a clock is the
+  // expiry line the server adds last.
+  const note = parts.slice(1).find((p) => !p.startsWith("⏰"));
+  return note || null;
 }
 
 /** The product a message is about, if it is about one.
@@ -818,6 +832,28 @@ export default function ChatScreen({
   } | null>(null);
   const [discounts, setDiscounts] = useState<any[]>([]);
   const [discountLoading, setDiscountLoading] = useState(false);
+  const [respondingToDiscount, setRespondingToDiscount] = useState<number | null>(
+    null,
+  );
+
+  // Loaded with the conversation, not only when the attach sheet is opened:
+  // the offer cards in the thread read their live state from this, and an
+  // accepted offer that still showed an Accept button would be worse than
+  // showing nothing.
+  useEffect(() => {
+    if (!roomId) return;
+    let alive = true;
+    getRoomDiscounts(roomId)
+      .then((list) => {
+        if (alive) setDiscounts(Array.isArray(list) ? list : []);
+      })
+      .catch(() => {
+        // The card falls back to the status it was sent with.
+      });
+    return () => {
+      alive = false;
+    };
+  }, [roomId]);
 
   async function handleDiscounts() {
     if (sending) return;
@@ -868,16 +904,25 @@ export default function ChatScreen({
     discountId: number,
     response: "accepted" | "rejected",
   ) {
+    if (respondingToDiscount != null) return;
+    setRespondingToDiscount(discountId);
     try {
       await respondToDiscount(discountId, { response });
+      // Marked, not removed. The card in the conversation reads its state
+      // from this list; dropping the row sent it back to looking unanswered,
+      // Accept button and all.
       setDiscounts((prev) =>
-        (Array.isArray(prev) ? prev : []).filter((d) => d.id !== discountId),
+        (Array.isArray(prev) ? prev : []).map((d) =>
+          Number(d?.id) === Number(discountId) ? { ...d, status: response } : d,
+        ),
       );
       show({
         variant: "success",
         title: "Discount",
         message:
-          response === "accepted" ? "Discount accepted." : "Discount declined.",
+          response === "accepted"
+            ? "Saved. Use it at checkout."
+            : "Discount declined.",
       });
     } catch {
       show({
@@ -885,6 +930,8 @@ export default function ChatScreen({
         title: "Error",
         message: "Could not respond to discount.",
       });
+    } finally {
+      setRespondingToDiscount(null);
     }
   }
 
@@ -1264,6 +1311,22 @@ export default function ChatScreen({
                 </View>
               );
             })()}
+
+          {item.message_type === "discount" && (
+            <DiscountMessageCard
+              data={(item.message_data ?? {}) as any}
+              // Older messages put the seller's note only in the body text.
+              fallbackNote={discountNoteFromContent(item.content)}
+              status={
+                discounts.find(
+                  (d) => Number(d?.id) === Number(item.message_data?.discount_id),
+                )?.status ?? null
+              }
+              role={role ?? undefined}
+              busy={respondingToDiscount === Number(item.message_data?.discount_id)}
+              onRespond={handleRespondToDiscount}
+            />
+          )}
 
           {item.message_type === "offer" && (
             <View

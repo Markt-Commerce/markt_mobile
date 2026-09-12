@@ -1,5 +1,15 @@
 // /models/chat.ts
-export type MessageType = "text" | "image" | "video" | "product" | "offer";
+export type MessageType =
+  | "text"
+  | "image"
+  | "video"
+  | "product"
+  /** A buyer naming their own price. */
+  | "offer"
+  /** A seller offering the buyer a discount. Sent by the server since
+   *  the feature existed; the app had no branch for it, so these
+   *  rendered as empty bubbles. */
+  | "discount";
 
 export interface ChatRoomLite {
   id: number;
