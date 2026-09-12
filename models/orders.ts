@@ -22,6 +22,35 @@ export interface Order {
     buyername: string;
     profile_picture_url?: string;
   };
+  /** Null on orders checked out without a delivery quote, which is most of
+   * the older ones -- so callers must handle its absence rather than assume. */
+  delivery?: OrderDelivery | null;
+}
+
+/** Where the parcel is. Mirrors the backend's DeliveryState. */
+export type DeliveryState =
+  | "quoted"
+  | "paid"
+  | "awaiting_dispatch"
+  | "job_created"
+  | "assigned"
+  | "picked_up"
+  | "in_transit"
+  | "delivered"
+  | "failed"
+  | "cancelled";
+
+export interface OrderDelivery {
+  state: DeliveryState;
+  /** Naira. The settled share once a shared run has closed, the solo fee
+   * before that -- `settled` says which. */
+  fee: number | null;
+  distance_km?: number | null;
+  external_job_id?: string | null;
+  last_status_at?: string | null;
+  failure_reason?: string | null;
+  batch_opt_in?: boolean;
+  settled?: boolean;
 }
 
 export interface CreateOrderRequest {
