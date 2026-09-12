@@ -44,6 +44,7 @@ import {
 } from "../services/sections/moderation";
 import { saveItem, unsaveItem, type SavedType } from "../services/sections/saved";
 import { friendlyErrorMessage } from "../utils/errorMessages";
+import { confirmDestructive } from "../utils/confirm";
 
 type Step = "actions" | "reasons" | "details" | "done";
 
@@ -194,7 +195,18 @@ export default function ContentActionsSheet({
     }
   };
 
-  const handleBlock = async () => {
+  const handleBlock = () =>
+    confirmDestructive({
+      title: `Block ${target?.authorName || "this person"}?`,
+      message:
+        "You won't see their posts or products, and they can't message you. " +
+        "You can unblock them in Settings.",
+      confirmLabel: "Block",
+      cancelLabel: "Cancel",
+      onConfirm: blockNow,
+    });
+
+  const blockNow = async () => {
     if (!target?.authorId || busy) return;
     setBusy(true);
     try {

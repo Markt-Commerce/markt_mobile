@@ -29,6 +29,7 @@ import {
   type ProductReview,
 } from "../services/sections/reviews";
 import { parseServerDate } from "../utils/datetime";
+import { confirmDestructive } from "../utils/confirm";
 
 type Props = {
   productId: string;
@@ -127,7 +128,15 @@ export default function ProductReviews({ productId, onChanged }: Props) {
     }
   };
 
-  const remove = async (id: number) => {
+  const remove = (id: number) =>
+    confirmDestructive({
+      title: "Delete your review?",
+      message: "You can write another one, but this text is gone.",
+      confirmLabel: "Delete",
+      onConfirm: () => removeNow(id),
+    });
+
+  const removeNow = async (id: number) => {
     const snapshot = reviews;
     setReviews((rs) => rs.filter((r) => r.id !== id));
     try {
