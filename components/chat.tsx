@@ -84,6 +84,7 @@ import { getUserProfile } from "../services/sections/profile";
 import { useTheme } from "./themeProvider";
 import { useTokens } from "../theme/useTokens";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useKeyboardOverlap } from "../hooks/useKeyboardOverlap";
 import { InlineVideo, MediaViewerModal } from "./postMedia";
 import {
   formatDate as watDate,
@@ -214,6 +215,10 @@ export default function ChatScreen({
   /** Fullscreen image viewer for tapped chat images */
   const [viewerUri, setViewerUri] = useState<string | null>(null);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  // How much the keyboard actually covers. Measured rather than inferred --
+  // see useKeyboardOverlap for why the window's own resizing cannot be
+  // trusted on Android.
+  const keyboardOverlap = useKeyboardOverlap(!embedInSheet);
   const didInitialScrollRef = useRef(false);
   const pendingScrollToBottomRef = useRef(false);
 
@@ -1409,6 +1414,13 @@ export default function ChatScreen({
   const inputBottomPad = embedInSheet || !keyboardVisible
     ? Math.max(insets.bottom, 8)
     : 8;
+  // Android only, and only as a full screen. KeyboardAvoidingView's "height"
+  // behaviour relies on the window shrinking when the IME opens, and under
+  // edge-to-edge it does not -- so the bar stayed where it was and the
+  // keyboard sat on top of it. iOS is unaffected: "padding" works there, and
+  // doubling up would lift the bar twice.
+  const androidKeyboardLift =
+    Platform.OS === "android" && !embedInSheet ? keyboardOverlap : 0;
   // Sheet mode: the BottomSheetFooter overlays the list, so the list needs
   // bottom padding equal to the measured footer height to keep the newest
   // message visible just above the input bar.
@@ -1700,7 +1712,10 @@ export default function ChatScreen({
   return (
     <KeyboardAvoidingView
       className="flex-1 bg-surface-page"
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      // Android gets no behaviour at all -- the measured lift below does the
+      // work, and "height" actively fought it by resizing a window that
+      // edge-to-edge had already stopped resizing.
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={0}
     >
       {/* Header */}
@@ -1729,7 +1744,7 @@ export default function ChatScreen({
 
       {messageList}
       {typingIndicator}
-      {inputBar}
+      <View style={{ paddingBottom: androidKeyboardLift }}>{inputBar}</View>
       {overlays}
     </KeyboardAvoidingView>
   );
