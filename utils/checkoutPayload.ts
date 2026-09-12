@@ -29,7 +29,8 @@ export function shippingToBilling(
 export function buildCheckoutRequest(
   shipping: ShippingAddressPayload,
   notes = "Checkout from mobile",
-  deliveryQuoteId?: string
+  deliveryQuoteId?: string,
+  batchOptIn = false
 ): CheckoutRequest {
   return {
     shipping_address: shipping,
@@ -37,7 +38,12 @@ export function buildCheckoutRequest(
     notes,
     use_saved_address: false,
     idempotency_key: getOrCreateIdempotencyKey("checkout-cart"),
-    ...(deliveryQuoteId ? { delivery_quote_id: deliveryQuoteId } : {}),
+    // batch_opt_in only travels with a quote: sharing a run is priced
+    // against the solo quote, so without one there is no ceiling to cap
+    // the shared fee at and the opt-in would mean nothing.
+    ...(deliveryQuoteId
+      ? { delivery_quote_id: deliveryQuoteId, batch_opt_in: batchOptIn }
+      : {}),
   };
 }
 

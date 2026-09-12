@@ -43,6 +43,7 @@ import { clearIdempotencyKey } from "../../utils/idempotency";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import ShippingAddressCard from "../../components/shippingAddressCard";
 import DeliveryQuoteCard from "../../components/checkout/DeliveryQuoteCard";
+import BatchDeliveryOption from "../../components/checkout/BatchDeliveryOption";
 import { useDeliveryQuote } from "../../hooks/useDeliveryQuote";
 import { isActiveOrder, isPastOrder } from "../../utils/orderStatus";
 import { onBadgeChanged } from "../../utils/badgeEvents";
@@ -79,6 +80,9 @@ function MyCartTab() {
   // an unpaid order one tab away and nothing saying so.
   const [unpaid, setUnpaid] = useState<Order | null>(null);
   const delivery = useDeliveryQuote(cart, shipping.address, shipping.source);
+  // Never inferred: the buyer has to choose to share, because under
+  // charge-then-refund their money leaves and comes back.
+  const [batchOptIn, setBatchOptIn] = useState(false);
 
   const fetchCart = useCallback(async (opts?: { silent?: boolean }) => {
     try {
@@ -161,7 +165,8 @@ function MyCartTab() {
           "Checkout from mobile",
           // Without it the server uses its flat estimate, so a failed quote
           // still lets someone buy something.
-          delivery.quote?.id
+          delivery.quote?.id,
+          batchOptIn
         )
       );
       // The attempt is over the moment an order exists, so the key retires
@@ -351,6 +356,11 @@ function MyCartTab() {
           quote={delivery.quote}
           blocked={delivery.blocked}
           onFixAddress={shipping.useCurrentLocation}
+        />
+        <BatchDeliveryOption
+          quote={delivery.quote}
+          value={batchOptIn}
+          onChange={setBatchOptIn}
         />
         <View className="mt-4 rounded border p-4 bg-surface-raised border-border">
           <Text className="text-base font-extrabold mb-2 text-text-primary">Order Summary</Text>

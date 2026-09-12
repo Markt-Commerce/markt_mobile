@@ -28,6 +28,10 @@ export interface DeliveryQuote {
   expires_at: string;
   strategy: string;
   strategy_version: string;
+  /** Whether sharing a run is on offer. A deployment flag the client cannot
+   * know on its own, and offering a choice that does not exist is worse than
+   * not offering it. */
+  batch_available?: boolean;
 }
 
 export interface ServiceabilityResult {
