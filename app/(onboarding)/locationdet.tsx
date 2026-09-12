@@ -1,5 +1,15 @@
 import React, { useEffect } from "react";
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useKeyboardOverlap, keyboardScrollPadding } from '../../hooks/useKeyboardOverlap';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { ArrowLeft } from "lucide-react-native";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,8 +32,10 @@ import * as haptics from "../../utils/haptics";
 export default function AddAddressScreen() {
   const { show } = useToast();
   const router = useRouter();
-  const { role } = useUser();
+  const { role, refreshProfile } = useUser();
   const t = useTokens();
+  const insets = useSafeAreaInsets();
+  const keyboardOverlap = useKeyboardOverlap();
   const iconColor = t.textPrimary;
   const [location, setLocation] = React.useState<Location.LocationObject | null>(null);
   const [geocoding, setGeocoding] = React.useState(false);
@@ -168,6 +180,17 @@ export default function AddAddressScreen() {
     setIsSubmitting(true);
     try {
       await saveAddress(data);
+
+      // The last write of signup, so pull the finished account into context
+      // before leaving. Without it the tabs mount against the profile as it
+      // was several screens ago — and the celebration that fires on
+      // completion lands on a dashboard still showing an empty account.
+      try {
+        await refreshProfile();
+      } catch (e) {
+        logger.warn("signup: could not refresh profile before entering", e);
+      }
+
       show({
         variant: "success",
         title: "All set",
@@ -204,11 +227,19 @@ export default function AddAddressScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface-page">
-      <ScrollView 
-        className="flex-1" 
-        contentContainerStyle={{ paddingBottom: 40 }}
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+      <ScrollView
+        className="flex-1"
+          // Measured, and the screen lifts with the keyboard: these forms
+          // are taller than the screen, so the last fields were simply behind
+          // it with nowhere to scroll to.
+        contentContainerStyle={{ paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 32) }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
       >
         <View className="w-full max-w-[480px] mx-auto">
           {/* Header */}
@@ -300,6 +331,7 @@ export default function AddAddressScreen() {
           </View>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

@@ -1,4 +1,6 @@
 import React from "react";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useKeyboardOverlap, keyboardScrollPadding } from '../../hooks/useKeyboardOverlap';
 import {
   View,
   Text,
@@ -39,6 +41,8 @@ const schema = z.object({
 
 export default function UserInfoScreen() {
   const { setUser, refreshProfile } = useUser();
+  const insets = useSafeAreaInsets();
+  const keyboardOverlap = useKeyboardOverlap();
   const router = useRouter();
   const { show } =  useToast();
   const t = useTokens();
@@ -125,14 +129,20 @@ export default function UserInfoScreen() {
         // someone at the end of signup.
         try {
           await uploadProfilePicture(profilePictureUri, "profile.jpg");
-          // Pull the new URL into context. Without this the avatar stayed
-          // blank everywhere until the next sign-in, because nothing told
-          // the app the picture it had just uploaded existed.
-          await refreshProfile();
         } catch (e) {
           logger.warn("signup: could not upload profile picture", e);
         }
       }
+
+      // Pull everything just saved into context, for everyone — not only the
+      // people who added a photo.
+      //
+      // This used to sit inside the `if (profilePictureUri)` branch, so
+      // skipping the photo meant nothing told the app about the name,
+      // username or phone number it had just written. The tabs rendered the
+      // profile as it was before the form, and the only way to see your own
+      // details was to sign out and back in.
+      await refreshProfile();
 
       show({
         variant: "success",
@@ -172,6 +182,10 @@ export default function UserInfoScreen() {
           className="flex-1"
           contentContainerStyle={{
             flexGrow: 1,
+            // Measured: a KeyboardAvoidingView shifts the screen, but a form
+            // taller than the screen still needs somewhere to scroll to, and
+            // the phone number is the last field.
+            paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 32),
             // Not `center`: these forms are taller than the screen, so
             // centring pushed the first field below the fold and left a gap
             // above the header that looked like a rendering fault.
@@ -179,6 +193,7 @@ export default function UserInfoScreen() {
             paddingHorizontal: 16,
           }}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
           showsVerticalScrollIndicator={false}
         >
           <View className="w-full max-w-[520px]">

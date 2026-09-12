@@ -1,11 +1,15 @@
 import React from "react";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useKeyboardOverlap, keyboardScrollPadding } from '../../hooks/useKeyboardOverlap';
 import {
-  View,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   Text,
   TouchableOpacity,
-  ScrollView,
-  Image,
-  Alert,
+  View,
 } from "react-native";
 import { ArrowLeft, X, Camera, Check } from "lucide-react-native";
 import { useForm } from "react-hook-form";
@@ -44,6 +48,8 @@ const ShopInformationScreen = () => {
   const router = useRouter();
   const { show } = useToast(); // <-- toast API
   const t = useTokens();
+  const insets = useSafeAreaInsets();
+  const keyboardOverlap = useKeyboardOverlap();
   const iconColor = t.textPrimary;
   const mutedIconColor = t.textSecondary;
 
@@ -145,14 +151,20 @@ const ShopInformationScreen = () => {
       if (profilePictureUri) {
         try {
           await uploadProfilePicture(profilePictureUri, "profile.jpg");
-          // Pull the new URL into context. Without this the avatar stayed
-          // blank everywhere until the next sign-in, because nothing told
-          // the app the picture it had just uploaded existed.
-          await refreshProfile();
         } catch (e) {
           logger.warn("signup: could not upload profile picture", e);
         }
       }
+
+      // Pull everything just saved into context, for everyone — not only the
+      // people who added a photo.
+      //
+      // This used to sit inside the `if (profilePictureUri)` branch, so
+      // skipping the photo meant nothing told the app about the name,
+      // username or phone number it had just written. The tabs rendered the
+      // profile as it was before the form, and the only way to see your own
+      // details was to sign out and back in.
+      await refreshProfile();
 
       show({
         variant: "success",
@@ -183,12 +195,20 @@ const ShopInformationScreen = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-surface-page">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
       <ScrollView
         className="flex-1"
+          // Measured, and the screen lifts with the keyboard: these forms
+          // are taller than the screen, so the last fields were simply behind
+          // it with nowhere to scroll to.
         contentContainerStyle={{
-          paddingBottom: 40,
+          paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 32),
         }}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
@@ -320,6 +340,7 @@ const ShopInformationScreen = () => {
           }}
         />
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

@@ -1,4 +1,6 @@
 import React, { useCallback, useState } from "react";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useKeyboardOverlap, keyboardScrollPadding } from '../../hooks/useKeyboardOverlap';
 import { ActivityIndicator, Text, View, Pressable, TextInput, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -25,6 +27,8 @@ import { logger } from "../../utils/logger";
 export default function ShopBasics() {
   const router = useRouter();
   const t = useTokens();
+  const insets = useSafeAreaInsets();
+  const keyboardOverlap = useKeyboardOverlap();
   const [shopName, setShopName] = useState("");
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locating, setLocating] = useState(false);
@@ -98,7 +102,14 @@ export default function ShopBasics() {
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <ScrollView className="flex-1 px-6 pt-6" keyboardShouldPersistTaps="handled">
+        <ScrollView
+          className="flex-1 px-6 pt-6"
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+          contentContainerStyle={{
+            paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 32),
+          }}
+        >
           <View className="items-center mb-6">
             <SuccessMark size={92} />
           </View>
