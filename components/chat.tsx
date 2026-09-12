@@ -29,6 +29,7 @@ import {
   Rocket,
   Send,
   ShoppingCart,
+  Percent,
   Smile,
   SmilePlus,
   Star,
@@ -159,6 +160,27 @@ function formatTime(iso: string) {
   return isSameWatDay(iso, new Date())
     ? watTime(iso)
     : `${watDate(iso)}, ${watTime(iso)}`;
+}
+
+/** The product a message is about, if it is about one.
+ *
+ * Product messages arrive in three shapes -- `message_data.product_id`, an
+ * embedded `message_data.product`, or a bare PRD_ id in the content -- so the
+ * "offer a discount on this" action reads all three rather than only the
+ * tidiest one. Returns null for anything that is not a product message. */
+function productIdOf(message: any): string | null {
+  if (message?.message_data?.product_id) return String(message.message_data.product_id);
+  if (message?.message_data?.product?.id) return String(message.message_data.product.id);
+  const inContent = (message?.content || "").match(/PRD_[\w]+/)?.[0];
+  if (inContent && (message?.message_type === "product" || /^PRD_[\w]+$/.test((message.content || "").trim()) || (message.content || "").includes("Sharing product"))) {
+    return inContent;
+  }
+  return null;
+}
+
+/** Its name, when the message carried one. Only used for labelling. */
+function productNameOf(message: any): string | null {
+  return message?.message_data?.product?.name ?? null;
 }
 
 /** User-facing text above a product card (excludes bare product ids / share labels). */
@@ -788,6 +810,12 @@ export default function ChatScreen({
 
   const [discountVisible, setDiscountVisible] = useState(false);
   const [offerDiscountVisible, setOfferDiscountVisible] = useState(false);
+  // Which product the offer is about, when it was started from a product
+  // message. Null means shop-wide, which is what the attach sheet makes.
+  const [offerFor, setOfferFor] = useState<{
+    productId: string;
+    productName?: string | null;
+  } | null>(null);
   const [discounts, setDiscounts] = useState<any[]>([]);
   const [discountLoading, setDiscountLoading] = useState(false);
 
@@ -816,7 +844,12 @@ export default function ChatScreen({
     expires_at: string;
     discount_message?: string;
   }) {
-    await createRoomDiscount(roomId, offer);
+    await createRoomDiscount(roomId, {
+      ...offer,
+      // Only when the offer was started from a product message. Absent means
+      // it covers the whole shop, which is what the server assumes too.
+      ...(offerFor ? { product_id: offerFor.productId } : {}),
+    });
     show({
       variant: "success",
       title: "Offer sent",
@@ -1372,6 +1405,33 @@ export default function ChatScreen({
                 >
                   <SmilePlus size={14} color={mutedColor} />
                 </TouchableOpacity>
+                {/* Offer a discount on *this* product. Anchored to the
+                    message because that is where the intent is: a seller
+                    saying "15% off" under a jersey means the jersey, and an
+                    offer made from the attach sheet has no way to know which
+                    product was being discussed. Checkout scopes it to that
+                    product too, so the two agree. */}
+                {role === "seller" && productIdOf(item) ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setOfferFor({
+                        productId: productIdOf(item)!,
+                        productName: productNameOf(item),
+                      });
+                      setOfferDiscountVisible(true);
+                    }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      productNameOf(item)
+                        ? `Offer a discount on ${productNameOf(item)}`
+                        : "Offer a discount on this product"
+                    }
+                    className="p-1"
+                  >
+                    <Percent size={14} color={mutedColor} />
+                  </TouchableOpacity>
+                ) : null}
                 {reactionPickerFor === String(item.id) && (
                   <View className="flex-row gap-1 mt-0.5">
                     {COMMON_REACTIONS.map((type) => {
@@ -1589,8 +1649,12 @@ export default function ChatScreen({
       />
       <DiscountOfferSheet
         visible={offerDiscountVisible}
-        onClose={() => setOfferDiscountVisible(false)}
+        onClose={() => {
+          setOfferDiscountVisible(false);
+          setOfferFor(null);
+        }}
         onSubmit={handleCreateDiscount}
+        productName={offerFor?.productName ?? null}
       />
       {discountVisible && (
         <View className="absolute inset-0 z-[1000] bg-black/40 justify-end">

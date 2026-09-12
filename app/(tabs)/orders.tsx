@@ -47,7 +47,10 @@ import type { CartGroup } from "../../models/cart";
 import type { SavedAddress } from "../../models/addresses";
 import type { CombinedDeliveryQuote } from "../../models/delivery";
 import { useGroupQuotes } from "../../hooks/useGroupQuotes";
-import { useSpendableDiscounts } from "../../hooks/useSpendableDiscounts";
+import {
+  useSpendableDiscounts,
+  eligibleBase,
+} from "../../hooks/useSpendableDiscounts";
 import { getUserProfile } from "../../services/sections/profile";
 import type { RefundPreference } from "../../models/profile";
 import ChatDiscountOption from "../../components/cart/ChatDiscountOption";
@@ -487,14 +490,22 @@ function MyCartTab() {
               g.seller_id != null &&
               appliedDiscount[g.seller_id] &&
               groupDiscounts[g.seller_id]
-                ? discountAmountFor(groupDiscounts[g.seller_id], g.subtotal)
+                ? discountAmountFor(
+                    groupDiscounts[g.seller_id],
+                    eligibleBase(groupDiscounts[g.seller_id], g)
+                  )
                 : null
             }
             discountOption={
               g.seller_id != null && groupDiscounts[g.seller_id] ? (
                 <ChatDiscountOption
                   discount={groupDiscounts[g.seller_id]}
-                  subtotal={g.subtotal}
+                  subtotal={eligibleBase(groupDiscounts[g.seller_id], g)}
+                  productName={
+                    g.items?.find(
+                      (i) => i.product_id === groupDiscounts[g.seller_id!].product_id
+                    )?.product?.name ?? null
+                  }
                   applied={
                     appliedDiscount[g.seller_id] ===
                     groupDiscounts[g.seller_id].id
