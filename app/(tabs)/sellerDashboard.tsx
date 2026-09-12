@@ -911,7 +911,19 @@ export default function SellerDashboard() {
         <View className="h-8" />
       </ScrollView>
 
-      <ProductFormBottomSheet ref={productFormRef} />
+      <ProductFormBottomSheet
+        ref={productFormRef}
+        // This screen has no refetch-on-focus -- only pull-to-refresh -- so
+        // without this a seller creates a product and the inventory list
+        // below still shows the world as it was.
+        onCreated={(product) => {
+          onRefresh();
+          // Straight to what they just made, the way saving an edit already
+          // shows the changed row. Creating something and being left on the
+          // same screen reads as if it did not work.
+          if (product?.id) router.push(`/productDetails/${product.id}` as any);
+        }}
+      />
       <CreateNicheBottomSheet ref={nicheFormRef} />
       <InventoryEditSheet
         product={editingProduct}

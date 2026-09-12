@@ -42,6 +42,9 @@ import {
 import { clearIdempotencyKey } from "../../utils/idempotency";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import ShippingAddressCard from "../../components/shippingAddressCard";
+import DeliveryQuoteCard from "../../components/checkout/DeliveryQuoteCard";
+import BatchDeliveryOption from "../../components/checkout/BatchDeliveryOption";
+import { useDeliveryQuote } from "../../hooks/useDeliveryQuote";
 import { isActiveOrder, isPastOrder } from "../../utils/orderStatus";
 import { onBadgeChanged } from "../../utils/badgeEvents";
 
@@ -72,6 +75,14 @@ function MyCartTab() {
   const [refreshing, setRefreshing] = useState(false);
   const [processing, setProcessing] = useState(false);
   const shipping = useShippingAddress();
+  // Checkout creates the order and empties the cart before payment, so an
+  // abandoned attempt leaves the buyer looking at "your cart is empty" with
+  // an unpaid order one tab away and nothing saying so.
+  const [unpaid, setUnpaid] = useState<Order | null>(null);
+  const delivery = useDeliveryQuote(cart, shipping.address, shipping.source);
+  // Never inferred: the buyer has to choose to share, because under
+  // charge-then-refund their money leaves and comes back.
+  const [batchOptIn, setBatchOptIn] = useState(false);
 
   const fetchCart = useCallback(async (opts?: { silent?: boolean }) => {
     try {
@@ -79,6 +90,15 @@ function MyCartTab() {
       const [cartData, summaryData] = await Promise.all([getCart(), getCartSummary()]);
       setCart(cartData);
       setSummary(summaryData);
+      try {
+        const orders = await getBuyerOrders(1, 10);
+        setUnpaid(
+          orders?.find((o) => o.status === "pending_payment") ?? null
+        );
+      } catch {
+        // A prompt is a courtesy; the cart still works without it.
+        setUnpaid(null);
+      }
     } catch {
       show({
         variant: "error",
@@ -117,6 +137,16 @@ function MyCartTab() {
 
   const handleCheckout = async () => {
     const missing = missingShippingFields(shipping.address);
+    if (delivery.blocked) {
+      // Checkout here creates the order and empties the cart, so letting this
+      // through would strand someone with an unpayable order and no basket.
+      show({
+        variant: "error",
+        title: delivery.blocked.title,
+        message: delivery.blocked.message,
+      });
+      return;
+    }
     if (missing.length > 0) {
       // Name the fields. "Add a shipping address" was unhelpful when an address
       // was already filled in and only one field was blank.
@@ -130,7 +160,14 @@ function MyCartTab() {
     try {
       setProcessing(true);
       const checkout = await checkoutCart(
-        buildCheckoutRequest(shipping.address!, "Checkout from mobile")
+        buildCheckoutRequest(
+          shipping.address!,
+          "Checkout from mobile",
+          // Without it the server uses its flat estimate, so a failed quote
+          // still lets someone buy something.
+          delivery.quote?.id,
+          batchOptIn
+        )
       );
       // The attempt is over the moment an order exists, so the key retires
       // here. It only ever existed to make a *retry of this attempt* safe.
@@ -182,17 +219,39 @@ function MyCartTab() {
             <ShoppingCart size={44} color={t.textMuted} strokeWidth={1.5} />
           </View>
         <Text className="text-[22px] font-bold text-center text-text-primary">
-          Your cart is empty
+          {unpaid ? "Your order is waiting to be paid" : "Your cart is empty"}
         </Text>
         <Text className="text-[15px] text-center mt-2 leading-[21px] text-text-muted">
-          Add items from the feed to get started.
+          {unpaid
+            ? "It's held for you until you pay."
+            : "Add items from the feed to get started."}
         </Text>
-        <TouchableOpacity
-          onPress={() => router.replace("/(tabs)")}
-          className="mt-6 h-12 px-7 rounded-xl bg-primary-fill items-center justify-center"
-        >
-          <Text className="text-white font-semibold">Start shopping</Text>
-        </TouchableOpacity>
+        {unpaid ? (
+          <TouchableOpacity
+            onPress={() => router.push(`/checkout/payment-method/${unpaid.id}` as any)}
+            accessibilityRole="button"
+            className="mt-6 h-12 px-7 rounded-xl bg-primary-fill items-center justify-center"
+          >
+            <Text className="text-white font-semibold">Pay now</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={() => router.replace("/(tabs)")}
+            className="mt-6 h-12 px-7 rounded-xl bg-primary-fill items-center justify-center"
+          >
+            <Text className="text-white font-semibold">Start shopping</Text>
+          </TouchableOpacity>
+        )}
+        {unpaid ? (
+          <TouchableOpacity
+            onPress={() => router.replace("/(tabs)")}
+            className="mt-3 h-11 px-6 items-center justify-center"
+          >
+            <Text className="text-[14px] font-semibold text-text-secondary">
+              Keep shopping
+            </Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
     );
   }
@@ -260,6 +319,28 @@ function MyCartTab() {
       </View>
 
       <View className="px-4 mt-4">
+        {unpaid ? (
+          // The cart survives checkout now, so an unpaid order normally sits
+          // alongside a full basket. Without this the buyer has no idea the
+          // earlier attempt is still waiting, and checking out again just
+          // makes a second one.
+          <TouchableOpacity
+            onPress={() => router.push(`/checkout/payment-method/${unpaid.id}` as any)}
+            accessibilityRole="button"
+            className="mb-4 rounded-xl border border-warning bg-surface-sunken p-4"
+          >
+            <Text className="text-[15px] font-bold text-text-primary">
+              You have an order waiting to be paid
+            </Text>
+            <Text className="mt-1 text-[13px] leading-5 text-text-secondary">
+              Finish paying for it, or keep editing this basket and check out
+              again.
+            </Text>
+            <Text className="mt-2 text-[14px] font-bold text-primary-text">
+              Pay now
+            </Text>
+          </TouchableOpacity>
+        ) : null}
         <ShippingAddressCard
           address={shipping.address}
           source={shipping.source}
@@ -270,7 +351,18 @@ function MyCartTab() {
           updateAddress={shipping.updateAddress}
           isDark={isDark}
         />
-        <View className="rounded border p-4 bg-surface-raised border-border">
+        <DeliveryQuoteCard
+          loading={delivery.loading}
+          quote={delivery.quote}
+          blocked={delivery.blocked}
+          onFixAddress={shipping.useCurrentLocation}
+        />
+        <BatchDeliveryOption
+          quote={delivery.quote}
+          value={batchOptIn}
+          onChange={setBatchOptIn}
+        />
+        <View className="mt-4 rounded border p-4 bg-surface-raised border-border">
           <Text className="text-base font-extrabold mb-2 text-text-primary">Order Summary</Text>
           <View className="flex-row justify-between py-1.5">
             <Text className="text-sm text-text-secondary">Subtotal</Text>
@@ -280,18 +372,42 @@ function MyCartTab() {
             <Text className="text-sm text-text-secondary">Discount</Text>
             <Text className="text-sm text-text-primary">−{formatMoney(summary?.discount)}</Text>
           </View>
+          <View className="flex-row justify-between py-1.5">
+            <Text className="text-sm text-text-secondary">Delivery</Text>
+            <Text className="text-sm text-text-primary">
+              {delivery.quote
+                ? formatMoney(delivery.quote.fee_minor / 100)
+                : delivery.loading
+                  ? "…"
+                  : "—"}
+            </Text>
+          </View>
           <View className="h-px my-2 bg-border" />
           <View className="flex-row justify-between py-1.5">
             <Text className="text-sm font-semibold text-text-primary">Total</Text>
-            <Text className="text-sm font-extrabold text-text-primary">{formatMoney(summary?.total)}</Text>
+            <Text className="text-sm font-extrabold text-text-primary">
+              {formatMoney(
+                Number(summary?.total ?? 0) +
+                  (delivery.quote ? delivery.quote.fee_minor / 100 : 0)
+              )}
+            </Text>
           </View>
           <TouchableOpacity
             onPress={handleCheckout}
-            disabled={processing || !isShippingAddressUsable(shipping.address)}
-            className={`mt-4 h-12 rounded items-center justify-center ${processing || !isShippingAddressUsable(shipping.address) ? ("bg-surface-sunken") : "bg-primary-fill"}`}
+            disabled={
+              processing ||
+              !isShippingAddressUsable(shipping.address) ||
+              !!delivery.blocked ||
+              delivery.loading
+            }
+            className={`mt-4 h-12 rounded items-center justify-center ${processing || !isShippingAddressUsable(shipping.address) || !!delivery.blocked || delivery.loading ? ("bg-surface-sunken") : "bg-primary-fill"}`}
           >
-            <Text className={processing || !isShippingAddressUsable(shipping.address) ? ("text-text-secondary") : "text-white font-semibold"}>
-              {processing ? "Processing…" : "Proceed to Checkout"}
+            <Text className={processing || !isShippingAddressUsable(shipping.address) || !!delivery.blocked || delivery.loading ? ("text-text-secondary") : "text-white font-semibold"}>
+              {processing
+                ? "Processing…"
+                : delivery.loading
+                  ? "Working out delivery…"
+                  : "Proceed to Checkout"}
             </Text>
           </TouchableOpacity>
         </View>

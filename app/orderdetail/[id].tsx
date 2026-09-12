@@ -1,4 +1,5 @@
 import React from "react";
+import DeliveryProgress from "../../components/orders/DeliveryProgress";
 import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -239,6 +240,15 @@ export default function OrderDetail() {
 
           <Row label="Total" value={order.total} bold isDark={isDark} />
         </View>
+
+        {/* Only when the order carries a delivery. Orders checked out before
+            quoting existed have none, and an empty tracker is worse than no
+            tracker. */}
+        {order.delivery ? (
+          <View className="mb-4">
+            <DeliveryProgress delivery={order.delivery} />
+          </View>
+        ) : null}
 
         <View className="flex pb-10 gap-2.5">
           {order.status === "pending_payment" ? (

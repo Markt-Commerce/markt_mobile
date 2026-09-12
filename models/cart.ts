@@ -217,6 +217,9 @@ export interface CheckoutRequest {
   notes?: string;
   use_saved_address?: boolean;
   idempotency_key?: string;
+  /** From POST /delivery/quote. Absent means the server's flat estimate. */
+  delivery_quote_id?: string;
+  batch_opt_in?: boolean;
 }
 
 export interface CheckoutResponse {

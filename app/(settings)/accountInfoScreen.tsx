@@ -14,6 +14,9 @@ import { Input } from '../../components/inputs';
 import * as ImagePicker from 'expo-image-picker';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getUserProfile, uploadShopBanner, updateUserAddress, updateSellerProfile } from '../../services/sections/profile';
+import { CategoryAddition } from '../../components/categoryAddition';
+import { getAllCategories } from '../../services/sections/categories';
+import type { Category } from '../../models/categories';
 import * as Location from 'expo-location';
 import { UserProfile } from '../../models/profile';
 import { attemptMultipleUpload } from '../../services/sections/media';
@@ -129,6 +132,13 @@ export default function AccountInfoScreen() {
               description: profile.seller_account?.description || '',
             });
             setBannerUrl(profile.seller_account?.banner_url || null);
+            const shopCats = (profile.seller_account?.categories ?? []) as Category[];
+            setShopCategories(shopCats);
+            // Kept separately so "has anything changed" compares against what
+            // the server actually holds, not against the picker's own state.
+            setOriginalCategoryIds(
+              shopCats.map((c) => Number(c.id)).sort()
+            );
           }
           resetGeneral({
             phone_number: profile.phone_number || '',
@@ -379,8 +389,30 @@ export default function AccountInfoScreen() {
     handleSave('/users/profile/seller', {
       shop_name: data.shop_name?.trim(),
       description: data.description?.trim(),
+      // Only when they actually changed: sending the list every time would
+      // rewrite the rows (and the primary-category ordering) on a save that
+      // only touched the shop name.
+      ...(categoriesChanged
+        ? { category_ids: shopCategories.map((c) => Number(c.id)) }
+        : {}),
     });
   });
+
+  // Shop categories describe the *shop*, not its products: each product
+  // carries its own category_ids, and changing what the shop is filed under
+  // deliberately leaves them alone. That is also what the server does -- it
+  // only rewrites SellerCategory rows -- so nothing gets re-filed behind the
+  // seller's back.
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [shopCategories, setShopCategories] = useState<Category[]>([]);
+  const [originalCategoryIds, setOriginalCategoryIds] = useState<number[]>([]);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+
+  useEffect(() => {
+    getAllCategories()
+      .then(setCategories)
+      .catch(() => setCategories([]));
+  }, []);
 
   const currentPhone = (generalValues?.phone_number ?? '').trim();
   const originalPhone = (profileData?.phone_number ?? '').trim();
@@ -397,7 +429,14 @@ export default function AccountInfoScreen() {
   const currentDescription = (sellerValues?.description ?? '').trim();
   const originalShopName = (profileData?.seller_account?.shop_name ?? '').trim();
   const originalDescription = (profileData?.seller_account?.description ?? '').trim();
-  const sellerHasChanges = currentShopName !== originalShopName || currentDescription !== originalDescription;
+  const currentCategoryIds = shopCategories.map((c) => Number(c.id)).sort();
+  const categoriesChanged =
+    currentCategoryIds.length !== originalCategoryIds.length ||
+    currentCategoryIds.some((id, i) => id !== originalCategoryIds[i]);
+  const sellerHasChanges =
+    currentShopName !== originalShopName ||
+    currentDescription !== originalDescription ||
+    categoriesChanged;
 
   const isGeneralDisabled = !isGeneralValid || loading || imageLoading || !generalHasChanges;
   const isBuyerDisabled = !isBuyerValid || loading || imageLoading || !buyerHasChanges;
@@ -635,6 +674,54 @@ export default function AccountInfoScreen() {
                     onPress={saveShopLocation}
                   />
                 </View>
+
+                <View className="mt-4">
+                  <Text className="mb-2 text-[13px] font-semibold text-text-secondary">
+                    What your shop sells
+                  </Text>
+                  <Text className="mb-2 text-[12px] leading-4 text-text-muted">
+                    How buyers find your shop when browsing. Your products keep
+                    their own categories — changing these does not move them.
+                  </Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {shopCategories.map((cat) => (
+                      <View
+                        key={String(cat.id)}
+                        className="flex-row items-center rounded border border-border bg-surface-sunken px-3 py-1"
+                      >
+                        <Text className="mr-2 text-sm text-text-primary">{cat.name}</Text>
+                        <TouchableOpacity
+                          accessibilityRole="button"
+                          accessibilityLabel={`Remove ${cat.name}`}
+                          onPress={() =>
+                            setShopCategories((prev) =>
+                              prev.filter((c) => c.id !== cat.id)
+                            )
+                          }
+                        >
+                          <Text className="text-sm text-text-secondary">×</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      onPress={() => setCategoryModalOpen(true)}
+                      className="rounded border border-border bg-surface-raised px-4 py-2"
+                    >
+                      <Text className="text-sm font-bold text-text-primary">
+                        {shopCategories.length ? '+ Edit' : '+ Add categories'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <CategoryAddition
+                  visible={categoryModalOpen}
+                  categories={categories}
+                  parentSelectedCategories={shopCategories}
+                  onClose={() => setCategoryModalOpen(false)}
+                  onConfirm={(selected) => setShopCategories(selected)}
+                />
 
                 <TouchableOpacity
                   className={`mt-4 h-12 rounded bg-primary-fill items-center justify-center ${

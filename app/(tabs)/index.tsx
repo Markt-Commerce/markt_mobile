@@ -622,9 +622,17 @@ export default function FeedScreen() {
       </BottomSheet>
 
       {/* Imported Bottom Sheets */}
-      <ProductFormBottomSheet ref={productFormRef} />
-      <PostFormBottomSheet ref={postFormRef} />
-      <BuyerRequestFormBottomSheet ref={requestFormRef} />
+      <ProductFormBottomSheet
+        ref={productFormRef}
+        // The feed is cached per tab, so a newly created product would not
+        // appear until the cache aged out.
+        onCreated={(product) => {
+          refresh();
+          if (product?.id) router.push(`/productDetails/${product.id}` as any);
+        }}
+      />
+      <PostFormBottomSheet ref={postFormRef} onCreated={refresh} />
+      <BuyerRequestFormBottomSheet ref={requestFormRef} onCreated={refresh} />
       {role === "seller" && (
         <CreateNicheBottomSheet
           ref={nicheFormRef}
