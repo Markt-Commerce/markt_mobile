@@ -49,6 +49,7 @@ import {
   sendMessageREST,
   getRoomDiscounts,
   respondToDiscount,
+  createRoomDiscount,
 } from "../services/sections/chat";
 import { ChatMessage } from "../models/chat";
 import { addToCart } from "../services/sections/cart";
@@ -57,6 +58,7 @@ import { useToast } from "./ToastProvider";
 import ProductPicker from "./productPicker";
 import RequestPicker from "./requestPicker";
 import ChatAttachmentSheet from "./chatAttachmentSheet";
+import DiscountOfferSheet from "./chat/DiscountOfferSheet";
 import type { BuyerRequest } from "../models/feed";
 import { getBuyerRequests } from "../services/sections/feed";
 import { attemptMultipleUpload } from "../services/sections/media";
@@ -785,6 +787,7 @@ export default function ChatScreen({
   }
 
   const [discountVisible, setDiscountVisible] = useState(false);
+  const [offerDiscountVisible, setOfferDiscountVisible] = useState(false);
   const [discounts, setDiscounts] = useState<any[]>([]);
   const [discountLoading, setDiscountLoading] = useState(false);
 
@@ -804,6 +807,27 @@ export default function ChatScreen({
       });
     } finally {
       setDiscountLoading(false);
+    }
+  }
+
+  async function handleCreateDiscount(offer: {
+    discount_type: "percentage" | "fixed_amount";
+    discount_value: number;
+    expires_at: string;
+    discount_message?: string;
+  }) {
+    await createRoomDiscount(roomId, offer);
+    show({
+      variant: "success",
+      title: "Offer sent",
+      message: "They can use it at checkout while it lasts.",
+    });
+    // Refresh the list so the seller sees what they just made if they look.
+    try {
+      const list = await getRoomDiscounts(roomId);
+      setDiscounts(Array.isArray(list) ? list : []);
+    } catch {
+      // The offer is sent; a stale list is not worth an error.
     }
   }
 
@@ -1558,7 +1582,15 @@ export default function ChatScreen({
         onProducts={role === "seller" ? openProductPicker : undefined}
         onRequests={role === "buyer" ? openRequestPicker : undefined}
         onDiscounts={handleDiscounts}
+        onCreateDiscount={
+          role === "seller" ? () => setOfferDiscountVisible(true) : undefined
+        }
         role={role === "buyer" || role === "seller" ? role : "buyer"}
+      />
+      <DiscountOfferSheet
+        visible={offerDiscountVisible}
+        onClose={() => setOfferDiscountVisible(false)}
+        onSubmit={handleCreateDiscount}
       />
       {discountVisible && (
         <View className="absolute inset-0 z-[1000] bg-black/40 justify-end">
