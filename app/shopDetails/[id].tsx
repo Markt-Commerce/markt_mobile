@@ -372,6 +372,17 @@ export default function Shop() {
                   item.map((p) => ({
                     ...p,
                     description: p.description ?? "",
+                    // `recent_products` is a deliberately slim summary and
+                    // sends a flat `image` string, while the tile reads
+                    // `images[0].media.original_url` like every other product
+                    // list. So every featured tile rendered with a URI of
+                    // `undefined` — blank on this screen and fine two
+                    // sections below, from the same component.
+                    images:
+                      (p as any).images ??
+                      ((p as any).image
+                        ? [{ media: { original_url: (p as any).image } }]
+                        : []),
                   })) as Product[]
                 }
               />

@@ -6,6 +6,7 @@ import { Product } from "../models/feed";
 import { useTokens } from "../theme/useTokens";
 import { formatPrice } from "../utils/money";
 import { discountPercent } from "./Price";
+import { useUser } from "../hooks/userContextProvider";
 
 type Props = {
   products: Product[];
@@ -19,6 +20,7 @@ const ProductDisplayComponent: React.FC<Props> = ({
   onChat,
 }) => {
   const t = useTokens();
+  const { role } = useUser();
   const mutedIconColor = t.textSecondary;
 
   return (
@@ -64,6 +66,11 @@ const ProductDisplayComponent: React.FC<Props> = ({
                     >
                       {product.name}
                     </Text>
+                    {/* Buying actions, so only for someone who is buying.
+                        A seller browsing their own catalogue was offered
+                        "Add" and "Chat" on their own products — the feed
+                        already hides these in seller mode and this did not. */}
+                    {role === "seller" ? null : (
                     <View className="flex-row justify-between mt-2 gap-2">
                       <TouchableOpacity
                         onPress={() => onAdd?.(product)}
@@ -94,6 +101,7 @@ const ProductDisplayComponent: React.FC<Props> = ({
                         </Text>
                       </TouchableOpacity>
                     </View>
+                    )}
                   </View>
                 </View>
               </TouchableOpacity>
