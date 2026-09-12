@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Image } from "react-native";
+import { View, Text, TouchableOpacity, Image, ActivityIndicator } from "react-native";
 import { ChevronDown, ChevronUp, Store, Truck } from "lucide-react-native";
 import { useTokens } from "../../theme/useTokens";
 import type { CartGroup } from "../../models/cart";
@@ -22,7 +22,12 @@ interface Props {
   deliveryFee?: number | null;
   /** Set when this group cannot be delivered to the chosen address. */
   blockedReason?: string | null;
+  /** This card is the one being checked out. */
   busy?: boolean;
+  /** Another card is being checked out. Not busy -- just unavailable while
+   * one is in flight, and worth distinguishing so only the card the buyer
+   * actually tapped says "Working…". */
+  disabled?: boolean;
   onCheckout: () => void;
   onClear: () => void;
   onChangeAddress: () => void;
@@ -37,7 +42,7 @@ interface Props {
  * that could never be paid for. Each card checks out on its own.
  */
 export default function CartGroupCard({
-  group, deliveringTo, deliveryFee, blockedReason, busy,
+  group, deliveringTo, deliveryFee, blockedReason, busy, disabled,
   onCheckout, onClear, onChangeAddress, children,
 }: Props) {
   const t = useTokens();
@@ -112,23 +117,44 @@ export default function CartGroupCard({
 
       <TouchableOpacity
         onPress={onCheckout}
-        disabled={busy || blocked || !deliveringTo}
+        disabled={busy || disabled || blocked || !deliveringTo}
         accessibilityRole="button"
-        className={`mt-4 h-12 items-center justify-center rounded-xl ${
-          busy || blocked || !deliveringTo ? "bg-surface-sunken" : "bg-primary-fill"
+        accessibilityState={{ busy, disabled: disabled || blocked || !deliveringTo }}
+        className={`mt-4 h-12 flex-row items-center justify-center gap-2 rounded-xl ${
+          busy || disabled || blocked || !deliveringTo
+            ? "bg-surface-sunken"
+            : "bg-primary-fill"
         }`}
       >
+        {busy ? <ActivityIndicator size="small" color={t.textSecondary} /> : null}
         <Text
           className={`text-[15px] font-bold ${
-            busy || blocked || !deliveringTo ? "text-text-muted" : "text-text-on-primary"
+            busy || disabled || blocked || !deliveringTo
+              ? "text-text-muted"
+              : "text-text-on-primary"
           }`}
         >
-          {busy ? "Working…" : blocked ? "Can't deliver here" : "Checkout"}
+          {busy
+            ? "Working…"
+            : blocked
+              ? "Can't deliver here"
+              : "Checkout"}
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={onClear} accessibilityRole="button" className="mt-2 h-10 items-center justify-center">
-        <Text className="text-[14px] font-semibold text-primary-text">Clear selection</Text>
+      <TouchableOpacity
+        onPress={onClear}
+        disabled={busy || disabled}
+        accessibilityRole="button"
+        className="mt-2 h-10 items-center justify-center"
+      >
+        <Text
+          className={`text-[14px] font-semibold ${
+            busy || disabled ? "text-text-muted" : "text-primary-text"
+          }`}
+        >
+          Clear selection
+        </Text>
       </TouchableOpacity>
     </View>
   );

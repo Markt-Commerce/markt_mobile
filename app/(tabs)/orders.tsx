@@ -75,7 +75,11 @@ function MyCartTab() {
   const [summary, setSummary] = useState<CartSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [processing, setProcessing] = useState(false);
+  // Which shop's card is checking out, not merely "something is". A single
+  // shared flag put every card into "Working…" when one was tapped, which
+  // reads as the whole basket being bought at once -- the opposite of what
+  // splitting the cart is for.
+  const [checkingOut, setCheckingOut] = useState<number | null>(null);
   const shipping = useShippingAddress();
   // Checkout creates the order and empties the cart before payment, so an
   // abandoned attempt leaves the buyer looking at "your cart is empty" with
@@ -185,13 +189,16 @@ function MyCartTab() {
 
   /** Check out one shop's card. The rest of the basket stays where it is. */
   const checkoutGroup = async (group: CartGroup) => {
-    if (processing) return;
+    // One at a time across the whole basket: two checkouts in flight would
+    // race the same cart rows, and the second would price against a basket
+    // the first is already turning into an order.
+    if (checkingOut !== null) return;
     if (!address) {
       setPickerOpen(true);
       return;
     }
     try {
-      setProcessing(true);
+      setCheckingOut(group.seller_id ?? -1);
       const quote = await createDeliveryQuote({
         seller_id: group.seller_id!,
         dropoff_latitude: address.latitude,
@@ -229,7 +236,7 @@ function MyCartTab() {
         ),
       });
     } finally {
-      setProcessing(false);
+      setCheckingOut(null);
     }
   };
 
@@ -403,7 +410,10 @@ function MyCartTab() {
                 ? delivery.blocked.message
                 : null
             }
-            busy={processing}
+            busy={checkingOut === (g.seller_id ?? -1)}
+            // Every other card goes quiet rather than looking broken: they
+            // are not busy, they are just not available while one is.
+            disabled={checkingOut !== null}
             onCheckout={() => checkoutGroup(g)}
             onClear={() =>
               Promise.all(

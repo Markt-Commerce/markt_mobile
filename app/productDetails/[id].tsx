@@ -105,6 +105,17 @@ const addProductToCart = async (product:ProductDetail)=>{
   // Stop a basket that can never be checked out. Browsing stays open --
   // Markt is not only a delivery app, and hiding out-of-area shops would gut
   // the social half -- but the cart action is where the dead end begins.
+  // The button is already disabled for your own listing; this is the guard
+  // for every other way the handler can be reached, and it mirrors what the
+  // server now enforces.
+  if (isOwnProduct) {
+    show({
+      variant: "error",
+      title: "This is your own product",
+      message: "You can't buy from your own shop.",
+    });
+    return;
+  }
   if (serviceable === false) {
     show({
       variant: "error",
