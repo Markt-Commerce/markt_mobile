@@ -23,6 +23,7 @@ import SkeletonImage from "../components/SkeletonImage";
 import { useTokens } from "../theme/useTokens";
 import { useToast } from "../components/ToastProvider";
 import { formatNaira } from "../utils/formatCurrency";
+import { confirmDestructive } from "../utils/confirm";
 import { friendlyErrorMessage } from "../utils/errorMessages";
 import { listSaved, unsaveItem, type SavedItem, type SavedType } from "../services/sections/saved";
 
@@ -117,7 +118,17 @@ export default function SavedScreen() {
     );
   };
 
-  const handleRemove = async (item: SavedItem) => {
+  const handleRemove = (item: SavedItem) =>
+    // The mildest of these, and the only one where "you can save it again"
+    // is genuinely true -- so it says so rather than pretending to be grave.
+    confirmDestructive({
+      title: "Remove from saved?",
+      message: "You can save it again any time.",
+      confirmLabel: "Remove",
+      onConfirm: () => removeNow(item),
+    });
+
+  const removeNow = async (item: SavedItem) => {
     const key = `${item.content_type}:${item.content_id}`;
     const snapshot = items;
     setItems((prev) =>

@@ -62,6 +62,7 @@ import { useTokens } from "../../theme/useTokens";
 import { useShippingAddress } from "../../hooks/useShippingAddress";
 import { clearIdempotencyKey } from "../../utils/idempotency";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
+import { confirmDestructive } from "../../utils/confirm";
 import BatchDeliveryOption from "../../components/checkout/BatchDeliveryOption";
 import CartGroupCard from "../../components/cart/CartGroupCard";
 import CombinedDeliveryBanner from "../../components/cart/CombinedDeliveryBanner";
@@ -506,9 +507,17 @@ function MyCartTab() {
             disabled={checkingOut !== null}
             onCheckout={() => checkoutGroup(g)}
             onClear={() =>
-              Promise.all(
-                g.items.map((i) => deleteCartItem(i.id).catch(() => null))
-              ).then(() => fetchCart())
+              // Every item from this shop, gone on one tap, with the basket
+              // rebuilt by hand afterwards.
+              confirmDestructive({
+                title: `Remove everything from ${g.shop_name || "this shop"}?`,
+                message: `${g.item_count} item${g.item_count === 1 ? "" : "s"} will be taken out of your cart.`,
+                confirmLabel: "Remove",
+                onConfirm: () =>
+                  Promise.all(
+                    g.items.map((i) => deleteCartItem(i.id).catch(() => null))
+                  ).then(() => fetchCart()),
+              })
             }
             onChangeAddress={() => setPickerOpen(true)}
             discountAmount={

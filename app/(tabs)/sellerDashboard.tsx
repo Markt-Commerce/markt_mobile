@@ -11,6 +11,7 @@ import { getSellerOrders, updateSellerOrderItem } from '../../services/sections/
 /** Both dashboard lists page at the same size, so the control reads the same. */
 const LIST_PAGE_SIZE = 10;
 import { friendlyErrorMessage } from '../../utils/errorMessages';
+import { confirmDestructive } from "../../utils/confirm";
 import { formatStatus, statusTone } from '../../utils/formatStatus';
 
 /** Tone -> [light, dark] classes, matching the order list. */
@@ -366,7 +367,21 @@ export default function SellerDashboard() {
     productFormRef.current?.expand?.();
   };
 
-  const handleDeleteProduct = async (productId: string | number) => {
+  const handleDeleteProduct = (productId: string | number, name?: string) => {
+    // A trash icon in a list, one tap from gone. Deleting a listing takes its
+    // reviews, its view count and its place in anyone's saved items with it,
+    // and there is no undo.
+    confirmDestructive({
+      title: name ? `Delete ${name}?` : "Delete this product?",
+      message:
+        "Its reviews and views go too, and anyone who saved it will lose it. " +
+        "Hide it instead if you just want it off the shop for now.",
+      confirmLabel: "Delete",
+      onConfirm: () => deleteProduct_(productId),
+    });
+  };
+
+  const deleteProduct_ = async (productId: string | number) => {
     try {
       await deleteProduct(String(productId));
       setSellerInventory(prev => prev.filter(p => String(p.id) !== String(productId)));
@@ -529,7 +544,7 @@ export default function SellerDashboard() {
           <TouchableOpacity
             accessibilityLabel={`delete-${item.id || item.name}`}
             accessibilityRole="button"
-            onPress={() => handleDeleteProduct(item.id)}
+            onPress={() => handleDeleteProduct(item.id, item.name)}
             hitSlop={8}
             className="w-9 h-9 items-center justify-center"
           >
