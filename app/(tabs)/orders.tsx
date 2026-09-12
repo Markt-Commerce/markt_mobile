@@ -218,7 +218,7 @@ function MyCartTab() {
         </Text>
         <Text className="text-[15px] text-center mt-2 leading-[21px] text-text-muted">
           {unpaid
-            ? "Checking out moved your items into an order. It's held for you until you pay."
+            ? "It's held for you until you pay."
             : "Add items from the feed to get started."}
         </Text>
         {unpaid ? (
@@ -314,6 +314,28 @@ function MyCartTab() {
       </View>
 
       <View className="px-4 mt-4">
+        {unpaid ? (
+          // The cart survives checkout now, so an unpaid order normally sits
+          // alongside a full basket. Without this the buyer has no idea the
+          // earlier attempt is still waiting, and checking out again just
+          // makes a second one.
+          <TouchableOpacity
+            onPress={() => router.push(`/checkout/payment-method/${unpaid.id}` as any)}
+            accessibilityRole="button"
+            className="mb-4 rounded-xl border border-warning bg-surface-sunken p-4"
+          >
+            <Text className="text-[15px] font-bold text-text-primary">
+              You have an order waiting to be paid
+            </Text>
+            <Text className="mt-1 text-[13px] leading-5 text-text-secondary">
+              Finish paying for it, or keep editing this basket and check out
+              again.
+            </Text>
+            <Text className="mt-2 text-[14px] font-bold text-primary-text">
+              Pay now
+            </Text>
+          </TouchableOpacity>
+        ) : null}
         <ShippingAddressCard
           address={shipping.address}
           source={shipping.source}
