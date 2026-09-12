@@ -20,6 +20,27 @@ import logger from "../utils/logger";
  * zero and are ignored, so a shop with only an out-of-reach offer shows
  * nothing rather than an offer that would be refused.
  */
+/**
+ * What an offer is actually computed on, for this shop's card.
+ *
+ * An offer made from a product message covers that product only — the server
+ * charges it against that product's lines, so showing it against the whole
+ * group would promise a bigger reduction than the buyer gets. A shop-wide
+ * offer keeps the whole subtotal.
+ */
+export function eligibleBase(
+  discount: SpendableDiscount,
+  group: CartGroup
+): number {
+  if (!discount.product_id) return group.subtotal;
+  return (group.items ?? [])
+    .filter((item) => item.product_id === discount.product_id)
+    .reduce(
+      (sum, item) => sum + (Number(item.product_price) || 0) * (item.quantity || 0),
+      0
+    );
+}
+
 export function useSpendableDiscounts(groups: CartGroup[]): {
   byGroup: Record<number, SpendableDiscount>;
   refresh: () => void;
@@ -51,7 +72,7 @@ export function useSpendableDiscounts(groups: CartGroup[]): {
     let bestAmount = 0;
     for (const offer of offers) {
       if (offer.seller_id !== group.seller_id) continue;
-      const amount = discountAmountFor(offer, group.subtotal);
+      const amount = discountAmountFor(offer, eligibleBase(offer, group));
       if (amount > bestAmount) {
         best = offer;
         bestAmount = amount;

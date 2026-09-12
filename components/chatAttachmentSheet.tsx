@@ -23,6 +23,8 @@ type Props = {
   onProducts?: () => void;
   onRequests?: () => void;
   onDiscounts?: () => void;
+  /** Sellers only: open the form that makes a new offer. */
+  onCreateDiscount?: () => void;
   role?: "buyer" | "seller";
 };
 
@@ -46,27 +48,20 @@ const OptionCard = ({
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.7}
-      className={`flex-1 min-w-[100px] max-w-[110px] rounded border p-4 items-center bg-surface-raised border-border ${disabled ? "opacity-50" : ""}`}
+      accessibilityRole="button"
+      accessibilityLabel={subtitle ? `${label}, ${subtitle}` : label}
+      accessibilityState={{ disabled }}
+      className={`flex-1 items-center py-2 ${disabled ? "opacity-50" : ""}`}
     >
-      <View
-        className="w-14 h-14 rounded items-center justify-center mb-3 bg-surface-sunken"
-      >
-        <Icon size={28} color={t.textPrimary} />
+      <View className="w-12 h-12 rounded-full items-center justify-center mb-2 bg-surface-sunken">
+        <Icon size={22} color={t.textPrimary} />
       </View>
       <Text
-        className="font-semibold text-sm text-text-primary"
+        className="font-semibold text-[13px] text-text-primary"
         numberOfLines={1}
       >
         {label}
       </Text>
-      {subtitle && (
-        <Text
-          className="text-[11px] mt-0.5 text-text-secondary"
-          numberOfLines={1}
-        >
-          {subtitle}
-        </Text>
-      )}
     </TouchableOpacity>
   );
 };
@@ -80,6 +75,7 @@ export default function ChatAttachmentSheet({
   onProducts,
   onRequests,
   onDiscounts,
+  onCreateDiscount,
   role = "buyer",
 }: Props) {
   useEffect(() => {
@@ -122,88 +118,72 @@ export default function ChatAttachmentSheet({
           Attach
         </Text>
 
-        <View className="px-5 pb-6">
-          <Text
-            className="text-xs font-bold uppercase tracking-wider mb-3 text-text-secondary"
-          >
-            Media
-          </Text>
-          <View className="flex-row flex-wrap gap-3">
+        {/* One row, not a stacked grid of section-headed cards. There are
+            four choices; giving each a 135px card and its own heading made
+            the sheet nearly half the screen to say very little. */}
+        <View className="flex-row px-3 pb-4">
+          <OptionCard
+            icon={Camera}
+            label="Camera"
+            onPress={() => handleOption(onCamera)}
+            disabled={busy}
+          />
+          <OptionCard
+            icon={ImageIcon}
+            label="Photos"
+            onPress={() => handleOption(onPhotos)}
+            disabled={busy}
+          />
+          {role === "seller" && onProducts ? (
             <OptionCard
-              icon={Camera}
-              label="Camera"
-              onPress={() => handleOption(onCamera)}
-              subtitle="Take photo"
+              icon={ShoppingBag}
+              label="Product"
+              onPress={() => handleOption(onProducts)}
               disabled={busy}
             />
+          ) : null}
+          {role === "buyer" && onRequests ? (
             <OptionCard
-              icon={ImageIcon}
-              label="Photos"
-              onPress={() => handleOption(onPhotos)}
-              subtitle="From gallery"
+              icon={FileText}
+              label="Request"
+              onPress={() => handleOption(onRequests)}
               disabled={busy}
             />
-          </View>
-
-          {(role === "seller" && onProducts) ||
-          (role === "buyer" && onRequests) ? (
-            <>
-              <Text
-                className="text-xs font-bold uppercase tracking-wider mt-5 mb-3 text-text-secondary"
-              >
-                {role === "seller" ? "Share" : "More"}
-              </Text>
-              <View className="flex-row flex-wrap gap-3">
-                {role === "seller" && onProducts && (
-                  <OptionCard
-                    icon={ShoppingBag}
-                    label="Products"
-                    onPress={() => handleOption(onProducts)}
-                    subtitle="Share listing"
-                    disabled={busy}
-                  />
-                )}
-                {role === "buyer" && onRequests && (
-                  <OptionCard
-                    icon={FileText}
-                    label="Requests"
-                    onPress={() => handleOption(onRequests)}
-                    subtitle="Share request"
-                    disabled={busy}
-                  />
-                )}
-                {onDiscounts && (
-                  <OptionCard
-                    icon={Percent}
-                    label="Discounts"
-                    onPress={() => handleOption(onDiscounts)}
-                    subtitle="View offers"
-                    disabled={busy}
-                  />
-                )}
-              </View>
-            </>
-          ) : (
-            onDiscounts && (
-              <>
-                <Text
-                  className="text-xs font-bold uppercase tracking-wider mt-5 mb-3 text-text-secondary"
-                >
-                  Offers
-                </Text>
-                <View className="flex-row flex-wrap gap-3">
-                  <OptionCard
-                    icon={Percent}
-                    label="Discounts"
-                    onPress={() => handleOption(onDiscounts)}
-                    subtitle="View offers"
-                    disabled={busy}
-                  />
-                </View>
-              </>
-            )
-          )}
+          ) : null}
+          {/* A seller can now make one, not just look at the ones that
+              exist. The endpoint was always there; nothing called it. */}
+          {role === "seller" && onCreateDiscount ? (
+            <OptionCard
+              icon={Percent}
+              label="Discount"
+              onPress={() => handleOption(onCreateDiscount)}
+              disabled={busy}
+            />
+          ) : onDiscounts ? (
+            <OptionCard
+              icon={Percent}
+              label="Offers"
+              onPress={() => handleOption(onDiscounts)}
+              disabled={busy}
+            />
+          ) : null}
         </View>
+
+        {/* A seller still needs to see what they have already offered, but it
+            is a second-order thing next to making one. */}
+        {role === "seller" && onCreateDiscount && onDiscounts ? (
+          <TouchableOpacity
+            onPress={() => handleOption(onDiscounts)}
+            disabled={busy}
+            accessibilityRole="button"
+            className="mx-5 mb-4 items-center rounded-xl border border-border py-3"
+          >
+            <Text className="text-[13px] font-semibold text-primary-text">
+              See offers in this chat
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
         <View className="h-6 bg-surface-page" />
       </View>
     </View>

@@ -153,6 +153,29 @@ export async function getRoomDiscounts(room_id: number): Promise<any[]> {
   return [];
 }
 
+/** POST /chats/rooms/<id>/discounts — a seller offers this buyer a discount.
+ *
+ * `expires_at` is required by the server: an offer with no end is a price
+ * change the seller has forgotten they made. */
+export async function createRoomDiscount(
+  room_id: number,
+  body: {
+    discount_type: "percentage" | "fixed_amount";
+    discount_value: number;
+    expires_at: string;
+    minimum_order_amount?: number;
+    maximum_discount_amount?: number;
+    usage_limit?: number;
+    product_id?: string;
+    discount_message?: string;
+  }
+): Promise<any> {
+  return request<any>(`${BASE_URL}/chats/rooms/${room_id}/discounts`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 export async function respondToDiscount(discount_id: number, body: { response: "accepted" | "rejected"; response_message?: string }): Promise<void> {
   await request<void>(`${BASE_URL}/chats/discounts/${discount_id}/respond`, {
     method: "POST",

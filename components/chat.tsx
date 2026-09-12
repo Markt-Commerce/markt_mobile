@@ -29,6 +29,7 @@ import {
   Rocket,
   Send,
   ShoppingCart,
+  Percent,
   Smile,
   SmilePlus,
   Star,
@@ -49,6 +50,7 @@ import {
   sendMessageREST,
   getRoomDiscounts,
   respondToDiscount,
+  createRoomDiscount,
 } from "../services/sections/chat";
 import { ChatMessage } from "../models/chat";
 import { addToCart } from "../services/sections/cart";
@@ -57,6 +59,7 @@ import { useToast } from "./ToastProvider";
 import ProductPicker from "./productPicker";
 import RequestPicker from "./requestPicker";
 import ChatAttachmentSheet from "./chatAttachmentSheet";
+import DiscountOfferSheet from "./chat/DiscountOfferSheet";
 import type { BuyerRequest } from "../models/feed";
 import { getBuyerRequests } from "../services/sections/feed";
 import { attemptMultipleUpload } from "../services/sections/media";
@@ -84,6 +87,7 @@ import { getUserProfile } from "../services/sections/profile";
 import { useTheme } from "./themeProvider";
 import { useTokens } from "../theme/useTokens";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useKeyboardOverlap } from "../hooks/useKeyboardOverlap";
 import { InlineVideo, MediaViewerModal } from "./postMedia";
 import {
   formatDate as watDate,
@@ -158,6 +162,27 @@ function formatTime(iso: string) {
     : `${watDate(iso)}, ${watTime(iso)}`;
 }
 
+/** The product a message is about, if it is about one.
+ *
+ * Product messages arrive in three shapes -- `message_data.product_id`, an
+ * embedded `message_data.product`, or a bare PRD_ id in the content -- so the
+ * "offer a discount on this" action reads all three rather than only the
+ * tidiest one. Returns null for anything that is not a product message. */
+function productIdOf(message: any): string | null {
+  if (message?.message_data?.product_id) return String(message.message_data.product_id);
+  if (message?.message_data?.product?.id) return String(message.message_data.product.id);
+  const inContent = (message?.content || "").match(/PRD_[\w]+/)?.[0];
+  if (inContent && (message?.message_type === "product" || /^PRD_[\w]+$/.test((message.content || "").trim()) || (message.content || "").includes("Sharing product"))) {
+    return inContent;
+  }
+  return null;
+}
+
+/** Its name, when the message carried one. Only used for labelling. */
+function productNameOf(message: any): string | null {
+  return message?.message_data?.product?.name ?? null;
+}
+
 /** User-facing text above a product card (excludes bare product ids / share labels). */
 function productMessageCaption(content: string | undefined, productId?: string): string | null {
   const text = (content ?? "").trim();
@@ -214,6 +239,10 @@ export default function ChatScreen({
   /** Fullscreen image viewer for tapped chat images */
   const [viewerUri, setViewerUri] = useState<string | null>(null);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  // How much the keyboard actually covers. Measured rather than inferred --
+  // see useKeyboardOverlap for why the window's own resizing cannot be
+  // trusted on Android.
+  const keyboardOverlap = useKeyboardOverlap(!embedInSheet);
   const didInitialScrollRef = useRef(false);
   const pendingScrollToBottomRef = useRef(false);
 
@@ -780,6 +809,13 @@ export default function ChatScreen({
   }
 
   const [discountVisible, setDiscountVisible] = useState(false);
+  const [offerDiscountVisible, setOfferDiscountVisible] = useState(false);
+  // Which product the offer is about, when it was started from a product
+  // message. Null means shop-wide, which is what the attach sheet makes.
+  const [offerFor, setOfferFor] = useState<{
+    productId: string;
+    productName?: string | null;
+  } | null>(null);
   const [discounts, setDiscounts] = useState<any[]>([]);
   const [discountLoading, setDiscountLoading] = useState(false);
 
@@ -799,6 +835,32 @@ export default function ChatScreen({
       });
     } finally {
       setDiscountLoading(false);
+    }
+  }
+
+  async function handleCreateDiscount(offer: {
+    discount_type: "percentage" | "fixed_amount";
+    discount_value: number;
+    expires_at: string;
+    discount_message?: string;
+  }) {
+    await createRoomDiscount(roomId, {
+      ...offer,
+      // Only when the offer was started from a product message. Absent means
+      // it covers the whole shop, which is what the server assumes too.
+      ...(offerFor ? { product_id: offerFor.productId } : {}),
+    });
+    show({
+      variant: "success",
+      title: "Offer sent",
+      message: "They can use it at checkout while it lasts.",
+    });
+    // Refresh the list so the seller sees what they just made if they look.
+    try {
+      const list = await getRoomDiscounts(roomId);
+      setDiscounts(Array.isArray(list) ? list : []);
+    } catch {
+      // The offer is sent; a stale list is not worth an error.
     }
   }
 
@@ -1343,6 +1405,33 @@ export default function ChatScreen({
                 >
                   <SmilePlus size={14} color={mutedColor} />
                 </TouchableOpacity>
+                {/* Offer a discount on *this* product. Anchored to the
+                    message because that is where the intent is: a seller
+                    saying "15% off" under a jersey means the jersey, and an
+                    offer made from the attach sheet has no way to know which
+                    product was being discussed. Checkout scopes it to that
+                    product too, so the two agree. */}
+                {role === "seller" && productIdOf(item) ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setOfferFor({
+                        productId: productIdOf(item)!,
+                        productName: productNameOf(item),
+                      });
+                      setOfferDiscountVisible(true);
+                    }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      productNameOf(item)
+                        ? `Offer a discount on ${productNameOf(item)}`
+                        : "Offer a discount on this product"
+                    }
+                    className="p-1"
+                  >
+                    <Percent size={14} color={mutedColor} />
+                  </TouchableOpacity>
+                ) : null}
                 {reactionPickerFor === String(item.id) && (
                   <View className="flex-row gap-1 mt-0.5">
                     {COMMON_REACTIONS.map((type) => {
@@ -1409,6 +1498,13 @@ export default function ChatScreen({
   const inputBottomPad = embedInSheet || !keyboardVisible
     ? Math.max(insets.bottom, 8)
     : 8;
+  // Android only, and only as a full screen. KeyboardAvoidingView's "height"
+  // behaviour relies on the window shrinking when the IME opens, and under
+  // edge-to-edge it does not -- so the bar stayed where it was and the
+  // keyboard sat on top of it. iOS is unaffected: "padding" works there, and
+  // doubling up would lift the bar twice.
+  const androidKeyboardLift =
+    Platform.OS === "android" && !embedInSheet ? keyboardOverlap : 0;
   // Sheet mode: the BottomSheetFooter overlays the list, so the list needs
   // bottom padding equal to the measured footer height to keep the newest
   // message visible just above the input bar.
@@ -1546,7 +1642,19 @@ export default function ChatScreen({
         onProducts={role === "seller" ? openProductPicker : undefined}
         onRequests={role === "buyer" ? openRequestPicker : undefined}
         onDiscounts={handleDiscounts}
+        onCreateDiscount={
+          role === "seller" ? () => setOfferDiscountVisible(true) : undefined
+        }
         role={role === "buyer" || role === "seller" ? role : "buyer"}
+      />
+      <DiscountOfferSheet
+        visible={offerDiscountVisible}
+        onClose={() => {
+          setOfferDiscountVisible(false);
+          setOfferFor(null);
+        }}
+        onSubmit={handleCreateDiscount}
+        productName={offerFor?.productName ?? null}
       />
       {discountVisible && (
         <View className="absolute inset-0 z-[1000] bg-black/40 justify-end">
@@ -1700,7 +1808,10 @@ export default function ChatScreen({
   return (
     <KeyboardAvoidingView
       className="flex-1 bg-surface-page"
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      // Android gets no behaviour at all -- the measured lift below does the
+      // work, and "height" actively fought it by resizing a window that
+      // edge-to-edge had already stopped resizing.
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={0}
     >
       {/* Header */}
@@ -1729,7 +1840,7 @@ export default function ChatScreen({
 
       {messageList}
       {typingIndicator}
-      {inputBar}
+      <View style={{ paddingBottom: androidKeyboardLift }}>{inputBar}</View>
       {overlays}
     </KeyboardAvoidingView>
   );

@@ -17,8 +17,11 @@ const money = (n: number) => {
 
 interface Props {
   discount: SpendableDiscount;
-  /** This shop's items only — the offer comes off this, not the whole cart. */
+  /** What the offer is actually computed on: this shop's items, or just the
+   *  one product when the offer was made about a product. */
   subtotal: number;
+  /** That product's name, when the offer is pinned to one. */
+  productName?: string | null;
   applied: boolean;
   onChange: (next: boolean) => void;
   disabled?: boolean;
@@ -33,7 +36,7 @@ interface Props {
  * spent by surprise is not recoverable.
  */
 export default function ChatDiscountOption({
-  discount, subtotal, applied, onChange, disabled,
+  discount, subtotal, applied, onChange, disabled, productName,
 }: Props) {
   const t = useTokens();
   const amount = discountAmountFor(discount, subtotal);
@@ -60,7 +63,12 @@ export default function ChatDiscountOption({
       <Tag size={18} color={applied ? t.primaryText : t.textSecondary} />
       <View className="flex-1">
         <Text className="text-[14px] font-semibold text-text-primary">
-          {label} from this shop
+          {/* Naming the product matters: the buyer would otherwise work out
+              the percentage against their whole basket and wonder why the
+              number is smaller. */}
+          {discount.product_id
+            ? `${label} on ${productName || "one item"}`
+            : `${label} from this shop`}
         </Text>
         <Text className="mt-0.5 text-[12px] leading-4 text-text-secondary">
           {applied
