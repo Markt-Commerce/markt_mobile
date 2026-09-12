@@ -666,7 +666,11 @@ export default function SellerDashboard() {
           {[
             {
               key: "orders",
-              label: "Orders",
+              // "All orders", not "Orders": there is now an Orders tab a row
+              // above this, and it shows a different thing -- the recent few.
+              // This is the full screen, which is hidden from the bottom tab
+              // bar (href: null) and reachable only from here.
+              label: "All orders",
               Icon: ShoppingBag,
               badge: pendingOrderCount,
               onPress: () => router.push("/(tabs)/sellerOrders"),
@@ -863,6 +867,25 @@ export default function SellerDashboard() {
                 busy={pageLoading}
                 onChange={(n: number) => goToPage("orders", n)}
               />
+              {/* This tab is the recent few. The full screen -- filters,
+                  fulfilment, everything older -- is otherwise only reachable
+                  from a tile on the Overview tab, which is not where anyone
+                  looks for it once they are already in Orders. */}
+              <TouchableOpacity
+                onPress={() => router.push("/(tabs)/sellerOrders")}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  pendingOrderCount > 0
+                    ? `See all orders, ${pendingOrderCount} pending`
+                    : "See all orders"
+                }
+                className="mt-2 h-11 flex-row items-center justify-center gap-1"
+              >
+                <Text className="text-[14px] font-semibold text-primary-text">
+                  See all orders
+                </Text>
+                <ChevronRight size={16} color={t.primaryText} />
+              </TouchableOpacity>
               {error ? <Text className="text-danger-text text-sm mt-3 px-1">{error}</Text> : null}
             </>
           ) : (
