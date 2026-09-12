@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, Image, ActivityIndicator } from "react-native";
 import { ChevronDown, ChevronUp, Store, Truck } from "lucide-react-native";
 import { useTokens } from "../../theme/useTokens";
+import { serviceFeeFor } from "../../models/cart";
 import type { CartGroup } from "../../models/cart";
 
 const money = (n: number) => {
@@ -39,6 +40,13 @@ interface Props {
    * the whole basket had to pick one group's fee to quote and was wrong for
    * every other one. */
   batchOption?: React.ReactNode;
+  /** The chat offer from *this* shop, if the buyer holds one.
+   *
+   * Per card for the same reason the batch toggle is: an offer belongs to
+   * one seller, and each card is its own order. */
+  discountOption?: React.ReactNode;
+  /** What the applied offer takes off this order, in naira. */
+  discountAmount?: number | null;
 }
 
 /**
@@ -51,10 +59,15 @@ interface Props {
 export default function CartGroupCard({
   group, deliveringTo, deliveryFee, blockedReason, busy, disabled,
   onCheckout, onClear, onChangeAddress, children, batchOption,
+  discountOption, discountAmount,
 }: Props) {
   const t = useTokens();
   const [open, setOpen] = React.useState(false);
   const blocked = !!blockedReason;
+  // What is actually being paid for goods, which is what the fee is charged
+  // on -- a seller's discount is not partly taken back as a percentage.
+  const goodsTotal = Math.max(0, group.subtotal - (discountAmount ?? 0));
+  const serviceFee = serviceFeeFor(goodsTotal);
 
   return (
     <View className="mb-4 rounded-2xl border border-border bg-surface-raised p-4">
@@ -120,7 +133,44 @@ export default function CartGroupCard({
             <Text className="text-[13px] text-text-primary">{money(deliveryFee)}</Text>
           </View>
         ) : null}
+
+        {/* Shown only once it is actually coming off, so the buyer can see
+            the reduction land rather than trust that tapping worked. */}
+        {!blocked && discountAmount ? (
+          <View className="mt-2 flex-row justify-between">
+            <Text className="text-[13px] text-text-secondary">Discount</Text>
+            <Text className="text-[13px] font-semibold text-primary-text">
+              -{money(discountAmount)}
+            </Text>
+          </View>
+        ) : null}
+
+        {!blocked && (deliveryFee != null || discountAmount) ? (
+          <>
+            {/* Itemised rather than folded into the total: a fee the buyer
+                only discovers by doing the arithmetic is a fee they feel
+                they were not told about. */}
+            <View className="mt-2 flex-row justify-between">
+              <Text className="text-[13px] text-text-secondary">Service fee</Text>
+              <Text className="text-[13px] text-text-primary">
+                {money(serviceFee)}
+              </Text>
+            </View>
+            <View className="mt-2 flex-row justify-between border-t border-border pt-2">
+              <Text className="text-[14px] font-bold text-text-primary">Total</Text>
+              <Text className="text-[14px] font-bold text-text-primary">
+                {money(
+                  Math.max(0, goodsTotal + (deliveryFee ?? 0) + serviceFee)
+                )}
+              </Text>
+            </View>
+          </>
+        ) : null}
       </View>
+
+      {/* Above the share-a-trip toggle: the offer changes what is owed, the
+          toggle changes how it travels. */}
+      {!blocked ? discountOption : null}
 
       {/* Only where a delivery is actually possible: offering to share a
           trip that cannot happen is noise. */}

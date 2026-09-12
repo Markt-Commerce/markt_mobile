@@ -7,6 +7,7 @@ import {
   OfferPayload,
   ChatRoomLite,
   MessageReactionSummary,
+  SpendableDiscount,
 } from "../../models/chat";
 
 export const DEFAULT_PRODUCT_INQUIRY = "Hi, is this still available?";
@@ -126,6 +127,19 @@ export async function sendOfferREST(room_id: number, payload: OfferPayload): Pro
     }),
   });
   return res!;
+}
+
+/** GET /chats/discounts/spendable — the offers this buyer can spend right
+ * now, each tagged with the seller account id.
+ *
+ * A discount lives in a chat room and the basket is grouped by shop, so the
+ * join is the server's job; the cart screen just matches on seller_id.
+ * Expired, spent and withdrawn offers never come back, so anything in this
+ * list is something the buyer can actually take. */
+export async function getSpendableDiscounts(): Promise<SpendableDiscount[]> {
+  const res = await request<any>(`${BASE_URL}/chats/discounts/spendable`, { method: "GET" });
+  const list = Array.isArray(res) ? res : (res?.discounts ?? res?.data?.discounts ?? []);
+  return Array.isArray(list) ? list : [];
 }
 
 /**

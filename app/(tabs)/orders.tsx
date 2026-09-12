@@ -47,6 +47,11 @@ import type { CartGroup } from "../../models/cart";
 import type { SavedAddress } from "../../models/addresses";
 import type { CombinedDeliveryQuote } from "../../models/delivery";
 import { useGroupQuotes } from "../../hooks/useGroupQuotes";
+import { useSpendableDiscounts } from "../../hooks/useSpendableDiscounts";
+import { getUserProfile } from "../../services/sections/profile";
+import type { RefundPreference } from "../../models/profile";
+import ChatDiscountOption from "../../components/cart/ChatDiscountOption";
+import { discountAmountFor } from "../../models/chat";
 import { isActiveOrder, isPastOrder } from "../../utils/orderStatus";
 import { onBadgeChanged } from "../../utils/badgeEvents";
 
@@ -101,12 +106,27 @@ function MyCartTab() {
   // baskets -- which left every Checkout enabled regardless of whether we
   // could deliver.
   const groupQuotes = useGroupQuotes(groups, address);
+  // The chat offer worth the most on each shop's card, if the buyer holds
+  // one. Accepting a discount in chat used to change nothing at checkout.
+  const { byGroup: groupDiscounts, refresh: refreshDiscounts } =
+    useSpendableDiscounts(groups);
+  // Where this buyer asked for money owed back to go, so the share-a-trip
+  // toggle can say what will actually happen rather than assuming the card.
+  const [refundPreference, setRefundPreference] =
+    useState<RefundPreference>("card");
   // Never inferred: the buyer has to choose to share, because under
   // charge-then-refund their money leaves and comes back.
   // Per shop, not per basket. Each card becomes its own order with its own
   // delivery and its own ceiling, so one cart-wide toggle had to pick a
   // single group's fee to quote and was wrong for every other one.
   const [batchOptIn, setBatchOptIn] = useState<Record<number, boolean>>({});
+
+  // Which chat offer the buyer chose to spend on each shop's card, if any.
+  // Opt-in: these are usually single-use, and spending one on a small basket
+  // that the buyer was saving for a bigger one cannot be undone.
+  const [appliedDiscount, setAppliedDiscount] = useState<
+    Record<number, number | null>
+  >({});
 
   const fetchCart = useCallback(async (opts?: { silent?: boolean }) => {
     try {
@@ -195,6 +215,22 @@ function MyCartTab() {
     refreshCombined();
   }, [refreshCombined]);
 
+  useEffect(() => {
+    let alive = true;
+    getUserProfile()
+      .then((profile) => {
+        if (alive && profile?.buyer_account?.refund_preference) {
+          setRefundPreference(profile.buyer_account.refund_preference);
+        }
+      })
+      // The card is the default and the server decides for real either way;
+      // a profile we could not read is not worth a visible failure here.
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   /** Check out one shop's card. The rest of the basket stays where it is. */
   const checkoutGroup = async (group: CartGroup) => {
     // One at a time across the whole basket: two checkouts in flight would
@@ -235,9 +271,22 @@ function MyCartTab() {
           group.seller_id != null ? !!batchOptIn[group.seller_id] : false
         ),
         seller_id: group.seller_id ?? undefined,
+        // Only when the buyer actually tapped it. The server re-checks the
+        // offer against this shop and this total and spends it inside the
+        // order transaction, so what is sent here is a request, not a price.
+        discount_id:
+          group.seller_id != null
+            ? (appliedDiscount[group.seller_id] ?? undefined)
+            : undefined,
       });
       clearIdempotencyKey("checkout-cart");
       fetchCart();
+      // The offer is spent now. Refetch rather than assume, so a multi-use
+      // one keeps showing and a single-use one stops.
+      if (group.seller_id != null && appliedDiscount[group.seller_id]) {
+        setAppliedDiscount((prev) => ({ ...prev, [group.seller_id!]: null }));
+        refreshDiscounts();
+      }
       router.push(`/checkout/payment-method/${checkout.order_id}`);
     } catch (e) {
       show({
@@ -434,10 +483,39 @@ function MyCartTab() {
               ).then(() => fetchCart())
             }
             onChangeAddress={() => setPickerOpen(true)}
+            discountAmount={
+              g.seller_id != null &&
+              appliedDiscount[g.seller_id] &&
+              groupDiscounts[g.seller_id]
+                ? discountAmountFor(groupDiscounts[g.seller_id], g.subtotal)
+                : null
+            }
+            discountOption={
+              g.seller_id != null && groupDiscounts[g.seller_id] ? (
+                <ChatDiscountOption
+                  discount={groupDiscounts[g.seller_id]}
+                  subtotal={g.subtotal}
+                  applied={
+                    appliedDiscount[g.seller_id] ===
+                    groupDiscounts[g.seller_id].id
+                  }
+                  disabled={checkingOut !== null}
+                  onChange={(next) =>
+                    setAppliedDiscount((prev) => ({
+                      ...prev,
+                      [g.seller_id!]: next
+                        ? groupDiscounts[g.seller_id!].id
+                        : null,
+                    }))
+                  }
+                />
+              ) : null
+            }
             batchOption={
               g.seller_id != null ? (
                 <BatchDeliveryOption
                   quote={groupQuotes[g.seller_id]?.quote ?? null}
+                  refundPreference={refundPreference}
                   value={!!batchOptIn[g.seller_id]}
                   onChange={(next) =>
                     setBatchOptIn((prev) => ({ ...prev, [g.seller_id!]: next }))
