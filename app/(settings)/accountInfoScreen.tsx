@@ -1,7 +1,7 @@
 // screens/AccountInfoScreen.tsx
 import React, { useState, useEffect } from 'react';
-import { Camera, Image as ImageIcon } from 'lucide-react-native';
-import { View, Text, ScrollView, TouchableOpacity, Alert, Image, ActivityIndicator } from 'react-native';
+import { Camera, Image as ImageIcon, MapPin } from 'lucide-react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Image, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useUser } from '../../hooks/userContextProvider';
 import { request } from "../../services/api";
 import { z } from 'zod';
@@ -13,13 +13,16 @@ import ScreenHeader from '../../components/ScreenHeader';
 import { Input } from '../../components/inputs';
 import * as ImagePicker from 'expo-image-picker';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getUserProfile, uploadShopBanner } from '../../services/sections/profile';
+import { getUserProfile, uploadShopBanner, updateUserAddress, updateSellerProfile } from '../../services/sections/profile';
+import * as Location from 'expo-location';
 import { UserProfile } from '../../models/profile';
 import { attemptMultipleUpload } from '../../services/sections/media';
 import { isArray } from 'lodash';
 import logger from '../../utils/logger';
 import { friendlyErrorMessage } from '../../utils/errorMessages';
 import { useTokens } from '../../theme/useTokens';
+import { useKeyboardOverlap, keyboardScrollPadding } from '../../hooks/useKeyboardOverlap';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const BuyerSchema = z.object({
   buyername: z.string().min(2).max(60).optional(),
@@ -34,7 +37,16 @@ const SellerSchema = z.object({
 
 const GeneralSchema = z.object({
   phone_number: z.string().min(10).max(15).optional(),
-  profile_picture: z.string().min(10).optional()
+  profile_picture: z.string().min(10).optional(),
+  // Registration mints one when the client does not send it, and until now
+  // there was no way to change it — the handle you were given at signup was
+  // the handle you kept.
+  username: z
+    .string()
+    .min(3, "At least 3 characters")
+    .max(20, "Max 20 characters")
+    .regex(/^[a-zA-Z0-9_]+$/, "Letters, numbers and underscores only")
+    .optional(),
 });
 
 export default function AccountInfoScreen() {
@@ -48,6 +60,21 @@ export default function AccountInfoScreen() {
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [bannerLoading, setBannerLoading] = useState(false);
   const nav = useRouter();
+  const insets = useSafeAreaInsets();
+
+  /**
+   * Where the account is, and — for a seller — where the shop is.
+   *
+   * Neither was editable anywhere in the app. Skipping the address during
+   * signup meant never being able to add one, and a seller who skipped it
+   * had no shop coordinates at all, which is what keeps a shop out of every
+   * proximity search. The API has accepted both the whole time.
+   */
+  const [addressSaving, setAddressSaving] = useState(false);
+  const [shopLocSaving, setShopLocSaving] = useState(false);
+  const [addressLabel, setAddressLabel] = useState<string | null>(null);
+  const [shopLocLabel, setShopLocLabel] = useState<string | null>(null);
+  const keyboardOverlap = useKeyboardOverlap();
 
   const {
     control: generalControl,
@@ -57,7 +84,7 @@ export default function AccountInfoScreen() {
   } = useForm({
     mode: 'onChange',
     resolver: zodResolver(GeneralSchema),
-    defaultValues: { phone_number: '' },
+    defaultValues: { phone_number: '', username: '' },
   });
 
   const {
@@ -103,7 +130,10 @@ export default function AccountInfoScreen() {
             });
             setBannerUrl(profile.seller_account?.banner_url || null);
           }
-          resetGeneral({ phone_number: profile.phone_number || '' });
+          resetGeneral({
+            phone_number: profile.phone_number || '',
+            username: profile.username || '',
+          });
           return profile;
         } catch (err) {
           logger.error("Error fetching profile:", err);
@@ -255,12 +285,95 @@ export default function AccountInfoScreen() {
 
 
   const onGeneralSubmit = generalHandleSubmit((data) => {
-    handleSave('/users/profile', { phone_number: data.phone_number?.trim() });
+    handleSave('/users/profile', {
+      phone_number: data.phone_number?.trim(),
+      username: data.username?.trim(),
+    });
   });
 
   const onBuyerSubmit = buyerHandleSubmit((data) => {
     handleSave('/users/profile/buyer', { buyername: data.buyername?.trim() });
   });
+
+  /** Reads the device's location once and hands back a usable address. */
+  const readCurrentLocation = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      show({
+        variant: "error",
+        title: "Location permission needed",
+        message: "Allow location access to use your current position.",
+      });
+      return null;
+    }
+    const pos = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
+    let label: string | null = null;
+    try {
+      const [addr] = await Location.reverseGeocodeAsync(pos.coords);
+      label = [addr?.street ?? addr?.name, addr?.city ?? addr?.subregion, addr?.region]
+        .filter(Boolean)
+        .join(", ") || null;
+    } catch {
+      // A coordinate without a street name is still a coordinate.
+    }
+    return { coords: pos.coords, label };
+  };
+
+  const saveDeliveryAddress = async () => {
+    if (addressSaving) return;
+    setAddressSaving(true);
+    try {
+      const fix = await readCurrentLocation();
+      if (!fix) return;
+      await updateUserAddress({
+        latitude: fix.coords.latitude,
+        longitude: fix.coords.longitude,
+        ...(fix.label ? { street: fix.label } : {}),
+      });
+      setAddressLabel(fix.label ?? "Current location saved");
+      show({ variant: "success", title: "Address updated", message: fix.label ?? "Saved." });
+    } catch (e) {
+      show({
+        variant: "error",
+        title: "Could not save your address",
+        message: friendlyErrorMessage(e, "Please try again."),
+      });
+    } finally {
+      setAddressSaving(false);
+    }
+  };
+
+  const saveShopLocation = async () => {
+    if (shopLocSaving) return;
+    setShopLocSaving(true);
+    try {
+      const fix = await readCurrentLocation();
+      if (!fix) return;
+      // Sent as a pair — the server refuses a lone coordinate, and (0, 0) is
+      // what a failed geocode looks like rather than a shop in the Atlantic.
+      await updateSellerProfile({
+        shop_latitude: fix.coords.latitude,
+        shop_longitude: fix.coords.longitude,
+        ...(fix.label ? { shop_address: { street: fix.label } } : {}),
+      });
+      setShopLocLabel(fix.label ?? "Shop location saved");
+      show({
+        variant: "success",
+        title: "Shop location updated",
+        message: "Your shop can now be found by distance.",
+      });
+    } catch (e) {
+      show({
+        variant: "error",
+        title: "Could not save your shop location",
+        message: friendlyErrorMessage(e, "Please try again."),
+      });
+    } finally {
+      setShopLocSaving(false);
+    }
+  };
 
   const onSellerSubmit = sellerHandleSubmit((data) => {
     handleSave('/users/profile/seller', {
@@ -271,7 +384,10 @@ export default function AccountInfoScreen() {
 
   const currentPhone = (generalValues?.phone_number ?? '').trim();
   const originalPhone = (profileData?.phone_number ?? '').trim();
-  const generalHasChanges = currentPhone !== originalPhone;
+  const currentUsername = (generalValues?.username ?? '').trim();
+  const originalUsername = (profileData?.username ?? '').trim();
+  const generalHasChanges =
+    currentPhone !== originalPhone || currentUsername !== originalUsername;
 
   const currentBuyerName = (buyerValues?.buyername ?? '').trim();
   const originalBuyerName = (profileData?.buyer_account?.buyername ?? '').trim();
@@ -287,11 +403,54 @@ export default function AccountInfoScreen() {
   const isBuyerDisabled = !isBuyerValid || loading || imageLoading || !buyerHasChanges;
   const isSellerDisabled = !isSellerValid || loading || imageLoading || !sellerHasChanges;
 
+  /** A one-tap "set this from where I am" row. */
+  const LocationRow = ({
+    title,
+    hint,
+    saved,
+    busy,
+    onPress,
+  }: {
+    title: string;
+    hint: string;
+    saved: string | null;
+    busy: boolean;
+    onPress: () => void;
+  }) => (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={busy}
+      activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: busy, busy }}
+      className="flex-row items-center gap-3 rounded-xl px-4 py-3.5 bg-surface-sunken"
+    >
+      <MapPin size={18} color={t.primaryText} strokeWidth={2} />
+      <View className="flex-1">
+        <Text className="text-[14px] font-semibold text-text-primary">{title}</Text>
+        <Text className="text-[12px] mt-0.5 text-text-secondary" numberOfLines={1}>
+          {busy ? "Reading your location…" : saved ?? hint}
+        </Text>
+      </View>
+      {busy ? <ActivityIndicator size="small" color={t.textSecondary} /> : null}
+    </TouchableOpacity>
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "left", "right", "bottom"]}>
+      {/* The sheets learned about the keyboard; this screen never did, so
+          the shop description sat behind it while you typed into it. */}
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
       <ScrollView
         className={"flex-1 bg-surface-page"}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{
+          paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 32),
+        }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         showsVerticalScrollIndicator={false}
       >
         <ScreenHeader title="Account Info" onBack={() => nav.back()} />
@@ -325,7 +484,17 @@ export default function AccountInfoScreen() {
             </Text>
             <View className="rounded p-4 border bg-surface-raised border-border">
               <Input
-                placeholder="Phone Number"
+                label="Username"
+                placeholder="amaka_obi"
+                control={generalControl}
+                errors={generalErrors}
+                name="username"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <Input
+                label="Phone number"
+                placeholder="0801 234 5678"
                 control={generalControl}
                 errors={generalErrors}
                 name="phone_number"
@@ -374,6 +543,23 @@ export default function AccountInfoScreen() {
             </View>
           )}
 
+          {/* Where things get delivered. Skipping this during signup used to
+              mean never being able to add it. */}
+          <View className="mt-8">
+            <Text className="font-bold text-[11px] tracking-[2px] uppercase mb-3 text-text-secondary">
+              Delivery address
+            </Text>
+            <View className="rounded p-4 border bg-surface-raised border-border">
+              <LocationRow
+                title="Use my current location"
+                hint="We'll use this for delivery and to show you what's nearby."
+                saved={addressLabel}
+                busy={addressSaving}
+                onPress={saveDeliveryAddress}
+              />
+            </View>
+          </View>
+
           {role === 'seller' && (
             <View className="mt-8">
               <Text className="font-bold text-[11px] tracking-[2px] uppercase mb-3 text-text-secondary">
@@ -390,11 +576,23 @@ export default function AccountInfoScreen() {
                   className="mb-4 h-28 w-full overflow-hidden rounded-xl bg-primary-muted items-center justify-center"
                 >
                   {bannerUrl ? (
-                    <Image
-                      source={{ uri: bannerUrl }}
-                      className="h-full w-full"
-                      resizeMode="cover"
-                    />
+                    <>
+                      <Image
+                        source={{ uri: bannerUrl }}
+                        className="h-full w-full"
+                        resizeMode="cover"
+                      />
+                      {/* The profile photo row says "tap to choose a new
+                          one"; the cover said nothing, so once it was set it
+                          looked like a picture rather than a control. */}
+                      {!bannerLoading ? (
+                        <View className="absolute bottom-2 right-2 rounded-full px-3 py-1.5 bg-scrim">
+                          <Text className="text-[11px] font-semibold text-white">
+                            Change cover
+                          </Text>
+                        </View>
+                      ) : null}
+                    </>
                   ) : null}
                   {bannerLoading ? (
                     <View className="absolute inset-0 items-center justify-center">
@@ -425,6 +623,19 @@ export default function AccountInfoScreen() {
                     multiline
                   />
                 </View>
+                {/* Where the shop is. Without it the shop never appears in a
+                    proximity search at all — it only shows on the widest
+                    rungs — and there was no way to set it after signup. */}
+                <View className="mt-4">
+                  <LocationRow
+                    title="Shop location"
+                    hint="Set this so buyers nearby can find you."
+                    saved={shopLocLabel}
+                    busy={shopLocSaving}
+                    onPress={saveShopLocation}
+                  />
+                </View>
+
                 <TouchableOpacity
                   className={`mt-4 h-12 rounded bg-primary-fill items-center justify-center ${
                     isSellerDisabled ? "opacity-50" : ""
@@ -442,6 +653,7 @@ export default function AccountInfoScreen() {
           )}
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
