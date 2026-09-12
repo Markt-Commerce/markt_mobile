@@ -144,6 +144,540 @@ function getReactionIcon(type: string) {
  * timestamps stacked down the screen -- which is most of what made the thread
  * feel sparse and repetitive.
  */
+/** Reactions on a message, normalised. Pure -- reads only its argument --
+ *  so the memoised row can call it without depending on the screen. */
+function getReactionSummaries(
+  m: ChatMessage,
+): { reaction_type: string; count: number; has_reacted: boolean }[] {
+  const rx = m.message_data?.reactions;
+  if (Array.isArray(rx) && rx.length > 0)
+    return rx.filter((r) => r.count > 0);
+  const legacy = (m as any).hasReactedClient ?? false;
+  const count = m.message_data?.reactions_count ?? 0;
+  if (count > 0 || legacy)
+    return [
+      {
+        reaction_type: "THUMBS_UP",
+        count: count || (legacy ? 1 : 0),
+        has_reacted: legacy,
+      },
+    ];
+  return [];
+}
+
+
+/** What a message row needs from the screen that owns it, bundled so the row
+ *  can be memoised against one stable object rather than a dozen props. */
+type RowContext = {
+  myId: string | undefined;
+  role: string | null | undefined;
+  textColor: string;
+  mutedColor: string;
+  isDark: boolean;
+  setReactionPickerFor: (id: string | null) => void;
+  /** Through a ref, so a new message does not hand every row new callbacks. */
+  handlers: React.MutableRefObject<any>;
+};
+
+/**
+ * One message in the thread.
+ *
+ * Memoised, and outside the screen component, because it was neither: a plain
+ * function declared in the body got a fresh identity on every render, so
+ * every mounted row re-rendered on every keystroke. VirtualizedList said so
+ * out loud ("large list that is slow to update") on any thread long enough to
+ * notice.
+ *
+ * Everything it needs arrives as props: primitives, the message object, and
+ * one `ctx` that does not change while typing. Handlers reach it through a
+ * ref, so adding a message does not give the row a new function to look at.
+ */
+const MessageRow = React.memo(function MessageRow({
+  item,
+  isMe,
+  avatar,
+  continuesPrev,
+  continuesNext,
+  isGroupEnd,
+  hasReactions,
+  pickerOpen,
+  discountStatus,
+  discountBusy,
+  ctx,
+}: {
+  item: ChatMessage;
+  isMe: boolean;
+  avatar: any;
+  continuesPrev: boolean;
+  continuesNext: boolean;
+  isGroupEnd: boolean;
+  hasReactions: boolean;
+  pickerOpen: boolean;
+  /** Live status of the offer in this message, if it is one. */
+  discountStatus: string | null;
+  discountBusy: boolean;
+  ctx: RowContext;
+}) {
+  const {
+    myId,
+    role,
+    textColor,
+    mutedColor,
+    isDark,
+    setReactionPickerFor,
+    handlers,
+  } = ctx;
+    // Bubbles were `rounded` -- a 4px radius, so nearly square. A proper radius
+    // with the adjoining corners tightened makes a run read as one connected
+    // block, and the tail corner squares off at the end of the run.
+    const bubbleShape = [
+      "rounded-2xl",
+      isMe
+        ? `${continuesPrev ? "rounded-tr-md" : ""} ${continuesNext ? "rounded-br-md" : "rounded-br-sm"}`
+        : `${continuesPrev ? "rounded-tl-md" : ""} ${continuesNext ? "rounded-bl-md" : "rounded-bl-sm"}`,
+    ].join(" ");
+
+    return (
+      <View
+        className={`flex-row px-3 ${continuesPrev ? "pt-0.5" : "pt-2.5"} ${
+          isGroupEnd ? "pb-0.5" : "pb-0"
+        } ${isMe ? "justify-end" : "justify-start"}`}
+      >
+        {!isMe &&
+          (isGroupEnd ? (
+            <View className="mr-2">
+              <Avatar
+                key={`peer-${item.id}-${avatar.uri ?? "init"}`}
+                uri={avatar.uri}
+                name={avatar.name}
+                size={30}
+              />
+            </View>
+          ) : (
+            // Keeps the bubbles in a run flush with the one that has the avatar.
+            <View className="mr-2" style={{ width: 30 }} />
+          ))}
+        <View className={`max-w-[86%] ${isMe ? "items-end" : "items-start"}`}>
+          {item.message_type === "text" &&
+            (() => {
+              const sharedRequest = item.message_data?.request as
+                | { title?: string; description?: string; budget?: number }
+                | undefined;
+              const requestId = item.message_data?.request_id as
+                | string
+                | undefined;
+              if (
+                requestId &&
+                (item.content?.includes("Sharing request") || sharedRequest)
+              ) {
+                return (
+                  <View
+                    className={`px-4 py-3 min-w-[200px] ${bubbleShape} ${isMe ? "bg-primary-fill" : "bg-surface-raised border border-border"}`}
+                  >
+                    <Text
+                      className={`text-xs font-medium uppercase tracking-wide ${isMe ? "text-white/80" : "text-text-secondary"}`}
+                    >
+                      Buyer request
+                    </Text>
+                    <Text
+                      className={`text-base font-semibold mt-1 ${isMe ? "text-white" : "text-text-primary"}`}
+                      numberOfLines={2}
+                    >
+                      {sharedRequest?.title ||
+                        item.content.replace(/^Sharing request:\s*/i, "")}
+                    </Text>
+                    {sharedRequest?.description ? (
+                      <Text
+                        className={`text-sm mt-1 ${isMe ? "text-white/90" : "text-text-secondary"}`}
+                        numberOfLines={3}
+                      >
+                        {sharedRequest.description}
+                      </Text>
+                    ) : null}
+                    {sharedRequest?.budget != null && (
+                      <Text
+                        className={`text-sm font-semibold mt-2 ${isMe ? "text-white" : "text-text-primary"}`}
+                      >
+                        Budget: ₦{Number(sharedRequest.budget).toLocaleString()}
+                      </Text>
+                    )}
+                  </View>
+                );
+              }
+              const productIdInContent = (item.content || "").match(
+                /PRD_[\w]+/,
+              )?.[0];
+              if (
+                productIdInContent &&
+                (item.content?.includes("Sharing product") ||
+                  /^PRD_[\w]+$/.test(item.content.trim()))
+              ) {
+                return (
+                  <ChatProductDisplayComponent
+                    productId={productIdInContent}
+                    embeddedProduct={null}
+                    showAddToCart={role === "buyer"}
+                    onAddToCart={handlers.current.handleAddProductToCart}
+                  />
+                );
+              }
+              return (
+                <View
+                  className={`px-4 py-2.5 ${bubbleShape} ${isMe ? "bg-primary-fill" : "bg-surface-raised border border-border"}`}
+                >
+                  <Text
+                    className={`text-base ${isMe ? "text-white" : "text-text-primary"}`}
+                  >
+                    {item.content}
+                  </Text>
+                </View>
+              );
+            })()}
+
+          {item.message_type === "image" &&
+            (() => {
+              const imageUri = normalizeUri(
+                item.message_data?.url ??
+                  item.message_data?.image_url ??
+                  item.content,
+              );
+              if (!imageUri) {
+                return (
+                  <View
+                    className="w-56 h-40 rounded items-center justify-center px-3 bg-media"
+                  >
+                    <Text
+                      className="text-sm text-center text-text-secondary"
+                    >
+                      Image unavailable
+                    </Text>
+                  </View>
+                );
+              }
+              return (
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPress={() => handlers.current.setViewerUri(imageUri)}
+                >
+                  <Image
+                    source={{ uri: imageUri }}
+                    className="w-56 h-40 rounded bg-media"
+                    resizeMode="cover"
+                  />
+                  {item.pending && (
+                    <Text className="text-text-muted text-xs mt-1">Sending…</Text>
+                  )}
+                </TouchableOpacity>
+              );
+            })()}
+
+          {item.message_type === "video" &&
+            (() => {
+              const videoUri = normalizeUri(
+                item.message_data?.url ??
+                  (item.message_data as any)?.video_url ??
+                  item.content,
+              );
+              if (!videoUri) {
+                return (
+                  <View
+                    className="w-56 h-40 rounded items-center justify-center px-3 bg-media"
+                  >
+                    <Text
+                      className="text-sm text-center text-text-secondary"
+                    >
+                      Video unavailable
+                    </Text>
+                  </View>
+                );
+              }
+              return (
+                <View>
+                  <View
+                    className="w-56 h-40 rounded overflow-hidden bg-media"
+                  >
+                    <InlineVideo
+                      uri={videoUri}
+                      style={{ width: "100%", height: "100%" }}
+                      controls
+                    />
+                  </View>
+                  {item.pending && (
+                    <Text className="text-text-muted text-xs mt-1">Sending…</Text>
+                  )}
+                </View>
+              );
+            })()}
+
+          {item.message_type === "product" &&
+            (() => {
+              const productId = item.message_data?.product_id
+                ? String(item.message_data.product_id)
+                : (item.content || "").match(/PRD_[\w]+/)?.[0];
+              const embeddedProduct = item.message_data?.product;
+              const caption = productMessageCaption(item.content, productId);
+              if (!productId && !embeddedProduct?.id) {
+                return (
+                  <View
+                    className="rounded border px-4 py-3 bg-surface-sunken border-border"
+                  >
+                    <Text
+                      className="text-sm text-text-secondary"
+                    >
+                      Product no longer available
+                    </Text>
+                  </View>
+                );
+              }
+              return (
+                <View className="gap-2">
+                  {caption ? (
+                    <View
+                      className={`px-4 py-2.5 ${bubbleShape} ${isMe ? "bg-primary-fill" : "bg-surface-raised border border-border"}`}
+                    >
+                      <Text
+                        className={`text-base ${isMe ? "text-white" : "text-text-primary"}`}
+                      >
+                        {caption}
+                      </Text>
+                    </View>
+                  ) : null}
+                  <ChatProductDisplayComponent
+                    productId={productId}
+                    embeddedProduct={embeddedProduct}
+                    showAddToCart={role === "buyer"}
+                    onAddToCart={handlers.current.handleAddProductToCart}
+                  />
+                </View>
+              );
+            })()}
+
+          {item.message_type === "discount" && (
+            <DiscountMessageCard
+              data={(item.message_data ?? {}) as any}
+              // Older messages put the seller's note only in the body text.
+              fallbackNote={discountNoteFromContent(item.content)}
+              status={discountStatus}
+              role={role ?? undefined}
+              busy={discountBusy}
+              onRespond={handlers.current.handleRespondToDiscount}
+            />
+          )}
+
+          {item.message_type === "offer" && (
+            <View
+              className="rounded overflow-hidden border min-w-[200px] bg-surface-raised border-border"
+            >
+              <View
+                className="px-4 py-3 bg-media"
+              >
+                <Text
+                  className="text-xs font-medium uppercase tracking-wide text-text-secondary"
+                >
+                  Price offer
+                </Text>
+                <Text
+                  className="text-lg font-bold mt-0.5 text-text-primary"
+                >
+                  ₦
+                  {Number(
+                    (item as any).offer?.price ??
+                      (item as any).offer?.offer_amount ??
+                      item.content ??
+                      0,
+                  ).toLocaleString()}
+                </Text>
+                {(item as any).offer?.message && (
+                  <Text
+                    className="text-sm mt-1 text-text-secondary"
+                    numberOfLines={2}
+                  >
+                    {(item as any).offer.message}
+                  </Text>
+                )}
+              </View>
+              {role === "buyer" &&
+                (item as any).offer?.status === "pending" &&
+                (item as any).offer?.id && (
+                  <View className="flex-row p-2 gap-2">
+                    <TouchableOpacity
+                      onPress={() =>
+                        handlers.current.handleRespondToOffer(
+                          Number((item as any).offer.id),
+                          "accept",
+                        )
+                      }
+                      className="flex-1 py-2.5 rounded bg-primary-fill items-center"
+                    >
+                      <Text className="text-white font-semibold text-sm">
+                        Accept
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() =>
+                        handlers.current.handleRespondToOffer(
+                          Number((item as any).offer.id),
+                          "reject",
+                        )
+                      }
+                      className="flex-1 py-2.5 rounded border items-center bg-surface-sunken border-border"
+                    >
+                      <Text
+                        className="font-semibold text-sm text-text-primary"
+                      >
+                        Decline
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              {(item as any).offer?.status &&
+                (item as any).offer?.status !== "pending" && (
+                  <View className="px-4 py-2">
+                    <Text
+                      className="text-xs capitalize text-text-secondary"
+                    >
+                      {(item as any).offer.status}
+                    </Text>
+                  </View>
+                )}
+            </View>
+          )}
+
+          <View
+            className={`flex-row items-center gap-2 flex-wrap ${
+              isGroupEnd || hasReactions ? "mt-1" : ""
+            }`}
+          >
+            {/* One timestamp per run, not one per message. A burst of five
+                messages used to stack five identical times down the screen. */}
+            {isGroupEnd ? (
+              <Text className="text-text-muted text-[11px]">
+                {formatTime(item.created_at)}
+              </Text>
+            ) : null}
+            {!isNaN(Number(item.id)) && Number(item.id) > 0 && (
+              <>
+                {getReactionSummaries(item).map((r) => (
+                  <TouchableOpacity
+                    key={r.reaction_type}
+                    onPress={() => handlers.current.handleReactionTap(item, r)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    className={`flex-row items-center gap-0.5 px-1.5 py-0.5 rounded border ${
+                      r.has_reacted
+                        ? isDark
+                          ? "bg-dark-elevated border-dark-border-strong"
+                          : "bg-surface-sunken border-border"
+                        : isDark
+                          ? "bg-dark-surface border-transparent"
+                          : "bg-white border-transparent"
+                    }`}
+                  >
+                    {(() => {
+                      const ReactionIcon = getReactionIcon(r.reaction_type);
+                      return (
+                        <ReactionIcon
+                          size={12}
+                          color={r.has_reacted ? textColor : mutedColor}
+                        />
+                      );
+                    })()}
+                    {(r.count > 1 || r.has_reacted) && (
+                      <Text
+                        className={`text-[11px] ${r.has_reacted ? `text-text-primary font-semibold` : "text-text-secondary"}`}
+                      >
+                        {r.count}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                  onPress={() =>
+                    setReactionPickerFor(
+                      pickerOpen
+                        ? null
+                        : String(item.id),
+                    )
+                  }
+                  onLongPress={() => setReactionPickerFor(String(item.id))}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  className="p-1"
+                >
+                  <SmilePlus size={14} color={mutedColor} />
+                </TouchableOpacity>
+                {/* Offer a discount on *this* product. Anchored to the
+                    message because that is where the intent is: a seller
+                    saying "15% off" under a jersey means the jersey, and an
+                    offer made from the attach sheet has no way to know which
+                    product was being discussed. Checkout scopes it to that
+                    product too, so the two agree. */}
+                {role === "seller" && productIdOf(item) ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      handlers.current.setOfferFor({
+                        productId: productIdOf(item)!,
+                        productName: productNameOf(item),
+                      });
+                      handlers.current.setOfferDiscountVisible(true);
+                    }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      productNameOf(item)
+                        ? `Offer a discount on ${productNameOf(item)}`
+                        : "Offer a discount on this product"
+                    }
+                    className="p-1"
+                  >
+                    <Percent size={14} color={mutedColor} />
+                  </TouchableOpacity>
+                ) : null}
+                {pickerOpen && (
+                  <View className="flex-row gap-1 mt-0.5">
+                    {COMMON_REACTIONS.map((type) => {
+                      const active = getReactionSummaries(item).some(
+                        (r) => r.reaction_type === type && r.has_reacted,
+                      );
+                      return (
+                        <TouchableOpacity
+                          key={type}
+                          onPress={() => handlers.current.handlePickerReaction(item, type)}
+                          className={`px-2 py-1 rounded border ${active ? ("bg-surface-sunken border-border") : "bg-surface-raised border-border"}`}
+                        >
+                          {(() => {
+                            const PickerIcon = getReactionIcon(type);
+                            return (
+                              <PickerIcon
+                                size={16}
+                                color={active ? textColor : mutedColor}
+                              />
+                            );
+                          })()}
+                        </TouchableOpacity>
+                      );
+                    })}
+                    <TouchableOpacity
+                      onPress={() => setReactionPickerFor(null)}
+                      className="px-2 py-1 rounded bg-media"
+                    >
+                      <X size={14} color={mutedColor} />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </>
+            )}
+          </View>
+          {item.pending && (
+            <Text className="text-text-muted text-[10px] mt-0.5">Pending…</Text>
+          )}
+        </View>
+        {/* No avatar on your own messages. This is a 1:1 thread -- alignment
+            and colour already say who sent it -- and the avatar cost 40px of
+            width on every outgoing line. Neither WhatsApp nor Instagram shows
+            one here. */}
+      </View>
+    );
+});
+
 function isSameGroup(a?: ChatMessage, b?: ChatMessage) {
   if (!a || !b) return false;
   if (String(a.sender_id) !== String(b.sender_id)) return false;
@@ -299,15 +833,45 @@ export default function ChatScreen({
   );
 
   /** Display order: oldest first (chronological). API may return desc; we sort by created_at asc. */
+  // Enriched messages are cached by id against the object they came from.
+  //
+  // Without this the map built a new object for every message every time the
+  // list recomputed, so each row got a prop it had never seen and the memo on
+  // MessageRow could never bail out -- one new message re-rendered the entire
+  // thread. Reusing the previous object whenever the source has not changed
+  // is what lets the memo actually hold.
+  const enrichedRef = React.useRef(
+    new Map<string | number, { source: ChatMessage; value: ChatMessage }>(),
+  );
   const sortedMessages = React.useMemo(() => {
-    return [...messages]
-      .map((m) => enrichChatMessage(m, avatarCtx))
-      .sort(
-        (a, b) =>
-          (parseServerDate(a.created_at)?.getTime() ?? 0) -
-          (parseServerDate(b.created_at)?.getTime() ?? 0),
-      );
+    const cache = enrichedRef.current;
+    const live = new Set<string | number>();
+    const enriched = messages.map((m) => {
+      const key = m.id;
+      live.add(key);
+      const hit = cache.get(key);
+      if (hit && hit.source === m) return hit.value;
+      const value = enrichChatMessage(m, avatarCtx);
+      cache.set(key, { source: m, value });
+      return value;
+    });
+    // Messages that have gone (a failed send rolled back, an older page
+    // dropped) should not keep their entry alive for the life of the screen.
+    for (const key of cache.keys()) {
+      if (!live.has(key)) cache.delete(key);
+    }
+    return enriched.sort(
+      (a, b) =>
+        (parseServerDate(a.created_at)?.getTime() ?? 0) -
+        (parseServerDate(b.created_at)?.getTime() ?? 0),
+    );
   }, [messages, avatarCtx]);
+
+  // A new avatar context means every message renders differently, so the
+  // cached copies are stale by definition.
+  React.useEffect(() => {
+    enrichedRef.current.clear();
+  }, [avatarCtx]);
 
   const loadInitial = async () => {
     if (!hasValidRoomId) return;
@@ -960,25 +1524,6 @@ export default function ChatScreen({
   }
 
   /** Get reaction summaries for display; fallback to legacy reactions_count/hasReactedClient for THUMBS_UP */
-  function getReactionSummaries(
-    m: ChatMessage,
-  ): { reaction_type: string; count: number; has_reacted: boolean }[] {
-    const rx = m.message_data?.reactions;
-    if (Array.isArray(rx) && rx.length > 0)
-      return rx.filter((r) => r.count > 0);
-    const legacy = (m as any).hasReactedClient ?? false;
-    const count = m.message_data?.reactions_count ?? 0;
-    if (count > 0 || legacy)
-      return [
-        {
-          reaction_type: "THUMBS_UP",
-          count: count || (legacy ? 1 : 0),
-          has_reacted: legacy,
-        },
-      ];
-    return [];
-  }
-
   async function handleAddReaction(
     message: ChatMessage,
     reactionType: ReactionType,
@@ -1070,477 +1615,86 @@ export default function ChatScreen({
     }
   }
 
-  function renderMessage({ item, index }: { item: ChatMessage; index: number }) {
-    const isMe = item.sender_id === myId || String(item.sender_id) === myId;
-    const avatar = getMessageAvatarProps(item, isMe, avatarCtx);
+  // Handlers reach the rows through a ref rather than through props.
+  //
+  // They are plain functions in this component, so each render makes new ones.
+  // Passed directly they would change rowContext on every keystroke and undo
+  // the memoisation entirely -- the rows would re-render for a reason that has
+  // nothing to do with them. The ref's identity never changes; what it points
+  // at is refreshed on each render, so a row always calls the current one.
+  const handlersRef = React.useRef<any>({});
+  handlersRef.current = {
+    handleAddProductToCart,
+    handleRespondToOffer,
+    handleRespondToDiscount,
+    handleReactionTap,
+    handlePickerReaction,
+    setViewerUri,
+    loadOlder,
+    setOfferFor,
+    setOfferDiscountVisible,
+  };
 
-    // Runs of messages from one person in the same minute render as a single
-    // block: the avatar sits beside the last bubble (so it lines up with where
-    // the run ends, as Messenger and Instagram do) and only that bubble carries
-    // a timestamp. Everything above it gets a spacer of the same width so the
-    // bubbles stay on one edge.
-    const prev = sortedMessages[index - 1];
-    const next = sortedMessages[index + 1];
-    const continuesPrev = isSameGroup(prev, item);
-    const continuesNext = isSameGroup(item, next);
-    const isGroupEnd = !continuesNext;
-    // Reactions still need the gap above them even mid-run.
-    const hasReactions = getReactionSummaries(item).length > 0;
+  const rowContext = React.useMemo<RowContext>(
+    () => ({
+      myId,
+      role,
+      textColor,
+      mutedColor,
+      isDark,
+      setReactionPickerFor,
+      handlers: handlersRef,
+    }),
+    [myId, role, textColor, mutedColor, isDark],
+  );
 
-    // Bubbles were `rounded` -- a 4px radius, so nearly square. A proper radius
-    // with the adjoining corners tightened makes a run read as one connected
-    // block, and the tail corner squares off at the end of the run.
-    const bubbleShape = [
-      "rounded-2xl",
-      isMe
-        ? `${continuesPrev ? "rounded-tr-md" : ""} ${continuesNext ? "rounded-br-md" : "rounded-br-sm"}`
-        : `${continuesPrev ? "rounded-tl-md" : ""} ${continuesNext ? "rounded-bl-md" : "rounded-bl-sm"}`,
-    ].join(" ");
-
-    return (
-      <View
-        className={`flex-row px-3 ${continuesPrev ? "pt-0.5" : "pt-2.5"} ${
-          isGroupEnd ? "pb-0.5" : "pb-0"
-        } ${isMe ? "justify-end" : "justify-start"}`}
-      >
-        {!isMe &&
-          (isGroupEnd ? (
-            <View className="mr-2">
-              <Avatar
-                key={`peer-${item.id}-${avatar.uri ?? "init"}`}
-                uri={avatar.uri}
-                name={avatar.name}
-                size={30}
-              />
-            </View>
-          ) : (
-            // Keeps the bubbles in a run flush with the one that has the avatar.
-            <View className="mr-2" style={{ width: 30 }} />
-          ))}
-        <View className={`max-w-[86%] ${isMe ? "items-end" : "items-start"}`}>
-          {item.message_type === "text" &&
-            (() => {
-              const sharedRequest = item.message_data?.request as
-                | { title?: string; description?: string; budget?: number }
-                | undefined;
-              const requestId = item.message_data?.request_id as
-                | string
-                | undefined;
-              if (
-                requestId &&
-                (item.content?.includes("Sharing request") || sharedRequest)
-              ) {
-                return (
-                  <View
-                    className={`px-4 py-3 min-w-[200px] ${bubbleShape} ${isMe ? "bg-primary-fill" : "bg-surface-raised border border-border"}`}
-                  >
-                    <Text
-                      className={`text-xs font-medium uppercase tracking-wide ${isMe ? "text-white/80" : "text-text-secondary"}`}
-                    >
-                      Buyer request
-                    </Text>
-                    <Text
-                      className={`text-base font-semibold mt-1 ${isMe ? "text-white" : "text-text-primary"}`}
-                      numberOfLines={2}
-                    >
-                      {sharedRequest?.title ||
-                        item.content.replace(/^Sharing request:\s*/i, "")}
-                    </Text>
-                    {sharedRequest?.description ? (
-                      <Text
-                        className={`text-sm mt-1 ${isMe ? "text-white/90" : "text-text-secondary"}`}
-                        numberOfLines={3}
-                      >
-                        {sharedRequest.description}
-                      </Text>
-                    ) : null}
-                    {sharedRequest?.budget != null && (
-                      <Text
-                        className={`text-sm font-semibold mt-2 ${isMe ? "text-white" : "text-text-primary"}`}
-                      >
-                        Budget: ₦{Number(sharedRequest.budget).toLocaleString()}
-                      </Text>
-                    )}
-                  </View>
-                );
-              }
-              const productIdInContent = (item.content || "").match(
-                /PRD_[\w]+/,
-              )?.[0];
-              if (
-                productIdInContent &&
-                (item.content?.includes("Sharing product") ||
-                  /^PRD_[\w]+$/.test(item.content.trim()))
-              ) {
-                return (
-                  <ChatProductDisplayComponent
-                    productId={productIdInContent}
-                    embeddedProduct={null}
-                    showAddToCart={role === "buyer"}
-                    onAddToCart={handleAddProductToCart}
-                  />
-                );
-              }
-              return (
-                <View
-                  className={`px-4 py-2.5 ${bubbleShape} ${isMe ? "bg-primary-fill" : "bg-surface-raised border border-border"}`}
-                >
-                  <Text
-                    className={`text-base ${isMe ? "text-white" : "text-text-primary"}`}
-                  >
-                    {item.content}
-                  </Text>
-                </View>
-              );
-            })()}
-
-          {item.message_type === "image" &&
-            (() => {
-              const imageUri = normalizeUri(
-                item.message_data?.url ??
-                  item.message_data?.image_url ??
-                  item.content,
-              );
-              if (!imageUri) {
-                return (
-                  <View
-                    className="w-56 h-40 rounded items-center justify-center px-3 bg-media"
-                  >
-                    <Text
-                      className="text-sm text-center text-text-secondary"
-                    >
-                      Image unavailable
-                    </Text>
-                  </View>
-                );
-              }
-              return (
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  onPress={() => setViewerUri(imageUri)}
-                >
-                  <Image
-                    source={{ uri: imageUri }}
-                    className="w-56 h-40 rounded bg-media"
-                    resizeMode="cover"
-                  />
-                  {item.pending && (
-                    <Text className="text-text-muted text-xs mt-1">Sending…</Text>
-                  )}
-                </TouchableOpacity>
-              );
-            })()}
-
-          {item.message_type === "video" &&
-            (() => {
-              const videoUri = normalizeUri(
-                item.message_data?.url ??
-                  (item.message_data as any)?.video_url ??
-                  item.content,
-              );
-              if (!videoUri) {
-                return (
-                  <View
-                    className="w-56 h-40 rounded items-center justify-center px-3 bg-media"
-                  >
-                    <Text
-                      className="text-sm text-center text-text-secondary"
-                    >
-                      Video unavailable
-                    </Text>
-                  </View>
-                );
-              }
-              return (
-                <View>
-                  <View
-                    className="w-56 h-40 rounded overflow-hidden bg-media"
-                  >
-                    <InlineVideo
-                      uri={videoUri}
-                      style={{ width: "100%", height: "100%" }}
-                      controls
-                    />
-                  </View>
-                  {item.pending && (
-                    <Text className="text-text-muted text-xs mt-1">Sending…</Text>
-                  )}
-                </View>
-              );
-            })()}
-
-          {item.message_type === "product" &&
-            (() => {
-              const productId = item.message_data?.product_id
-                ? String(item.message_data.product_id)
-                : (item.content || "").match(/PRD_[\w]+/)?.[0];
-              const embeddedProduct = item.message_data?.product;
-              const caption = productMessageCaption(item.content, productId);
-              if (!productId && !embeddedProduct?.id) {
-                return (
-                  <View
-                    className="rounded border px-4 py-3 bg-surface-sunken border-border"
-                  >
-                    <Text
-                      className="text-sm text-text-secondary"
-                    >
-                      Product no longer available
-                    </Text>
-                  </View>
-                );
-              }
-              return (
-                <View className="gap-2">
-                  {caption ? (
-                    <View
-                      className={`px-4 py-2.5 ${bubbleShape} ${isMe ? "bg-primary-fill" : "bg-surface-raised border border-border"}`}
-                    >
-                      <Text
-                        className={`text-base ${isMe ? "text-white" : "text-text-primary"}`}
-                      >
-                        {caption}
-                      </Text>
-                    </View>
-                  ) : null}
-                  <ChatProductDisplayComponent
-                    productId={productId}
-                    embeddedProduct={embeddedProduct}
-                    showAddToCart={role === "buyer"}
-                    onAddToCart={handleAddProductToCart}
-                  />
-                </View>
-              );
-            })()}
-
-          {item.message_type === "discount" && (
-            <DiscountMessageCard
-              data={(item.message_data ?? {}) as any}
-              // Older messages put the seller's note only in the body text.
-              fallbackNote={discountNoteFromContent(item.content)}
-              status={
-                discounts.find(
+  const renderMessage = React.useCallback(
+    ({ item, index }: { item: ChatMessage; index: number }) => {
+      const isMe = item.sender_id === myId || String(item.sender_id) === myId;
+      // Runs of messages from one person in the same minute render as a single
+      // block: the avatar sits beside the last bubble (so it lines up with
+      // where the run ends, as Messenger and Instagram do) and only that
+      // bubble carries a timestamp. Everything above it gets a spacer of the
+      // same width so the bubbles stay on one edge.
+      const prev = sortedMessages[index - 1];
+      const next = sortedMessages[index + 1];
+      const continuesNext = isSameGroup(item, next);
+      return (
+        <MessageRow
+          item={item}
+          isMe={isMe}
+          avatar={getMessageAvatarProps(item, isMe, avatarCtx)}
+          continuesPrev={isSameGroup(prev, item)}
+          continuesNext={continuesNext}
+          isGroupEnd={!continuesNext}
+          // Reactions still need the gap above them even mid-run.
+          hasReactions={getReactionSummaries(item).length > 0}
+          pickerOpen={reactionPickerFor === String(item.id)}
+          discountStatus={
+            item.message_type === "discount"
+              ? (discounts.find(
                   (d) => Number(d?.id) === Number(item.message_data?.discount_id),
-                )?.status ?? null
-              }
-              role={role ?? undefined}
-              busy={respondingToDiscount === Number(item.message_data?.discount_id)}
-              onRespond={handleRespondToDiscount}
-            />
-          )}
+                )?.status ?? null)
+              : null
+          }
+          discountBusy={
+            respondingToDiscount === Number(item.message_data?.discount_id)
+          }
+          ctx={rowContext}
+        />
+      );
+    },
+    [
+      myId,
+      sortedMessages,
+      avatarCtx,
+      reactionPickerFor,
+      discounts,
+      respondingToDiscount,
+      rowContext,
+    ],
+  );
 
-          {item.message_type === "offer" && (
-            <View
-              className="rounded overflow-hidden border min-w-[200px] bg-surface-raised border-border"
-            >
-              <View
-                className="px-4 py-3 bg-media"
-              >
-                <Text
-                  className="text-xs font-medium uppercase tracking-wide text-text-secondary"
-                >
-                  Price offer
-                </Text>
-                <Text
-                  className="text-lg font-bold mt-0.5 text-text-primary"
-                >
-                  ₦
-                  {Number(
-                    (item as any).offer?.price ??
-                      (item as any).offer?.offer_amount ??
-                      item.content ??
-                      0,
-                  ).toLocaleString()}
-                </Text>
-                {(item as any).offer?.message && (
-                  <Text
-                    className="text-sm mt-1 text-text-secondary"
-                    numberOfLines={2}
-                  >
-                    {(item as any).offer.message}
-                  </Text>
-                )}
-              </View>
-              {role === "buyer" &&
-                (item as any).offer?.status === "pending" &&
-                (item as any).offer?.id && (
-                  <View className="flex-row p-2 gap-2">
-                    <TouchableOpacity
-                      onPress={() =>
-                        handleRespondToOffer(
-                          Number((item as any).offer.id),
-                          "accept",
-                        )
-                      }
-                      className="flex-1 py-2.5 rounded bg-primary-fill items-center"
-                    >
-                      <Text className="text-white font-semibold text-sm">
-                        Accept
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() =>
-                        handleRespondToOffer(
-                          Number((item as any).offer.id),
-                          "reject",
-                        )
-                      }
-                      className="flex-1 py-2.5 rounded border items-center bg-surface-sunken border-border"
-                    >
-                      <Text
-                        className="font-semibold text-sm text-text-primary"
-                      >
-                        Decline
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              {(item as any).offer?.status &&
-                (item as any).offer?.status !== "pending" && (
-                  <View className="px-4 py-2">
-                    <Text
-                      className="text-xs capitalize text-text-secondary"
-                    >
-                      {(item as any).offer.status}
-                    </Text>
-                  </View>
-                )}
-            </View>
-          )}
-
-          <View
-            className={`flex-row items-center gap-2 flex-wrap ${
-              isGroupEnd || hasReactions ? "mt-1" : ""
-            }`}
-          >
-            {/* One timestamp per run, not one per message. A burst of five
-                messages used to stack five identical times down the screen. */}
-            {isGroupEnd ? (
-              <Text className="text-text-muted text-[11px]">
-                {formatTime(item.created_at)}
-              </Text>
-            ) : null}
-            {!isNaN(Number(item.id)) && Number(item.id) > 0 && (
-              <>
-                {getReactionSummaries(item).map((r) => (
-                  <TouchableOpacity
-                    key={r.reaction_type}
-                    onPress={() => handleReactionTap(item, r)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    className={`flex-row items-center gap-0.5 px-1.5 py-0.5 rounded border ${
-                      r.has_reacted
-                        ? isDark
-                          ? "bg-dark-elevated border-dark-border-strong"
-                          : "bg-surface-sunken border-border"
-                        : isDark
-                          ? "bg-dark-surface border-transparent"
-                          : "bg-white border-transparent"
-                    }`}
-                  >
-                    {(() => {
-                      const ReactionIcon = getReactionIcon(r.reaction_type);
-                      return (
-                        <ReactionIcon
-                          size={12}
-                          color={r.has_reacted ? textColor : mutedColor}
-                        />
-                      );
-                    })()}
-                    {(r.count > 1 || r.has_reacted) && (
-                      <Text
-                        className={`text-[11px] ${r.has_reacted ? `text-text-primary font-semibold` : "text-text-secondary"}`}
-                      >
-                        {r.count}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                ))}
-                <TouchableOpacity
-                  onPress={() =>
-                    setReactionPickerFor(
-                      reactionPickerFor === String(item.id)
-                        ? null
-                        : String(item.id),
-                    )
-                  }
-                  onLongPress={() => setReactionPickerFor(String(item.id))}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  className="p-1"
-                >
-                  <SmilePlus size={14} color={mutedColor} />
-                </TouchableOpacity>
-                {/* Offer a discount on *this* product. Anchored to the
-                    message because that is where the intent is: a seller
-                    saying "15% off" under a jersey means the jersey, and an
-                    offer made from the attach sheet has no way to know which
-                    product was being discussed. Checkout scopes it to that
-                    product too, so the two agree. */}
-                {role === "seller" && productIdOf(item) ? (
-                  <TouchableOpacity
-                    onPress={() => {
-                      setOfferFor({
-                        productId: productIdOf(item)!,
-                        productName: productNameOf(item),
-                      });
-                      setOfferDiscountVisible(true);
-                    }}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                      productNameOf(item)
-                        ? `Offer a discount on ${productNameOf(item)}`
-                        : "Offer a discount on this product"
-                    }
-                    className="p-1"
-                  >
-                    <Percent size={14} color={mutedColor} />
-                  </TouchableOpacity>
-                ) : null}
-                {reactionPickerFor === String(item.id) && (
-                  <View className="flex-row gap-1 mt-0.5">
-                    {COMMON_REACTIONS.map((type) => {
-                      const active = getReactionSummaries(item).some(
-                        (r) => r.reaction_type === type && r.has_reacted,
-                      );
-                      return (
-                        <TouchableOpacity
-                          key={type}
-                          onPress={() => handlePickerReaction(item, type)}
-                          className={`px-2 py-1 rounded border ${active ? ("bg-surface-sunken border-border") : "bg-surface-raised border-border"}`}
-                        >
-                          {(() => {
-                            const PickerIcon = getReactionIcon(type);
-                            return (
-                              <PickerIcon
-                                size={16}
-                                color={active ? textColor : mutedColor}
-                              />
-                            );
-                          })()}
-                        </TouchableOpacity>
-                      );
-                    })}
-                    <TouchableOpacity
-                      onPress={() => setReactionPickerFor(null)}
-                      className="px-2 py-1 rounded bg-media"
-                    >
-                      <X size={14} color={mutedColor} />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </>
-            )}
-          </View>
-          {item.pending && (
-            <Text className="text-text-muted text-[10px] mt-0.5">Pending…</Text>
-          )}
-        </View>
-        {/* No avatar on your own messages. This is a 1:1 thread -- alignment
-            and colour already say who sent it -- and the avatar cost 40px of
-            width on every outgoing line. Neither WhatsApp nor Instagram shows
-            one here. */}
-      </View>
-    );
-  }
 
   // Plain FlatList and TextInput in both modes now.
   //
@@ -1573,6 +1727,16 @@ export default function ChatScreen({
   // message visible just above the input bar.
   const [sheetFooterHeight, setSheetFooterHeight] = useState(64);
 
+  // Stable, so passing it does not itself invalidate the list each render.
+  const handleListScroll = React.useCallback(
+    ({ nativeEvent }: { nativeEvent: { contentOffset: { y: number } } }) => {
+      // loadOlder already refuses when it is mid-flight or there is nothing
+      // older, so this depends on nothing and never changes identity.
+      if (nativeEvent.contentOffset.y < 80) handlersRef.current.loadOlder?.();
+    },
+    [],
+  );
+
   const messageList = loading ? (
     <View style={[styles.sheetListWrap, styles.sheetLoading]}>
       <ActivityIndicator size="large" color={textColor} />
@@ -1599,11 +1763,19 @@ export default function ChatScreen({
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="interactive"
-      onScroll={({ nativeEvent }) => {
-        const { contentOffset, contentSize, layoutMeasurement } = nativeEvent;
-        const padding = 80;
-        if (contentOffset.y < padding && hasMore && !loadingOlder) loadOlder();
-      }}
+      // Windowing, which this list had none of: every message ever loaded
+      // stayed mounted, so a long thread re-rendered hundreds of rows for one
+      // keystroke. A chat is read from the bottom, so a small initial batch is
+      // enough and the rest arrives as you scroll up.
+      initialNumToRender={15}
+      maxToRenderPerBatch={10}
+      updateCellsBatchingPeriod={50}
+      windowSize={11}
+      // Not on iOS: it has a long history of blanking cells in inverted or
+      // fast-scrolling lists, and a message that is not there is worse than
+      // one that costs a little to keep.
+      removeClippedSubviews={Platform.OS === "android"}
+      onScroll={handleListScroll}
       scrollEventThrottle={400}
       ListHeaderComponent={
         hasMore && loadingOlder ? (
