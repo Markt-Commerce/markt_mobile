@@ -305,26 +305,23 @@ export default function PostDetailsScreen() {
   const myAvatarUri = profile?.profile_picture_url || profile?.profile_picture || undefined;
   const myDisplayName = profile?.username || user?.email;
 
-  if (!post) {
-    return (
-      <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "bottom"]}>
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color={t.textPrimary} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const postMedia: MediaItem[] = (post.social_media ?? [])
-    .filter((sm) => !!sm?.media?.original_url)
-    .map((sm) => ({
-      uri: sm.media.original_url,
-      type: mediaTypeOf({
-        media_type: (sm.media as any)?.media_type,
-        mime_type: (sm.media as any)?.mime_type,
-        url: sm.media.original_url,
-      }),
-    }));
+  // Memoised, and above the `!post` guard with everything else that uses a
+  // hook. A new array each render would invalidate the header memo below on
+  // every keystroke, which is the thing that memo exists to prevent.
+  const postMedia: MediaItem[] = React.useMemo(
+    () =>
+      (post?.social_media ?? [])
+        .filter((sm) => !!sm?.media?.original_url)
+        .map((sm) => ({
+          uri: sm.media.original_url,
+          type: mediaTypeOf({
+            media_type: (sm.media as any)?.media_type,
+            mime_type: (sm.media as any)?.mime_type,
+            url: sm.media.original_url,
+          }),
+        })),
+    [post?.social_media],
+  );
 
   // Header, post content, and sponsored ad are rendered in the ListHeaderComponent.
   //
@@ -337,7 +334,8 @@ export default function PostDetailsScreen() {
   // newComment is deliberately not a dependency. What you are typing does not
   // change the post above it.
   const listHeader = React.useMemo(
-    () => (
+    () =>
+      !post ? null : (
     <View>
       {/* Header Bar */}
       <View className="flex items-center p-4 pb-2 flex-row bg-surface-raised">
@@ -460,6 +458,7 @@ export default function PostDetailsScreen() {
     ),
     [
       post,
+      postMedia,
       likeCount,
       likedByMe,
       isLiking,
@@ -501,6 +500,17 @@ export default function PostDetailsScreen() {
       ),
     [loading, t.textMuted],
   );
+
+
+  if (!post) {
+    return (
+      <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "bottom"]}>
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color={t.textPrimary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-surface-page" edges={["top"]}>
