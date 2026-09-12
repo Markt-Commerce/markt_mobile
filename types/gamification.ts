@@ -159,6 +159,15 @@ export interface UnseenAchievements {
     to_tier: string;
     tier: { key: string; name: string; color_hex?: string; stars?: number };
   } | null;
+  /**
+   * A streak milestone the app never got to show.
+   *
+   * The socket event fires inside the login request — before the client has a
+   * user id, and therefore before it has connected its socket — so on sign-in
+   * the realtime path always misses it. This is the durable copy, the same
+   * shape as the event so one handler covers both.
+   */
+  streak?: StreakAdvancedEvent | null;
 }
 
 /** Consecutive-day streak, additive on GET /gamification/me. */

@@ -2,7 +2,17 @@ import { AccountType, RegisterRequest } from './auth'
 import { useState, createContext, useContext } from 'react';
 
 
-//this context would be available to all the signup steps/components that need it to fill them up and get info
+/**
+ * Carries the email (and, on the login bounce, the password) between the
+ * signup screen and the verification screen.
+ *
+ * It used to accumulate the entire registration payload across four screens
+ * and POST it at the end, which is why an app kill lost everything and a
+ * duplicate email surfaced three screens after the field that caused it.
+ * Registration now happens on the first screen, so the rest of the flow
+ * writes to the server and this holds only what the code screen needs to
+ * display and resend to.
+ */
 const registerContext = createContext<{
   regData: RegisterRequest;
   setRegData: React.Dispatch<React.SetStateAction<RegisterRequest>>;

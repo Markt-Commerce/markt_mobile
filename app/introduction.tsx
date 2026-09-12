@@ -1,124 +1,162 @@
 import React, { useCallback } from "react";
-import { ImageBackground, View, Text, TouchableOpacity } from "react-native";
+import { Text, View, Pressable, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useFocusEffect } from "expo-router";
-import { Compass, ShoppingBag, Sparkles } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { ArrowRight } from "lucide-react-native";
+import SocialAuthButtons from "../components/auth/SocialAuthButtons";
+import { useSocialAuth, useAppleAuthAvailable } from "../hooks/useSocialAuth";
+import { useTokens } from "../theme/useTokens";
 import { useUser } from "../hooks/userContextProvider";
-import { navigateToAppHome } from "../utils/authNavigation";
+import { MarketHero } from "../components/illustrations/MarktIllustration";
 
-export default function MarktLandingScreen() {
+/**
+ * The first screen. Replaces `introduction` as the logged-out entry point.
+ *
+ * Three decisions worth naming:
+ *
+ * 1. **Social first.** Apple and Google sit above email, because they are one
+ *    tap against six screens. Email is still there and still obvious — it is
+ *    secondary, not hidden.
+ * 2. **"Browse first" is a real link, not a tease.** It opens the actual
+ *    product catalogue (those endpoints are public), so someone can see what
+ *    Markt sells before deciding whether to join. The old flow demanded a
+ *    six-screen signup before showing a single price.
+ * 3. **Sign in is a distinct, visible affordance.** A returning user should
+ *    never have to work out that "get started" is also the way back in.
+ */
+export default function Welcome() {
   const router = useRouter();
-  const { user } = useUser();
+  const t = useTokens();
+  const { setUser, setRole } = useUser();
+  const appleAvailable = useAppleAuthAvailable();
 
-  // Safety net if iOS swipe-back briefly surfaces this screen while authenticated.
-  useFocusEffect(
-    useCallback(() => {
-      if (user) {
-        navigateToAppHome();
-      }
-    }, [user])
+  const onSuccess = useCallback(
+    (user: any, isNew: boolean) => {
+      // Same shape the password path writes, so nothing downstream can tell
+      // the two apart.
+      const accountType = (user?.current_role ?? user?.account_type ?? "buyer") as
+        | "buyer"
+        | "seller";
+      setUser({
+        email: String(user?.email ?? "").toLowerCase(),
+        account_type: accountType,
+        user_id: user?.id,
+      });
+      setRole(accountType);
+
+      // A returning user goes straight in. A new one still needs a name and a
+      // role — two taps, not six screens.
+      if (isNew) router.replace("/(onboarding)/yourName");
+    },
+    [router, setUser, setRole]
   );
 
-  // Fake starter progress (feel free to wire to real data)
-  const level = 1;
-  const xp = 20;       // out of 100 for demo
-  const xpPercent = Math.min(100, Math.max(0, xp));
+  const {
+    busy,
+    error,
+    needsPasswordLink,
+    signInWithGoogle,
+    signInWithApple,
+    clearError,
+  } = useSocialAuth(onSuccess);
 
   return (
-    <ImageBackground
-      source={require("../assets/introimage.jpg")}
-      resizeMode="cover"
-      className="flex-1"
-    >
-      {/* dim overlay for readability */}
-      <View className="absolute inset-0 bg-black/55" />
-
-      <SafeAreaView className="flex-1 justify-between">
-        {/* Top bar */}
-        <View className="px-6 pt-6 flex-row items-center justify-between">
-          <Text className="text-white text-[24px] font-bold tracking-tight">Markt</Text>
-
-          {/* Gamified chip */}
-          <View className="flex-row items-center gap-2 bg-white/10 border border-white/20 rounded px-3 py-1">
-            <Text className="text-white text-xs">Lvl {level}</Text>
-            <Text className="text-white/80 text-xs">•</Text>
-            <Text className="text-white text-xs">{xp} XP</Text>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "left", "right", "bottom"]}>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "space-between" }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="px-6 pt-10">
+          <View className="items-center mb-8">
+            <MarketHero size={220} />
           </View>
+          <Text className="text-[34px] font-bold leading-[40px] text-text-primary">
+            Buy and sell{"\n"}with people nearby.
+          </Text>
+          <Text className="text-base mt-3 leading-6 text-text-secondary">
+            Markt is a marketplace built on real conversations — find what you
+            need, or start selling in minutes.
+          </Text>
         </View>
 
-        {/* Middle “quest card” */}
-        <View className="px-6">
-          <View className="rounded bg-white/10 border border-white/20 p-6">
-            <Text className="text-white text-[32px] font-bold leading-tight">
-              Ready for your first quest?
-            </Text>
-            <Text className="text-white/90 mt-3 leading-6">
-              Explore a vibrant marketplace, complete mini-goals, and collect rewards as you buy & sell.
-            </Text>
-
-            {/* Progress */}
-            <View className="mt-6">
-              <View className="flex-row items-end justify-between">
-                <Text className="text-white/80 text-xs">Starter Track</Text>
-                <Text className="text-white text-xs font-semibold">{xpPercent}%</Text>
-              </View>
-              <View className="w-full h-1.5 bg-white/15 rounded mt-2 overflow-hidden">
-                <View
-                  className="h-1.5 bg-white rounded"
-                  style={{ width: `${xpPercent}%` }}
-                />
-              </View>
-                {/* Mini “quests” */}
-                <View className="mt-4">
-                  <View className="flex-row items-center gap-3">
-                  <Compass size={16} color="#ffffff" />
-                  <Text className="text-white/90 ">Discover trending niches</Text>
-                </View>
-                <View className="flex-row items-center gap-3 mt-2">
-                  <ShoppingBag size={16} color="#ffffff" />
-                  <Text className="text-white/90 ">Follow sellers you love</Text>
-                </View>
-                <View className="flex-row items-center gap-3 mt-2">
-                  <Sparkles size={16} color="#ffffff" />
-                  <Text className="text-white/90 ">Unlock perks as you level up</Text>
-                </View>
-              </View>
+        <View className="px-6 pb-6">
+          {error ? (
+            <View
+              className="rounded border border-danger/40 bg-danger-muted px-4 py-3 mb-4"
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+            >
+              <Text className="text-sm text-danger-text">{error}</Text>
+              {needsPasswordLink ? (
+                <Pressable
+                  onPress={() => {
+                    clearError();
+                    router.push("/(entrances)/login");
+                  }}
+                  accessibilityRole="button"
+                  className="mt-2"
+                  hitSlop={8}
+                >
+                  <Text className="text-sm font-bold text-danger-text underline">
+                    Sign in with your password
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
+          ) : null}
+
+          <SocialAuthButtons
+            busy={busy}
+            appleAvailable={appleAvailable}
+            onGoogle={signInWithGoogle}
+            onApple={signInWithApple}
+          />
+
+          <Pressable
+            onPress={() => router.push("/(entrances)/signup")}
+            disabled={busy !== null}
+            accessibilityRole="button"
+            accessibilityLabel="Continue with email"
+            className="h-[52px] rounded mt-3 flex-row items-center justify-center border border-border active:opacity-80"
+            style={{ opacity: busy ? 0.5 : 1 }}
+          >
+            <Text className="text-[16px] font-semibold text-text-primary">
+              Continue with email
+            </Text>
+          </Pressable>
+
+          {/* Value before friction: the catalogue is public, so this is a real
+              door, not a preview. */}
+          <Pressable
+            onPress={() => router.push("/browse")}
+            accessibilityRole="button"
+            accessibilityLabel="Browse Markt without an account"
+            className="h-11 flex-row items-center justify-center gap-1.5 mt-5"
+            hitSlop={8}
+          >
+            <Text className="text-[15px] font-semibold text-text-secondary">
+              Browse first
+            </Text>
+            <ArrowRight size={16} color={t.textSecondary} />
+          </Pressable>
+
+          <View className="flex-row items-center justify-center mt-6">
+            <Text className="text-sm text-text-secondary">
+              Already have an account?{" "}
+            </Text>
+            <Pressable
+              onPress={() => router.push("/(entrances)/login")}
+              accessibilityRole="button"
+              hitSlop={12}
+            >
+              <Text className="text-sm font-bold underline text-text-primary">
+                Sign in
+              </Text>
+            </Pressable>
           </View>
         </View>
-
-        {/* Actions */}
-        <View className="px-6 pb-8">
-          <TouchableOpacity
-            className="h-12 bg-primary-fill rounded justify-center items-center mb-4 active:opacity-90 shadow-sm"
-            onPress={() => router.navigate("/signup")}
-            accessibilityRole="button"
-            accessibilityLabel="Start your first quest"
-          >
-            <Text className="text-white text-base font-semibold tracking-wide">
-              Start your first quest
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="h-12 bg-white rounded justify-center items-center active:opacity-90 shadow-sm"
-            onPress={() => router.navigate("/login")}
-            accessibilityRole="button"
-            accessibilityLabel="I already have an account"
-          >
-            <Text className="text-black text-base font-semibold tracking-wide">
-              I already have an account
-            </Text>
-          </TouchableOpacity>
-
-          {/* Tiny footer tip */}
-          <View className="items-center mt-4">
-            <Text className="text-white/70 text-[12px]">
-              Tip: Complete your profile to unlock a bonus
-            </Text>
-          </View>
-        </View>
-      </SafeAreaView>
-    </ImageBackground>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

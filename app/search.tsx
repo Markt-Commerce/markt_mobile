@@ -14,6 +14,7 @@ import {
 // silently dropped and the navigator's default light background showed
 // through below the header. Every other screen already uses this one.
 import { SafeAreaView } from "react-native-safe-area-context";
+import SearchField from "../components/SearchField";
 import { Search, ChevronRight, ChevronLeft, Megaphone } from "lucide-react-native";
 import { Link } from "expo-router";
 import { debounce } from "lodash";
@@ -235,27 +236,23 @@ export default function SearchPage() {
       (view === "posts" && posts.length === 0));
 
   return (
+    // No top edge: this screen sits under the tabs header, which already
+    // applies the status-bar inset — claiming it again left a band of empty
+    // surface above the search field.
     <SafeAreaView
       className="flex-1 bg-surface-page"
+      edges={["left", "right"]}
     >
       {/* Search Input */}
       <View
-        className="px-6 pt-6 pb-4 border-b bg-surface-raised border-border"
+        className="px-4 pt-3 pb-4 border-b bg-surface-raised border-border"
       >
-        <View
-          className="h-14 px-5 flex-row items-center rounded border bg-surface-sunken border-border"
-        >
-          <Search size={20} color={iconColor} strokeWidth={1.5} />
-          <TextInput
-            className="ml-4 flex-1 font-semibold text-base text-text-primary"
-            placeholder="Search products, sellers, posts…"
-            placeholderTextColor={mutedIconColor}
-            value={query}
-            onChangeText={setQuery}
-            selectionColor={iconColor}
-          />
-          {searching && <ActivityIndicator size="small" color={mutedIconColor} />}
-        </View>
+        <SearchField
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search products, sellers, posts…"
+          busy={searching}
+        />
 
         {/* Buyer request shortcut — buyer mode only */}
         {role === "buyer" && (

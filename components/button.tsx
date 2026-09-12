@@ -1,5 +1,5 @@
 import { Text, View, TouchableOpacity, TouchableOpacityProps, ActivityIndicator } from "react-native";
-import React from "react";
+import React, { useState } from "react";
 import { useTokens } from "../theme/useTokens";
 
 type ButtonVariant = "primary" | "conversion" | "secondary" | "outline";
@@ -34,6 +34,7 @@ const Button = ({
 }: ButtonProps) => {
   const isDisabled = disabled || loading;
   const t = useTokens();
+  const [pressed, setPressed] = useState(false);
 
   const variantStyles = {
     // primary-fill, not primary. `primary` is the brand *swatch*, and in dark
@@ -62,7 +63,12 @@ const Button = ({
 
   return (
     <TouchableOpacity
-      className={`flex h-12 flex-row items-center justify-center rounded px-6 ${s.container}`}
+      className={`flex h-14 flex-row items-center justify-center rounded-2xl px-6 active:opacity-90 ${s.container}`}
+      // A press that does nothing visible reads as a dead control. 0.98 is
+      // enough to feel and small enough not to look like a bounce.
+      style={{ transform: [{ scale: pressed ? 0.98 : 1 }] }}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.85}
@@ -76,7 +82,7 @@ const Button = ({
       ) : children != null ? (
         children
       ) : (
-        <Text className={`text-base font-semibold tracking-wide ${s.text}`} numberOfLines={1}>
+        <Text className={`text-[16px] font-bold ${s.text}`} numberOfLines={1}>
           {text}
         </Text>
       )}

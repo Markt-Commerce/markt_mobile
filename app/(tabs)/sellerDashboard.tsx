@@ -3,11 +3,13 @@ import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'expo-router';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, Dimensions, Animated, Easing, FlatList, RefreshControl } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { Search, ChevronDown, AlertTriangle, ChevronRight, Pencil, Trash2 } from 'lucide-react-native';
+import { Search, ChevronDown, AlertTriangle, ChevronRight, Pencil, Trash2, Plus, ShoppingBag, MessageCircle, FileText, Users } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSellerAnalyticsOverview, getSellerAnalyticsTimeseries } from '../../services/sections/analytics';
-import { getMyProducts } from '../../services/sections/product';
+import { getMyProducts, getMyProductsPage } from '../../services/sections/product';
 import { getSellerOrders, updateSellerOrderItem } from '../../services/sections/orders';
+/** Both dashboard lists page at the same size, so the control reads the same. */
+const LIST_PAGE_SIZE = 10;
 import { friendlyErrorMessage } from '../../utils/errorMessages';
 import { formatStatus, statusTone } from '../../utils/formatStatus';
 
@@ -17,8 +19,12 @@ import { deleteProduct } from '../../services/sections/product';
 import { SellerAnalyticsOverview, SellerAnalyticsTimeseries } from '../../models/analytics';
 import { ProductResponse } from '../../models/products';
 import { OrderItem, SellerOrderItem } from '../../models/orders';
+import logger from '../../utils/logger';
+import Pager from '../../components/Pager';
+import SearchField from '../../components/SearchField';
 import { useToast } from '../../components/ToastProvider';
 import ProductFormBottomSheet from '../../components/productCreateBottomSheet';
+import { type InputSheetHandle } from '../../components/InputSheet';
 import CreateNicheBottomSheet from '../../components/nicheCreateBottomSheet';
 import BottomSheet from '@gorhom/bottom-sheet';
 import StartCards from '../../components/startCards';
@@ -31,6 +37,24 @@ import { formatPrice } from "../../utils/money";
 // The line between 'fine' and 'running out'. Shared by the Low filter and
 // the per-row chip so the two can never disagree.
 const LOW_STOCK_THRESHOLD = 5;
+
+/**
+ * The statuses a product can actually have, and what to call them.
+ *
+ * The menu used to offer "active" and "inactive". `inactive` is not one of
+ * the five values the server knows, so picking it could never have matched a
+ * product — the list just went empty and looked like an empty inventory.
+ */
+const PRODUCT_STATUSES = [
+  { value: "active", label: "Active" },
+  { value: "draft", label: "Draft" },
+  { value: "out_of_stock", label: "Out of stock" },
+  { value: "archived", label: "Archived" },
+] as const;
+
+type StatusValue = (typeof PRODUCT_STATUSES)[number]["value"];
+const isStatusFilter = (v: string): v is StatusValue =>
+  PRODUCT_STATUSES.some((s) => s.value === v);
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -50,18 +74,33 @@ export default function SellerDashboard() {
   const [sellerRecentOrders, setSellerRecentOrders] = useState<SellerOrderItem[]>([]);
   const [sellerInventory, setSellerInventory] = useState<ProductResponse[]>([]);
 
+  /**
+   * Which of the two lists is showing, and where each one is in its pages.
+   *
+   * Both endpoints have always been paginated and the dashboard never used
+   * it: orders asked for page 1 of 5 and threw the pagination object away,
+   * inventory asked for 50 and hoped that covered it. A seller with 60
+   * products simply could not see the last ten.
+   */
+  const [listTab, setListTab] = useState<"orders" | "inventory">("orders");
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [ordersPages, setOrdersPages] = useState(1);
+  const [invPage, setInvPage] = useState(1);
+  const [invPages, setInvPages] = useState(1);
+  const [pageLoading, setPageLoading] = useState(false);
+
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [windowDays, setWindowDays] = useState<7 | 30 | 90>(30);
   // Inventory filter: 'all' | 'low' (below LOW_STOCK_THRESHOLD) | product status. 'Status' chip
   // opens a small menu to pick active/inactive.
-  const [invFilter, setInvFilter] = useState<'all' | 'low' | 'active' | 'inactive'>('all');
+  const [invFilter, setInvFilter] = useState<'all' | 'low' | StatusValue>('all');
   const [statusMenuVisible, setStatusMenuVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
   // Bottom sheet ref for product creation
-  const productFormRef = useRef<BottomSheet>(null);
+  const productFormRef = useRef<InputSheetHandle>(null);
 
   const nicheFormRef = useRef<BottomSheet>(null);
 
@@ -88,14 +127,16 @@ export default function SellerDashboard() {
           end_date: toDate,
           metric: "sales"
         });
-        const ordersData = await getSellerOrders(1, 5);
-        const productsData = await getMyProducts(1, 50);
+        const ordersData = await getSellerOrders(1, LIST_PAGE_SIZE);
+        const productsData = await getMyProductsPage(1, LIST_PAGE_SIZE);
         if (!mounted) return;
         setAnalyticsOverview(analyticsOverviewData);
         setAnalyticsTimeseries(analyticsTimeseriesData);
         setSellerRecentOrders(ordersData.items || []);
-        setSellerInventory(productsData || []);
-        setFilteredInventory(productsData || []);
+        setOrdersPages(ordersData.pagination?.total_pages ?? 1);
+        setSellerInventory(productsData.items || []);
+        setFilteredInventory(productsData.items || []);
+        setInvPages(productsData.pagination?.total_pages ?? 1);
       } catch (err) {
         if (!mounted) return;
         setError('There was an issue retrieving your seller dashboard information.');
@@ -127,14 +168,18 @@ export default function SellerDashboard() {
           end_date: toDate,
           metric: "sales"
         }),
-        getSellerOrders(1, 5),
-        getMyProducts(1, 50),
+        getSellerOrders(1, LIST_PAGE_SIZE),
+        getMyProductsPage(1, LIST_PAGE_SIZE),
       ]);
       setAnalyticsOverview(analyticsOverviewData);
       setAnalyticsTimeseries(analyticsTimeseriesData);
       setSellerRecentOrders(ordersData.items || []);
-      setSellerInventory(productsData || []);
-      setFilteredInventory(productsData || []);
+      setOrdersPages(ordersData.pagination?.total_pages ?? 1);
+      setOrdersPage(1);
+      setSellerInventory(productsData.items || []);
+      setFilteredInventory(productsData.items || []);
+      setInvPages(productsData.pagination?.total_pages ?? 1);
+      setInvPage(1);
     } catch (err) {
       setError('Failed to refresh');
       show({ variant: 'error', title: 'Refresh failed', message: 'Could not refresh dashboard data.' });
@@ -144,28 +189,43 @@ export default function SellerDashboard() {
   }, [show, windowDays]);
 
   // Debounce search + apply the active inventory filter (status / low stock).
+  /**
+   * Inventory filters, asked of the server.
+   *
+   * This used to filter `sellerInventory` in place, which only ever held one
+   * page — so searching looked at ten products and reported nothing found
+   * with complete confidence. Debounced because it is a keystroke away from
+   * a request.
+   */
   useEffect(() => {
-    const t = setTimeout(() => {
-      let list = sellerInventory;
-      if (invFilter === 'low') {
-        list = list.filter((p: any) => (p.stock ?? 0) < LOW_STOCK_THRESHOLD);
-      } else if (invFilter === 'active') {
-        list = list.filter((p: any) => p.status === 'active');
-      } else if (invFilter === 'inactive') {
-        list = list.filter((p: any) => p.status === 'inactive');
-      }
-      if (searchText) {
-        const q = searchText.trim().toLowerCase();
-        list = list.filter((p: any) =>
-          (p.name || '').toLowerCase().includes(q) ||
-          (p.sku || '').toLowerCase().includes(q) ||
-          String(p.id || '').toLowerCase().includes(q)
-        );
-      }
-      setFilteredInventory(list);
+    const handle = setTimeout(() => {
+      let cancelled = false;
+      (async () => {
+        try {
+          const data = await getMyProductsPage(1, LIST_PAGE_SIZE, {
+            search: searchText,
+            status:
+              invFilter === "all" || invFilter === "low" ? undefined : invFilter,
+            low_stock: invFilter === "low",
+          });
+          if (cancelled) return;
+          setSellerInventory(data.items || []);
+          setFilteredInventory(data.items || []);
+          setInvPages(data.pagination?.total_pages ?? 1);
+          setInvPage(1);
+        } catch (e) {
+          // Leave what is on screen. An empty list here would read as "you
+          // have no products matching that", which is a different claim.
+          logger.warn("dashboard: inventory filter failed", e);
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
     }, 300);
-    return () => clearTimeout(t);
-  }, [searchText, sellerInventory, invFilter]);
+    return () => clearTimeout(handle);
+  }, [searchText, invFilter]);
+
 
   // Currency: NGN (Nigerian Naira) — SELLER_DASHBOARD improvement §1
   const formatCurrency = useCallback((n?: number) => {
@@ -237,6 +297,46 @@ export default function SellerDashboard() {
   // Safe color fn for chart config (accepts opacity)
   const chartColor = (opacity = 1) => isDark ? `rgba(240,241,242,${opacity})` : `rgba(0,0,0,${opacity})`;
   const chartLabelColor = (opacity = 1) => isDark ? `rgba(198,197,207,${opacity})` : `rgba(113,113,122,${opacity})`;
+
+  /**
+   * Move one of the lists to another page.
+   *
+   * Replaces rather than appends: this is a dashboard, and the seller is
+   * paging through a list to find something, not scrolling a feed. "Page 3
+   * of 7" answers "where am I" in a way an infinite scroll never does.
+   */
+  const goToPage = React.useCallback(
+    async (which: "orders" | "inventory", page: number) => {
+      if (pageLoading || page < 1) return;
+      setPageLoading(true);
+      try {
+        if (which === "orders") {
+          const data = await getSellerOrders(page, LIST_PAGE_SIZE);
+          setSellerRecentOrders(data.items || []);
+          setOrdersPages(data.pagination?.total_pages ?? 1);
+          setOrdersPage(page);
+        } else {
+          const data = await getMyProductsPage(page, LIST_PAGE_SIZE);
+          setSellerInventory(data.items || []);
+          setInvPages(data.pagination?.total_pages ?? 1);
+          setInvPage(page);
+        }
+      } catch (e) {
+        // Keep the page the seller is on rather than blanking the list —
+        // a failed "next" should look like nothing happened, not like the
+        // inventory vanished.
+        logger.warn("dashboard: could not load page", e);
+        show({
+          variant: "error",
+          title: "Couldn't load that page",
+          message: "Check your connection and try again.",
+        });
+      } finally {
+        setPageLoading(false);
+      }
+    },
+    [pageLoading, show]
+  );
 
   const pendingOrderCount = sellerRecentOrders.filter((o) => o.status === 'pending').length;
   const periodLabel = windowDays === 7 ? 'Last 7 days' : windowDays === 30 ? 'Last 30 days' : 'Last 90 days';
@@ -495,49 +595,82 @@ export default function SellerDashboard() {
         {/* Start cards (onboarding) — SELLER_DASHBOARD_API_AND_MOBILE_GUIDE §2.4 */}
         <StartCards title="Getting started" />
 
-        {/* Primary CTA — Create Product */}
-        <View className="px-6 py-4">
+        {/* One primary action, then navigation.
+            This was two full-width buttons stacked over three text-only
+            outlined pills of arbitrary widths — which read as filter chips,
+            not as places to go, and gave "Create Community" the same weight
+            as "Create Product". Creating a product is the thing a seller
+            opens this screen to do; everything else is a destination. */}
+        <View className="px-6 pt-2 pb-4">
           <TouchableOpacity
             accessibilityLabel="create-product-btn"
+            accessibilityRole="button"
             onPress={handleCreateProduct}
-            className="rounded h-12 items-center justify-center bg-primary-fill"
+            className="h-[52px] flex-row items-center justify-center gap-2 rounded-xl bg-primary-fill"
           >
-            <Text className="text-white font-bold text-base">Create Product</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => nicheFormRef.current?.expand()}
-            className="mt-3 rounded h-12 items-center justify-center border bg-surface-sunken border-border"
-          >
-            <Text className="font-bold text-sm text-text-primary">Create Community</Text>
+            <Plus size={18} color={t.textOnPrimary} strokeWidth={2.5} />
+            <Text className="text-[16px] font-bold text-text-on-primary">
+              Create product
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Quick actions — with badges */}
-        <View className="flex-row flex-wrap gap-4 px-6 py-4">
-          <TouchableOpacity
-            accessibilityLabel="orders-quicknav"
-            onPress={() => router.push("/(tabs)/sellerOrders")}
-            className={`flex-row items-center rounded h-12 px-6 ${pendingOrderCount > 0 ? "bg-primary-fill border border-primary" : ("border border-border bg-surface-raised")}`}
-          >
-            <Text className={`font-bold text-sm ${pendingOrderCount > 0 ? "text-white" : ("text-text-primary")}`}>Orders</Text>
-            {pendingOrderCount > 0 && (
-              <View className={`ml-2 min-w-[20px] h-5 rounded items-center justify-center px-1.5 ${isDark ? "bg-surface-raised" : "bg-primary-fill"}`}>
-                <Text className={`${isDark ? "text-primary" : "text-white"} text-[10px] font-bold`}>{pendingOrderCount}</Text>
+        {/* Quick actions — equal tiles, so they read as one control */}
+        <View className="flex-row gap-3 px-6 pb-5">
+          {[
+            {
+              key: "orders",
+              label: "Orders",
+              Icon: ShoppingBag,
+              badge: pendingOrderCount,
+              onPress: () => router.push("/(tabs)/sellerOrders"),
+            },
+            {
+              key: "chats",
+              label: "Chats",
+              Icon: MessageCircle,
+              badge: 0,
+              onPress: () => router.push("/(tabs)/messages"),
+            },
+            {
+              key: "requests",
+              label: "Requests",
+              Icon: FileText,
+              badge: 0,
+              onPress: () => router.push("/(tabs)/requests"),
+            },
+            {
+              key: "community",
+              label: "Community",
+              Icon: Users,
+              badge: 0,
+              onPress: () => nicheFormRef.current?.expand(),
+            },
+          ].map(({ key, label, Icon, badge, onPress }) => (
+            <TouchableOpacity
+              key={key}
+              onPress={onPress}
+              accessibilityRole="button"
+              accessibilityLabel={badge > 0 ? `${label}, ${badge} pending` : label}
+              className="flex-1 items-center gap-1.5 rounded-2xl border border-border bg-surface-raised px-1 py-3.5"
+            >
+              <View className="relative">
+                <Icon size={20} color={t.textPrimary} strokeWidth={1.9} />
+                {badge > 0 ? (
+                  // Sits on the icon rather than after the label: a count
+                  // beside the text pushed the tiles to different widths.
+                  <View className="absolute -right-2.5 -top-1.5 min-w-[18px] h-[18px] items-center justify-center rounded-full px-1 bg-primary-fill">
+                    <Text className="text-[10px] font-bold text-text-on-primary">
+                      {badge > 9 ? "9+" : badge}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push("/(tabs)/messages")}
-            className="rounded h-12 px-6 items-center justify-center border border border-border bg-surface-raised"
-          >
-            <Text className="font-bold text-sm text-text-primary">Chats</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push("/(tabs)/requests")}
-            className="rounded h-12 px-6 items-center justify-center border border border-border bg-surface-raised"
-          >
-            <Text className="font-bold text-sm text-text-primary">Requests</Text>
-          </TouchableOpacity>
+              <Text className="text-[12px] font-semibold text-text-secondary" numberOfLines={1}>
+                {label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* Sales trends card */}
@@ -575,26 +708,6 @@ export default function SellerDashboard() {
               />
             </View>
           </View>
-        </View>
-
-        {/* Recent Orders card */}
-        <View className="px-6 pt-4">
-          <Text className="text-xl font-bold px-1 pb-4 text-text-primary">Recent Orders</Text>
-          {loading && !sellerRecentOrders.length ? (
-            <Text className="text-sm px-1 text-text-secondary">Loading recent orders...</Text>
-          ) : sellerRecentOrders.length === 0 ? (
-            <Text className="text-sm px-1 text-text-secondary">No recent orders</Text>
-          ) : (
-            <View className="rounded border overflow-hidden bg-surface-raised border-border">
-              <FlatList
-                data={sellerRecentOrders}
-                keyExtractor={(it) => String(it.id)}
-                renderItem={renderOrderItem}
-                scrollEnabled={false}
-              />
-            </View>
-          )}
-          {error ? <Text className="text-danger-text text-sm mt-3 px-1">{error}</Text> : null}
         </View>
 
         {/* Low stock */}
@@ -659,44 +772,94 @@ export default function SellerDashboard() {
           </View>
         </View>
 
-        {/* Inventory search + filters */}
-        <View className="px-6 pt-10">
-          <Text className="text-xl font-bold px-1 pb-4 text-text-primary">Inventory</Text>
-          <View className="rounded border p-6 bg-surface-raised border-border">
-            <View className="flex-row items-center rounded overflow-hidden border bg-surface-sunken border-border">
-              <View className="w-12 items-center justify-center">
-                <Search size={20} color={t.textSecondary} />
-              </View>
-              <TextInput
-                placeholder="Search products"
-                className="flex-1 h-12 px-3 text-base text-text-primary"
-                placeholderTextColor={t.textSecondary}
-                value={searchText}
-                onChangeText={setSearchText}
-                accessibilityLabel="inventory-search"
+        {/* Orders and inventory, one section with two tabs.
+            They were two headed sections a full screen apart, so comparing
+            "what sold" against "what is left" meant scrolling between them.
+            Both are the same question asked twice. */}
+        <View className="px-6 pt-6">
+          <View className="flex-row gap-2 mb-4">
+            {([
+              { key: "orders", label: "Recent orders" },
+              { key: "inventory", label: "Inventory" },
+            ] as const).map(({ key, label }) => {
+              const active = listTab === key;
+              return (
+                <TouchableOpacity
+                  key={key}
+                  onPress={() => setListTab(key)}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: active }}
+                  className={`flex-1 h-10 items-center justify-center rounded-xl ${
+                    active ? "bg-text-primary" : "bg-surface-sunken"
+                  }`}
+                >
+                  <Text
+                    className={`text-[14px] font-semibold ${
+                      active ? "text-text-on-primary" : "text-text-secondary"
+                    }`}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {listTab === "orders" ? (
+            <>
+              {loading && !sellerRecentOrders.length ? (
+                <Text className="text-sm px-1 text-text-secondary">Loading recent orders…</Text>
+              ) : sellerRecentOrders.length === 0 ? (
+                <Text className="text-sm px-1 text-text-secondary">No recent orders</Text>
+              ) : (
+                <View className="rounded-2xl border overflow-hidden bg-surface-raised border-border">
+                  <FlatList
+                    data={sellerRecentOrders}
+                    keyExtractor={(it) => String(it.id)}
+                    renderItem={renderOrderItem}
+                    scrollEnabled={false}
+                  />
+                </View>
+              )}
+              <Pager
+                page={ordersPage}
+                pages={ordersPages}
+                busy={pageLoading}
+                onChange={(n: number) => goToPage("orders", n)}
               />
-            </View>
+              {error ? <Text className="text-danger-text text-sm mt-3 px-1">{error}</Text> : null}
+            </>
+          ) : (
+            <>
+          <View className="rounded border p-6 bg-surface-raised border-border">
+            <SearchField
+              value={searchText}
+              onChangeText={setSearchText}
+              placeholder="Search products"
+            />
 
             <View className="flex-row gap-3 mt-4">
               <View>
                 <TouchableOpacity
                   onPress={() => setStatusMenuVisible((v) => !v)}
-                  className={`h-10 items-center justify-center rounded pl-5 pr-4 flex-row gap-2 border ${(invFilter === 'active' || invFilter === 'inactive') ? "bg-primary-fill border-primary" : ("bg-surface-sunken border-border")}`}
+                  className={`h-10 items-center justify-center rounded pl-5 pr-4 flex-row gap-2 border ${isStatusFilter(invFilter) ? "bg-primary-fill border-primary" : ("bg-surface-sunken border-border")}`}
                 >
-                  <Text className={`font-bold text-sm capitalize ${(invFilter === 'active' || invFilter === 'inactive') ? "text-white" : ("text-text-primary")}`}>
-                    {invFilter === 'active' || invFilter === 'inactive' ? invFilter : 'Status'}
+                  <Text className={`font-bold text-sm capitalize ${isStatusFilter(invFilter) ? "text-white" : ("text-text-primary")}`}>
+                    {isStatusFilter(invFilter)
+                      ? PRODUCT_STATUSES.find((x) => x.value === invFilter)?.label
+                      : 'Status'}
                   </Text>
-                  <ChevronDown size={18} color={(invFilter === 'active' || invFilter === 'inactive') ? t.textOnPrimary : (t.textPrimary)} />
+                  <ChevronDown size={18} color={isStatusFilter(invFilter) ? t.textOnPrimary : (t.textPrimary)} />
                 </TouchableOpacity>
                 {statusMenuVisible && (
                   <View className="absolute top-11 left-0 z-10 rounded border overflow-hidden min-w-[130px] bg-surface-raised border-border">
-                    {(['active', 'inactive'] as const).map((s) => (
+                    {PRODUCT_STATUSES.map(({ value, label }) => (
                       <TouchableOpacity
-                        key={s}
-                        onPress={() => { setInvFilter(s); setStatusMenuVisible(false); }}
+                        key={value}
+                        onPress={() => { setInvFilter(value); setStatusMenuVisible(false); }}
                         className="px-4 py-3"
                       >
-                        <Text className="font-bold text-sm capitalize text-text-primary">{s}</Text>
+                        <Text className="font-bold text-sm text-text-primary">{label}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -716,10 +879,8 @@ export default function SellerDashboard() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
 
-        {/* Inventory list card */}
-        <View className="px-6 pt-4">
+          <View className="pt-4" />
           {loading && !filteredInventory.length ? (
             <Text className="text-sm px-1 text-text-secondary">Loading inventory...</Text>
           ) : filteredInventory.length === 0 ? (
@@ -733,6 +894,14 @@ export default function SellerDashboard() {
                 scrollEnabled={false}
               />
             </View>
+          )}
+              <Pager
+                page={invPage}
+                pages={invPages}
+                busy={pageLoading}
+                onChange={(n: number) => goToPage("inventory", n)}
+              />
+            </>
           )}
         </View>
 

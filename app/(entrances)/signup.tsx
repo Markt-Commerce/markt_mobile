@@ -16,41 +16,46 @@ import { useUser } from "../../hooks/userContextProvider";
 import { AccountType } from "../../models/auth";
 import { useRouter } from "expo-router";
 import { register, useRegData } from "../../models/signupSteps";
+import { registerUser } from "../../services/sections/auth";
+import { RegisterRequest } from "../../models/auth";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useToast } from "../../components/ToastProvider";
 import { useWatch } from "react-hook-form";
 import { getPasswordStrength } from "../../utils/passwordStrength";
 import Button from "../../components/button";
+import RoleToggle from "../../components/auth/RoleToggle";
 import { Check, Circle } from "lucide-react-native";
 import { useTokens } from "../../theme/useTokens";
+import * as haptics from "../../utils/haptics";
 
 // --- Validation schema ---
-const schema = z
-  .object({
-    email: z.string().email("Invalid email address"),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters long")
-      .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/,
-        "Must contain uppercase, lowercase, and a number"
-      ),
-    confirmPassword: z.string().min(8, "Please confirm your password"),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+// No "confirm password". The field exists to catch a typo you cannot see —
+// but this form already shows the password on demand and grades it live
+// against four rules, which catches the same typo without asking anyone to
+// type a password twice. Two inputs to solve a problem one input already
+// solved is just friction.
+const schema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters long")
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/,
+      "Must contain uppercase, lowercase, and a number"
+    ),
+});
 
 type FormValues = z.infer<typeof schema>;
 
 export default function SignupScreen() {
   const router = useRouter();
-  const { setRole, role } = useUser();
+  const { setRole, role, setUser } = useUser();
   const { regData, setRegData } = useRegData();
   const { show } = useToast();
   const t = useTokens();
   const iconColor = t.textPrimary;
+  const [submitting, setSubmitting] = React.useState(false);
   const mutedIconColor = t.textSecondary;
 
   const {
@@ -66,8 +71,31 @@ export default function SignupScreen() {
   const strength = getPasswordStrength(password);
   const setUserRole = (r: AccountType) => setRole(r);
 
+  /**
+   * This screen creates the account, rather than stashing three fields and
+   * creating it three screens later.
+   *
+   * That ordering was the source of three separate bugs: nothing survived an
+   * app kill, a duplicate email surfaced at the end instead of on the field
+   * that caused it, and the account was created logged-in but unverified
+   * while login refuses an unverified account — so closing the app mid-signup
+   * locked you out of the account you had just made.
+   */
   const onSubmit = async (data: FormValues) => {
+    if (submitting) return;
+    haptics.tick();
+    setSubmitting(true);
     try {
+      // Register no longer returns a token, and deliberately does not sign
+      // anyone in — verifying the address is what does that. So nothing here
+      // touches the session; it only carries the address forward so the code
+      // screen knows who it is asking about.
+      await registerUser({
+        email: data.email,
+        password: data.password,
+        account_type: role || "buyer",
+      } as RegisterRequest);
+
       setRegData(
         register(regData, {
           email: data.email,
@@ -78,45 +106,28 @@ export default function SignupScreen() {
 
       show({
         variant: "success",
-        title: "Account details saved",
-        message: role === "seller" ? "Let’s set up your seller profile." : "Let’s set up your buyer profile.",
+        title: "Account created",
+        message: `We sent a 6-digit code to ${data.email}.`,
       });
-
-      if (role === "seller") router.navigate("/userdetSeller");
-      else router.navigate("/userdetBuyer");
+      router.push({ pathname: "/emailVerification", params: { sent: "1" } });
     } catch (error: any) {
+      // 409 is the one worth naming: it is the whole reason this moved to the
+      // first screen, so it must land as advice, not as "something failed".
+      const taken = error?.status === 409;
       show({
         variant: "error",
-        title: "Sign up failed",
-        message: "Please check your details and try again.",
+        title: taken ? "That email is already registered" : "Sign up failed",
+        message: taken
+          ? "Sign in instead, or use a different address."
+          : friendlyErrorMessage(
+              error,
+              "Please check your details and try again."
+            ),
       });
+    } finally {
+      setSubmitting(false);
     }
   };
-
-  const RoleToggle = () => (
-    <View className="flex-row items-center rounded p-1 bg-surface-sunken">
-      <TouchableOpacity
-        onPress={() => setUserRole("buyer")}
-        className={`flex-1 py-2.5 rounded items-center ${
-          role === "buyer" ? "bg-primary-fill shadow-sm" : "shadow-none"
-        }`}
-      >
-        <Text className={`font-bold text-sm ${role === "buyer" ? "text-white" : "text-text-secondary"}`}>
-          Buyer
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        onPress={() => setUserRole("seller")}
-        className={`flex-1 py-2.5 rounded items-center ${
-          role === "seller" ? "bg-primary-fill shadow-sm" : "shadow-none"
-        }`}
-      >
-        <Text className={`font-bold text-sm ${role === "seller" ? "text-white" : "text-text-secondary"}`}>
-          Seller
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
 
   return (
     <SafeAreaView className="flex-1 bg-surface-page">
@@ -152,16 +163,18 @@ export default function SignupScreen() {
             </View>
 
             {/* Panel */}
-            <View className="rounded border px-5 py-8 bg-surface-raised border-border">
+            <View>
               {/* Role selection */}
               <View className="mb-8">
-                <Text className="mb-3 text-sm font-bold text-text-primary">I want to be a</Text>
-                <RoleToggle />
+                <Text className="mb-2 text-[13px] font-semibold text-text-secondary">
+                  I’m here for
+                </Text>
+                <RoleToggle value={role} onChange={setUserRole} />
               </View>
 
               {/* Email */}
               <View className="mb-6">
-                <Text className="mb-2 text-sm font-bold text-text-primary">Email Address</Text>
+                <Text className="mb-2 text-[13px] font-semibold text-text-secondary">Email Address</Text>
                 <Input
                   placeholder="you@example.com"
                   control={control}
@@ -169,12 +182,15 @@ export default function SignupScreen() {
                   errors={errors}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="email"
+                  textContentType="emailAddress"
                 />
               </View>
 
               {/* Password */}
               <View className="mb-6">
-                <Text className="mb-2 text-sm font-bold text-text-primary">Password</Text>
+                <Text className="mb-2 text-[13px] font-semibold text-text-secondary">Password</Text>
                 <PasswordInput
                   placeholder="Min. 8 characters"
                   control={control}
@@ -229,22 +245,12 @@ export default function SignupScreen() {
                 </View>
               </View>
 
-              {/* Confirm Password */}
-              <View className="mb-8">
-                <Text className="mb-2 text-sm font-bold text-text-primary">Confirm Password</Text>
-                <PasswordInput
-                  placeholder="Repeat password"
-                  control={control}
-                  name="confirmPassword"
-                  errors={errors}
-                />
-              </View>
-
               {/* CTA */}
               <Button
-                text="Next"
+                text="Create account"
                 onPress={handleSubmit(onSubmit)}
-                disabled={!isValid}
+                disabled={!isValid || submitting}
+                loading={submitting}
                 variant="primary"
               />
 

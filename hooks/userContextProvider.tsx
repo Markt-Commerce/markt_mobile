@@ -28,6 +28,15 @@ export interface UserContextType {
   profile: UserProfile | null;
   setProfile: React.Dispatch<React.SetStateAction<UserProfile | null>>;
   refreshProfile: () => Promise<UserProfile | null>;
+  /**
+   * True when this account exists but has not proved it owns its address.
+   *
+   * Undefined until the profile has loaded — "we don't know yet" is a
+   * different answer from "no", and treating it as either would either flash
+   * the verification screen at every returning user or let an unverified one
+   * into the app for a beat.
+   */
+  needsEmailVerification: boolean | undefined;
   /** True while restoring session from storage on app start */
   isRestoringSession: boolean;
   /** Re-check stored session (e.g. after returning from background) */
@@ -89,6 +98,14 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     else setProfile(null);
   }, [user, refreshProfile]);
 
+  // An account is created before the code is entered — it has to be, or
+  // there is nowhere to attach the code to and nothing survives closing the
+  // app. What must NOT happen is that account reaching the marketplace: see
+  // the guard in app/_layout.tsx, which this drives.
+  const needsEmailVerification = profile
+    ? profile.onboarding?.email_verified === false
+    : undefined;
+
   // Reset "session expired" toast flag when user logs in (so next 401 shows it again)
   useEffect(() => {
     if (user) hasShownSessionExpiredRef.current = false;
@@ -110,7 +127,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }, [show]);
 
   return (
-    <UserContext.Provider value={{ user, role, setUser, setRole, profile, setProfile, refreshProfile, isRestoringSession, checkAuthStatus }}>
+    <UserContext.Provider value={{ user, role, setUser, setRole, profile, setProfile, refreshProfile, needsEmailVerification, isRestoringSession, checkAuthStatus }}>
       {children}
     </UserContext.Provider>
   );

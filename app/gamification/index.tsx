@@ -24,6 +24,7 @@ import { reasonLabel } from "../../utils/gamification";
 import type { PointsHistoryItem, LeaderboardRow as LBRow } from "../../types/gamification";
 import CountUp from "../../components/gamification/CountUp";
 import StreakCard from "../../components/gamification/StreakCard";
+import { tierColor } from "../../theme/tierColors";
 
 export default function GamificationScreen() {
   const router = useRouter();
@@ -129,7 +130,7 @@ export default function GamificationScreen() {
                   tier={data.tier.key}
                   stars={data.tier.stars}
                   name={data.tier.name}
-                  colorHex={data.tier.color_hex}
+                  colorHex={tierColor(data.tier?.key, t)}
                   size="lg"
                   showName
                 />
@@ -152,7 +153,7 @@ export default function GamificationScreen() {
                   progress={data.tier.progress_to_next}
                   pointsToNext={data.tier.points_to_next_tier}
                   nextTierName={null}
-                  colorHex={data.tier.color_hex}
+                  colorHex={tierColor(data.tier?.key, t)}
                 />
               </View>
             </View>

@@ -42,6 +42,7 @@ function TabsWithDrawer() {
     <SafeAreaView style={{ flex: 1, backgroundColor: t.surfacePage }} edges={["top"]}>
       <View style={{ flex: 1 }}>
         <AppBar
+          showLocation
           title="Markt"
           avatarUri={profile?.profile_picture_url}
           avatarName={displayName}

@@ -10,6 +10,7 @@
   --c-surface-raised: #FFFFFF;
   --c-surface-overlay: #FFFFFF;
   --c-surface-sunken: #F4F4F5;
+  --c-scrim: rgba(0,0,0,0.45);
   --c-text-primary: #09090B;
   --c-text-secondary: #52525B;
   --c-text-muted: #6B6B75;
@@ -41,6 +42,7 @@
     --c-surface-raised: #0E0F11;
     --c-surface-overlay: #212428;
     --c-surface-sunken: #16181B;
+    --c-scrim: rgba(0,0,0,0.45);
     --c-text-primary: #EDEEF0;
     --c-text-secondary: #A8ADB4;
     --c-text-muted: #8B9198;

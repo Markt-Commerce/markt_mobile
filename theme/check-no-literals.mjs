@@ -24,9 +24,6 @@ const DIRS = ["app", "components"];
  * literals allowed in it.
  */
 const ALLOWED = {
-  // White on the brand gradient. A deliberately single-look branded splash,
-  // the same call as a video scrim: it does not restyle per theme.
-  "app/introduction.tsx": ["#ffffff", "#fff"],
   // A shadow is black in both themes.
   "app/(tabs)/_layout.tsx": ["#000000"],
   // Controls drawn over video, where the backdrop is the footage rather than
@@ -48,6 +45,14 @@ const ALLOWED = {
   // Gold, silver and bronze. A silver medal is not "muted text".
   "components/gamification/LeaderboardRow.tsx": [
     "#F5C518", "#3F2E00", "#C9CDD2", "#2B2F33", "#D08A54", "#3A2109",
+  ],
+  // Google's four-colour "G" is a trademark. Google's identity guidelines
+  // require the mark be reproduced exactly; theming it would be both wrong and
+  // a brand violation. The spinner overlay on Apple's own button is likewise
+  // pinned to contrast with Apple's fixed BLACK/WHITE button styles, which do
+  // not follow our tokens.
+  "components/auth/SocialAuthButtons.tsx": [
+    "#4285F4", "#34A853", "#FBBC05", "#EA4335", "#000000", "#FFFFFF",
   ],
   // Star gold, which is what a rating star looks like everywhere.
   "components/StarRating.tsx": ["#F5A623"],

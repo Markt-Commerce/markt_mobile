@@ -117,7 +117,13 @@ export async function getUnseenAchievements(): Promise<UnseenAchievements> {
 export async function markAchievementsSeen(payload: {
   badge_slugs?: string[];
   tier?: string;
-}): Promise<{ badges_marked: number; tier_marked: boolean }> {
+  /** The milestone day that was shown, e.g. 7. */
+  streak?: number;
+}): Promise<{
+  badges_marked: number;
+  tier_marked: boolean;
+  streak_marked: boolean;
+}> {
   return request(`${BASE_URL}/gamification/me/achievements/seen`, {
     method: "POST",
     body: JSON.stringify(payload),

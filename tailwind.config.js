@@ -77,13 +77,24 @@ module.exports = {
         card: "16px",
         section: "24px",
       },
+      // The whole scale used to be 8px, `full` included — so every
+      // `rounded-full` in the app (74 of them: avatars, chips, pills, the
+      // code input) rendered as an 8px rounded square. Avatar only looked
+      // right because it sets borderRadius as an inline style and never went
+      // through this.
+      //
+      // DEFAULT stays 8px: 444 uses of plain `rounded` are load-bearing and
+      // this is not the change to move them in. The named steps get real
+      // values, which is what they were always being written to mean.
       borderRadius: {
-        sm: "8px",
+        sm: "6px",
         DEFAULT: "8px", // Standard border radius
-        md: "8px",
-        lg: "8px",
-        xl: "8px",
-        full: "8px",
+        md: "10px",
+        lg: "12px",
+        xl: "16px",
+        "2xl": "20px",
+        "3xl": "28px",
+        full: "9999px",
 
         // Old compatibility
         card: "8px",

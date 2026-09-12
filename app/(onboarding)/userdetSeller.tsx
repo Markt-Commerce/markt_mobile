@@ -1,18 +1,24 @@
 import React from "react";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useKeyboardOverlap, keyboardScrollPadding } from '../../hooks/useKeyboardOverlap';
 import {
-  View,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   Text,
   TouchableOpacity,
-  ScrollView,
-  Image,
-  Alert,
+  View,
 } from "react-native";
 import { ArrowLeft, X, Camera, Check } from "lucide-react-native";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useUser } from "../../hooks/userContextProvider";
-import { SignupStepTwo, register, useRegData } from "../../models/signupSteps";
+import { updateUserProfile, updateSellerProfile } from "../../services/sections/profile";
+import { uploadProfilePicture } from "../../services/sections/auth";
+import { logger } from "../../utils/logger";
 import { getAllCategories } from "../../services/sections/categories";
 import { Category } from "../../models/categories";
 import { useRouter } from "expo-router";
@@ -27,6 +33,7 @@ import { useDebouncedCallback } from "../../hooks/useDebouncedCallback";
 import { useWatch } from "react-hook-form"; 
 import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
+import StepProgress from "../../components/auth/StepProgress";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 const schema = z.object({
@@ -37,11 +44,12 @@ const schema = z.object({
 });
 
 const ShopInformationScreen = () => {
-  const { setUser } = useUser();
-  const { regData, setRegData } = useRegData();
+  const { setUser, refreshProfile } = useUser();
   const router = useRouter();
   const { show } = useToast(); // <-- toast API
   const t = useTokens();
+  const insets = useSafeAreaInsets();
+  const keyboardOverlap = useKeyboardOverlap();
   const iconColor = t.textPrimary;
   const mutedIconColor = t.textSecondary;
 
@@ -49,6 +57,7 @@ const ShopInformationScreen = () => {
   const [selectedCategories, setSelectedCategories] = React.useState<Category[]>([]);
   const [modalVisible, setModalVisible] = React.useState(false);
   const [profilePictureUri, setProfilePictureUri] = React.useState<string | null>(null);
+  const [saving, setSaving] = React.useState(false);
   const [usernameStatus, setUsernameStatus] = React.useState<"idle" | "checking" | "available" | "taken">("idle");
   const [usernameMessage, setUsernameMessage] = React.useState("");
 
@@ -115,42 +124,68 @@ const ShopInformationScreen = () => {
     }
   };
 
+  /**
+   * Saves to the account, which exists by the time this screen opens.
+   *
+   * Previously this merged into an in-memory context POSTed on the location
+   * screen, so a shop's whole description could be lost to a backgrounded app.
+   */
   const handleSubmitForm = async (data: z.infer<typeof schema>) => {
-    const shopData: SignupStepTwo = {
-      username: data.userName,
-      phone_number: data.phoneNumber,
-      seller_data: {
-        policies: {}, // later
-        description: data.shopDescription,
-        shop_name: data.shopName,
-        category_ids: selectedCategories.map((c) => c.id),
-      },
-    };
-
-    const updatedRegData = register(regData, shopData);
-    delete updatedRegData.buyer_data;
-    
-    // Store local image URI if selected (will be uploaded in locationdet)
-    if (profilePictureUri) {
-      (updatedRegData as any).profile_picture_local = profilePictureUri;
-    }
-    
-    setRegData(updatedRegData);
-
+    if (saving) return;
+    setSaving(true);
     try {
+      // The handle first: it is the one the server can refuse, and being told
+      // "that's taken" after the shop has saved is worse than before it.
+      if (data.userName) {
+        await updateUserProfile({
+          username: data.userName,
+          phone_number: data.phoneNumber,
+        });
+      }
+      await updateSellerProfile({
+        shop_name: data.shopName,
+        description: data.shopDescription,
+        category_ids: selectedCategories.map((c) => c.id),
+      });
+
+      if (profilePictureUri) {
+        try {
+          await uploadProfilePicture(profilePictureUri, "profile.jpg");
+        } catch (e) {
+          logger.warn("signup: could not upload profile picture", e);
+        }
+      }
+
+      // Pull everything just saved into context, for everyone — not only the
+      // people who added a photo.
+      //
+      // This used to sit inside the `if (profilePictureUri)` branch, so
+      // skipping the photo meant nothing told the app about the name,
+      // username or phone number it had just written. The tabs rendered the
+      // profile as it was before the form, and the only way to see your own
+      // details was to sign out and back in.
+      await refreshProfile();
+
       show({
         variant: "success",
-        title: "Shop details saved",
-        message: "Well done! Your shop information has been saved.",
+        title: "Shop saved",
+        message: "Now, where is your shop?",
       });
-
       router.push("/locationdet");
     } catch (error: any) {
+      const taken = error?.status === 409;
       show({
         variant: "error",
-        title: "Could not complete signup",
-        message: friendlyErrorMessage(error, "Could not save your shop details. Please review them and try again."),
+        title: taken ? "That username is taken" : "Could not save your shop",
+        message: taken
+          ? "Pick another one and try again."
+          : friendlyErrorMessage(
+              error,
+              "Could not save your shop details. Please review them and try again."
+            ),
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -160,44 +195,54 @@ const ShopInformationScreen = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-surface-page">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
       <ScrollView
         className="flex-1"
+          // Measured, and the screen lifts with the keyboard: these forms
+          // are taller than the screen, so the last fields were simply behind
+          // it with nowhere to scroll to.
         contentContainerStyle={{
-          paddingBottom: 40,
+          paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 32),
         }}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View className="flex-row items-center justify-between pb-8 pt-4 px-6">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
-          >
-            <ArrowLeft size={20} color={iconColor} />
-          </TouchableOpacity>
+        <View className="flex-row items-center justify-between pb-4 pt-2 px-4">
+          {/* The step before this one is verification, which a verified
+              account cannot re-enter — it would only 400 with "already
+              verified". Shown only when there is somewhere real to go. */}
+          {router.canGoBack() ? (
+            <TouchableOpacity
+              onPress={() => router.back()}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
+            >
+              <ArrowLeft size={20} color={iconColor} />
+            </TouchableOpacity>
+          ) : (
+            <View className="h-10 w-10" />
+          )}
           <Text className="text-xl font-bold text-center flex-1 pr-10 text-text-primary">
             Shop setup
           </Text>
         </View>
 
-        {/* Progress hint */}
-        <View className="flex-row gap-2 items-center justify-center mb-10 px-8">
-          <View className="h-1.5 flex-1 rounded bg-text-primary" />
-          <View className="h-1.5 flex-1 rounded bg-text-primary" />
-          <View className="h-1.5 flex-1 rounded bg-surface-sunken" />
-        </View>
+        <StepProgress step={1} total={2} label="About your shop" className="mx-4 mb-6" />
 
         {/* Card */}
         <View className="mx-4">
-          <View className="rounded border px-6 py-8 bg-surface-raised border-border">
+          <View>
             {/* Avatar placeholder with image picker */}
-            <View className="items-center mb-10">
+            <View className="items-center mb-8">
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={changeProfilePicture}
-                className="h-24 w-24 rounded-full border-2 border-dashed items-center justify-center overflow-hidden bg-surface-sunken border-border"
+                className="h-24 w-24 rounded-full border items-center justify-center overflow-hidden bg-surface-sunken border-border"
               >
                 {profilePictureUri ? (
                   <Image source={{ uri: profilePictureUri }} className="w-full h-full" />
@@ -213,13 +258,13 @@ const ShopInformationScreen = () => {
             {/* Shop Name */}
             <View className="mb-6">
               <Label>Shop Name</Label>
-              <Input placeholder="e.g. Vintage Market" control={control} name="shopName" errors={errors} />
+              <Input placeholder="e.g. Amaka Fabrics" control={control} name="shopName" errors={errors} />
             </View>
 
             {/* Username — debounced check */}
             <View className="mb-6">
               <Label>Shop Username</Label>
-              <Input placeholder="markt_handle" control={control} name="userName" errors={errors} autoCapitalize="none" />
+              <Input placeholder="amaka_fabrics" control={control} name="userName" errors={errors} autoCapitalize="none" />
               <View className="mt-2 h-4">
                 {usernameStatus === "taken" ? (
                   <Text className="text-xs text-danger-text ">{usernameMessage}</Text>
@@ -237,18 +282,18 @@ const ShopInformationScreen = () => {
             {/* Phone Number */}
             <View className="mb-6">
               <Label>Contact Number</Label>
-              <Input placeholder="+1 (555) 000-0000" control={control} name="phoneNumber" errors={errors} keyboardType="phone-pad" />
+              <Input placeholder="0801 234 5678" control={control} name="phoneNumber" errors={errors} keyboardType="phone-pad" />
             </View>
 
             {/* Shop Description */}
             <View className="mb-10">
               <Label>Shop Description</Label>
-              <Input placeholder="Tell us what you sell..." control={control} name="shopDescription" errors={errors} multiline />
+              <Input placeholder="e.g. Ankara, lace and aso-oke, cut to order." control={control} name="shopDescription" errors={errors} multiline />
             </View>
 
             {/* Categories */}
             <View className="mb-10">
-              <Text className="mb-4 text-sm font-bold uppercase tracking-widest text-text-primary">Niches & Categories</Text>
+              <Text className="mb-2 text-[13px] font-semibold text-text-secondary">What do you sell?</Text>
               <View className="flex-row flex-wrap gap-3">
                 {selectedCategories.map((cat) => (
                   <View key={cat.id.toString()} className="flex-row items-center rounded px-4 py-2 border bg-surface-sunken border-border">
@@ -275,7 +320,8 @@ const ShopInformationScreen = () => {
             {/* Save / Next */}
             <Button 
               onPress={handleSubmit(handleSubmitForm)} 
-              disabled={!isValid || usernameStatus === "taken" || usernameStatus === "checking"} 
+              disabled={!isValid || saving || usernameStatus === "taken" || usernameStatus === "checking"}
+              loading={saving} 
               text="Next" 
               variant="conversion"
             />
@@ -294,6 +340,7 @@ const ShopInformationScreen = () => {
           }}
         />
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

@@ -11,6 +11,7 @@
  * card couldn't show Join vs Joined without a request each.
  */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import SearchField from "../components/SearchField";
 import {
   View,
   Text,
@@ -199,22 +200,11 @@ export default function CommunitiesScreen() {
         ) : null}
 
         <View className="px-4 pb-3">
-          <View
-            className={`flex-row items-center h-11 px-3 rounded-xl ${
-              "bg-surface-sunken"
-            }`}
-          >
-            <Search size={17} color={t.textMuted} strokeWidth={2} />
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Search communities"
-              placeholderTextColor={t.textMuted}
-              className={`flex-1 ml-2 text-[15px] ${strong}`}
-              returnKeyType="search"
-              accessibilityLabel="Search communities"
-            />
-          </View>
+          <SearchField
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search communities"
+          />
 
           <ScrollView
             horizontal

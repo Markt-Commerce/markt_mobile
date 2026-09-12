@@ -1,7 +1,8 @@
 import 'react-native-reanimated';
-import React, { useRef, useMemo, forwardRef, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
-import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import React, { useRef, forwardRef, useState } from 'react';
+import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import InputSheet, { type InputSheetHandle } from './InputSheet';
+import SheetBusyOverlay from './SheetBusyOverlay';
 import { useForm } from 'react-hook-form';
 import { z } from "zod";
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,7 +39,7 @@ const productSchema = z.object({
     name: z.string().min(1, "Variant name is required")
   })).optional(),
   sku: z.string().max(100).optional(),
-  compare_at_price: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()).default(0.01),
+  compare_at_price: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()),
   cost_per_item: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()).default(0.01),
   status: z.enum(['active', 'inactive']).optional(),
   tag_ids: z.array(z.number()).optional(),
@@ -52,18 +53,17 @@ interface Props {
   productImages?: string[];
 }
 
-const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
+const ProductFormBottomSheet = forwardRef<InputSheetHandle | null, Props>(
   (props, ref) => {
 
-    const sheetRef = React.useRef<BottomSheet | null>(null);
-    React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
+    const sheetRef = React.useRef<InputSheetHandle | null>(null);
+    React.useImperativeHandle(ref, () => sheetRef.current!, []);
     const t = useTokens();
 
     productSchema.refine(()=> selectedCategories?.length ?? 0 > 0,{
       path: ["category_ids"]
     });
 
-  const snapPoints = useMemo(() => ['50%', '90%'], []);
   const { show } = useToast();
 
 
@@ -123,9 +123,13 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         ? (data as any).category_ids
         : selectedCategories.map(c => c.id);
 
-      //server requires cost_per_item and compare_at_price to be equal or greater than 0.01
-      data.compare_at_price = data.compare_at_price ?? 0.01;
-      data.cost_per_item = data.cost_per_item ?? 0.01;
+      // Both are optional on the server; it only validates them when present
+      // (>= 0.01). Defaulting them to 0.01 recorded "this used to cost one
+      // kobo" on every product where the seller left the field blank, which
+      // is why the discount UI had to compare the two numbers rather than
+      // simply check whether a compare-at price exists. Omitted now.
+      if (!data.compare_at_price) delete (data as any).compare_at_price;
+      if (!data.cost_per_item) delete (data as any).cost_per_item;
 
       const payload: CreateProductRequest = {
         ...data,
@@ -159,32 +163,64 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
     }
   };
 
+  /**
+   * The action bar, pinned rather than scrolled to.
+   *
+   * A sibling of the scroll view inside InputSheet, so "above the keyboard"
+   * is a layout fact rather than a calculation. Shape from fieldgrid-mobile's
+   * input sheet: a hairline rule, the sheet's own background, status text
+   * left and the action right.
+   */
+  const footer = (
+    <>
+      <Text className="flex-1 text-[12px] text-text-muted" numberOfLines={1}>
+        {stage === "uploading"
+          ? "Uploading images…"
+          : stage === "creating"
+            ? "Creating…"
+            : `${selectedCategories.length} categor${selectedCategories.length === 1 ? "y" : "ies"} selected`}
+      </Text>
+      <TouchableOpacity
+        disabled={sending}
+        onPress={handleSubmit(onSubmit)}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: sending, busy: sending }}
+        className={`min-h-[44px] flex-row items-center justify-center gap-2 rounded-xl px-5 ${
+          sending ? "bg-surface-sunken" : "bg-primary-fill"
+        }`}
+      >
+        {sending ? <ActivityIndicator size="small" color={t.textSecondary} /> : null}
+        <Text
+          className={`text-[15px] font-bold ${
+            sending ? "text-text-muted" : "text-text-on-primary"
+          }`}
+        >
+          {sending ? "Working…" : "Create Product"}
+        </Text>
+      </TouchableOpacity>
+    </>
+  );
+
   return (
-    <BottomSheet
+    <InputSheet
       ref={sheetRef}
-      index={-1}
-      snapPoints={snapPoints}
-      enablePanDownToClose={!sending}
-      enableContentPanningGesture={!sending}
-      backgroundStyle={{ backgroundColor: t.surfacePage }}
-      handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
+      title="Create Product"
+      busy={sending}
+      onClose={props.onClose}
+      footer={footer}
+      overlay={
+        <SheetBusyOverlay
+          visible={sending}
+          title={stage === "uploading" ? "Uploading images" : "Creating your product"}
+          subtitle={
+            stage === "uploading"
+              ? "Keep this sheet open until it finishes."
+              : "Almost done."
+          }
+        />
+      }
     >
-      <BottomSheetScrollView className="p-4">
-        <Text className="text-lg font-bold mb-4 text-text-primary">Create Product</Text>
-
-        {/* In-flight banner — visible while a slow network keeps us waiting */}
-        {sending && (
-          <View className="flex-row items-center gap-3 rounded border px-4 py-3 mb-4 bg-surface-sunken border-border">
-            <ActivityIndicator size="small" color={t.textPrimary} />
-            <Text className="flex-1 text-xs leading-5 text-text-secondary">
-              {stage === "uploading"
-                ? "Uploading images… please keep this sheet open."
-                : "Creating your product… almost done."}
-            </Text>
-          </View>
-        )}
-
-        <View pointerEvents={sending ? "none" : "auto"}>
+      <View pointerEvents={sending ? "none" : "auto"}>
 
         {/* Product Name */}
         <Input name='name' label='Product Name' placeholder='e.g. Wireless headphones' control={control} errors={errors} />
@@ -239,29 +275,10 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         <Input name='sku' label='SKU' placeholder='Your stock-keeping code' control={control} errors={errors} />
 
         {/* Compare at Price */}
-        <Input name='compare_at_price' label='Compare at Price (₦)' placeholder='Original price, if discounted' control={control} keyboardType='numeric' errors={errors} />
+        <Input name='compare_at_price' label='Compare at Price (₦)' placeholder='Leave blank if not on sale' control={control} keyboardType='numeric' errors={errors} />
 
         {/* Cost per Item */}
         <Input name='cost_per_item' label='Cost per Item (₦)' placeholder='What it costs you' control={control} keyboardType='numeric' errors={errors} />
-        
-
-        {/* Submit Button */}
-        <TouchableOpacity
-          disabled={sending}
-          onPress={handleSubmit(onSubmit)} // call our merged submit handler
-          className={`bg-primary-fill p-3 rounded mt-4 flex-row items-center justify-center gap-2 ${sending ? "opacity-70" : ""}`}
-        >
-          {sending && <ActivityIndicator size="small" color="white" />}
-          <Text className="text-white text-center font-bold">
-            {stage === "uploading"
-              ? "Uploading images…"
-              : stage === "creating"
-                ? "Creating product…"
-                : "Create Product"}
-          </Text>
-        </TouchableOpacity>
-        </View>
-
 
         <CategoryAddition
           visible={modalVisible}
@@ -270,8 +287,8 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
           onClose={() => setModalVisible(false)}
           onConfirm={(selected) => setSelectedCategories(selected)}
           />
-      </BottomSheetScrollView>
-    </BottomSheet>
+      </View>
+    </InputSheet>
   );
 }
 );

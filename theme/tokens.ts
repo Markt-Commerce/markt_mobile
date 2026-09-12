@@ -31,6 +31,8 @@ export interface ThemeTokens {
   surfaceOverlay: string;
   /** Inputs, chips, and other quiet fills inside a card. */
   surfaceSunken: string;
+  /** Dimming layer over a sheet or modal that is busy. */
+  scrim: string;
 
   /** Body copy and headings. */
   textPrimary: string;
@@ -119,6 +121,9 @@ export const darkTokens: ThemeTokens = {
   surfaceRaised: "#0E0F11",
   surfaceOverlay: "#212428",
   surfaceSunken: "#16181B",
+  // Enough to say "not now" without hiding what is underneath, so a busy
+  // sheet still reads as the form you were filling in.
+  scrim: "rgba(0,0,0,0.45)",
 
   textPrimary: "#EDEEF0", // 16.52 / 15.02 / 13.42
   textSecondary: "#A8ADB4", // 8.49 / 7.72 / 6.90
@@ -173,6 +178,9 @@ export const lightTokens: ThemeTokens = {
   surfaceRaised: "#FFFFFF",
   surfaceOverlay: "#FFFFFF",
   surfaceSunken: "#F4F4F5",
+  // Enough to say "not now" without hiding what is underneath, so a busy
+  // sheet still reads as the form you were filling in.
+  scrim: "rgba(0,0,0,0.45)",
 
   textPrimary: "#09090B",
   textSecondary: "#52525B",

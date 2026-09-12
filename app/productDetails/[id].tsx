@@ -8,6 +8,7 @@ import { ArrowLeft, ShoppingBag, ArrowBigDown, MessageCircle, ShoppingCart } fro
 import { addToCart } from "../../services/sections/cart";
 import { getRecommendedProducts } from "../../services/sections/feed";
 import { Product } from "../../models/feed";
+import Price from "../../components/Price";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useUser } from "../../hooks/userContextProvider";
 import { useToast } from "../../components/ToastProvider";
@@ -313,7 +314,15 @@ const addProductToCart = async (product:ProductDetail)=>{
         <View className="px-6">
           <Text className="text-2xl font-bold text-text-primary">{product.name}</Text>
           <Text className="text-base mt-1 text-text-secondary">sold by {product.seller.shop_name}</Text>
-          <Text className="text-xl font-bold mt-3 text-text-primary">{formatNaira(product.price)}</Text>
+          {/* "Compare at price" has been on the create form since the
+              beginning and nothing ever rendered it, so a seller marking
+              something down had no way to tell it had worked. */}
+          <Price
+            price={product.price}
+            compareAt={product.compare_at_price}
+            size="md"
+            className="mt-3"
+          />
         </View>
 
         {/* Quantity Selection */}

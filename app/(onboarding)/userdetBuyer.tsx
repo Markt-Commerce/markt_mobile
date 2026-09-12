@@ -1,4 +1,6 @@
 import React from "react";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useKeyboardOverlap, keyboardScrollPadding } from '../../hooks/useKeyboardOverlap';
 import {
   View,
   Text,
@@ -17,7 +19,9 @@ import { Input } from "../../components/inputs";
 import { useUser } from "../../hooks/userContextProvider";
 import { checkUsername } from "../../services/sections/auth";
 import { useRouter } from "expo-router";
-import { SignupStepTwo, register, useRegData } from "../../models/signupSteps";
+import { updateUserProfile, updateBuyerProfile } from "../../services/sections/profile";
+import { uploadProfilePicture } from "../../services/sections/auth";
+import { logger } from "../../utils/logger";
 import Button from "../../components/button";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useToast } from "../../components/ToastProvider";
@@ -26,6 +30,7 @@ import { useDebouncedCallback } from "../../hooks/useDebouncedCallback";
 import { useWatch } from "react-hook-form";
 import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
+import StepProgress from "../../components/auth/StepProgress";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 const schema = z.object({
@@ -35,8 +40,9 @@ const schema = z.object({
 });
 
 export default function UserInfoScreen() {
-  const { setUser } = useUser();
-  const { regData, setRegData } = useRegData();
+  const { setUser, refreshProfile } = useUser();
+  const insets = useSafeAreaInsets();
+  const keyboardOverlap = useKeyboardOverlap();
   const router = useRouter();
   const { show } =  useToast();
   const t = useTokens();
@@ -45,6 +51,7 @@ export default function UserInfoScreen() {
   const [profilePictureUri, setProfilePictureUri] = React.useState<string | null>(null);
   const [usernameStatus, setUsernameStatus] = React.useState<"idle" | "checking" | "available" | "taken">("idle");
   const [usernameMessage, setUsernameMessage] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
 
   const {
     control,
@@ -75,9 +82,6 @@ export default function UserInfoScreen() {
     checkUsernameDebounced(username);
   }, [username]);
 
-  // Change this to the actual next screen in your flow if different
-  const NEXT_ROUTE = "/emailVerification";
-
   const changeProfilePicture = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
@@ -96,43 +100,71 @@ export default function UserInfoScreen() {
     }
   };
 
+  /**
+   * Saves to the account, which exists by the time this screen opens.
+   *
+   * It used to merge into an in-memory context that was POSTed two screens
+   * later, so an app kill here lost everything typed — and a failure two
+   * screens later reported as "registration failed" with no clue which field
+   * caused it.
+   */
   const handleSubmitForm = async (data: z.infer<typeof schema>) => {
-    const userData: SignupStepTwo = {
-      buyer_data: {
-        buyername: data.Buyername,
-        shipping_address: {}, // will be collected in a later step
-      },
-      username: data.username,
-      phone_number: data.phone_number,
-    };
-
-    // Merge step data into the registration payload
-    const updatedRegData = register(regData, userData);
-    delete updatedRegData.seller_data; // ensure we’re on the buyer path
-    setRegData(updatedRegData);
-
-    // send the user data to the backend here
-    // may move this later to a another signup step
+    if (saving) return;
+    setSaving(true);
     try {
-      //store user in secure store
-      /* await SecureStore.setItemAsync('user', JSON.stringify({
-        email: regData.email,
-        password: regData.password,
-        userType: regData.account_type,
-      })); */
+      // Two calls because they are two resources: the handle lives on the
+      // user, the display name on the buyer profile. The handle goes first —
+      // it is the one that can be refused, and being told "that's taken"
+      // after the rest has saved is worse than before.
+      if (data.username) {
+        await updateUserProfile({
+          username: data.username,
+          phone_number: data.phone_number,
+        });
+      }
+      await updateBuyerProfile({ buyername: data.Buyername });
+
+      if (profilePictureUri) {
+        // Best-effort: a photo is optional, and failing it must not block
+        // someone at the end of signup.
+        try {
+          await uploadProfilePicture(profilePictureUri, "profile.jpg");
+        } catch (e) {
+          logger.warn("signup: could not upload profile picture", e);
+        }
+      }
+
+      // Pull everything just saved into context, for everyone — not only the
+      // people who added a photo.
+      //
+      // This used to sit inside the `if (profilePictureUri)` branch, so
+      // skipping the photo meant nothing told the app about the name,
+      // username or phone number it had just written. The tabs rendered the
+      // profile as it was before the form, and the only way to see your own
+      // details was to sign out and back in.
+      await refreshProfile();
+
       show({
         variant: "success",
-        title: "Registration Successful",
-        message: "Well done! Your information has been saved.",
-      })
+        title: "Profile saved",
+        message: "Where should we show you things from?",
+      });
       router.push("/locationdet");
-    } catch (error) {
+    } catch (error: any) {
+      const taken = error?.status === 409;
       show({
         variant: "error",
-        title: "Registration Failed",
-        message: friendlyErrorMessage(error, "Could not save your information. Please review it and try again."),
+        title: taken ? "That username is taken" : "Could not save your details",
+        message: taken
+          ? "Pick another one and try again."
+          : friendlyErrorMessage(
+              error,
+              "Could not save your information. Please review it and try again."
+            ),
       });
-  }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const Label = ({ children }: { children: React.ReactNode }) => (
@@ -150,57 +182,67 @@ export default function UserInfoScreen() {
           className="flex-1"
           contentContainerStyle={{
             flexGrow: 1,
-            justifyContent: "center",
+            // Measured: a KeyboardAvoidingView shifts the screen, but a form
+            // taller than the screen still needs somewhere to scroll to, and
+            // the phone number is the last field.
+            paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 32),
+            // Not `center`: these forms are taller than the screen, so
+            // centring pushed the first field below the fold and left a gap
+            // above the header that looked like a rendering fault.
             alignItems: "center",
             paddingHorizontal: 16,
           }}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
           showsVerticalScrollIndicator={false}
         >
           <View className="w-full max-w-[520px]">
             {/* Header */}
-            <View className="flex-row items-center justify-between pb-8 pt-4">
-              <TouchableOpacity
-                onPress={() => router.back()}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
-              >
-                <ArrowLeft size={20} color={iconColor} />
-              </TouchableOpacity>
+            <View className="flex-row items-center justify-between pb-4 pt-2">
+              {/* The step before this one is verification, which a verified
+                  account cannot re-enter — it would only 400 with "already
+                  verified". Shown only when there is somewhere real to go. */}
+              {router.canGoBack() ? (
+                <TouchableOpacity
+                  onPress={() => router.back()}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
+                >
+                  <ArrowLeft size={20} color={iconColor} />
+                </TouchableOpacity>
+              ) : (
+                <View className="h-10 w-10" />
+              )}
             </View>
 
             {/* Title */}
-            <View className="mb-8">
-              <Text className="text-[32px] font-bold leading-tight text-text-primary">
-                Your{"\n"}profile
+            <View className="mb-5">
+              <Text className="text-[28px] font-bold leading-9 text-text-primary">
+                Your profile
               </Text>
-              <Text className="text-base mt-2 text-text-secondary">
+              <Text className="text-[15px] mt-1.5 text-text-secondary">
                 Let's get to know you better.
               </Text>
             </View>
 
-            {/* Progress hint */}
-            <View className="flex-row gap-2 items-center justify-center mb-10 px-2">
-              <View className="h-1.5 flex-1 rounded bg-text-primary" />
-              <View className="h-1.5 flex-1 rounded bg-surface-sunken" />
-              <View className="h-1.5 flex-1 rounded bg-surface-sunken" />
-            </View>
+            <StepProgress step={1} total={2} label="About you" className="mb-6" />
 
-            {/* Card */}
-            <View className="rounded border px-6 py-8 bg-surface-raised border-border">
+            {/* No card: a bordered panel inside a screen that is already a panel
+                adds an edge without adding meaning. Spacing does the work. */}
+            <View>
               {/* Avatar placeholder with image picker */}
-              <View className="items-center mb-10">
+              <View className="items-center mb-8">
                 <TouchableOpacity
                   activeOpacity={0.85}
                   onPress={changeProfilePicture}
-                  className="h-24 w-24 rounded-full border-2 border-dashed items-center justify-center overflow-hidden bg-surface-sunken border-border"
+                  className="h-24 w-24 rounded-full border items-center justify-center overflow-hidden bg-surface-sunken border-border"
                 >
                   {profilePictureUri ? (
                     <Image source={{ uri: profilePictureUri }} className="w-full h-full" />
                   ) : (
                     <View className="items-center">
                       <ImageIcon size={32} color={mutedIconColor} />
-                      <Text className="text-[10px] font-bold mt-1 text-text-secondary">ADD PHOTO</Text>
+                      <Text className="text-[12px] font-semibold mt-1.5 text-text-secondary">Add photo</Text>
                     </View>
                   )}
                 </TouchableOpacity>
@@ -210,7 +252,7 @@ export default function UserInfoScreen() {
               <View className="mb-6">
                 <Label>Full Name</Label>
                 <Input
-                  placeholder="e.g. John Doe"
+                  placeholder="e.g. Amaka Obi"
                   control={control}
                   name="Buyername"
                   errors={errors}
@@ -222,7 +264,7 @@ export default function UserInfoScreen() {
               <View className="mb-6">
                 <Label>Username</Label>
                 <Input
-                  placeholder="choose_a_unique_id"
+                  placeholder="amaka_obi"
                   control={control}
                   name="username"
                   errors={errors}
@@ -249,7 +291,7 @@ export default function UserInfoScreen() {
               <View className="mb-10">
                 <Label>Phone Number</Label>
                 <Input
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="0801 234 5678"
                   control={control}
                   name="phone_number"
                   errors={errors}
@@ -261,7 +303,8 @@ export default function UserInfoScreen() {
               {/* CTA — disable if username taken */}
               <Button
                 onPress={handleSubmit(handleSubmitForm)}
-                disabled={!isValid || usernameStatus === "taken" || usernameStatus === "checking"}
+                disabled={!isValid || saving || usernameStatus === "taken" || usernameStatus === "checking"}
+              loading={saving}
                 text="Continue"
                 variant="primary"
               />

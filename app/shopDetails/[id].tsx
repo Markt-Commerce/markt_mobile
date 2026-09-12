@@ -34,6 +34,7 @@ import BadgeGrid from "../../components/gamification/BadgeGrid";
 import FeedPostCard from "../../components/FeedPostCard";
 import type { FeedPost } from "../../types/feed";
 import { saveItem, unsaveItem } from "../../services/sections/saved";
+import { tierColor } from "../../theme/tierColors";
 
 function ShopPostCard({ post, shop }: { post: ShopPost; shop: ShopData }) {
   const [saved, setSaved] = useState(false);
@@ -167,14 +168,21 @@ export default function Shop() {
           </TouchableOpacity>
         </View>
 
-        {/* Cover Image */}
-        <ImageBackground
-          source={{
-            uri: shop?.user.profile_picture || defaultProfilePicture,
-          }}
-          className="w-full h-56 overflow-hidden bg-media"
-          resizeMode="cover"
-        />
+        {/* Cover image.
+            This used to render the shop's *avatar* blown up to full width, so
+            every shop page showed the same picture twice — once stretched
+            across the top and once as the circle sitting on it. Sellers now
+            have a real banner; when there is none, a tinted block is a better
+            answer than the avatar again. */}
+        {shop?.banner_url ? (
+          <ImageBackground
+            source={{ uri: shop.banner_url }}
+            className="w-full h-56 overflow-hidden bg-media"
+            resizeMode="cover"
+          />
+        ) : (
+          <View className="w-full h-56 bg-primary-muted" />
+        )}
 
         {/* Profile Section */}
         <View className="px-6 py-6">
@@ -197,7 +205,7 @@ export default function Shop() {
                   <TierBadge
                     tier={sellerGamification.tier.key}
                     stars={sellerGamification.tier.stars}
-                    colorHex={sellerGamification.tier.color_hex}
+                    colorHex={tierColor(sellerGamification.tier?.key, t)}
                     size="sm"
                   />
                 )}
@@ -364,6 +372,17 @@ export default function Shop() {
                   item.map((p) => ({
                     ...p,
                     description: p.description ?? "",
+                    // `recent_products` is a deliberately slim summary and
+                    // sends a flat `image` string, while the tile reads
+                    // `images[0].media.original_url` like every other product
+                    // list. So every featured tile rendered with a URI of
+                    // `undefined` — blank on this screen and fine two
+                    // sections below, from the same component.
+                    images:
+                      (p as any).images ??
+                      ((p as any).image
+                        ? [{ media: { original_url: (p as any).image } }]
+                        : []),
                   })) as Product[]
                 }
               />

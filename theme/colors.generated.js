@@ -6,6 +6,7 @@ module.exports = {
   "surface-raised": "var(--c-surface-raised)",
   "surface-overlay": "var(--c-surface-overlay)",
   "surface-sunken": "var(--c-surface-sunken)",
+  "scrim": "var(--c-scrim)",
   "text-primary": "var(--c-text-primary)",
   "text-secondary": "var(--c-text-secondary)",
   "text-muted": "var(--c-text-muted)",

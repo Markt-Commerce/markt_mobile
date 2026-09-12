@@ -16,10 +16,12 @@ import { loginUser } from "../../services/sections/auth";
 import { useUser } from "../../hooks/userContextProvider";
 import { Input, PasswordInput } from "../../components/inputs";
 import Button from "../../components/button";
+import RoleToggle from "../../components/auth/RoleToggle";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRegData } from "../../models/signupSteps";
 import { useToast } from "../../components/ToastProvider";
-import { navigateToAppHome } from "../../utils/authNavigation"; 
+import { navigateToAppHome, navigateToOnboardingStep } from "../../utils/authNavigation";
+import { getUserProfile } from "../../services/sections/profile";
 import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 
@@ -72,7 +74,15 @@ export default function LoginScreen() {
         message: `Signed in as ${userData.email.toLowerCase()}`,
       });
 
-      navigateToAppHome();
+      // Resume an interrupted signup rather than dropping someone into the
+      // tabs with a half-built account. Best-effort: a failed profile read
+      // must not block a successful sign-in.
+      try {
+        const profile = await getUserProfile();
+        navigateToOnboardingStep(profile.onboarding?.next_step);
+      } catch {
+        navigateToAppHome();
+      }
     } catch (error: any) {
       const errMsg = friendlyErrorMessage(
         error,
@@ -84,17 +94,18 @@ export default function LoginScreen() {
         },
       );
 
-      // If backend asks for email verification, route + info toast
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "message" in error &&
-        typeof (error as any).message === "string" &&
-        (error as any).message.toLowerCase().includes("verify") &&
-        (error as any).message.toLowerCase().includes("email")
-      ) {
+      // An unfinished signup, not a failed sign-in: the account exists and
+      // the password was right, it just never verified its address. Send
+      // them to the code screen rather than telling them "login failed",
+      // which is both wrong and a dead end.
+      //
+      // Recognised by the flag the server sets, not by the wording of the
+      // message. That substring match was the only thing that worked before,
+      // because `abort()` was dropping the structured payload on the way out.
+      const body = error?.body;
+      if (body?.error_type === "unverified_email") {
         setRegData({
-          email: data.email,
+          email: body.email ?? data.email,
           password: data.password,
           account_type: role || "buyer",
           username: "",
@@ -103,11 +114,19 @@ export default function LoginScreen() {
 
         show({
           variant: "info",
-          title: "Verify your email",
-          message: "We need to verify your email before you can sign in.",
+          title: "Verify your email first",
+          message: body.code_sent
+            ? "We've sent a fresh code to your inbox."
+            : "Enter the code we sent you, or ask for a new one.",
         });
 
-        router.push("/emailVerification");
+        // `sent` tells the code screen whether one is already on its way, so
+        // it neither asks for a duplicate nor sits on a 60-second countdown
+        // for a code the server declined to send.
+        router.push({
+          pathname: "/emailVerification",
+          params: body.code_sent ? { sent: "1" } : {},
+        });
         return;
       }
 
@@ -159,7 +178,7 @@ export default function LoginScreen() {
             </View>
 
             {/* Panel */}
-            <View className="rounded border px-5 py-8 bg-surface-raised border-border">
+            <View>
               {/* Error banner */}
               {error ? (
                 <View className="mb-6 rounded bg-danger-muted px-4 py-3 border border-danger/10">
@@ -169,7 +188,7 @@ export default function LoginScreen() {
 
               {/* Email */}
               <View className="mb-6">
-                <Text className="mb-2 text-sm font-bold text-text-primary">Email Address</Text>
+                <Text className="mb-2 text-[13px] font-semibold text-text-secondary">Email Address</Text>
                 <Input
                   placeholder="Enter your email"
                   control={control}
@@ -177,6 +196,7 @@ export default function LoginScreen() {
                   errors={errors}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  autoCorrect={false}
                   autoComplete="email"
                   textContentType="emailAddress"
                 />
@@ -184,7 +204,7 @@ export default function LoginScreen() {
 
               {/* Password — eye toggle */}
               <View className="mb-2">
-                <Text className="mb-2 text-sm font-bold text-text-primary">Password</Text>
+                <Text className="mb-2 text-[13px] font-semibold text-text-secondary">Password</Text>
                 <PasswordInput
                   placeholder="Enter your password"
                   control={control}
@@ -202,30 +222,8 @@ export default function LoginScreen() {
 
               {/* Role toggle */}
               <View className="mb-10">
-                <Text className="mb-3 text-sm font-bold text-text-primary">Continue as</Text>
-                <View className="flex-row items-center rounded p-1 bg-surface-sunken">
-                  <TouchableOpacity
-                    onPress={() => setRole("buyer")}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: role === "buyer" }}
-                    className={`flex-1 rounded py-2.5 items-center ${role === "buyer" ? "bg-primary-fill shadow-sm" : "shadow-none"}`}
-                  >
-                    <Text className={`font-bold text-sm ${role === "buyer" ? "text-white" : "text-text-secondary"}`}>
-                      Buyer
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => setRole("seller")}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: role === "seller" }}
-                    className={`flex-1 rounded py-2.5 items-center ${role === "seller" ? "bg-primary-fill shadow-sm" : "shadow-none"}`}
-                  >
-                    <Text className={`font-bold text-sm ${role === "seller" ? "text-white" : "text-text-secondary"}`}>
-                      Seller
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                <Text className="mb-2 text-[13px] font-semibold text-text-secondary">Continue as</Text>
+                <RoleToggle value={role} onChange={setRole} />
               </View>
 
               {/* Submit */}

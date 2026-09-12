@@ -1,7 +1,6 @@
 import React, { forwardRef, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from "react-native";
-import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from "react-native";
+import InputSheet, { type InputSheetHandle } from "./InputSheet";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,12 +33,10 @@ interface Props {
   onCreated?: (role: "buyer" | "seller") => void; 
 }
 
-const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mode, onClose, onCreated }, ref) => {
+const CreateRoleBottomSheet = forwardRef<InputSheetHandle | null, Props>(({ mode, onClose, onCreated }, ref) => {
   const t = useTokens();
-  const sheetRef = useRef<BottomSheetMethods | null>(null);
-  React.useImperativeHandle(ref, () => sheetRef.current as BottomSheetMethods, []);
-
-  const snapPoints = useMemo(() => ["45%", "80%"], []);
+  const sheetRef = useRef<InputSheetHandle | null>(null);
+  React.useImperativeHandle(ref, () => sheetRef.current as InputSheetHandle, []);
   const { show } = useToast();
   const [sending, setSending] = useState(false);
 
@@ -144,13 +141,50 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
     }
   };
 
+  // One sheet, two forms — so the action bar has to know which one it is
+  // submitting. Both write through the same `sending` flag.
+  const footer = (
+    <>
+      <Text className="flex-1 text-[12px] text-text-muted" numberOfLines={1}>
+        {sending
+          ? "Creating…"
+          : mode === "seller"
+            ? `${selectedCategories.length} categor${selectedCategories.length === 1 ? "y" : "ies"}`
+            : ""}
+      </Text>
+      <TouchableOpacity
+        disabled={sending || !mode}
+        onPress={
+          mode === "seller"
+            ? handleSubmitSeller(submitSeller)
+            : handleSubmitBuyer(submitBuyer)
+        }
+        accessibilityRole="button"
+        accessibilityState={{ disabled: sending || !mode, busy: sending }}
+        className={`min-h-[44px] flex-row items-center justify-center gap-2 rounded-xl px-5 ${
+          sending || !mode ? "bg-surface-sunken" : "bg-primary-fill"
+        }`}
+      >
+        {sending ? <ActivityIndicator size="small" color={t.textSecondary} /> : null}
+        <Text
+          className={`text-[15px] font-bold ${
+            sending || !mode ? "text-text-muted" : "text-text-on-primary"
+          }`}
+        >
+          {sending ? "Creating…" : mode === "seller" ? "Create shop" : "Create account"}
+        </Text>
+      </TouchableOpacity>
+    </>
+  );
+
   return (
-    <BottomSheet ref={sheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose={!sending} onClose={onClose}>
-      <BottomSheetScrollView contentContainerStyle={{ padding: 16 }}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 12, color: t.textPrimary }}>
-            {mode === "buyer" ? "Create Buyer Account" : mode === "seller" ? "Create Seller Account" : "Create Account"}
-          </Text>
+    <InputSheet
+      ref={sheetRef}
+      title={mode === "buyer" ? "Create Buyer Account" : mode === "seller" ? "Create Seller Account" : "Create Account"}
+      busy={sending}
+      onClose={onClose}
+      footer={footer}
+    >
 
           {mode === "buyer" && (
             <View>
@@ -174,13 +208,6 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                 )}
               />
               {buyerErrors.buyername && <Text style={{ color: t.dangerText, marginBottom: 6 }}>{buyerErrors.buyername.message}</Text>}
-              <TouchableOpacity
-                disabled={sending}
-                onPress={handleSubmitBuyer(submitBuyer)}
-                style={{ backgroundColor: t.textPrimary, padding: 12, borderRadius: 8, alignItems: "center", opacity: sending ? 0.6 : 1 }}
-              >
-                <Text style={{ color: t.textOnPrimary, fontWeight: "700" }}>{sending ? "Creating…" : "Create Buyer Account"}</Text>
-              </TouchableOpacity>
             </View>
           )}
 
@@ -247,14 +274,6 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                 <Text>Select categories</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                disabled={sending}
-                onPress={handleSubmitSeller(submitSeller)}
-                style={{ backgroundColor: t.textPrimary, padding: 12, borderRadius: 8, alignItems: "center", opacity: sending ? 0.6 : 1 }}
-              >
-                <Text style={{ color: t.textOnPrimary, fontWeight: "700" }}>{sending ? "Creating…" : "Create Seller Account"}</Text>
-              </TouchableOpacity>
-
               <CategoryAddition
                 visible={categoryModalVisible}
                 categories={categories}
@@ -267,9 +286,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
               />
             </View>
           )}
-        </KeyboardAvoidingView>
-      </BottomSheetScrollView>
-    </BottomSheet>
+    </InputSheet>
   );
 });
 

@@ -5,6 +5,8 @@ import { ShoppingCart, MessageCircle } from "lucide-react-native";
 import { Product } from "../models/feed";
 import { useTokens } from "../theme/useTokens";
 import { formatPrice } from "../utils/money";
+import { discountPercent } from "./Price";
+import { useUser } from "../hooks/userContextProvider";
 
 type Props = {
   products: Product[];
@@ -18,6 +20,7 @@ const ProductDisplayComponent: React.FC<Props> = ({
   onChat,
 }) => {
   const t = useTokens();
+  const { role } = useUser();
   const mutedIconColor = t.textSecondary;
 
   return (
@@ -40,10 +43,19 @@ const ProductDisplayComponent: React.FC<Props> = ({
                         light mode, so the price vanished over any pale
                         product photo — and the number was printed raw, with
                         no currency symbol and no thousands separator. */}
-                    <View className="absolute right-2 top-2 rounded-full px-2.5 py-1 bg-primary-fill">
-                      <Text className="text-xs font-bold text-text-on-primary">
-                        {formatPrice(product.price)}
-                      </Text>
+                    <View className="absolute right-2 top-2 items-end gap-1">
+                      <View className="rounded-full px-2.5 py-1 bg-primary-fill">
+                        <Text className="text-xs font-bold text-text-on-primary">
+                          {formatPrice(product.price)}
+                        </Text>
+                      </View>
+                      {discountPercent(product.price, product.compare_at_price) !== null ? (
+                        <View className="rounded-full px-2 py-0.5 bg-success-fill">
+                          <Text className="text-[10px] font-bold text-on-success-fill">
+                            {discountPercent(product.price, product.compare_at_price)}% off
+                          </Text>
+                        </View>
+                      ) : null}
                     </View>
                   </ImageBackground>
 
@@ -54,6 +66,11 @@ const ProductDisplayComponent: React.FC<Props> = ({
                     >
                       {product.name}
                     </Text>
+                    {/* Buying actions, so only for someone who is buying.
+                        A seller browsing their own catalogue was offered
+                        "Add" and "Chat" on their own products — the feed
+                        already hides these in seller mode and this did not. */}
+                    {role === "seller" ? null : (
                     <View className="flex-row justify-between mt-2 gap-2">
                       <TouchableOpacity
                         onPress={() => onAdd?.(product)}
@@ -84,6 +101,7 @@ const ProductDisplayComponent: React.FC<Props> = ({
                         </Text>
                       </TouchableOpacity>
                     </View>
+                    )}
                   </View>
                 </View>
               </TouchableOpacity>
