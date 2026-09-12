@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Text, View, Pressable } from "react-native";
+import { ActivityIndicator, Text, View, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ShoppingBag, Store, Check } from "lucide-react-native";
@@ -37,7 +37,7 @@ const OPTIONS = [
 export default function YourRole() {
   const router = useRouter();
   const t = useTokens();
-  const { setRole } = useUser();
+  const { setRole, refreshProfile } = useUser();
   const { name } = useLocalSearchParams<{ name?: string }>();
   const [choice, setChoice] = useState<"buyer" | "seller" | null>(null);
   const [saving, setSaving] = useState(false);
@@ -48,15 +48,33 @@ export default function YourRole() {
     setRole(choice);
 
     // Saved here rather than on the name screen, because only now do we know
-    // the field it belongs in. Best-effort: a failed write must not strand
-    // someone at the last step of signup — the name is editable in settings,
-    // and blocking here would be worse than a missing display name.
+    // the field it belongs in. Best-effort, and *bounded*: this used to be a
+    // bare await, so a slow or hanging request left the button disabled with
+    // no label change — indistinguishable from a button that does nothing.
+    // The name is editable in settings; stranding someone on the last step of
+    // signup to guarantee it is the worse trade.
     if (name?.trim() && choice === "buyer") {
       try {
-        await updateBuyerProfile({ buyername: name.trim() });
+        await Promise.race([
+          updateBuyerProfile({ buyername: name.trim() }),
+          new Promise((resolve) => setTimeout(resolve, 4000)),
+        ]);
       } catch (e) {
         logger.warn("onboarding: could not save display name", e);
       }
+    }
+
+    // The tabs are guarded on the account having verified its address, and
+    // that guard reads the profile. Navigating before it has loaded means
+    // replacing onto a screen that is not mounted yet, which does nothing at
+    // all — so make sure it is loaded first.
+    try {
+      await Promise.race([
+        refreshProfile(),
+        new Promise((resolve) => setTimeout(resolve, 4000)),
+      ]);
+    } catch {
+      // Guard falls back to "unknown", which permits.
     }
     // `replace`, not `push`: finishing onboarding must not leave the flow in
     // history. The old emailVerification screen pushed, so an iOS swipe-back
@@ -130,19 +148,24 @@ export default function YourRole() {
       <View className="px-6 pb-6">
         <Pressable
           onPress={done}
-          disabled={!choice}
+          disabled={!choice || saving}
           accessibilityRole="button"
-          accessibilityState={{ disabled: !choice }}
-          className={`h-[52px] rounded items-center justify-center ${
+          accessibilityState={{ disabled: !choice || saving, busy: saving }}
+          className={`h-[52px] rounded-xl flex-row items-center justify-center gap-2 ${
             choice ? "bg-primary-fill" : "bg-surface-sunken"
-          }`}
+          } ${saving ? "opacity-80" : ""}`}
         >
+          {saving ? <ActivityIndicator size="small" color={t.textOnPrimary} /> : null}
           <Text
             className={`text-[16px] font-bold ${
               choice ? "text-text-on-primary" : "text-text-muted"
             }`}
           >
-            {choice === "seller" ? "Set up my shop" : "Start browsing"}
+            {saving
+              ? "Setting up…"
+              : choice === "seller"
+                ? "Set up my shop"
+                : "Start browsing"}
           </Text>
         </Pressable>
       </View>
