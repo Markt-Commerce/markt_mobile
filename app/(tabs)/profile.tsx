@@ -11,6 +11,7 @@ import {
   Settings,
   ShieldCheck,
   Trophy,
+  MapPin,
 } from "lucide-react-native";
 import BottomSheet from "@gorhom/bottom-sheet";
 import Avatar from "../../components/Avatar";
@@ -228,6 +229,15 @@ export default function ProfileScreen() {
             title="Rewards & Badges"
             onPress={() => router.push("/gamification" as any)}
           />
+          {/* Buyers only: a seller's pickup point is their shop location,
+              set in shop settings, not a list of delivery addresses. */}
+          {role === "buyer" ? (
+            <Row
+              icon={MapPin}
+              title="Addresses"
+              onPress={() => router.push("/(settings)/addressesScreen" as any)}
+            />
+          ) : null}
           <Row
             icon={Settings}
             title="Settings"
