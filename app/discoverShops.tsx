@@ -201,7 +201,11 @@ export default function DiscoverShopsScreen() {
           active
             ? tone === "primary"
               ? "text-text-on-primary"
-              : "text-text-on-primary"
+              : // The neutral chip inverts the page: its fill is text-primary,
+                // so its label has to be the page, not "on primary" — that
+                // token is white in both themes, which on dark put white text
+                // on a white pill.
+                "text-surface-page"
             : "text-text-secondary"
         }`}
       >

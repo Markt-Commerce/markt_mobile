@@ -795,7 +795,10 @@ export default function SellerDashboard() {
                 >
                   <Text
                     className={`text-[14px] font-semibold ${
-                      active ? "text-text-on-primary" : "text-text-secondary"
+                      // Inverted fill, so the label is the page colour.
+                      // "on primary" is white in both themes and vanished
+                      // against the near-white dark-mode fill.
+                      active ? "text-surface-page" : "text-text-secondary"
                     }`}
                   >
                     {label}

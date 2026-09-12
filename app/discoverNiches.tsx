@@ -10,7 +10,7 @@
  * hardcoded to member_count desc with no way to ask "am I in this one" — so a
  * card couldn't show Join vs Joined without a request each.
  */
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SearchField from "../components/SearchField";
 import {
   View,
@@ -30,6 +30,9 @@ import { useTheme } from "../components/themeProvider";
 import { useTokens } from "../theme/useTokens";
 import { useToast } from "../components/ToastProvider";
 import { getNiches, joinNiche, leaveNiche } from "../services/sections/niches";
+import { useUser } from "../hooks/userContextProvider";
+import CreateNicheBottomSheet from "../components/nicheCreateBottomSheet";
+import type { InputSheetHandle } from "../components/InputSheet";
 import type { Niches, NichesListParams } from "../models/niches";
 import { friendlyErrorMessage } from "../utils/errorMessages";
 
@@ -106,6 +109,11 @@ export default function CommunitiesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   // Per-community, so one slow join doesn't freeze every button on screen.
   const [busy, setBusy] = useState<Record<string, boolean>>({});
+
+  // Creating a community is a sheet, not a screen — there is no /niches/create
+  // route, which is why the "+" did nothing. NICHES_API §2.4: sellers only.
+  const { role } = useUser();
+  const createRef = useRef<InputSheetHandle | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -323,14 +331,19 @@ export default function CommunitiesScreen() {
         <Text className={`flex-1 text-center text-[17px] font-bold ${strong}`}>
           Communities
         </Text>
-        <TouchableOpacity
-          onPress={() => router.push("/niches/create" as any)}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          accessibilityRole="button"
-          accessibilityLabel="Create a community"
-        >
-          <Plus size={22} color={t.textPrimary} strokeWidth={2.2} />
-        </TouchableOpacity>
+        {role === "seller" ? (
+          <TouchableOpacity
+            onPress={() => createRef.current?.expand()}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            accessibilityRole="button"
+            accessibilityLabel="Create a community"
+          >
+            <Plus size={22} color={t.textPrimary} strokeWidth={2.2} />
+          </TouchableOpacity>
+        ) : (
+          // Keeps the title centred without the button.
+          <View style={{ width: 22 }} />
+        )}
       </View>
 
       <View className={`flex-row border-b ${hairline}`}>
@@ -410,6 +423,19 @@ export default function CommunitiesScreen() {
           )
         }
       />
+
+      {role === "seller" ? (
+        <CreateNicheBottomSheet
+          ref={createRef}
+          onCreated={() => {
+            // A community you just made is one you're in, so Home is where it
+            // belongs. Switching tabs reloads on its own; reloading here too
+            // would race it, so only one of the two ever runs.
+            if (tab === "home") load();
+            else setTab("home");
+          }}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
