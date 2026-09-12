@@ -73,6 +73,14 @@ export interface CheckoutPaymentInitRequest {
   reliability_fee_opted_in?: boolean;
   fulfilment_preference?: FulfilmentPreference;
   idempotency_key?: string;
+  /**
+   * From POST /delivery/quote. Optional: without it the server uses its flat
+   * estimate, which is what keeps older builds working. With it, the buyer is
+   * charged exactly the fee they were shown.
+   */
+  delivery_quote_id?: string;
+  /** Share a run with other orders going the same way. Never inferred. */
+  batch_opt_in?: boolean;
 }
 
 /** Response for CheckoutPaymentInitRequest — no order_id yet, since the

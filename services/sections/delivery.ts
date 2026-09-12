@@ -1,0 +1,93 @@
+import { request, BASE_URL } from "../api";
+import type {
+  DeliveryQuote,
+  DeliveryQuoteRequest,
+  NotServiceableError,
+  NotServiceableReason,
+  ServiceabilityResult,
+} from "../../models/delivery";
+
+/**
+ * Whether we deliver to a point at all.
+ *
+ * Unauthenticated on the server on purpose, so this can be asked before
+ * anyone signs up.
+ */
+export async function checkServiceable(
+  latitude: number,
+  longitude: number
+): Promise<ServiceabilityResult> {
+  return request<ServiceabilityResult>(
+    `${BASE_URL}/delivery/serviceable?latitude=${latitude}&longitude=${longitude}`,
+    { method: "GET" }
+  );
+}
+
+/** Price a delivery from one shop to a point. */
+export async function createDeliveryQuote(
+  data: DeliveryQuoteRequest
+): Promise<DeliveryQuote> {
+  return request<DeliveryQuote>(`${BASE_URL}/delivery/quote`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Pull the structured reason out of a 422.
+ *
+ * The server raises rather than aborts precisely so this survives: the
+ * message alone cannot tell "your address is outside our area" from "this
+ * shop hasn't set its location", and those need different things from the
+ * buyer. Returns null for anything that isn't a serviceability refusal.
+ */
+export function notServiceableReason(error: unknown): NotServiceableReason | null {
+  const body = (error as { body?: NotServiceableError })?.body;
+  if (body?.error_type === "not_serviceable" && body.reason) return body.reason;
+  return null;
+}
+
+/** What to tell the buyer, and whether they can do anything about it. */
+export function describeNotServiceable(reason: NotServiceableReason): {
+  title: string;
+  message: string;
+  actionable: boolean;
+} {
+  switch (reason) {
+    case "dropoff_unlocated":
+      return {
+        title: "We need your location",
+        message:
+          "Set your delivery address on the map so we can work out the fee.",
+        actionable: true,
+      };
+    case "pickup_unlocated":
+      return {
+        title: "This shop has no location yet",
+        message:
+          "The seller hasn't pinned their shop, so we can't arrange delivery from it. Try messaging them.",
+        actionable: false,
+      };
+    case "dropoff_not_serviceable":
+      return {
+        title: "We don't reach you yet",
+        message:
+          "We're not delivering to this address yet. We're adding new areas — we can let you know when we reach yours.",
+        actionable: false,
+      };
+    case "pickup_not_serviceable":
+      return {
+        title: "We don't cover this shop's area yet",
+        message:
+          "We're not delivering from this shop's area yet. We're adding new areas all the time.",
+        actionable: false,
+      };
+    case "no_lane":
+      return {
+        title: "Not between these two areas yet",
+        message:
+          "We deliver in both of these areas, but not between them yet. We're working on it.",
+        actionable: false,
+      };
+  }
+}

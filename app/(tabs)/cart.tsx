@@ -19,6 +19,8 @@ import {
 } from "../../utils/shippingAddress";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import ShippingAddressCard from "../../components/shippingAddressCard";
+import DeliveryQuoteCard from "../../components/checkout/DeliveryQuoteCard";
+import { useDeliveryQuote } from "../../hooks/useDeliveryQuote";
 import logger from "../../utils/logger";
 import { onBadgeChanged } from "../../utils/badgeEvents";
 
@@ -38,6 +40,9 @@ export default function CartScreen() {
   const [reliabilityFeeOptedIn, setReliabilityFeeOptedIn] = useState(false);
   const { show } = useToast();
   const shipping = useShippingAddress();
+  // The real, distance-based fee for this basket and address. Null while
+  // it is being worked out, or when we do not deliver there at all.
+  const delivery = useDeliveryQuote(cart, shipping.address);
 
   //map
   const fetchCart = useCallback(async (opts?: { silent?: boolean }) => {
@@ -108,6 +113,15 @@ export default function CartScreen() {
   };
 
   const handleCheckout = async () => {
+    if (delivery.blocked) {
+      // Paying for a delivery that cannot happen is worse than not selling.
+      show({
+        variant: "error",
+        title: delivery.blocked.title,
+        message: delivery.blocked.message,
+      });
+      return;
+    }
     const missing = missingShippingFields(shipping.address);
     if (missing.length > 0) {
       // Name the fields. "Add a shipping address" was unhelpful when an address
@@ -128,7 +142,10 @@ export default function CartScreen() {
         buildCheckoutPaymentInitRequest(
           shipping.address!,
           fulfilmentPreference,
-          reliabilityFeeOptedIn
+          reliabilityFeeOptedIn,
+          // Optional on purpose: without it the server falls back to its flat
+          // estimate, so a failed quote still lets someone buy something.
+          delivery.quote?.id
         )
       );
       // Same reason as the other checkout path: the key exists to make a retry
@@ -315,6 +332,12 @@ export default function CartScreen() {
             updateAddress={shipping.updateAddress}
             isDark={isDark}
           />
+          <DeliveryQuoteCard
+            loading={delivery.loading}
+            quote={delivery.quote}
+            blocked={delivery.blocked}
+            onFixAddress={shipping.useCurrentLocation}
+          />
         </View>
 
         {/* Summary card */}
@@ -412,7 +435,12 @@ export default function CartScreen() {
 
             <TouchableOpacity
               onPress={handleCheckout}
-              disabled={processing || !isShippingAddressUsable(shipping.address)}
+              disabled={
+                processing ||
+                !isShippingAddressUsable(shipping.address) ||
+                !!delivery.blocked ||
+                delivery.loading
+              }
               className={`mt-6 h-12 rounded items-center justify-center ${processing || !isShippingAddressUsable(shipping.address) ? ("bg-surface-sunken") : "bg-primary-fill"}`}
               activeOpacity={0.85}
               accessibilityRole="button"

@@ -44,7 +44,8 @@ export function buildCheckoutRequest(
 export function buildCheckoutPaymentInitRequest(
   shipping: ShippingAddressPayload,
   fulfilmentPreference: FulfilmentPreference,
-  reliabilityFeeOptedIn: boolean
+  reliabilityFeeOptedIn: boolean,
+  deliveryQuoteId?: string
 ): CheckoutPaymentInitRequest {
   return {
     shipping_address: shipping,
@@ -53,5 +54,9 @@ export function buildCheckoutPaymentInitRequest(
     reliability_fee_opted_in: reliabilityFeeOptedIn,
     fulfilment_preference: fulfilmentPreference,
     idempotency_key: getOrCreateIdempotencyKey("checkout-cart"),
+    // Omitted rather than sent as undefined when there is no quote: the
+    // server treats absence as "use the flat estimate", which is what keeps
+    // an older build (or a failed quote) working.
+    ...(deliveryQuoteId ? { delivery_quote_id: deliveryQuoteId } : {}),
   };
 }
