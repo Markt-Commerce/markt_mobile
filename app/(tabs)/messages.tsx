@@ -2,7 +2,7 @@
  * Messages — Chat room list (Instagram/Twitter-style)
  */
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useCallback, useState, useMemo } from "react";
 import SearchField from "../../components/SearchField";
 import {
   View,
@@ -14,7 +14,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { MessageCircle, Search } from "lucide-react-native";
 import { getRooms } from "../../services/sections/chat";
 import type { RoomListResponse } from "../../models/chat";
@@ -43,21 +43,34 @@ export default function MessagesScreen() {
   const router = useRouter();
   const t = useTokens();
 
-  const fetchRooms = async () => {
+  const fetchRooms = useCallback(async (opts?: { silent?: boolean }) => {
     try {
       const res = await getRooms(1, 20);
       setData(res);
     } catch {
-      setData({ rooms: [], pagination: undefined });
+      // A refresh that fails must not empty a list that is already on screen:
+      // silent passes keep what is there rather than blanking the tab.
+      if (!opts?.silent) setData({ rooms: [], pagination: undefined });
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
-
-  useEffect(() => {
-    fetchRooms();
   }, []);
+
+  // On focus, not on mount.
+  //
+  // This is a tab screen, so it mounts once and stays mounted for the whole
+  // session. Fetching in a mount effect meant the list was a snapshot from
+  // whenever the app started: send a message, come back, and the room still
+  // showed the previous last message, in the previous order, with the old
+  // unread count. Everything that changes a room happens on another screen.
+  //
+  // Silent, so returning to the tab does not replace the list with a spinner.
+  useFocusEffect(
+    useCallback(() => {
+      fetchRooms({ silent: true });
+    }, [fetchRooms])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);

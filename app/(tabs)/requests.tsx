@@ -14,7 +14,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { FileText, Plus, Search } from "lucide-react-native";
 import { useUser } from "../../hooks/userContextProvider";
@@ -120,6 +120,23 @@ export default function RequestsScreen() {
     setLoading(true);
     fetchRequests();
   }, [fetchRequests]);
+
+  // A tab mounts once and stays mounted, so the effect above only ever ran at
+  // app start (and when the role changes). A request posted from the feed --
+  // where the compose sheet also lives -- did not appear here until the app
+  // was restarted or the list pulled. Refetching on focus is quiet: the list
+  // already on screen stays put while it happens.
+  const focusedOnce = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      // The mount effect has this covered the first time.
+      if (!focusedOnce.current) {
+        focusedOnce.current = true;
+        return;
+      }
+      fetchRequests();
+    }, [fetchRequests])
+  );
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();

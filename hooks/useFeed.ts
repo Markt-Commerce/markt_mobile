@@ -45,6 +45,44 @@ interface CacheEntry {
 
 const cache: Record<string, CacheEntry> = {};
 
+/** Mounted useFeed instances, so a write-through can wake them. */
+const cacheListeners = new Set<() => void>();
+
+/**
+ * Update one post everywhere it is cached, without refetching the feed.
+ *
+ * The feed deliberately does not refetch on focus -- it shows the cached tab
+ * and refreshes underneath only once it is stale. That is right for scroll
+ * position and for data, and wrong for the one case where the user themselves
+ * changed something: comment on a post, come back, and the count under it is
+ * still what it was before they typed. It reads as though the comment did not
+ * save.
+ *
+ * So the screen that made the change writes it through. The same post can sit
+ * in several cached tabs at once, so every tab is patched, not just the one
+ * being looked at.
+ */
+export function patchFeedPost(
+  postId: string,
+  patch: (post: any) => Record<string, unknown>
+): void {
+  let changed = false;
+  for (const key of Object.keys(cache)) {
+    const entry = cache[key];
+    let hit = false;
+    const items = entry.items.map((item: any) => {
+      if (item?.type !== "post" || String(item.id) !== String(postId)) return item;
+      hit = true;
+      return { ...item, ...patch(item) };
+    });
+    if (hit) {
+      cache[key] = { ...entry, items };
+      changed = true;
+    }
+  }
+  if (changed) cacheListeners.forEach((listener) => listener());
+}
+
 /** Tab is either a main tab id or a niche id string for niche feed (NICHES_API §2.1). */
 export function useFeed(tab: keyof typeof MAIN_TABS | string) {
   const cached = cache[tab];
@@ -167,6 +205,21 @@ export function useFeed(tab: keyof typeof MAIN_TABS | string) {
       loadingMoreRef.current = false;
     }
   }, [fetchPage, commit]);
+
+  // A write-through from elsewhere (a comment posted on the detail screen)
+  // changes the cache directly; this is how the mounted list hears about it.
+  useEffect(() => {
+    const listener = () => {
+      const entry = cache[tabRef.current];
+      if (!entry) return;
+      itemsRef.current = entry.items;
+      setItems(entry.items);
+    };
+    cacheListeners.add(listener);
+    return () => {
+      cacheListeners.delete(listener);
+    };
+  }, []);
 
   // Owning the tab-change fetch here means the screen no longer needs its own
   // effect calling refresh(), which used to fire on every mount and discard
