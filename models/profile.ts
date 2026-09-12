@@ -48,7 +48,10 @@ export type Address = {
   policies: SellerPolicies;
   description: string;
   average_rating: number;
-  categories: string;
+  /** The categories the shop itself is filed under -- serialised as full
+   * category objects, not a string. Products carry their own categories
+   * separately; these two never move together. */
+  categories: { id: number; name: string }[];
   verification_status: 'verified' | 'unverified' | 'pending';
   shop_name: string;
   /** The shop's cover image. Null until the seller uploads one. */
