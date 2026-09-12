@@ -94,17 +94,18 @@ export default function LoginScreen() {
         },
       );
 
-      // If backend asks for email verification, route + info toast
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "message" in error &&
-        typeof (error as any).message === "string" &&
-        (error as any).message.toLowerCase().includes("verify") &&
-        (error as any).message.toLowerCase().includes("email")
-      ) {
+      // An unfinished signup, not a failed sign-in: the account exists and
+      // the password was right, it just never verified its address. Send
+      // them to the code screen rather than telling them "login failed",
+      // which is both wrong and a dead end.
+      //
+      // Recognised by the flag the server sets, not by the wording of the
+      // message. That substring match was the only thing that worked before,
+      // because `abort()` was dropping the structured payload on the way out.
+      const body = error?.body;
+      if (body?.error_type === "unverified_email") {
         setRegData({
-          email: data.email,
+          email: body.email ?? data.email,
           password: data.password,
           account_type: role || "buyer",
           username: "",
@@ -113,11 +114,19 @@ export default function LoginScreen() {
 
         show({
           variant: "info",
-          title: "Verify your email",
-          message: "We need to verify your email before you can sign in.",
+          title: "Verify your email first",
+          message: body.code_sent
+            ? "We've sent a fresh code to your inbox."
+            : "Enter the code we sent you, or ask for a new one.",
         });
 
-        router.push("/emailVerification");
+        // `sent` tells the code screen whether one is already on its way, so
+        // it neither asks for a duplicate nor sits on a 60-second countdown
+        // for a code the server declined to send.
+        router.push({
+          pathname: "/emailVerification",
+          params: body.code_sent ? { sent: "1" } : {},
+        });
         return;
       }
 

@@ -102,8 +102,13 @@ export async function request<T = any>(path: string, opts: RequestInit = {}): Pr
           res.statusText ||
           `Request failed with status ${res.status}`;
 
-    const err = new Error(msg) as Error & { status?: number };
+    const err = new Error(msg) as Error & { status?: number; body?: any };
     err.status = res.status;
+    // The parsed body, so callers can branch on what the server actually
+    // said rather than on the shape of its prose. Without it the only way to
+    // recognise "this account has not verified its email" was to substring
+    // -match the message, which breaks the moment anyone rewords it.
+    err.body = errorBody;
     throw err;
   }
 
