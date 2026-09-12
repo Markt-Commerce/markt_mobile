@@ -18,6 +18,8 @@ import {
   Modal,
   ActivityIndicator,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { X } from "lucide-react-native";
@@ -106,7 +108,17 @@ export default function DiscountOfferSheet({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View className="flex-1 justify-end bg-black/40">
+      {/* The same shape QuickChatBottomSheet settled on: the layout lifts the
+          sheet, nothing measures it. Padding the sheet by the measured
+          keyboard height instead double-counted on Android -- the modal
+          window had already resized -- and pushed all but one field off the
+          top of the screen. The measurement is still useful for exactly one
+          thing: dropping the home-indicator inset once the keyboard has
+          taken that space. */}
+      <KeyboardAvoidingView
+        className="flex-1 justify-end bg-black/40"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
         <TouchableOpacity
           style={{ flex: 1 }}
           activeOpacity={1}
@@ -116,12 +128,10 @@ export default function DiscountOfferSheet({
         <View
           className="rounded-t-2xl bg-surface-raised px-5 pt-4"
           style={{
-            // The measured keyboard, not a behaviour prop: this is a Modal in
-            // its own native window, and that window never resizes.
-            paddingBottom:
-              (keyboardOverlap > 0
-                ? keyboardOverlap
-                : Math.max(insets.bottom, 12)) + 12,
+            paddingBottom: (keyboardOverlap > 0 ? 0 : Math.max(insets.bottom, 12)) + 12,
+            // So a long form scrolls inside the sheet rather than growing the
+            // sheet until the chat behind it disappears.
+            maxHeight: "85%",
           }}
         >
           <View className="flex-row items-center justify-between">
@@ -264,7 +274,7 @@ export default function DiscountOfferSheet({
             </Text>
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
