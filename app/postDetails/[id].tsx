@@ -133,7 +133,7 @@ export default function PostDetailsScreen() {
     }
   };
 
-  const handleLike = async () => {
+  const handleLike = React.useCallback(async () => {
     if (isLiking || !post) return;
     setIsLiking(true);
     const prevLiked = likedByMe;
@@ -149,9 +149,9 @@ export default function PostDetailsScreen() {
     } finally {
       setIsLiking(false);
     }
-  };
+  }, [isLiking, post, likedByMe, likeCount, show]);
 
-  const handleShare = async () => {
+  const handleShare = React.useCallback(async () => {
     try {
       await Share.share({
         message: "Check out this post on Markt",
@@ -161,9 +161,9 @@ export default function PostDetailsScreen() {
     } catch {
       // User cancelled
     }
-  };
+  }, [post?.id]);
 
-  const handleSave = async () => {
+  const handleSave = React.useCallback(async () => {
     if (!post) return;
     const previous = saved;
     setSaved(!previous);
@@ -174,7 +174,7 @@ export default function PostDetailsScreen() {
       setSaved(previous);
       show({ variant: "error", title: "Could not update saved posts", message: "Please try again." });
     }
-  };
+  }, [post, saved, show]);
 
   useEffect(() => {
     if (id) FetchPost(id);
@@ -201,7 +201,7 @@ export default function PostDetailsScreen() {
     };
   }, [post?.products]);
 
-  const handleAddSponsoredToCart = async () => {
+  const handleAddSponsoredToCart = React.useCallback(async () => {
     if (!sponsoredProduct || addingToCart) return;
     setAddingToCart(true);
     try {
@@ -220,7 +220,7 @@ export default function PostDetailsScreen() {
     } finally {
       setAddingToCart(false);
     }
-  };
+  }, [sponsoredProduct, addingToCart, show]);
 
   useEffect(() => {
     getUserProfile()
@@ -326,8 +326,18 @@ export default function PostDetailsScreen() {
       }),
     }));
 
-  // Header, post content, and sponsored ad are rendered in the ListHeaderComponent
-  const renderListHeader = () => (
+  // Header, post content, and sponsored ad are rendered in the ListHeaderComponent.
+  //
+  // A memoised *element*, not a function. Passing a function meant a new
+  // identity on every render, and to React a new function is a different
+  // component type -- so the whole header was unmounted and mounted again on
+  // every keystroke in the comment box. That remount is what made the post
+  // blink while you typed: the image started loading from scratch each time.
+  //
+  // newComment is deliberately not a dependency. What you are typing does not
+  // change the post above it.
+  const listHeader = React.useMemo(
+    () => (
     <View>
       {/* Header Bar */}
       <View className="flex items-center p-4 pb-2 flex-row bg-surface-raised">
@@ -447,26 +457,50 @@ export default function PostDetailsScreen() {
         Comments
       </Text>
     </View>
+    ),
+    [
+      post,
+      likeCount,
+      likedByMe,
+      isLiking,
+      saved,
+      sponsoredProduct,
+      addingToCart,
+      profile,
+      isDark,
+      t,
+      router,
+      handleLike,
+      handleSave,
+      handleShare,
+      handleAddSponsoredToCart,
+    ],
   );
 
-  const renderCommentItem = ({ item, index }: { item: CommentItem; index: number }) => (
-    <SingleCommentComponent
-      comment={item}
-      isDark={isDark}
-      grouped={sameCommentGroup(comments[index - 1], item)}
-    />
+  const renderCommentItem = React.useCallback(
+    ({ item, index }: { item: CommentItem; index: number }) => (
+      <SingleCommentComponent
+        comment={item}
+        isDark={isDark}
+        grouped={sameCommentGroup(comments[index - 1], item)}
+      />
+    ),
+    [isDark, comments],
   );
 
-  const renderListFooter = () => {
-    if (loading) {
-      return (
+  // An element for the same reason as the header: a fresh function identity is
+  // a fresh component type, and remounting a spinner restarts its animation.
+  const listFooter = React.useMemo(
+    () =>
+      loading ? (
         <View className="py-4">
           <ActivityIndicator size="small" color={t.textMuted} />
         </View>
-      );
-    }
-    return <View className="h-5" />; // Small spacer
-  };
+      ) : (
+        <View className="h-5" /> // Small spacer
+      ),
+    [loading, t.textMuted],
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-surface-page" edges={["top"]}>
@@ -480,8 +514,8 @@ export default function PostDetailsScreen() {
           data={comments}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderCommentItem}
-          ListHeaderComponent={renderListHeader}
-          ListFooterComponent={renderListFooter}
+          ListHeaderComponent={listHeader}
+          ListFooterComponent={listFooter}
           onEndReached={loadComments}
           onEndReachedThreshold={0.5}
           keyboardShouldPersistTaps="handled"
