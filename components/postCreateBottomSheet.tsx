@@ -37,10 +37,14 @@ export type PostFormData = z.infer<typeof postSchema>;
 
 interface PostFormBottomSheetProps {
   nicheId?: string;
+  /** Fired after a post is created, so the feed showing it can refresh.
+   * No navigation: a post's home is the feed, unlike a product, which has a
+   * detail page of its own worth landing on. */
+  onCreated?: () => void;
 }
 
 const PostFormBottomSheet = React.forwardRef<InputSheetHandle | null, PostFormBottomSheetProps>(
-  ({ nicheId }, ref) => {
+  ({ nicheId, onCreated }, ref) => {
 
     const sheetRef = React.useRef<InputSheetHandle | null>(null);
     React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
@@ -120,6 +124,7 @@ const PostFormBottomSheet = React.forwardRef<InputSheetHandle | null, PostFormBo
         setSelectedCategories([]);
         setCurrentProducts([]);
         sheetRef.current?.close();
+        onCreated?.();
       } catch (error) {
         logger.error("Failed to create post:", error);
         show({
