@@ -1,17 +1,6 @@
 import React, { forwardRef, useEffect, useMemo, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-  Switch,
-} from "react-native";
-import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { useKeyboardOverlap, keyboardScrollPadding } from '../hooks/useKeyboardOverlap';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
+import InputSheet, { type InputSheetHandle } from "./InputSheet";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,15 +26,9 @@ interface Props {
   onCreated?: () => void;
 }
 
-const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ onClose, onCreated }, ref) => {
-  const sheetRef = useRef<BottomSheetMethods | null>(null);
-  React.useImperativeHandle(ref, () => sheetRef.current as BottomSheetMethods, []);
-
-  const snapPoints = useMemo(() => ["50%", "80%"], []);
-
-  const insets = useSafeAreaInsets();
-
-  const keyboardOverlap = useKeyboardOverlap();
+const CreateNicheBottomSheet = forwardRef<InputSheetHandle | null, Props>(({ onClose, onCreated }, ref) => {
+  const sheetRef = useRef<InputSheetHandle | null>(null);
+  React.useImperativeHandle(ref, () => sheetRef.current as InputSheetHandle, []);
   const { show } = useToast();
   const t = useTokens();
 
@@ -113,31 +96,36 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
     }
   };
 
-  return (
-    <BottomSheet 
-      ref={sheetRef} 
-      index={-1} 
-      snapPoints={snapPoints} 
-      enablePanDownToClose 
-      onClose={onClose}
-      backgroundStyle={{ backgroundColor: t.surfacePage }}
-      handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
-      // Every form sheet in the app had the same gap: the sheet did not know
-      // the keyboard existed, so a field in the lower half was hidden behind
-      // it the moment it gained focus.
-      keyboardBehavior="extend"
-      keyboardBlurBehavior="restore"
-      android_keyboardInputMode="adjustResize"
-    >
-      <BottomSheetScrollView
-        contentContainerStyle={{
-          padding: 16,
-          paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 32),
-        }}
-        keyboardShouldPersistTaps="handled"
+  const footer = (
+    <>
+      <Text className="flex-1 text-[12px] text-text-muted" numberOfLines={1}>
+        {submitting ? "Creating…" : `${selectedCategories.length} categor${selectedCategories.length === 1 ? "y" : "ies"}`}
+      </Text>
+      <TouchableOpacity
+        disabled={submitting}
+        onPress={handleSubmit(onSubmit)}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: submitting, busy: submitting }}
+        className={`min-h-[44px] flex-row items-center justify-center gap-2 rounded-xl px-5 ${
+          submitting ? "bg-surface-sunken" : "bg-primary-fill"
+        }`}
       >
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 12, color: t.textPrimary }}>Create Niche</Text>
+        {submitting ? <ActivityIndicator size="small" color={t.textSecondary} /> : null}
+        <Text className={`text-[15px] font-bold ${submitting ? "text-text-muted" : "text-text-on-primary"}`}>
+          {submitting ? "Creating…" : "Create Community"}
+        </Text>
+      </TouchableOpacity>
+    </>
+  );
+
+  return (
+    <InputSheet
+      ref={sheetRef}
+      title="Create Community"
+      busy={submitting}
+      onClose={onClose}
+      footer={footer}
+    >
 
           <Text style={{ marginBottom: 6, color: t.textPrimary }}>Name</Text>
           <Controller
@@ -285,14 +273,6 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
             <Text style={{ color: t.textPrimary }}>Select categories</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={handleSubmit(onSubmit)}
-            style={{ backgroundColor: t.textPrimary, padding: 12, borderRadius: 8, alignItems: "center", opacity: submitting ? 0.7 : 1 }}
-            disabled={submitting}
-          >
-            <Text style={{ color: t.surfacePage, fontWeight: "700" }}>{submitting ? "Creating..." : "Create Niche"}</Text>
-          </TouchableOpacity>
-
           <CategoryAddition
             visible={categoryModalVisible}
             categories={categories}
@@ -303,9 +283,7 @@ const CreateNicheBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ o
               setCategoryModalVisible(false);
             }}
           />
-        </KeyboardAvoidingView>
-      </BottomSheetScrollView>
-    </BottomSheet>
+    </InputSheet>
   );
 });
 

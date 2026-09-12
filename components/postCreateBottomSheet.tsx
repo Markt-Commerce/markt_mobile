@@ -1,9 +1,7 @@
 import 'react-native-reanimated';
 import React, { forwardRef, useMemo, useState } from "react";
-import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { useKeyboardOverlap, keyboardScrollPadding } from '../hooks/useKeyboardOverlap';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
+import InputSheet, { type InputSheetHandle } from "./InputSheet";
+import { ActivityIndicator, View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -41,10 +39,10 @@ interface PostFormBottomSheetProps {
   nicheId?: string;
 }
 
-const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomSheetProps>(
+const PostFormBottomSheet = React.forwardRef<InputSheetHandle | null, PostFormBottomSheetProps>(
   ({ nicheId }, ref) => {
 
-    const sheetRef = React.useRef<BottomSheet | null>(null);
+    const sheetRef = React.useRef<InputSheetHandle | null>(null);
     React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
     //user
     const { user } = useUser();
@@ -58,12 +56,6 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
 
     //draft or active
     const [postStatus, setPostStatus] = useState<"active" | "draft">("active")
-
-    const snapPoints = useMemo(() => ["50%", "85%"], []);
-
-    const insets = useSafeAreaInsets();
-
-    const keyboardOverlap = useKeyboardOverlap();
     const { control, handleSubmit, reset, formState: { errors } } = useForm<PostFormData>({
       resolver: zodResolver(postSchema) as any
     });
@@ -182,27 +174,35 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
     //media/images
 
 
-    return (
-      <BottomSheet
-        ref={sheetRef}
-        index={-1}
-        snapPoints={snapPoints}
-        enablePanDownToClose={!sending}
-        backgroundStyle={{ backgroundColor: t.surfacePage }}
-        handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
-      // Every form sheet in the app had the same gap: the sheet did not know
-      // the keyboard existed, so a field in the lower half was hidden behind
-      // it the moment it gained focus.
-      keyboardBehavior="extend"
-      keyboardBlurBehavior="restore"
-      android_keyboardInputMode="adjustResize"
-      >
-        <BottomSheetScrollView
-          className="p-4"
-          contentContainerStyle={{ paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 32) }}
-          keyboardShouldPersistTaps="handled"
+  const footer = (
+      <>
+        <Text className="flex-1 text-[12px] text-text-muted" numberOfLines={1}>
+          {sending ? "Posting…" : `${currentProducts.length} product${currentProducts.length === 1 ? "" : "s"} tagged`}
+        </Text>
+        <TouchableOpacity
+          disabled={sending}
+          onPress={handleSubmit(onSubmit)}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: sending, busy: sending }}
+          className={`min-h-[44px] flex-row items-center justify-center gap-2 rounded-xl px-5 ${
+            sending ? "bg-surface-sunken" : "bg-primary-fill"
+          }`}
         >
-        <Text className="text-lg font-bold mb-3 text-text-primary">Create Post</Text>
+          {sending ? <ActivityIndicator size="small" color={t.textSecondary} /> : null}
+          <Text className={`text-[15px] font-bold ${sending ? "text-text-muted" : "text-text-on-primary"}`}>
+            {sending ? "Posting…" : "Create Post"}
+          </Text>
+        </TouchableOpacity>
+      </>
+    );
+
+    return (
+      <InputSheet
+        ref={sheetRef}
+        title="Create Post"
+        busy={sending}
+        footer={footer}
+      >
 
           {/* Caption */}
           <Input name="caption" control={control} label="Caption" placeholder="Share a product you're curious about…" multiline numberOfLines={6} />
@@ -265,13 +265,6 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
           </TouchableOpacity>
 
 
-          {/* Submit Button */}
-          <TouchableOpacity className="bg-primary-fill p-3 rounded" onPress={
-              handleSubmit(onSubmit)
-          } disabled={sending}>
-            <Text className="text-white text-center font-bold">{sending ? "Sending..." : "Create Post"}</Text>
-          </TouchableOpacity>
-
           <CategoryAddition
             visible={modalVisible}
             categories={categories}
@@ -279,7 +272,6 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
             onClose={() => setModalVisible(false)}
             onConfirm={(selected) => setSelectedCategories(selected)}
           />
-        </BottomSheetScrollView>
 
       {/* For Product Picker */}
       <ProductPicker 
@@ -297,7 +289,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
           setCurrentProducts(prev => prev.filter(pId => pId !== product.id));
         }}
       />
-      </BottomSheet>
+      </InputSheet>
     );
   }
 );

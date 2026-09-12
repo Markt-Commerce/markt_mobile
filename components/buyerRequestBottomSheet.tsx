@@ -1,8 +1,7 @@
 import React, { Ref, useState } from "react";
-import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { useKeyboardOverlap, keyboardScrollPadding } from '../hooks/useKeyboardOverlap';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import InputSheet, { type InputSheetHandle } from "./InputSheet";
 import {
+  ActivityIndicator,
   View,
   Text,
   TextInput,
@@ -22,7 +21,6 @@ import { pickImage } from "../services/imageSelection";
 import { uploadImage, attemptMultipleUpload } from "../services/sections/media";
 import { MediaResponse } from "../models/media";
 import { createBuyerRequest } from "../services/sections/request";
-import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { CreateRequestPayload } from "../models/request";
 import { useToast } from "./ToastProvider";
 import { friendlyErrorMessage } from "../utils/errorMessages";
@@ -52,19 +50,13 @@ const requestSchema = z.object({
 export type RequestFormData = z.infer<typeof requestSchema>;
 
 const BuyerRequestFormBottomSheet = React.forwardRef<
-  BottomSheetMethods | null,
+  InputSheetHandle | null,
   { onCreated?: () => void }
 >(({ onCreated }, ref) => {
-  const sheetRef = React.useRef<BottomSheetMethods | null>(null);
+  const sheetRef = React.useRef<InputSheetHandle | null>(null);
   React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
   const { show } = useToast();
   const t = useTokens();
-
-  const snapPoints = React.useMemo(() => ["50%", "85%"], []);
-
-  const insets = useSafeAreaInsets();
-
-  const keyboardOverlap = useKeyboardOverlap();
   const [requestImages, setRequestImages] = useState<string[]>([]);
 
   requestSchema.refine(() => selectedCategories?.length ?? 0 > 0, {
@@ -166,34 +158,35 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
     }
   };
 
-  return (
-    <BottomSheet
-      ref={sheetRef}
-      index={-1}
-      snapPoints={snapPoints}
-      enableDynamicSizing={false}
-      enablePanDownToClose={!sending}
-      backgroundStyle={{ backgroundColor: t.surfacePage }}
-      handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
-      // Every form sheet in the app had the same gap: the sheet did not know
-      // the keyboard existed, so a field in the lower half was hidden behind
-      // it the moment it gained focus.
-      keyboardBehavior="extend"
-      keyboardBlurBehavior="restore"
-      android_keyboardInputMode="adjustResize"
-    >
-      <BottomSheetScrollView
-        contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 32),
-        }}
-        keyboardShouldPersistTaps="handled"
+  const footer = (
+    <>
+      <Text className="flex-1 text-[12px] text-text-muted" numberOfLines={1}>
+        {sending ? "Sending…" : `${selectedCategories.length} categor${selectedCategories.length === 1 ? "y" : "ies"}`}
+      </Text>
+      <TouchableOpacity
+        disabled={sending}
+        onPress={handleSubmit(onSubmit)}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: sending, busy: sending }}
+        className={`min-h-[44px] flex-row items-center justify-center gap-2 rounded-xl px-5 ${
+          sending ? "bg-surface-sunken" : "bg-primary-fill"
+        }`}
       >
-        <Text
-          className="text-lg font-bold mb-4 text-text-primary"
-        >
-          Create Buyer Request
+        {sending ? <ActivityIndicator size="small" color={t.textSecondary} /> : null}
+        <Text className={`text-[15px] font-bold ${sending ? "text-text-muted" : "text-text-on-primary"}`}>
+          {sending ? "Sending…" : "Create Request"}
         </Text>
+      </TouchableOpacity>
+    </>
+  );
+
+  return (
+    <InputSheet
+      ref={sheetRef}
+      title="Create Buyer Request"
+      busy={sending}
+      footer={footer}
+    >
 
         {/* Title */}
         <Input
@@ -281,15 +274,6 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
           />
         </View>
 
-        <TouchableOpacity
-          disabled={sending}
-          className="bg-primary-fill py-4 rounded items-center justify-center"
-          onPress={handleSubmit(onSubmit)}
-        >
-          <Text className="text-white font-semibold">
-            {sending ? "Sending…" : "Create Request"}
-          </Text>
-        </TouchableOpacity>
 
         <CategoryAddition
           visible={modalVisible}
@@ -298,8 +282,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
           onClose={() => setModalVisible(false)}
           onConfirm={(selected) => setSelectedCategories(selected)}
         />
-      </BottomSheetScrollView>
-    </BottomSheet>
+    </InputSheet>
   );
 });
 

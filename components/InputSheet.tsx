@@ -59,26 +59,44 @@ const InputSheet = forwardRef<InputSheetHandle, {
   footer: ReactNode;
   /** Blocks dismissal while something is in flight. */
   busy?: boolean;
+  /**
+   * Controlled mode. Omit it and the sheet owns its own visibility, opened
+   * through the ref — which is how the create sheets are wired. Some callers
+   * already hold the open/closed state themselves, and converting them just
+   * to fit one of the two shapes would be churn for nothing.
+   */
+  visible?: boolean;
   onClose?: () => void;
   /** Covers the sheet while busy — see SheetBusyOverlay. */
   overlay?: ReactNode;
   maxHeight?: `${number}%`;
 }>(function InputSheet(
-  { title, children, footer, busy = false, onClose, overlay, maxHeight = "88%" },
+  {
+    title,
+    children,
+    footer,
+    busy = false,
+    visible: controlledVisible,
+    onClose,
+    overlay,
+    maxHeight = "88%",
+  },
   ref
 ) {
   const t = useTokens();
   const insets = useSafeAreaInsets();
-  const [visible, setVisible] = useState(false);
+  const [selfVisible, setSelfVisible] = useState(false);
+  const controlled = controlledVisible !== undefined;
+  const visible = controlled ? controlledVisible : selfVisible;
   const keyboardOverlap = useKeyboardOverlap(visible);
 
   useImperativeHandle(
     ref,
     () => ({
-      expand: () => setVisible(true),
+      expand: () => setSelfVisible(true),
       close: () => {
         dismissKeyboard();
-        setVisible(false);
+        setSelfVisible(false);
       },
     }),
     []
@@ -87,9 +105,11 @@ const InputSheet = forwardRef<InputSheetHandle, {
   const dismiss = useCallback(() => {
     if (busy) return;
     dismissKeyboard();
-    setVisible(false);
+    // A controlled sheet closes because its owner says so, not because it
+    // decided to — setting local state here would fight the prop.
+    if (!controlled) setSelfVisible(false);
     onClose?.();
-  }, [busy, onClose]);
+  }, [busy, controlled, onClose]);
 
   /**
    * iOS lifts the whole sheet with the keyboard, so it only needs its resting

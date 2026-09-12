@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Pressable, Text, TextInput, View, ActivityIndicator } from "react-native";
-import { X } from "lucide-react-native";
+import { Pressable, Text, TextInput, View, ActivityIndicator } from "react-native";
+import InputSheet from "./InputSheet";
 import { useTokens } from "../theme/useTokens";
 import { updateProduct } from "../services/sections/product";
 import { useToast } from "./ToastProvider";
@@ -75,21 +75,40 @@ export default function InventoryEditSheet({
     }
   };
 
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable className="flex-1 justify-end bg-black/50" onPress={onClose}>
-        {/* Stops a tap inside the sheet from closing it. */}
-        <Pressable onPress={(e) => e.stopPropagation()}>
-          <View className="rounded-t-2xl border-t border-border bg-surface-overlay px-5 pt-4 pb-8">
-            <View className="flex-row items-center justify-between mb-5">
-              <Text className="text-lg font-bold text-text-primary" numberOfLines={1}>
-                {product.name}
-              </Text>
-              <Pressable onPress={onClose} hitSlop={10} accessibilityLabel="Close">
-                <X size={22} color={t.textSecondary} />
-              </Pressable>
-            </View>
+  const footer = (
+    <>
+      <Text className="flex-1 text-[12px] text-text-muted" numberOfLines={1}>
+        {saving ? "Saving…" : active ? "Listed" : "Hidden from buyers"}
+      </Text>
+      <Pressable
+        onPress={save}
+        disabled={!canSave}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: !canSave, busy: saving }}
+        className={`min-h-[44px] flex-row items-center justify-center gap-2 rounded-xl px-5 ${
+          canSave ? "bg-primary-fill" : "bg-surface-sunken"
+        }`}
+      >
+        {saving ? <ActivityIndicator size="small" color={t.textSecondary} /> : null}
+        <Text
+          className={`text-[15px] font-bold ${
+            canSave ? "text-text-on-primary" : "text-text-muted"
+          }`}
+        >
+          {saving ? "Saving…" : "Save changes"}
+        </Text>
+      </Pressable>
+    </>
+  );
 
+  return (
+    <InputSheet
+      visible={visible}
+      onClose={onClose}
+      title={product.name}
+      busy={saving}
+      footer={footer}
+    >
             <Text className="text-xs font-bold uppercase tracking-[1.5px] text-text-muted mb-2">
               Price
             </Text>
@@ -157,24 +176,6 @@ export default function InventoryEditSheet({
               </Pressable>
             </View>
 
-            <Pressable
-              onPress={save}
-              disabled={!canSave}
-              accessibilityRole="button"
-              className={`mt-7 h-12 rounded items-center justify-center flex-row gap-2 ${
-                canSave ? "bg-primary-fill" : "bg-surface-sunken"
-              }`}
-            >
-              {saving ? <ActivityIndicator size="small" color={t.textOnPrimary} /> : null}
-              <Text
-                className={`font-bold ${canSave ? "text-text-on-primary" : "text-text-muted"}`}
-              >
-                {saving ? "Saving…" : "Save changes"}
-              </Text>
-            </Pressable>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+    </InputSheet>
   );
 }
