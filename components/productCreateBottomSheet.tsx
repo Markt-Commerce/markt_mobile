@@ -119,6 +119,18 @@ const ProductFormBottomSheet = forwardRef<InputSheetHandle | null, Props>(
   // an error left `sending` stuck true forever).
   const onSubmit = async (data: ProductFormData) => {
     if (sending) return;
+    // Checked here rather than in the zod schema because the images are not a
+    // form field -- they live in their own picker state and are uploaded on
+    // submit. A listing with no photo is one nobody buys from, so this is a
+    // refusal rather than a warning.
+    if (!Array.isArray(Imagevalue) || Imagevalue.length === 0) {
+      show({
+        variant: "error",
+        title: "Add at least one photo",
+        message: "Products with a photo are the ones buyers actually open.",
+      });
+      return;
+    }
     try {
       setStage("uploading");
 
@@ -191,7 +203,9 @@ const ProductFormBottomSheet = forwardRef<InputSheetHandle | null, Props>(
           ? "Uploading images…"
           : stage === "creating"
             ? "Creating…"
-            : `${selectedCategories.length} categor${selectedCategories.length === 1 ? "y" : "ies"} selected`}
+            : !Array.isArray(Imagevalue) || Imagevalue.length === 0
+              ? "Add at least one photo"
+              : `${selectedCategories.length} categor${selectedCategories.length === 1 ? "y" : "ies"} selected`}
       </Text>
       <TouchableOpacity
         disabled={sending}
@@ -268,7 +282,9 @@ const ProductFormBottomSheet = forwardRef<InputSheetHandle | null, Props>(
         {errors.category_ids && <Text className="text-danger-text text-xs mt-1">{errors.category_ids.message}</Text>}
 
         {/* Product Images */}
-        <Text className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary">Product Images</Text>
+        <Text className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary">
+          Product Images <Text className="text-danger-text">*</Text>
+        </Text>
         {Array.isArray(Imagevalue) && Imagevalue.length > 0 && (
           <Text className="text-xs mb-2 text-text-secondary">Long press on each image to remove it</Text>
         )}
