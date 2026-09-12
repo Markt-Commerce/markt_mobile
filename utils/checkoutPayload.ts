@@ -28,7 +28,8 @@ export function shippingToBilling(
 
 export function buildCheckoutRequest(
   shipping: ShippingAddressPayload,
-  notes = "Checkout from mobile"
+  notes = "Checkout from mobile",
+  deliveryQuoteId?: string
 ): CheckoutRequest {
   return {
     shipping_address: shipping,
@@ -36,6 +37,7 @@ export function buildCheckoutRequest(
     notes,
     use_saved_address: false,
     idempotency_key: getOrCreateIdempotencyKey("checkout-cart"),
+    ...(deliveryQuoteId ? { delivery_quote_id: deliveryQuoteId } : {}),
   };
 }
 
