@@ -17,7 +17,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
-import { ArrowLeft, Trash2, RefreshCw, Info, ShoppingCart } from "lucide-react-native";
+import { ArrowLeft, Trash2, RefreshCw, Info, ShoppingCart, Search } from "lucide-react-native";
 import { useUser } from "../../hooks/userContextProvider";
 import {
   getCart,
@@ -595,6 +595,7 @@ function BuyerOrdersTabs({
 
 function SellerOrdersTab({ isDark }: { isDark: boolean }) {
   const router = useRouter();
+  const t = useTokens();
 
   const fetchOrders = useCallback(async (page: number) => {
     const res = await getSellerOrders(page, 10);
@@ -603,6 +604,22 @@ function SellerOrdersTab({ isDark }: { isDark: boolean }) {
 
   return (
     <View className="flex-1">
+      {/* Searching, filtering by status and changing an item's status all
+          live on /(tabs)/sellerOrders, which is hidden from the tab bar and
+          was reachable from exactly one tile on the dashboard -- so a seller
+          who never noticed that tile could not search their own orders. This
+          is the same list, so this is where they will look for it. */}
+      <TouchableOpacity
+        onPress={() => router.push("/(tabs)/sellerOrders" as any)}
+        accessibilityRole="button"
+        accessibilityLabel="Search and filter orders"
+        className="mx-4 mt-3 mb-1 h-11 flex-row items-center justify-center gap-2 rounded-xl border border-border bg-surface-raised"
+      >
+        <Search size={16} color={t.textSecondary} />
+        <Text className="text-[14px] font-semibold text-text-primary">
+          Search and filter orders
+        </Text>
+      </TouchableOpacity>
       <View className="flex-1 bg-surface-raised">
         <OrdersList
           fetchOrders={fetchOrders}
