@@ -2,12 +2,14 @@ import React, { useMemo, useRef } from "react";
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
   Image,
   ActivityIndicator,
 } from "react-native";
-import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import BottomSheet, {
+  BottomSheetView,
+  BottomSheetFlatList,
+} from "@gorhom/bottom-sheet";
 import { Trash2 } from "lucide-react-native";
 import { ProductResponse } from "../models/products";
 import { resolveProductImageUri } from "../utils/imageUri";
@@ -113,7 +115,12 @@ export default function ProductPicker({
             </Text>
           </View>
         ) : (
-          <FlatList
+          // BottomSheetFlatList, not FlatList. A plain one inside a sheet is a
+          // VirtualizedList nested in the sheet's own scrollable -- React
+          // Native warns that this breaks windowing, and the list and the
+          // sheet fight each other for the drag. This version hands its
+          // scrolling to the sheet.
+          <BottomSheetFlatList
             data={products}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => {
