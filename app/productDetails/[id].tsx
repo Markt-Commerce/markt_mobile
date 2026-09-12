@@ -6,6 +6,7 @@ import { getProductById, trackProductView } from "../../services/sections/produc
 import { ProductDetail } from "../../models/products";
 import { ArrowLeft, ShoppingBag, ArrowBigDown, MessageCircle, ShoppingCart } from "lucide-react-native";
 import { addToCart } from "../../services/sections/cart";
+import { useShopServiceable } from "../../hooks/useShopServiceable";
 import { getRecommendedProducts } from "../../services/sections/feed";
 import { Product } from "../../models/feed";
 import Price from "../../components/Price";
@@ -36,6 +37,13 @@ export default function ProductDetails() {
   const {user, role} = useUser();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [product, setProduct] = useState<ProductDetail>();
+  // Unknown is not blocked: if this check fails or hasn't returned, the buyer
+  // is let through and the server refuses at checkout with a specific reason.
+  // Blocking on a failed network call would stop sales over a problem of ours.
+  const { serviceable } = useShopServiceable(
+    product?.seller?.shop_latitude,
+    product?.seller?.shop_longitude
+  );
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [messageSellerBusy, setMessageSellerBusy] = useState(false);
@@ -94,6 +102,19 @@ export default function ProductDetails() {
 }
 
 const addProductToCart = async (product:ProductDetail)=>{
+  // Stop a basket that can never be checked out. Browsing stays open --
+  // Markt is not only a delivery app, and hiding out-of-area shops would gut
+  // the social half -- but the cart action is where the dead end begins.
+  if (serviceable === false) {
+    show({
+      variant: "error",
+      title: "We don't deliver from here yet",
+      message:
+        "This shop is outside the areas we cover. We're adding new ones — " +
+        "you can still follow the shop and message the seller.",
+    });
+    return;
+  }
   try {
       const res = await addToCart({product_id: product.id,variant_id:0,quantity});
       show({

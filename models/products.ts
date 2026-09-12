@@ -116,6 +116,11 @@ export interface Product {
     total_rating?: number;
     total_products: number;
     verification_status: string;
+    /** Where the shop is, so the app can ask whether we deliver from there
+     *  before letting someone fill a basket they could never check out. Null
+     *  when the seller has not pinned their shop. */
+    shop_latitude?: number | null;
+    shop_longitude?: number | null;
   }
 
   interface SellerUser{
@@ -211,6 +216,10 @@ export interface SellerSummary {
   id?: number;
   shop_slug?: string;
   total_products?: number;
+  /** Where the shop is, so the app can ask whether we deliver from there
+   * before letting someone fill a basket they could never check out. */
+  shop_latitude?: number | null;
+  shop_longitude?: number | null;
 }
 
 export interface ProductResponse {
