@@ -21,6 +21,7 @@ import {
 import { ProductResponse } from "../../models/products";
 import { ShopData, Post as ShopPost } from "../../models/user";
 import { useToast } from "../../components/ToastProvider";
+import { useUser } from "../../hooks/userContextProvider";
 import ProductDisplayComponent from "../../components/productDisplayComponent";
 import { Product } from "../../models/feed";
 import { defaultProfilePicture } from "../../models/defaults";
@@ -77,9 +78,16 @@ export default function Shop() {
   const [followLoading, setFollowLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"products" | "posts">("products");
   const { show } = useToast();
+  const { user } = useUser();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const t = useTokens();
+  // This shop is mine. Role is not enough: a seller browsing in buyer mode
+  // is a buyer as far as `role` goes, and was offered Add and Chat on their
+  // own catalogue.
+  const isOwnShop =
+    !!user?.user_id && !!shop?.user?.id && shop.user.id === user.user_id;
+
   const { profile: sellerGamification } = useGamificationLookup(shop?.user?.id);
   const { badges: sellerBadges } = useBadges(shop?.user?.id);
 
@@ -385,6 +393,7 @@ export default function Shop() {
             {groupProducts(shop?.recent_products ?? []).map((item, idx) => (
               <ProductDisplayComponent
                 key={idx}
+                isOwnShop={isOwnShop}
                 products={
                   item.map((p) => ({
                     ...p,

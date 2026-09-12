@@ -12,12 +12,20 @@ type Props = {
   products: Product[];
   onAdd?: (product: Product) => void;
   onChat?: (product: Product) => void;
+  /** These products belong to the person looking at them.
+   *
+   * Role is not enough on its own: a seller browsing in *buyer* mode is a
+   * buyer as far as `role` is concerned, and was offered Add and Chat on
+   * their own catalogue. You cannot buy from yourself and you cannot message
+   * yourself. */
+  isOwnShop?: boolean;
 };
 
 const ProductDisplayComponent: React.FC<Props> = ({
   products,
   onAdd,
   onChat,
+  isOwnShop = false,
 }) => {
   const t = useTokens();
   const { role } = useUser();
@@ -70,7 +78,7 @@ const ProductDisplayComponent: React.FC<Props> = ({
                         A seller browsing their own catalogue was offered
                         "Add" and "Chat" on their own products — the feed
                         already hides these in seller mode and this did not. */}
-                    {role === "seller" ? null : (
+                    {role === "seller" || isOwnShop ? null : (
                     <View className="flex-row justify-between mt-2 gap-2">
                       <TouchableOpacity
                         onPress={() => onAdd?.(product)}

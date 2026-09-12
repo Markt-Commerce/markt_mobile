@@ -221,7 +221,12 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
               above; the header already reads "· following" when you do. */}
         </View>
 
-        {isBuyer && (
+        {/* Nothing to act on for your own listing: you cannot buy from
+            yourself and you cannot message yourself, so the row goes rather
+            than sitting there disabled. isOwnProduct already hid Chat; Add
+            to cart was left behind, so a seller browsing in buyer mode was
+            invited to buy their own product and only found out on tap. */}
+        {isBuyer && !isOwnProduct && (
           <View className="flex-row gap-2 mt-2 pt-2 border-t border-border">
             <TouchableOpacity
               onPress={handleAddToCart}

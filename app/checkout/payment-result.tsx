@@ -68,12 +68,36 @@ export default function PaymentResult() {
       }
     })();
 
-    return () => {
+  
+
+  return () => {
       cancelled = true;
     };
   }, [isSuccess, payment_id, order_id]);
 
   const resolvedOrderId = order_id || order?.id;
+
+  /**
+   * Leave the checkout stack behind before going anywhere.
+   *
+   * `replace` only swaps the top screen. The payment-method screen was still
+   * underneath, so after paying, "View order" put the order on top of it and
+   * Back from the order landed the buyer on "Choose payment method" for an
+   * order they had already paid for -- which looks exactly like being asked
+   * to pay twice.
+   *
+   * dismissAll() unwinds the checkout screens first; the replace then lands
+   * on a stack whose Back means what it says. Guarded, because there is
+   * nothing to dismiss when this screen is opened directly from a deep link.
+   */
+  const leaveCheckout = React.useCallback((href: string) => {
+    try {
+      if (router.canDismiss?.()) router.dismissAll();
+    } catch {
+      // Not dismissable in this stack; the replace below still lands right.
+    }
+    router.replace(href as any);
+  }, []);
 
   return (
     <SafeAreaView
@@ -138,7 +162,7 @@ export default function PaymentResult() {
           {resolvedOrderId ? (
             <TouchableOpacity
               className="h-12 rounded bg-primary-fill items-center justify-center"
-              onPress={() => router.replace(`/orderdetail/${resolvedOrderId}`)}
+              onPress={() => leaveCheckout(`/orderdetail/${resolvedOrderId}`)}
             >
               <Text className="text-white font-semibold">View order</Text>
             </TouchableOpacity>
@@ -148,6 +172,7 @@ export default function PaymentResult() {
             <TouchableOpacity
               className="h-12 rounded border items-center justify-center border-border-strong"
               onPress={() =>
+                // Retrying is the one case that stays inside checkout.
                 router.replace(`/checkout/payment-method/${resolvedOrderId}`)
               }
             >
@@ -159,7 +184,7 @@ export default function PaymentResult() {
 
           <TouchableOpacity
             className="h-12 items-center justify-center"
-            onPress={() => router.replace("/(tabs)/orders")}
+            onPress={() => leaveCheckout("/(tabs)/orders")}
           >
             <Text className="font-semibold text-text-secondary">
               Back to orders
