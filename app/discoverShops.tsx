@@ -14,6 +14,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import SearchField from "../components/SearchField";
 import {
   View,
   Text,
@@ -232,17 +233,12 @@ export default function DiscoverShopsScreen() {
         </View>
       </View>
 
-      <View className="mx-4 mb-3 h-12 flex-row items-center rounded-xl px-4 bg-surface-sunken">
-        <Search size={19} color={t.textSecondary} />
-        <TextInput
-          className="ml-3 flex-1 text-[15px] text-text-primary"
-          placeholder="Search shops"
-          placeholderTextColor={t.textSecondary}
-          value={search}
-          onChangeText={setSearch}
-          returnKeyType="search"
-        />
-      </View>
+      <SearchField
+        value={search}
+        onChangeText={setSearch}
+        placeholder="Search shops"
+        className="mx-4 mb-3"
+      />
 
       {/* Sort, then categories, on one rail — two stacked rails ate a third of
           the screen before a single shop appeared.

@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
+import SearchField from "../../components/SearchField";
 import {
   View,
   Text,
@@ -195,19 +196,11 @@ export default function SellerOrders() {
       {/* Search + Filters */}
       <View className="px-6 pt-6">
         {/* Search */}
-        <View className="flex-row items-center rounded overflow-hidden border bg-surface-sunken border-border">
-          <View className="w-12 items-center justify-center">
-            <Search size={18} color={t.textSecondary} />
-          </View>
-          <TextInput
-            className="flex-1 h-11 px-3 text-base text-text-primary"
-            placeholder="Search product name"
-            placeholderTextColor={t.textSecondary}
-            value={query}
-            onChangeText={setQuery}
-            returnKeyType="search"
-          />
-        </View>
+        <SearchField
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search product name"
+        />
 
         {/* Status pills */}
         <View className="mt-4">

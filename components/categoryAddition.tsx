@@ -1,4 +1,5 @@
 import React from "react";
+import SearchField from "./SearchField";
 import {
   Modal,
   View,
@@ -121,28 +122,12 @@ export const CategoryAddition = ({
             </View>
 
             {/* Search bar */}
-            <View
-              className="mt-3 flex-row items-center border rounded px-3 h-11 bg-surface-sunken border-border"
-            >
-              <Search size={18} color={mutedColor} />
-              <TextInput
-                className="flex-1 ml-2 text-text-primary"
-                placeholder="Search categories"
-                placeholderTextColor={t.textSecondary}
-                value={query}
-                onChangeText={setQuery}
-                autoCorrect={false}
-              />
-              {query.length > 0 && (
-                <TouchableOpacity onPress={() => setQuery("")} className="pl-2">
-                  <Text
-                    className="text-sm font-semibold text-text-primary"
-                  >
-                    Clear
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            <SearchField
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search categories"
+              className="mt-3"
+            />
 
             {/* Toolbar: count + actions */}
             <View className="mt-3 flex-row items-center justify-between">

@@ -13,6 +13,7 @@
  * delivery, purchase-gated reviews, the returns endpoints, role switching.
  */
 import React, { useMemo, useState } from "react";
+import SearchField from "../../components/SearchField";
 import {
   View,
   Text,
@@ -217,22 +218,12 @@ export default function HelpCenterScreen() {
           <Text className={`text-[26px] font-bold tracking-tight ${strong}`}>
             How can we help?
           </Text>
-          <View
-            className={`flex-row items-center h-11 px-3 rounded-xl mt-3 ${
-              "bg-surface-sunken"
-            }`}
-          >
-            <Search size={17} color={t.textMuted} strokeWidth={2} />
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Search help"
-              placeholderTextColor={t.textMuted}
-              className={`flex-1 ml-2 text-[15px] ${strong}`}
-              returnKeyType="search"
-              accessibilityLabel="Search help topics"
-            />
-          </View>
+          <SearchField
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search help"
+            className="mt-3"
+          />
         </View>
 
         {groups.length === 0 ? (

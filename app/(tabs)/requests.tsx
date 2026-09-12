@@ -3,6 +3,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import SearchField from "../../components/SearchField";
 import {
   View,
   Text,
@@ -193,17 +194,13 @@ export default function RequestsScreen() {
           in full, so filtering it locally is instant and needs no endpoint. */}
       <View className="px-4 pb-3">
         <View
-          className="flex-row items-center h-11 px-3 rounded-xl bg-surface-sunken"
+          className="flex-row items-center rounded-xl"
         >
-          <Search size={17} color={t.textMuted} strokeWidth={2} />
-          <TextInput
+          <SearchField
             value={query}
             onChangeText={setQuery}
             placeholder="Search requests"
-            placeholderTextColor={t.textMuted}
-            className="flex-1 ml-2 text-[15px] text-text-primary"
-            returnKeyType="search"
-            accessibilityLabel="Search requests"
+            className="flex-1"
           />
         </View>
 

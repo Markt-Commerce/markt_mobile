@@ -3,6 +3,7 @@
  */
 
 import React, { useEffect, useState, useMemo } from "react";
+import SearchField from "../../components/SearchField";
 import {
   View,
   Text,
@@ -78,16 +79,12 @@ export default function MessagesScreen() {
     <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
       <View className="border-b px-6 pt-6 pb-4 bg-surface-raised border-border">
         <Text className="text-2xl font-bold text-text-primary">Messages</Text>
-        <View className="flex-row items-center rounded mt-4 px-4 py-3 bg-surface-sunken">
-          <Search size={18} color={t.textSecondary} />
-          <TextInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search conversations"
-            placeholderTextColor={t.textSecondary}
-            className="flex-1 ml-3 text-base py-0 text-text-primary"
-          />
-        </View>
+        <SearchField
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search conversations"
+          className="mt-4"
+        />
       </View>
 
       {loading ? (

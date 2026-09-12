@@ -21,6 +21,7 @@ import { ProductResponse } from '../../models/products';
 import { OrderItem, SellerOrderItem } from '../../models/orders';
 import logger from '../../utils/logger';
 import Pager from '../../components/Pager';
+import SearchField from '../../components/SearchField';
 import { useToast } from '../../components/ToastProvider';
 import ProductFormBottomSheet from '../../components/productCreateBottomSheet';
 import { type InputSheetHandle } from '../../components/InputSheet';
@@ -831,19 +832,11 @@ export default function SellerDashboard() {
           ) : (
             <>
           <View className="rounded border p-6 bg-surface-raised border-border">
-            <View className="flex-row items-center rounded overflow-hidden border bg-surface-sunken border-border">
-              <View className="w-12 items-center justify-center">
-                <Search size={20} color={t.textSecondary} />
-              </View>
-              <TextInput
-                placeholder="Search products"
-                className="flex-1 h-12 px-3 text-base text-text-primary"
-                placeholderTextColor={t.textSecondary}
-                value={searchText}
-                onChangeText={setSearchText}
-                accessibilityLabel="inventory-search"
-              />
-            </View>
+            <SearchField
+              value={searchText}
+              onChangeText={setSearchText}
+              placeholder="Search products"
+            />
 
             <View className="flex-row gap-3 mt-4">
               <View>
