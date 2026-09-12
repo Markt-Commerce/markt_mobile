@@ -1,9 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import { View } from "react-native";
+import { useFocusEffect } from "expo-router";
 import Svg, { Circle, G, Path } from "react-native-svg";
 import Animated, {
+  cancelAnimation,
   Easing,
-  useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
@@ -39,8 +40,6 @@ import {
  * variant renders a still, complete image when motion is off.
  */
 
-const AnimatedG = Animated.createAnimatedComponent(G);
-
 /** One stall banner, optionally holding the person glyph. */
 function Banner({
   fill,
@@ -65,71 +64,281 @@ function Banner({
 }
 
 /**
- * Landing hero — three stalls at different heights, breathing gently out of
- * phase so the group reads as a market rather than a logo lockup.
+ * Entrance timing, in ms. The percentages the shadow syncs to are of CENTER_DUR.
+ *
+ * Roughly a third slower than the first pass: at 900/1100 the whole thing was
+ * over before someone who was already looking at the screen had registered it
+ * as motion. This is the same choreography, given time to be seen.
  */
+const SIDE_DUR = 1200;
+const SIDE_STAGGER = 170;
+const CENTER_DELAY = 380;
+const CENTER_DUR = 1500;
+const at = (pct: number) => Math.round(CENTER_DUR * pct);
+/** Landing keyframes: peak, dip, correction, rest. */
+const K_PEAK = at(0.55);
+const K_DIP = at(0.72);
+const K_FIX = at(0.86);
+const ENTRANCE_END = CENTER_DELAY + CENTER_DUR;
+
+/**
+ * One visible overshoot. A plain ease-in-out arrives and stops dead, which is
+ * what made the old version read as a logo lockup rather than an object.
+ */
+const OVERSHOOT = Easing.bezier(0.34, 1.56, 0.64, 1);
+
+/** How far the idle breath lifts the centre card, and how long one breath takes. */
+const BREATHE_SCALE = 1.025;
+const BREATHE_DUR = 4000;
+
+/**
+ * Landing hero — three stalls that arrive rather than sit there.
+ *
+ * Layout: the two tinted stalls are shorter and sit either side, bottoms
+ * aligned with the filled centre one, which is the only card carrying the
+ * person glyph. A soft ellipse under the centre card is its contact shadow.
+ *
+ * Motion: a staggered entrance, not a synchronised float. The side cards rise
+ * first (left, then right 120ms later), each overshooting a few pixels past
+ * rest before settling. The centre card starts once they are mostly down,
+ * lands harder — a scale that peaks, dips and corrects — and the shadow fades
+ * and stretches on that landing, so the bounce reads as weight hitting a
+ * surface. Once it has settled the centre card breathes slowly and the side
+ * cards stay put: enough life that the screen isn't frozen, not enough to
+ * compete with the buttons below it.
+ *
+ * Each layer is a plain View with its own Svg, so translateY/scale/opacity are
+ * ordinary style transforms. The shapes themselves are untouched.
+ */
+
 export function MarketHero({ size = 200 }: { size?: number }) {
   const t = useTokens();
   const reduced = useReducedMotion();
 
-  const a = useSharedValue(0);
-  const b = useSharedValue(0);
-  const c = useSharedValue(0);
+  // Bottoms align; the centre card is the tall one. 100:130 is the banner's
+  // own aspect ratio, so nothing is stretched.
+  const sideW = size * 0.255;
+  const centerW = size * 0.33;
+  const gap = size * 0.055;
+  const centerH = centerW * 1.3;
+  const shadowW = centerW * 0.72;
+  const shadowH = shadowW * 0.2;
+  const shadowGap = size * 0.012;
 
-  useEffect(() => {
-    if (reduced) return;
-    const float = (v: typeof a, delay: number) => {
-      v.value = withDelay(
+  // Start state. Under reduce-motion every value is already at rest, so the
+  // illustration renders complete and still.
+  const leftY = useSharedValue(reduced ? 0 : 40);
+  const leftOpacity = useSharedValue(reduced ? 1 : 0);
+  const rightY = useSharedValue(reduced ? 0 : 40);
+  const rightOpacity = useSharedValue(reduced ? 1 : 0);
+  const centerY = useSharedValue(reduced ? 0 : 50);
+  const centerScale = useSharedValue(reduced ? 1 : 0.9);
+  const centerOpacity = useSharedValue(reduced ? 1 : 0);
+  // Idle breathing is kept separate from the entrance scale and multiplied in,
+  // so the loop can start without interrupting the landing sequence.
+  const breathe = useSharedValue(1);
+  const shadowOpacity = useSharedValue(reduced ? 0.1 : 0);
+  const shadowScaleX = useSharedValue(reduced ? 1 : 0.6);
+
+  const play = useCallback(() => {
+    // The OS setting resolves a tick after mount, so this branch is also what
+    // stops an entrance that has already started. Assigning a shared value
+    // cancels whatever animation was driving it.
+    if (reduced) {
+      leftY.value = 0;
+      rightY.value = 0;
+      centerY.value = 0;
+      centerScale.value = 1;
+      breathe.value = 1;
+      leftOpacity.value = 1;
+      rightOpacity.value = 1;
+      centerOpacity.value = 1;
+      shadowOpacity.value = 0.1;
+      shadowScaleX.value = 1;
+      return;
+    }
+
+    leftY.value = 40;
+    rightY.value = 40;
+    centerY.value = 50;
+    centerScale.value = 0.9;
+    breathe.value = 1;
+    leftOpacity.value = 0;
+    rightOpacity.value = 0;
+    centerOpacity.value = 0;
+    shadowOpacity.value = 0;
+    shadowScaleX.value = 0.6;
+
+    // Side cards: rise, overshoot ~4px past rest, settle. The overshoot is the
+    // bezier's own rather than a second keyframe — 0.34/1.56 carries the value
+    // ~10% past its target before it comes back.
+    const rise = (delay: number) =>
+      withDelay(delay, withTiming(0, { duration: SIDE_DUR, easing: OVERSHOOT }));
+    const fade = (delay: number) =>
+      withDelay(
         delay,
-        withRepeat(
-          withSequence(
-            withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.quad) }),
-            withTiming(0, { duration: 1800, easing: Easing.inOut(Easing.quad) })
-          ),
-          -1,
-          false
-        )
+        withTiming(1, { duration: SIDE_DUR * 0.5, easing: Easing.out(Easing.quad) })
       );
-    };
-    // Out of phase on purpose: in sync they read as one object sliding.
-    float(a, 0);
-    float(b, 600);
-    float(c, 1200);
-  }, [reduced, a, b, c]);
 
-  // Animated as an SVG `transform` string rather than a style: <G> positions
-  // itself in user space, and a RN style transform does not apply to it.
-  // Written out three times instead of through a helper because each is a hook
-  // call and hooks cannot be produced by a loop or a helper function.
-  const g1 = useAnimatedProps(() => ({
-    transform: `translate(0, ${40 - a.value * 6}) scale(0.62)`,
+    leftY.value = rise(0);
+    leftOpacity.value = fade(0);
+    rightY.value = rise(SIDE_STAGGER);
+    rightOpacity.value = fade(SIDE_STAGGER);
+
+    centerY.value = withDelay(
+      CENTER_DELAY,
+      withTiming(0, { duration: CENTER_DUR, easing: OVERSHOOT })
+    );
+    centerOpacity.value = withDelay(
+      CENTER_DELAY,
+      withTiming(1, { duration: CENTER_DUR * 0.47, easing: Easing.out(Easing.quad) })
+    );
+    // 0.9 -> 1.04 at 55% -> 0.97 at 72% -> 1.01 at 86% -> 1. The dip is what
+    // makes it land rather than glide.
+    centerScale.value = withDelay(
+      CENTER_DELAY,
+      withSequence(
+        withTiming(1.04, { duration: K_PEAK, easing: Easing.out(Easing.cubic) }),
+        withTiming(0.97, { duration: K_DIP - K_PEAK, easing: Easing.inOut(Easing.quad) }),
+        withTiming(1.01, { duration: K_FIX - K_DIP, easing: Easing.inOut(Easing.quad) }),
+        withTiming(1, { duration: CENTER_DUR - K_FIX, easing: Easing.out(Easing.quad) })
+      )
+    );
+
+    // The shadow is invisible until the card is on its way down, then spreads
+    // on impact and pulls back in. Same clock as the scale keyframes.
+    shadowOpacity.value = withDelay(
+      CENTER_DELAY + K_PEAK,
+      withSequence(
+        withTiming(0.15, { duration: K_DIP - K_PEAK, easing: Easing.out(Easing.quad) }),
+        withTiming(0.1, { duration: CENTER_DUR - K_DIP, easing: Easing.out(Easing.quad) })
+      )
+    );
+    shadowScaleX.value = withDelay(
+      CENTER_DELAY + K_PEAK,
+      withSequence(
+        withTiming(1.1, { duration: K_DIP - K_PEAK, easing: Easing.out(Easing.cubic) }),
+        withTiming(1, { duration: CENTER_DUR - K_DIP, easing: Easing.out(Easing.quad) })
+      )
+    );
+
+    // Breathing, once everything has landed. Slow enough to be felt rather
+    // than watched, and only on the centre card — the side cards staying put
+    // is what keeps the eye on the one with a person in it.
+    breathe.value = withDelay(
+      ENTRANCE_END,
+      withRepeat(
+        withTiming(BREATHE_SCALE, {
+          duration: BREATHE_DUR,
+          easing: Easing.inOut(Easing.quad),
+        }),
+        -1,
+        true
+      )
+    );
+  }, [
+    reduced,
+    leftY,
+    leftOpacity,
+    rightY,
+    rightOpacity,
+    centerY,
+    centerScale,
+    centerOpacity,
+    breathe,
+    shadowOpacity,
+    shadowScaleX,
+  ]);
+
+  // On focus rather than on mount, so coming back from sign-in or the
+  // catalogue replays it instead of showing an already-finished picture.
+  useFocusEffect(
+    useCallback(() => {
+      play();
+      return () => {
+        // Nothing should be animating behind another screen.
+        cancelAnimation(breathe);
+      };
+    }, [play, breathe])
+  );
+
+  const leftStyle = useAnimatedStyle(() => ({
+    opacity: leftOpacity.value,
+    transform: [{ translateY: leftY.value }],
   }));
-  const g3 = useAnimatedProps(() => ({
-    transform: `translate(196, ${44 - c.value * 5}) scale(0.58)`,
+  const rightStyle = useAnimatedStyle(() => ({
+    opacity: rightOpacity.value,
+    transform: [{ translateY: rightY.value }],
   }));
-  const g2 = useAnimatedProps(() => ({
-    transform: `translate(92, ${10 - b.value * 9}) scale(0.86)`,
+  const centerStyle = useAnimatedStyle(() => ({
+    opacity: centerOpacity.value,
+    transform: [
+      { translateY: centerY.value },
+      { scale: centerScale.value * breathe.value },
+    ],
   }));
+  // The shadow answers the breath: as the card lifts, its contact shadow
+  // tightens and lightens. That is what sells the idle as breathing rather
+  // than as a card quietly pulsing for no reason.
+  const shadowStyle = useAnimatedStyle(() => {
+    const lift = (breathe.value - 1) / (BREATHE_SCALE - 1);
+    return {
+      opacity: shadowOpacity.value * (1 - lift * 0.3),
+      transform: [{ scaleX: shadowScaleX.value * (1 - lift * 0.07) }],
+    };
+  });
 
   return (
     <View
-      style={{ width: size, height: size * 0.9 }}
+      style={{ width: size, height: size * 0.9, justifyContent: "center" }}
       accessible
       accessibilityRole="image"
       accessibilityLabel="Three market stalls"
     >
-      <Svg width="100%" height="100%" viewBox="0 0 300 180">
-        {/* Back stalls are tinted, not opaque: depth without a second hue. */}
-        <AnimatedG animatedProps={g1}>
-          <Banner fill={t.primaryMuted} personFill={t.surfacePage} />
-        </AnimatedG>
-        <AnimatedG animatedProps={g3}>
-          <Banner fill={t.primaryMuted} personFill={t.surfacePage} />
-        </AnimatedG>
-        <AnimatedG animatedProps={g2}>
-          <Banner fill={t.primaryFill} withPerson personFill={t.textOnPrimary} />
-        </AnimatedG>
-      </Svg>
+      <View style={{ height: centerH + shadowGap + shadowH }}>
+        {/* Drawn first so it sits under the card it belongs to. */}
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            {
+              position: "absolute",
+              bottom: 0,
+              alignSelf: "center",
+              width: shadowW,
+              height: shadowH,
+              borderRadius: shadowH / 2,
+              backgroundColor: t.textMuted,
+            },
+            shadowStyle,
+          ]}
+        />
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-end",
+            justifyContent: "center",
+            gap,
+            height: centerH,
+          }}
+        >
+          {/* Back stalls are tinted, not opaque: depth without a second hue. */}
+          <Animated.View style={[{ width: sideW, height: sideW * 1.3 }, leftStyle]}>
+            <Svg width="100%" height="100%" viewBox={VIEWBOX}>
+              <Banner fill={t.primaryMuted} personFill={t.surfacePage} />
+            </Svg>
+          </Animated.View>
+          <Animated.View style={[{ width: centerW, height: centerH }, centerStyle]}>
+            <Svg width="100%" height="100%" viewBox={VIEWBOX}>
+              <Banner fill={t.primaryFill} withPerson personFill={t.textOnPrimary} />
+            </Svg>
+          </Animated.View>
+          <Animated.View style={[{ width: sideW, height: sideW * 1.3 }, rightStyle]}>
+            <Svg width="100%" height="100%" viewBox={VIEWBOX}>
+              <Banner fill={t.primaryMuted} personFill={t.surfacePage} />
+            </Svg>
+          </Animated.View>
+        </View>
+      </View>
     </View>
   );
 }
