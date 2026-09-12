@@ -1,3 +1,5 @@
+import type { OnboardingState } from './profile';
+
 import { AddressData, CommonBuyerResponseData, CommonSellerResponseData } from "./user";
 
 // types.ts
@@ -52,6 +54,14 @@ export interface AuthUser {
   created_at: string;
   updated_at: string;
   account_type: AccountType;
+
+  /**
+   * Where this account stands in signup.
+   *
+   * Present on the register and verify responses, which is what lets the
+   * verification screen route without a second round trip.
+   */
+  onboarding?: OnboardingState;
 }
 
 export interface UserSwitchResponse {

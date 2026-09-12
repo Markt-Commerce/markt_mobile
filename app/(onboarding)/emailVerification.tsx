@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { sendVerificationEmail, verifyEmail } from "../../services/sections/auth";
 import { useRegData } from "../../models/signupSteps";
 import { useUser } from "../../hooks/userContextProvider";
+import { AccountType } from "../../models/auth";
 import { getUserProfile } from "../../services/sections/profile";
 import { logger } from "../../utils/logger";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -31,7 +32,7 @@ const RESEND_COOLDOWN_SECONDS = 60;
 const EmailVerification = () => {
   const router = useRouter();
   const { regData } = useRegData();
-  const { role } = useUser();
+  const { role, setUser, setRole } = useUser();
   const { show } = useToast(); // <-- toast API
   const t = useTokens();
   const iconColor = t.textPrimary;
@@ -116,21 +117,27 @@ const EmailVerification = () => {
         return;
       }
       setVerifying(true);
-      const result = await Promise.resolve(verifyEmail(regData.email, data.code));
-      if (!result) throw new Error("Verification failed");
+      // This call is what signs the account in — register hands back no
+      // credentials, so until now there has been no session at all.
+      const account = await verifyEmail(regData.email, data.code);
+      if (!account?.email) throw new Error("Verification failed");
 
-      // Where to go next is the server's answer, not a guess from the role.
-      // Someone who finished their profile months ago and only now verified
-      // must land in the app, not back at a form they already filled in.
-      let next: string | null = role === "seller" ? "seller_profile" : "buyer_profile";
-      try {
-        const profile = await getUserProfile();
-        next = profile.onboarding?.next_step ?? null;
-      } catch (e) {
-        // Fall back to the role-based guess rather than stranding anyone on
-        // a screen with nowhere to go.
-        logger.warn("verification: could not read onboarding state", e);
-      }
+      const accountType = (account.current_role ??
+        account.account_type ??
+        role ??
+        "buyer") as AccountType;
+      setUser({
+        email: account.email.toLowerCase(),
+        account_type: accountType,
+        user_id: account.id,
+      });
+      setRole(accountType);
+
+      // Where to go next is the server's answer, not a guess from the role:
+      // someone who filled in their profile months ago and only now verified
+      // must land in the app, not back at a form they already completed. The
+      // verify response is the full profile payload, so it already says.
+      const next = account.onboarding?.next_step ?? null;
 
       show({
         variant: "success",

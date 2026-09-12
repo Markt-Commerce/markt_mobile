@@ -86,30 +86,21 @@ export default function SignupScreen() {
     haptics.tick();
     setSubmitting(true);
     try {
-      const account = await registerUser({
+      // Register no longer returns a token, and deliberately does not sign
+      // anyone in — verifying the address is what does that. So nothing here
+      // touches the session; it only carries the address forward so the code
+      // screen knows who it is asking about.
+      await registerUser({
         email: data.email,
         password: data.password,
         account_type: role || "buyer",
       } as RegisterRequest);
 
-      const accountType = (account.current_role ??
-        account.account_type ??
-        role ??
-        "buyer") as AccountType;
-      setUser({
-        email: account.email.toLowerCase(),
-        account_type: accountType,
-        user_id: account.id,
-      });
-      setRole(accountType);
-
-      // Kept only so the verification screen knows which address to show and
-      // resend to. Everything else it used to carry is now on the server.
       setRegData(
         register(regData, {
           email: data.email,
           password: data.password,
-          account_type: accountType,
+          account_type: role || "buyer",
         })
       );
 
