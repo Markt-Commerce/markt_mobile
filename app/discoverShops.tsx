@@ -16,6 +16,11 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import SearchField from "../components/SearchField";
 import {
+  FilterChip,
+  FilterRail,
+  RailDivider,
+} from "../components/FilterChip";
+import {
   View,
   Text,
   FlatList,
@@ -172,48 +177,6 @@ export default function DiscoverShopsScreen() {
     return null;
   })();
 
-  const Chip = ({
-    label,
-    active,
-    onPress,
-    tone = "primary",
-  }: {
-    label: string;
-    active: boolean;
-    onPress: () => void;
-    tone?: "primary" | "neutral";
-  }) => (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.8}
-      accessibilityRole="tab"
-      accessibilityState={{ selected: active }}
-      className={`h-9 items-center justify-center rounded-full px-4 ${
-        active
-          ? tone === "primary"
-            ? "bg-primary-fill"
-            : "bg-text-primary"
-          : "bg-surface-sunken"
-      }`}
-    >
-      <Text
-        className={`text-[13px] font-semibold ${
-          active
-            ? tone === "primary"
-              ? "text-text-on-primary"
-              : // The neutral chip inverts the page: its fill is text-primary,
-                // so its label has to be the page, not "on primary" — that
-                // token is white in both themes, which on dark put white text
-                // on a white pill.
-                "text-surface-page"
-            : "text-text-secondary"
-        }`}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-
   return (
     <SafeAreaView className="flex-1 bg-surface-page" edges={["top"]}>
       {/* Header: where you are, not what the screen is called. The title was
@@ -251,20 +214,10 @@ export default function DiscoverShopsScreen() {
           column has no intrinsic height, so it stretched to fill whatever
           the list below it did not claim, leaving the chips floating in the
           middle of a tall empty band with gaps above and below. */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ flexGrow: 0, flexShrink: 0 }}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingBottom: 12,
-          gap: 8,
-          alignItems: "center",
-        }}
-      >
+      <FilterRail>
         <SlidersHorizontal size={14} color={t.textMuted} strokeWidth={2} />
         {SORTS.map(({ key, label }) => (
-          <Chip
+          <FilterChip
             key={key}
             label={label}
             tone="neutral"
@@ -273,17 +226,17 @@ export default function DiscoverShopsScreen() {
           />
         ))}
 
-        {categories.length > 0 ? <View className="mx-1 h-5 w-px bg-border" /> : null}
+        {categories.length > 0 ? <RailDivider /> : null}
 
         {categories.length > 0 ? (
-          <Chip
+          <FilterChip
             label="All"
             active={selectedCategory === null}
             onPress={() => setSelectedCategory(null)}
           />
         ) : null}
         {categories.map((c) => (
-          <Chip
+          <FilterChip
             key={c.id}
             label={c.name}
             active={selectedCategory === c.slug}
@@ -292,7 +245,7 @@ export default function DiscoverShopsScreen() {
             }
           />
         ))}
-      </ScrollView>
+      </FilterRail>
 
       {scopeLine ? (
         <Text className="px-4 pb-2 text-[12px] text-text-muted">{scopeLine}</Text>
