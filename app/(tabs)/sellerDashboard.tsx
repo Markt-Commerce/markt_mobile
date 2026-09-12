@@ -82,7 +82,20 @@ export default function SellerDashboard() {
    * inventory asked for 50 and hoped that covered it. A seller with 60
    * products simply could not see the last ten.
    */
-  const [listTab, setListTab] = useState<"orders" | "inventory">("orders");
+  /**
+   * The screen's top-level view.
+   *
+   * Orders and inventory used to be the last section of a long page: past the
+   * stats, the getting-started cards, the quick actions, the sales chart and
+   * the low-stock alerts. A seller opening this screen to see what sold, or
+   * to add a product, scrolled past everything else to reach it every time.
+   *
+   * Three flat tabs rather than an Overview/Activity pair with the old
+   * orders-vs-inventory pills nested inside: tabs under tabs make you read
+   * two rows to work out where you are, and there are only three places to
+   * go.
+   */
+  const [tab, setTab] = useState<"overview" | "orders" | "products">("overview");
   const [ordersPage, setOrdersPage] = useState(1);
   const [ordersPages, setOrdersPages] = useState(1);
   const [invPage, setInvPage] = useState(1);
@@ -526,11 +539,48 @@ export default function SellerDashboard() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
+      {/* Outside the ScrollView on purpose: a tab bar that scrolls away is a
+          tab bar you have to scroll back up to use, which is the problem it
+          was added to solve. */}
+      <View className="flex-row gap-2 px-6 pt-3 pb-3 bg-surface-page">
+        {([
+          { key: "overview", label: "Overview" },
+          { key: "orders", label: "Orders" },
+          { key: "products", label: "Products" },
+        ] as const).map(({ key, label }) => {
+          const active = tab === key;
+          return (
+            <TouchableOpacity
+              key={key}
+              onPress={() => { setTab(key); setStatusMenuVisible(false); }}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              className={`flex-1 h-10 items-center justify-center rounded-xl ${
+                active ? "bg-text-primary" : "bg-surface-sunken"
+              }`}
+            >
+              <Text
+                className={`text-[14px] font-semibold ${
+                  // Inverted fill, so the label is the page colour. "on
+                  // primary" is white in both themes and vanished against the
+                  // near-white dark-mode fill.
+                  active ? "text-surface-page" : "text-text-secondary"
+                }`}
+              >
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
       <ScrollView
         className={"bg-surface-page"}
         contentContainerStyle={{ paddingBottom: 60 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.textPrimary} />}
       >
+        {tab === "overview" ? (
+          <>
         {/* Time selector (7d / 30d / 90d) + Export menu */}
         <View className="flex-row items-center justify-between px-6 py-4">
           <View className="flex-row rounded p-1 border bg-surface-sunken border-border">
@@ -610,26 +660,6 @@ export default function SellerDashboard() {
 
         {/* Start cards (onboarding) — SELLER_DASHBOARD_API_AND_MOBILE_GUIDE §2.4 */}
         <StartCards title="Getting started" />
-
-        {/* One primary action, then navigation.
-            This was two full-width buttons stacked over three text-only
-            outlined pills of arbitrary widths — which read as filter chips,
-            not as places to go, and gave "Create Community" the same weight
-            as "Create Product". Creating a product is the thing a seller
-            opens this screen to do; everything else is a destination. */}
-        <View className="px-6 pt-2 pb-4">
-          <TouchableOpacity
-            accessibilityLabel="create-product-btn"
-            accessibilityRole="button"
-            onPress={handleCreateProduct}
-            className="h-[52px] flex-row items-center justify-center gap-2 rounded-xl bg-primary-fill"
-          >
-            <Plus size={18} color={t.textOnPrimary} strokeWidth={2.5} />
-            <Text className="text-[16px] font-bold text-text-on-primary">
-              Create product
-            </Text>
-          </TouchableOpacity>
-        </View>
 
         {/* Quick actions — equal tiles, so they read as one control */}
         <View className="flex-row gap-3 px-6 pb-5">
@@ -788,43 +818,30 @@ export default function SellerDashboard() {
           </View>
         </View>
 
-        {/* Orders and inventory, one section with two tabs.
-            They were two headed sections a full screen apart, so comparing
-            "what sold" against "what is left" meant scrolling between them.
-            Both are the same question asked twice. */}
-        <View className="px-6 pt-6">
-          <View className="flex-row gap-2 mb-4">
-            {([
-              { key: "orders", label: "Recent orders" },
-              { key: "inventory", label: "Inventory" },
-            ] as const).map(({ key, label }) => {
-              const active = listTab === key;
-              return (
-                <TouchableOpacity
-                  key={key}
-                  onPress={() => setListTab(key)}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: active }}
-                  className={`flex-1 h-10 items-center justify-center rounded-xl ${
-                    active ? "bg-text-primary" : "bg-surface-sunken"
-                  }`}
-                >
-                  <Text
-                    className={`text-[14px] font-semibold ${
-                      // Inverted fill, so the label is the page colour.
-                      // "on primary" is white in both themes and vanished
-                      // against the near-white dark-mode fill.
-                      active ? "text-surface-page" : "text-text-secondary"
-                    }`}
-                  >
-                    {label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          </>
+        ) : null}
 
-          {listTab === "orders" ? (
+        {/* Orders and inventory. Reached by the tabs above rather than by
+            scrolling to the bottom of the overview. */}
+        {tab !== "overview" ? (
+        <View className="px-6 pt-6">
+          {/* Adding a product sits above the list of products, so a seller
+              can see what is already there while they add to it -- and does
+              not have to leave to find the button. */}
+          {tab === "products" ? (
+            <TouchableOpacity
+              accessibilityLabel="create-product-btn"
+              accessibilityRole="button"
+              onPress={handleCreateProduct}
+              className="mb-4 h-[52px] flex-row items-center justify-center gap-2 rounded-xl bg-primary-fill"
+            >
+              <Plus size={18} color={t.textOnPrimary} strokeWidth={2.5} />
+              <Text className="text-[16px] font-bold text-text-on-primary">
+                Create product
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+          {tab === "orders" ? (
             <>
               {loading && !sellerRecentOrders.length ? (
                 <Text className="text-sm px-1 text-text-secondary">Loading recent orders…</Text>
@@ -928,6 +945,7 @@ export default function SellerDashboard() {
             </>
           )}
         </View>
+        ) : null}
 
         <View className="h-8" />
       </ScrollView>
