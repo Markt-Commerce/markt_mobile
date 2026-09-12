@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useBackTo } from "../../utils/goBack";
 import { ArrowLeft, Plus, Users, Settings } from "lucide-react-native";
 import { getNichePosts, joinNiche, leaveNiche, getMyNiches, getNicheById, canPostInNiche } from "../../services/sections/niches";
 import { NichePost, Niches } from "../../models/niches";
@@ -25,6 +26,9 @@ function dedupeById<T extends { id: string | number }>(items: T[]): T[] {
 export default function NicheDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  // Back, or the list this belongs under when there is no history --
+  // after paying, and on a notification that opened the app cold.
+  const goBack = useBackTo("/(tabs)");
   const { show } = useToast();
   const t = useTokens();
 
@@ -230,7 +234,7 @@ export default function NicheDetailScreen() {
               />
             ) : null}
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={() => goBack()}
               accessibilityRole="button"
               accessibilityLabel="Go back"
               className="absolute left-4 top-3 w-9 h-9 rounded-full items-center justify-center"

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import {View,Text,ScrollView,FlatList,ActivityIndicator,TouchableOpacity,TextInput,Image, KeyboardAvoidingView, Share, Keyboard, Platform} from "react-native";
 import { ArrowLeft, SendHorizonal } from "lucide-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useBackTo } from "../../utils/goBack";
 import { commentOnPost, getPostById, getPostComments, likePost } from "../../services/sections/post";
 import { CommentItem, CommentResponse, PostDetails } from "../../models/post";
 import { useToast } from "../../components/ToastProvider";
@@ -95,6 +96,9 @@ export default function PostDetailsScreen() {
   const [postingComment, setPostingComment] = useState(false);
   const commentInputRef = useRef<TextInput>(null);
   const router = useRouter();
+  // Back, or the list this belongs under when there is no history --
+  // after paying, and on a notification that opened the app cold.
+  const goBack = useBackTo("/(tabs)");
   const { id } = useLocalSearchParams<{ id: string }>();
   const { show } = useToast();
   const { user } = useUser();
@@ -352,7 +356,7 @@ export default function PostDetailsScreen() {
       <View className="flex items-center p-4 pb-2 flex-row bg-surface-raised">
         <TouchableOpacity
           className="flex size-12 shrink-0 items-center justify-center"
-          onPress={() => router.back()}
+          onPress={() => goBack()}
         >
           <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>

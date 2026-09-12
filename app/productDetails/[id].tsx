@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { View, Text, Image, ActivityIndicator, TouchableOpacity, ImageBackground, Pressable, FlatList, Dimensions } from "react-native";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
+import { useBackTo } from "../../utils/goBack";
 import { getProductById, trackProductView } from "../../services/sections/product";
 import { ProductDetail } from "../../models/products";
 import { ArrowLeft, ShoppingBag, ArrowBigDown, MessageCircle, ShoppingCart, MapPin } from "lucide-react-native";
@@ -35,6 +36,9 @@ export default function ProductDetails() {
     details: true,
   });
   const router = useRouter();
+  // Back, or the list this belongs under when there is no history --
+  // after paying, and on a notification that opened the app cold.
+  const goBack = useBackTo("/(tabs)");
   const {user, role} = useUser();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [product, setProduct] = useState<ProductDetail>();
@@ -230,7 +234,7 @@ const addProductToCart = async (product:ProductDetail)=>{
         <View className={"bg-surface-raised"}>
         {/* Header */}
         <View className="flex-row items-center justify-between p-4 pb-2">
-          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <TouchableOpacity onPress={() => goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <ArrowLeft color={t.textPrimary} size={24} />
           </TouchableOpacity>
           {role == "buyer" && <TouchableOpacity className="p-2" onPress={()=> router.navigate("/cart")}>

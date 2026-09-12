@@ -3,6 +3,7 @@ import DeliveryProgress from "../../components/orders/DeliveryProgress";
 import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useBackTo } from "../../utils/goBack";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, MapPin, CreditCard, FileText, User, Package } from "lucide-react-native";
 import { getOrderDetails } from "../../services/sections/orders";
@@ -40,6 +41,9 @@ function formatShippingAddress(addr?: Record<string, any>): string {
 export default function OrderDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  // Back, or the list this belongs under when there is no history --
+  // after paying, and on a notification that opened the app cold.
+  const goBack = useBackTo("/(tabs)/orders");
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   // Order items only carry product_id/price/quantity/status (see temp.txt) — no
@@ -108,7 +112,7 @@ export default function OrderDetail() {
         {/* Header */}
         <View className="flex-row items-center py-6">
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => goBack()}
             className="mr-4 h-10 w-10 rounded border items-center justify-center bg-surface-sunken border-border"
           >
             <ArrowLeft size={20} color={iconColor} />
