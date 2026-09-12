@@ -19,6 +19,7 @@ import { ProductResponse } from '../../models/products';
 import { OrderItem, SellerOrderItem } from '../../models/orders';
 import { useToast } from '../../components/ToastProvider';
 import ProductFormBottomSheet from '../../components/productCreateBottomSheet';
+import { type InputSheetHandle } from '../../components/InputSheet';
 import CreateNicheBottomSheet from '../../components/nicheCreateBottomSheet';
 import BottomSheet from '@gorhom/bottom-sheet';
 import StartCards from '../../components/startCards';
@@ -61,7 +62,7 @@ export default function SellerDashboard() {
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
   // Bottom sheet ref for product creation
-  const productFormRef = useRef<BottomSheet>(null);
+  const productFormRef = useRef<InputSheetHandle>(null);
 
   const nicheFormRef = useRef<BottomSheet>(null);
 

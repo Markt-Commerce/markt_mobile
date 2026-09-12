@@ -1,14 +1,8 @@
 import 'react-native-reanimated';
-import React, { useCallback, useRef, useMemo, forwardRef, useState } from 'react';
-import { ActivityIndicator, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import BottomSheet, {
-  BottomSheetScrollView,
-  BottomSheetFooter,
-  type BottomSheetFooterProps,
-} from '@gorhom/bottom-sheet';
+import React, { useRef, forwardRef, useState } from 'react';
+import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import InputSheet, { type InputSheetHandle } from './InputSheet';
 import SheetBusyOverlay from './SheetBusyOverlay';
-import { useKeyboardOverlap, keyboardScrollPadding } from '../hooks/useKeyboardOverlap';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useForm } from 'react-hook-form';
 import { z } from "zod";
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -59,20 +53,17 @@ interface Props {
   productImages?: string[];
 }
 
-const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
+const ProductFormBottomSheet = forwardRef<InputSheetHandle | null, Props>(
   (props, ref) => {
 
-    const sheetRef = React.useRef<BottomSheet | null>(null);
-    React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
+    const sheetRef = React.useRef<InputSheetHandle | null>(null);
+    React.useImperativeHandle(ref, () => sheetRef.current!, []);
     const t = useTokens();
 
     productSchema.refine(()=> selectedCategories?.length ?? 0 > 0,{
       path: ["category_ids"]
     });
 
-  const snapPoints = useMemo(() => ['50%', '90%'], []);
-  const insets = useSafeAreaInsets();
-  const keyboardOverlap = useKeyboardOverlap();
   const { show } = useToast();
 
 
@@ -173,89 +164,63 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
   };
 
   /**
-   * The action bar, docked rather than scrolled to.
+   * The action bar, pinned rather than scrolled to.
    *
-   * `BottomSheetFooter` renders outside the scroll view and sits above the
-   * keyboard, so "Create Product" is reachable from any field instead of
-   * being the very last thing in a long form — which meant scrolling past
-   * every optional detail to submit, with the keyboard still up.
-   *
-   * Shape borrowed from fieldgrid-mobile's input sheet: a hairline rule, the
-   * sheet's own background so it reads as part of the sheet rather than a
-   * floating bar, and the action sitting right.
+   * A sibling of the scroll view inside InputSheet, so "above the keyboard"
+   * is a layout fact rather than a calculation. Shape from fieldgrid-mobile's
+   * input sheet: a hairline rule, the sheet's own background, status text
+   * left and the action right.
    */
-  const renderFooter = useCallback(
-    (props: BottomSheetFooterProps) => (
-      <BottomSheetFooter {...props} bottomInset={0}>
-        <View
-          className="flex-row items-center gap-3 px-4 pt-2.5 bg-surface-page border-t border-border"
-          style={{ paddingBottom: Math.max(insets.bottom, 10) }}
+  const footer = (
+    <>
+      <Text className="flex-1 text-[12px] text-text-muted" numberOfLines={1}>
+        {stage === "uploading"
+          ? "Uploading images…"
+          : stage === "creating"
+            ? "Creating…"
+            : `${selectedCategories.length} categor${selectedCategories.length === 1 ? "y" : "ies"} selected`}
+      </Text>
+      <TouchableOpacity
+        disabled={sending}
+        onPress={handleSubmit(onSubmit)}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: sending, busy: sending }}
+        className={`min-h-[44px] flex-row items-center justify-center gap-2 rounded-xl px-5 ${
+          sending ? "bg-surface-sunken" : "bg-primary-fill"
+        }`}
+      >
+        {sending ? <ActivityIndicator size="small" color={t.textSecondary} /> : null}
+        <Text
+          className={`text-[15px] font-bold ${
+            sending ? "text-text-muted" : "text-text-on-primary"
+          }`}
         >
-          <Text className="flex-1 text-[12px] text-text-muted" numberOfLines={1}>
-            {stage === "uploading"
-              ? "Uploading images…"
-              : stage === "creating"
-                ? "Creating…"
-                : `${selectedCategories.length} categor${selectedCategories.length === 1 ? "y" : "ies"}`}
-          </Text>
-          <TouchableOpacity
-            disabled={sending}
-            onPress={handleSubmit(onSubmit)}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: sending, busy: sending }}
-            className={`min-h-[44px] flex-row items-center justify-center gap-2 rounded-xl px-5 ${
-              sending ? "bg-surface-sunken" : "bg-primary-fill"
-            }`}
-          >
-            {sending ? <ActivityIndicator size="small" color={t.textSecondary} /> : null}
-            <Text
-              className={`text-[15px] font-bold ${
-                sending ? "text-text-muted" : "text-text-on-primary"
-              }`}
-            >
-              {sending ? "Working…" : "Create Product"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </BottomSheetFooter>
-    ),
-    [sending, stage, insets.bottom, selectedCategories.length, handleSubmit, onSubmit, t]
+          {sending ? "Working…" : "Create Product"}
+        </Text>
+      </TouchableOpacity>
+    </>
   );
 
   return (
-    <BottomSheet
+    <InputSheet
       ref={sheetRef}
-      index={-1}
-      snapPoints={snapPoints}
-      enablePanDownToClose={!sending}
-      enableContentPanningGesture={!sending}
-      backgroundStyle={{ backgroundColor: t.surfacePage }}
-      handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
-      // `extend` rather than `interactive`. Interactive works by moving the
-      // sheet up, and this one opens at 90% — there is nowhere left to move,
-      // so the bottom of the form stayed under the keyboard however the sheet
-      // behaved. Extending pins it at its largest snap point and the padding
-      // below does the actual work.
-      keyboardBehavior="extend"
-      keyboardBlurBehavior="restore"
-      android_keyboardInputMode="adjustResize"
-      footerComponent={renderFooter}
+      title="Create Product"
+      busy={sending}
+      onClose={props.onClose}
+      footer={footer}
+      overlay={
+        <SheetBusyOverlay
+          visible={sending}
+          title={stage === "uploading" ? "Uploading images" : "Creating your product"}
+          subtitle={
+            stage === "uploading"
+              ? "Keep this sheet open until it finishes."
+              : "Almost done."
+          }
+        />
+      }
     >
-      <BottomSheetScrollView
-        className="p-4"
-        // Measured, not a guess. A fixed 120px is smaller than any real
-        // keyboard, so the last few fields could never be scrolled clear of
-        // it — which is exactly what a numeric keypad over "Compare at Price"
-        // looked like. See hooks/useKeyboardOverlap.
-        contentContainerStyle={{
-          paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 32),
-        }}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
-      >
-        <Text className="text-lg font-bold mb-4 text-text-primary">Create Product</Text>
-
-        <View pointerEvents={sending ? "none" : "auto"}>
+      <View pointerEvents={sending ? "none" : "auto"}>
 
         {/* Product Name */}
         <Input name='name' label='Product Name' placeholder='e.g. Wireless headphones' control={control} errors={errors} />
@@ -314,10 +279,6 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
 
         {/* Cost per Item */}
         <Input name='cost_per_item' label='Cost per Item (₦)' placeholder='What it costs you' control={control} keyboardType='numeric' errors={errors} />
-        
-
-        </View>
-
 
         <CategoryAddition
           visible={modalVisible}
@@ -326,18 +287,8 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
           onClose={() => setModalVisible(false)}
           onConfirm={(selected) => setSelectedCategories(selected)}
           />
-      </BottomSheetScrollView>
-
-      <SheetBusyOverlay
-        visible={sending}
-        title={stage === "uploading" ? "Uploading images" : "Creating your product"}
-        subtitle={
-          stage === "uploading"
-            ? "Keep this sheet open until it finishes."
-            : "Almost done."
-        }
-      />
-    </BottomSheet>
+      </View>
+    </InputSheet>
   );
 }
 );

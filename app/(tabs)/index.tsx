@@ -19,6 +19,7 @@ import { useUser } from "../../hooks/userContextProvider";
 import { switchUserRole } from "../../services/sections/auth";
 import { setUserSession } from "../../services/authStorage";
 import ProductFormBottomSheet from "../../components/productCreateBottomSheet";
+import { type InputSheetHandle } from "../../components/InputSheet";
 import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BuyerRequestFormBottomSheet from "../../components/buyerRequestBottomSheet";
 import CreateNicheBottomSheet from "../../components/nicheCreateBottomSheet";
@@ -94,7 +95,7 @@ export default function FeedScreen() {
 
   // Bottom sheet refs
   const createMenuRef = useRef<BottomSheet>(null);
-  const productFormRef = useRef<BottomSheet>(null);
+  const productFormRef = useRef<InputSheetHandle>(null);
   const postFormRef = useRef<BottomSheet>(null);
   const requestFormRef = useRef<BottomSheet>(null);
   const nicheFormRef = useRef<BottomSheet>(null);
