@@ -8,6 +8,7 @@ import { useToast } from "../../components/ToastProvider";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { parseDate } from "../../utils/parseDate";
 import { useUser } from "../../hooks/userContextProvider";
+import { patchFeedPost } from "../../hooks/useFeed";
 import { getUserProfile } from "../../services/sections/profile";
 import Avatar from "../../components/Avatar";
 import type { UserProfile } from "../../models/profile";
@@ -142,6 +143,10 @@ export default function PostDetailsScreen() {
     setLikeCount((c) => (likedByMe ? Math.max(0, c - 1) : c + 1));
     try {
       await likePost(post.id);
+      patchFeedPost(String(post.id), () => ({
+        liked_by_me: !prevLiked,
+        likes_count: prevLiked ? Math.max(0, prevCount - 1) : prevCount + 1,
+      }));
     } catch {
       setLikedByMe(prevLiked);
       setLikeCount(prevCount);
@@ -242,6 +247,12 @@ export default function PostDetailsScreen() {
       const newComment = await commentOnPost(id, trimmed, parentId);
       setComments((prev) => [newComment, ...prev]);
       setNewComment("");
+      // The feed shows a comment count and does not refetch on focus, so
+      // without this the buyer goes back to the number they saw before they
+      // typed -- which reads as though the comment did not save.
+      patchFeedPost(String(id), (item) => ({
+        comments_count: (item.comments_count ?? 0) + 1,
+      }));
     } catch (error) {
       show({
         variant: "error",
