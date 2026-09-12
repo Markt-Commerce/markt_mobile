@@ -9,6 +9,8 @@ import { useBrowseLocation } from "../hooks/browseLocationContext";
 import LocationSwitcher from "../components/location/LocationSwitcher";
 import { ProductSkeletonRow } from "../components/SkeletonBlock";
 import { useTokens } from "../theme/useTokens";
+import { useAddToCart } from "../hooks/useAddToCart";
+import CartFab from "../components/CartFab";
 import type { Product as FeedProduct } from "../models/feed";
 import type { ProductResponse } from "../models/products";
 import { EmptyStall } from "../components/illustrations/MarktIllustration";
@@ -27,6 +29,7 @@ import { EmptyStall } from "../components/illustrations/MarktIllustration";
 export default function Browse() {
   const router = useRouter();
   const t = useTokens();
+  const { add: addProductToCart } = useAddToCart();
   const [items, setItems] = useState<ProductResponse[]>([]);
   const [feed, setFeed] = useState<Pick<NearbyFeed, "scope" | "radius_km"> | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
@@ -136,6 +139,11 @@ export default function Browse() {
           keyExtractor={(_, i) => String(i)}
           renderItem={({ item }) => (
             <ProductDisplayComponent
+              onAdd={addProductToCart}
+              // The tile carries no seller user id, so a room cannot be
+              // resolved from here. Opening the product is where chat has
+              // the context to work, and beats a button that does nothing.
+              onChat={(p) => router.push(`/productDetails/${p.id}` as any)}
               // ProductDisplayComponent renders the feed's Product shape; the
               // catalogue endpoint returns ProductResponse. Only the fields the
               // tile actually reads are mapped, so a change to either type
@@ -177,6 +185,7 @@ export default function Browse() {
           <Text className="text-[16px] font-bold text-text-on-primary">Join Markt</Text>
         </Pressable>
       </View>
+      <CartFab />
     </SafeAreaView>
   );
 }

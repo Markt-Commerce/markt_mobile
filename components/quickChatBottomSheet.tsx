@@ -1,7 +1,6 @@
 import React, {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -11,12 +10,17 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   StyleSheet,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
-import BottomSheet, {
-  BottomSheetFooter,
-  BottomSheetView,
-} from "@gorhom/bottom-sheet";
-import type { BottomSheetFooterProps } from "@gorhom/bottom-sheet";
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+  initialWindowMetrics,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import type { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { ArrowLeft } from "lucide-react-native";
 import ChatScreen from "./chat";
 import Avatar from "./Avatar";
@@ -24,7 +28,6 @@ import { createOrGetRoom } from "../services/sections/chat";
 import { runMessageSellerFlow } from "../utils/messageSellerFlow";
 import { getProductById } from "../services/sections/product";
 import { ChatRoomLite } from "../models/chat";
-import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { useToast } from "./ToastProvider";
 import { friendlyErrorMessage } from "../utils/errorMessages";
 import { useUser } from "../hooks/userContextProvider";
@@ -60,13 +63,53 @@ export default function QuickChatBottomSheet({
   asBuyer = true,
   sheetRef,
 }: QuickChatBottomSheetProps) {
-  const snapPoints = useMemo(() => ["90%"], []);
   const { show } = useToast();
   const { user } = useUser();
   const t = useTokens();
   const textColor = t.textPrimary;
   const currentUserId = user?.user_id?.toString() ?? "";
   const [sheetOpen, setSheetOpen] = useState(false);
+  const insets = useSafeAreaInsets();
+
+  /**
+   * The modal's own open state, driven through the ref the call sites
+   * already hold.
+   *
+   * They call `sheetRef.current?.expand()`, which was a @gorhom method. Rather
+   * than change every caller, the ref is filled with the two methods they
+   * actually use -- so this became a modal without a single call site
+   * knowing.
+   */
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const handle = {
+      expand: () => setVisible(true),
+      snapToIndex: () => setVisible(true),
+      close: () => setVisible(false),
+      forceClose: () => setVisible(false),
+      collapse: () => setVisible(false),
+    } as unknown as BottomSheetMethods;
+    (sheetRef as React.MutableRefObject<BottomSheetMethods | null>).current =
+      handle;
+    return () => {
+      (sheetRef as React.MutableRefObject<BottomSheetMethods | null>).current =
+        null;
+    };
+  }, [sheetRef]);
+
+  // The room fetch and teardown keyed off the sheet's index callback; now it
+  // keys off visibility, which is the same signal by another name.
+  useEffect(() => {
+    setSheetOpen(visible);
+    if (!visible) {
+      // Drop the room on close, exactly as the sheet's index callback did:
+      // reopening on a different product must not flash the last one's thread.
+      fetchGenRef.current += 1;
+      setRoomData(null);
+      setRoomLoading(false);
+      setRoomError(null);
+    }
+  }, [visible]);
   const [roomData, setRoomData] = useState<ChatRoomLite | null>(null);
   const [roomLoading, setRoomLoading] = useState(false);
   const [roomError, setRoomError] = useState<string | null>(null);
@@ -75,17 +118,7 @@ export default function QuickChatBottomSheet({
   const [sheetFooter, setSheetFooter] = useState<React.ReactNode>(null);
 
   const handleClose = useCallback(() => {
-    sheetRef.current?.close();
-  }, [sheetRef]);
-
-  const handleSheetChange = useCallback((index: number) => {
-    setSheetOpen(index >= 0);
-    if (index < 0) {
-      fetchGenRef.current += 1;
-      setRoomData(null);
-      setRoomLoading(false);
-      setRoomError(null);
-    }
+    setVisible(false);
   }, []);
 
   useEffect(() => {
@@ -227,115 +260,127 @@ export default function QuickChatBottomSheet({
     if (!sheetOpen || !showChat) setSheetFooter(null);
   }, [sheetOpen, showChat]);
 
-  // bottomInset={0}: the footer must sit flush against the sheet bottom — the
-  // safe-area gap is padded inside the input bar itself so its background
-  // reaches the screen edge instead of leaving a floating strip.
-  const renderFooter = useCallback(
-    (props: BottomSheetFooterProps) => (
-      <BottomSheetFooter {...props} bottomInset={0}>
-        {sheetFooter}
-      </BottomSheetFooter>
-    ),
-    [sheetFooter],
-  );
-
+  /**
+   * A full-screen modal, not a bottom sheet.
+   *
+   * It was a @gorhom sheet at a 90% snap with keyboardBehavior="extend" and
+   * the input in a BottomSheetFooter. Both halves of that fail for the same
+   * reason the product forms did earlier in this project: a sheet already at
+   * 90% has nowhere to extend to, and BottomSheetFooter positions against the
+   * *sheet* rather than the keyboard -- so the input sat behind it and you
+   * could not see what you were typing.
+   *
+   * The 10% it did not cover was the second problem. The home screen's header,
+   * its shop row with "See all", and the tab bar all stayed visible around a
+   * conversation, which is furniture from somewhere else framing a private
+   * message.
+   *
+   * So: Modal + KeyboardAvoidingView, with the input bar a sibling of the
+   * message list rather than a child of it. That is the arrangement that
+   * already works for every input sheet in the app, and "above the keyboard"
+   * becomes a layout fact instead of a calculation.
+   */
   return (
-    <BottomSheet
-      ref={sheetRef}
-      index={-1}
-      snapPoints={snapPoints}
-      // v5 defaults dynamic sizing ON, which adds a content-height snap point
-      // and makes the closed sheet peek up over the screen's bottom bar.
-      enableDynamicSizing={false}
-      enablePanDownToClose
-      onChange={handleSheetChange}
-      keyboardBehavior="extend"
-      keyboardBlurBehavior="restore"
-      android_keyboardInputMode="adjustResize"
-      footerComponent={showChat ? renderFooter : undefined}
-      backgroundStyle={{ backgroundColor: t.surfacePage }}
-      handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
+    <Modal
+      visible={visible}
+      animationType="slide"
+      onRequestClose={handleClose}
+      presentationStyle="fullScreen"
     >
-      <BottomSheetView style={styles.sheetRoot}>
-        {/* Fixed header */}
-        <View
-          style={[
-            styles.header,
-            {
-              borderBottomColor: t.surfaceSunken,
-              backgroundColor: t.surfacePage,
-            },
-          ]}
+      {/* Its own provider: a Modal renders in a separate native window that
+          the app-level SafeAreaProvider does not reach, so without this the
+          insets are zero and the header sits under the status bar. */}
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+        <SafeAreaView
+          style={{ flex: 1, backgroundColor: t.surfacePage }}
+          edges={["top", "left", "right"]}
         >
-          <TouchableOpacity
-            onPress={handleClose}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={styles.backButton}
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
           >
-            <ArrowLeft size={24} color={textColor} />
-          </TouchableOpacity>
-          <Avatar
-            uri={pickProfilePicture(displayOtherUser)}
-            name={displayOtherUser?.username}
-            size={40}
-          />
-          <Text
-            style={[styles.headerTitle, { color: textColor }]}
-            numberOfLines={1}
-          >
-            {displayOtherUser?.username ?? "Chat"}
-          </Text>
-        </View>
-
-        {hasExistingThread && showChat && (
-          <Text
-            className="text-xs text-center py-2 text-text-secondary"
-          >
-            Continuing your conversation
-          </Text>
-        )}
-
-        {/* Message list area — flex: 1 */}
-        <View style={styles.body}>
-          {roomLoading && (
-            <View style={styles.centered}>
-              <ActivityIndicator size="large" color={textColor} />
-              <Text
-                className="text-sm mt-3 text-text-secondary"
-              >
-                Opening chat…
-              </Text>
-            </View>
-          )}
-
-          {!roomLoading && roomError && (
-            <View style={styles.centered}>
-              <Text
-                className="font-semibold text-center px-6 text-text-primary"
-              >
-                {roomError}
-              </Text>
+            <View
+              style={[
+                styles.header,
+                {
+                  borderBottomColor: t.surfaceSunken,
+                  backgroundColor: t.surfacePage,
+                },
+              ]}
+            >
               <TouchableOpacity
-                className="mt-4 px-4 py-2 rounded bg-primary-fill"
-                onPress={() => fetchRoomData()}
+                onPress={handleClose}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={styles.backButton}
+                accessibilityRole="button"
+                accessibilityLabel="Close chat"
               >
-                <Text className="text-white font-semibold">Try again</Text>
+                <ArrowLeft size={24} color={textColor} />
               </TouchableOpacity>
+              <Avatar
+                uri={pickProfilePicture(displayOtherUser)}
+                name={displayOtherUser?.username}
+                size={40}
+              />
+              <Text
+                style={[styles.headerTitle, { color: textColor }]}
+                numberOfLines={1}
+              >
+                {displayOtherUser?.username ?? "Chat"}
+              </Text>
             </View>
-          )}
 
-          {showChat && (
-            <ChatScreen
-              variant="sheet"
-              onClose={handleClose}
-              onSheetFooterReady={setSheetFooter}
-              route={{ params: { roomId, otherUser: displayOtherUser } }}
-              navigation={null}
-            />
-          )}
-        </View>
-      </BottomSheetView>
-    </BottomSheet>
+            {hasExistingThread && showChat && (
+              <Text className="text-xs text-center py-2 text-text-secondary">
+                Continuing your conversation
+              </Text>
+            )}
+
+            <View style={styles.body}>
+              {roomLoading && (
+                <View style={styles.centered}>
+                  <ActivityIndicator size="large" color={textColor} />
+                  <Text className="text-sm mt-3 text-text-secondary">
+                    Opening chat…
+                  </Text>
+                </View>
+              )}
+
+              {!roomLoading && roomError && (
+                <View style={styles.centered}>
+                  <Text className="font-semibold text-center px-6 text-text-primary">
+                    {roomError}
+                  </Text>
+                  <TouchableOpacity
+                    className="mt-4 px-4 py-2 rounded bg-primary-fill"
+                    onPress={() => fetchRoomData()}
+                  >
+                    <Text className="text-white font-semibold">Try again</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {showChat && (
+                <ChatScreen
+                  variant="sheet"
+                  onClose={handleClose}
+                  onSheetFooterReady={setSheetFooter}
+                  route={{ params: { roomId, otherUser: displayOtherUser } }}
+                  navigation={null}
+                />
+              )}
+            </View>
+
+            {/* Sibling of the list, inside the keyboard-avoiding view. This is
+                the whole fix: the bar rises with the keyboard because the
+                layout says so, not because anything measured it. */}
+            {showChat && sheetFooter ? (
+              <View style={{ paddingBottom: insets.bottom }}>{sheetFooter}</View>
+            ) : null}
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    </Modal>
   );
 }
 

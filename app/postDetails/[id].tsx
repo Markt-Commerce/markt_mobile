@@ -13,6 +13,7 @@ import Avatar from "../../components/Avatar";
 import type { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
+import CartFab from "../../components/CartFab";
 import { getProductById } from "../../services/sections/product";
 import { addToCart } from "../../services/sections/cart";
 import type { ProductDetail } from "../../models/products";
@@ -533,6 +534,7 @@ export default function PostDetailsScreen() {
           </View>
         </View>
       </KeyboardAvoidingView>
+      <CartFab />
     </SafeAreaView>
   );
 }

@@ -16,7 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import SearchField from "../components/SearchField";
 import { Search, ChevronRight, ChevronLeft, Megaphone } from "lucide-react-native";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { debounce } from "lodash";
 import { search } from "../services/sections/search";
 import { SearchResponse } from "../models/search";
@@ -25,6 +25,8 @@ import PostDisplayComponent from "../components/PostDisplayComponent";
 import BuyerRequestFormBottomSheet from "../components/buyerRequestBottomSheet";
 import { defaultProfilePicture } from "../models/defaults";
 import { useTokens } from "../theme/useTokens";
+import { useAddToCart } from "../hooks/useAddToCart";
+import CartFab from "../components/CartFab";
 import { useUser } from "../hooks/userContextProvider";
 import type { Product as FeedProduct } from "../models/feed";
 import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
@@ -52,6 +54,8 @@ export default function SearchPage() {
   const loadingMoreRef = useRef(false);
   const { role } = useUser();
   const t = useTokens();
+  const router = useRouter();
+  const { add: addProductToCart } = useAddToCart();
   const requestFormRef = useRef<BottomSheetMethods>(null);
 
   const performSearch = useCallback(
@@ -216,6 +220,11 @@ export default function SearchPage() {
     <View className="px-2">
       {chunkPairs(items).map((pair, idx) => (
         <ProductDisplayComponent
+              onAdd={addProductToCart}
+              // The tile carries no seller user id, so a room cannot be
+              // resolved from here. Opening the product is where chat has
+              // the context to work, and beats a button that does nothing.
+              onChat={(p) => router.push(`/productDetails/${p.id}` as any)}
           key={pair[0]?.id ?? idx}
           products={pair as unknown as FeedProduct[]}
         />
@@ -417,6 +426,7 @@ export default function SearchPage() {
       )}
 
       {role === "buyer" && <BuyerRequestFormBottomSheet ref={requestFormRef} />}
+      <CartFab />
     </SafeAreaView>
   );
 }
