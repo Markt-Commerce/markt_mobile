@@ -5,7 +5,7 @@
  *       Seller orders (seller mode)
  */
 
-import React, { useCallback, useState , useEffect} from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,10 +14,19 @@ import {
   ActivityIndicator,
   RefreshControl,
   Image,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
-import { ArrowLeft, Trash2, RefreshCw, Info, ShoppingCart, Search } from "lucide-react-native";
+import {
+  ArrowLeft,
+  Trash2,
+  RefreshCw,
+  Info,
+  ShoppingCart,
+  Clock,
+  SlidersHorizontal,
+} from "lucide-react-native";
 import { useUser } from "../../hooks/userContextProvider";
 import {
   getCart,
@@ -26,7 +35,23 @@ import {
   getCartSummary,
   checkoutCart,
 } from "../../services/sections/cart";
-import { getBuyerOrders, getSellerOrders , getBuyerPendingCount } from "../../services/sections/orders";
+import {
+  getBuyerOrders,
+  getSellerOrders,
+  getBuyerPendingCount,
+  updateSellerOrderItem,
+} from "../../services/sections/orders";
+import {
+  nextStatuses,
+  STATUS_ACTION_LABEL,
+  type OrderItemStatus,
+} from "../../utils/orderTransitions";
+import SearchField from "../../components/SearchField";
+import {
+  FilterChip,
+  FilterRail,
+  RailDivider,
+} from "../../components/FilterChip";
 import { buildCheckoutRequest } from "../../utils/checkoutPayload";
 import { Cart, CartItem, CartSummary } from "../../models/cart";
 import type { Order, SellerOrderItem } from "../../models/orders";
@@ -593,43 +618,195 @@ function BuyerOrdersTabs({
   );
 }
 
+/** Statuses a seller filters by, in the order an item moves through them.
+ *
+ * "processing" was missing from the old screen's filters -- accepted but not
+ * yet shipped is precisely the pile a seller needs to see. And its "Canceled"
+ * chip was spelled with one L, which the backend enum has never used, so it
+ * matched nothing and always showed an empty list. */
+const SELLER_STATUS_FILTERS = [
+  { key: "all", label: "All" },
+  { key: "pending", label: "New" },
+  { key: "processing", label: "Accepted" },
+  { key: "shipped", label: "Shipped" },
+  { key: "delivered", label: "Delivered" },
+  { key: "cancelled", label: "Cancelled" },
+] as const;
+
+const SELLER_SORTS = [
+  { key: "latest", label: "Latest" },
+  { key: "price_desc", label: "Highest" },
+  { key: "price_asc", label: "Lowest" },
+] as const;
+
+type SellerStatusFilter = (typeof SELLER_STATUS_FILTERS)[number]["key"];
+type SellerSort = (typeof SELLER_SORTS)[number]["key"];
+
+/**
+ * The seller's orders.
+ *
+ * This used to be two screens. The one on the tab bar listed orders and
+ * nothing else; a second, /(tabs)/sellerOrders, held the search, the status
+ * filter, the sort and the only way to accept or ship an item -- and was
+ * hidden from the tab bar behind a single tile on the dashboard. A seller who
+ * never found that tile could not search their own orders, or advance one,
+ * from anywhere in the app.
+ *
+ * One screen now. The filtering is client-side over the page the server
+ * returns, exactly as it was before: making it server-side is a real change
+ * to the orders endpoint, not part of merging two screens.
+ */
 function SellerOrdersTab({ isDark }: { isDark: boolean }) {
   const router = useRouter();
   const t = useTokens();
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<SellerStatusFilter>("all");
+  const [sort, setSort] = useState<SellerSort>("latest");
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchOrders = useCallback(async (page: number) => {
-    const res = await getSellerOrders(page, 10);
-    return res.items;
-  }, []);
+  const fetchOrders = useCallback(
+    async (page: number): Promise<SellerOrderItem[]> => {
+      const res = await getSellerOrders(page, 10);
+      let items = res.items;
+
+      if (status !== "all") {
+        items = items.filter((i) => i.status === status);
+      }
+
+      const q = query.trim().toLowerCase();
+      if (q) {
+        items = items.filter((i) => i.product?.name?.toLowerCase().includes(q));
+      }
+
+      if (sort === "price_asc") {
+        items = [...items].sort((a, b) => a.price - b.price);
+      } else if (sort === "price_desc") {
+        items = [...items].sort((a, b) => b.price - a.price);
+      }
+      return items;
+    },
+    [query, sort, status]
+  );
+
+  const updateStatus = async (
+    item: SellerOrderItem,
+    next: OrderItemStatus
+  ) => {
+    try {
+      await updateSellerOrderItem(item.id!, { status: next });
+      setRefreshKey((k) => k + 1);
+    } catch (e) {
+      // The server names both states on an illegal move ("Cannot transition
+      // from Status.PENDING to Status.SHIPPED"), which is more use than
+      // "Failed to update order status".
+      Alert.alert(
+        "Couldn't update order",
+        friendlyErrorMessage(e, "Failed to update order status.")
+      );
+    }
+  };
+
+  const openActions = (item: SellerOrderItem) => {
+    const moves = nextStatuses(item.status);
+    if (moves.length === 0) {
+      // Nothing to do from here, so open the order rather than a menu with
+      // only "Close" in it.
+      if (item.id) router.push(`/sellerOrder/${item.id}` as any);
+      return;
+    }
+    Alert.alert(
+      "Update order status",
+      item.product?.name ?? "Order item",
+      // Only what the item can legally become from where it is. The menu used
+      // to offer every action from every state, so "Mark Shipped" on a pending
+      // item was a guaranteed 422. Mirrors OrderItem.VALID_STATUS_TRANSITIONS.
+      [
+        ...moves.map((next) => ({
+          text: STATUS_ACTION_LABEL[next] ?? next,
+          style: (next === "cancelled" ? "destructive" : "default") as
+            | "destructive"
+            | "default",
+          onPress: () => updateStatus(item, next),
+        })),
+        {
+          text: "Open order",
+          onPress: () => {
+            if (item.id) router.push(`/sellerOrder/${item.id}` as any);
+          },
+        },
+        { text: "Close", style: "cancel" as const },
+      ]
+    );
+  };
+
+  // Refetching is what applies a filter, so the list has to be rebuilt when
+  // one changes.
+  const listKey = useMemo(
+    () => `${status}|${sort}|${query}|${refreshKey}`,
+    [status, sort, query, refreshKey]
+  );
 
   return (
     <View className="flex-1">
-      {/* Searching, filtering by status and changing an item's status all
-          live on /(tabs)/sellerOrders, which is hidden from the tab bar and
-          was reachable from exactly one tile on the dashboard -- so a seller
-          who never noticed that tile could not search their own orders. This
-          is the same list, so this is where they will look for it. */}
-      <TouchableOpacity
-        onPress={() => router.push("/(tabs)/sellerOrders" as any)}
-        accessibilityRole="button"
-        accessibilityLabel="Search and filter orders"
-        className="mx-4 mt-3 mb-1 h-11 flex-row items-center justify-center gap-2 rounded-xl border border-border bg-surface-raised"
-      >
-        <Search size={16} color={t.textSecondary} />
-        <Text className="text-[14px] font-semibold text-text-primary">
-          Search and filter orders
-        </Text>
-      </TouchableOpacity>
+      <View className="flex-row items-center gap-2 px-4 pt-3">
+        <View className="flex-1">
+          <SearchField
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search by product"
+          />
+        </View>
+        <TouchableOpacity
+          onPress={() => router.push("/fulfilment/allocations" as any)}
+          accessibilityRole="button"
+          accessibilityLabel="Pending fulfilment requests"
+          className="h-11 flex-row items-center gap-1.5 rounded-xl border border-border bg-surface-sunken px-3"
+        >
+          <Clock size={16} color={t.textSecondary} />
+          <Text className="text-[13px] font-semibold text-text-primary">
+            Requests
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Status and sort share one rail, the shape the shop list settled on.
+          Stacked rails ate a third of the screen before a single order
+          appeared. Sort is the neutral tone so the two groups do not both
+          shout. */}
+      <View className="pt-3">
+        <FilterRail>
+          {SELLER_STATUS_FILTERS.map(({ key, label }) => (
+            <FilterChip
+              key={key}
+              label={label}
+              active={status === key}
+              onPress={() => setStatus(key)}
+            />
+          ))}
+          <RailDivider />
+          <SlidersHorizontal size={14} color={t.textMuted} strokeWidth={2} />
+          {SELLER_SORTS.map(({ key, label }) => (
+            <FilterChip
+              key={key}
+              label={label}
+              tone="neutral"
+              active={sort === key}
+              onPress={() => setSort(key)}
+            />
+          ))}
+        </FilterRail>
+      </View>
+
       <View className="flex-1 bg-surface-raised">
         <OrdersList
+          key={listKey}
           fetchOrders={fetchOrders}
           isSeller
-          // The seller's own screen, not /orderdetail — that one is the
-          // buyer's view and offered a seller "Pay now" and "Track Order" on
-          // a sale they were meant to fulfil.
-          pressed={(item: SellerOrderItem) => {
-            if (item.id) router.push(`/sellerOrder/${item.id}` as any);
-          }}
+          // A tap is the seller's action menu -- accept, ship, cancel -- and
+          // falls through to the order when there is nothing left to do.
+          // Never /orderdetail: that is the buyer's view, and it offered a
+          // seller "Pay now" on a sale they were meant to fulfil.
+          pressed={openActions}
         />
       </View>
     </View>
