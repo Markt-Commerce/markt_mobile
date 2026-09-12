@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -8,6 +8,11 @@ import { getNichePosts, joinNiche, leaveNiche, getMyNiches, getNicheById, canPos
 import { NichePost, Niches } from "../../models/niches";
 import { useToast } from "../../components/ToastProvider";
 import PostDisplayComponent from "../../components/PostDisplayComponent";
+import ContentActionsSheet, {
+  type ContentActionsTarget,
+} from "../../components/ContentActionsSheet";
+import type { FeedPost } from "../../types/feed";
+import { useUser } from "../../hooks/userContextProvider";
 import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { likePost } from "../../services/sections/post";
@@ -31,6 +36,8 @@ export default function NicheDetailScreen() {
   const goBack = useBackTo("/(tabs)");
   const { show } = useToast();
   const t = useTokens();
+
+  const { user } = useUser();
 
   const [posts, setPosts] = useState<NichePost[]>([]);
   const [niche, setNiche] = useState<Niches | null>(null);
@@ -194,10 +201,39 @@ export default function NicheDetailScreen() {
     }
   };
 
+  // Report, block, share and save -- the same menu the feed has. A post
+  // inside a niche is the one a member is most likely to want to report,
+  // since it is the one they did not choose to follow, and it was the one
+  // place with no way to.
+  const [actionsTarget, setActionsTarget] =
+    useState<ContentActionsTarget | null>(null);
+  const openPostActions = useCallback(
+    (post: FeedPost) => {
+      setActionsTarget({
+        type: "post",
+        id: post.id,
+        title: post.caption?.trim()
+          ? post.caption.trim().slice(0, 60)
+          : "This post",
+        authorId: post.user?.id,
+        authorName: post.user?.username,
+        isOwn: !!user?.user_id && post.user?.id === user.user_id,
+        shareUrl: `markt://post/${post.id}`,
+      });
+    },
+    [user?.user_id]
+  );
+
   const renderPost = ({ item }: { item: NichePost }) => {
     const post = item.post;
     if (!post?.id) return null;
-    return <PostDisplayComponent post={post} onLike={(postId) => likePost(postId)} />;
+    return (
+      <PostDisplayComponent
+        post={post}
+        onLike={(postId) => likePost(postId)}
+        onOpenActions={openPostActions}
+      />
+    );
   };
 
   const handleEndReached = () => {
@@ -396,6 +432,39 @@ export default function NicheDetailScreen() {
 
       {/* Post create bottom sheet (only for joined members who are not banned) */}
       {isJoined && !isBanned && canPost && <PostFormBottomSheet ref={postFormRef} nicheId={id} />}
+
+      <ContentActionsSheet
+        target={actionsTarget}
+        // The sheet's save row reflects the post it was opened on, which the
+        // server now reports (markt_python: a saved post now says it is
+        // saved); toggling it there updates the card in the list too.
+        saved={
+          !!actionsTarget &&
+          !!posts.find((p) => p.post?.id === actionsTarget.id)?.post?.is_saved
+        }
+        onSavedChange={(next: boolean) => {
+          const id = actionsTarget?.id;
+          if (!id) return;
+          setPosts((prev) =>
+            prev.map((p) =>
+              p.post?.id === id
+                ? { ...p, post: { ...p.post, is_saved: next } }
+                : p
+            )
+          );
+        }}
+        onClose={() => setActionsTarget(null)}
+        onBlocked={() => {
+          // Their posts should not still be sitting in the list behind the
+          // sheet that just blocked them.
+          setActionsTarget(null);
+          setPosts((prev) =>
+            prev.filter(
+              (p) => p.post?.user?.id !== actionsTarget?.authorId
+            )
+          );
+        }}
+      />
     </SafeAreaView>
   );
 }

@@ -247,7 +247,7 @@ export default function AccountInfoScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       // Wide, because that is the shape it is displayed in — cropping here
       // beats cropping in a card the seller never sees.
       allowsEditing: true,
@@ -286,7 +286,7 @@ export default function AccountInfoScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       quality: 0.8,
     });
 

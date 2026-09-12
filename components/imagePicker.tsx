@@ -95,8 +95,8 @@ export default function InstagramGrid({
       const remaining = max ? Math.max(0, max - images.length) : undefined;
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: allowVideos
-          ? ImagePicker.MediaTypeOptions.All
-          : ImagePicker.MediaTypeOptions.Images,
+          ? ["images", "videos"]
+          : ["images"],
         allowsMultipleSelection: true,
         selectionLimit: remaining,
         quality: 0.9,

@@ -1183,8 +1183,8 @@ export default function ChatScreen({
       const res = await ImagePicker.launchImageLibraryAsync({
         mediaTypes:
           kind === "image"
-            ? ImagePicker.MediaTypeOptions.Images
-            : ImagePicker.MediaTypeOptions.Videos,
+            ? ["images"]
+            : ["videos"],
         quality: 0.8,
       });
       if (res.canceled) return;
@@ -1282,7 +1282,7 @@ export default function ChatScreen({
         return;
       }
       const res = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images"],
         quality: 0.8,
       });
       if (res.canceled) return;
