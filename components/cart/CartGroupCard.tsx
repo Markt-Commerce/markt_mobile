@@ -39,6 +39,13 @@ interface Props {
    * the whole basket had to pick one group's fee to quote and was wrong for
    * every other one. */
   batchOption?: React.ReactNode;
+  /** The chat offer from *this* shop, if the buyer holds one.
+   *
+   * Per card for the same reason the batch toggle is: an offer belongs to
+   * one seller, and each card is its own order. */
+  discountOption?: React.ReactNode;
+  /** What the applied offer takes off this order, in naira. */
+  discountAmount?: number | null;
 }
 
 /**
@@ -51,6 +58,7 @@ interface Props {
 export default function CartGroupCard({
   group, deliveringTo, deliveryFee, blockedReason, busy, disabled,
   onCheckout, onClear, onChangeAddress, children, batchOption,
+  discountOption, discountAmount,
 }: Props) {
   const t = useTokens();
   const [open, setOpen] = React.useState(false);
@@ -120,7 +128,36 @@ export default function CartGroupCard({
             <Text className="text-[13px] text-text-primary">{money(deliveryFee)}</Text>
           </View>
         ) : null}
+
+        {/* Shown only once it is actually coming off, so the buyer can see
+            the reduction land rather than trust that tapping worked. */}
+        {!blocked && discountAmount ? (
+          <View className="mt-2 flex-row justify-between">
+            <Text className="text-[13px] text-text-secondary">Discount</Text>
+            <Text className="text-[13px] font-semibold text-primary-text">
+              -{money(discountAmount)}
+            </Text>
+          </View>
+        ) : null}
+
+        {!blocked && (deliveryFee != null || discountAmount) ? (
+          <View className="mt-2 flex-row justify-between border-t border-border pt-2">
+            <Text className="text-[14px] font-bold text-text-primary">Total</Text>
+            <Text className="text-[14px] font-bold text-text-primary">
+              {money(
+                Math.max(
+                  0,
+                  group.subtotal + (deliveryFee ?? 0) - (discountAmount ?? 0)
+                )
+              )}
+            </Text>
+          </View>
+        ) : null}
       </View>
+
+      {/* Above the share-a-trip toggle: the offer changes what is owed, the
+          toggle changes how it travels. */}
+      {!blocked ? discountOption : null}
 
       {/* Only where a delivery is actually possible: offering to share a
           trip that cannot happen is noise. */}

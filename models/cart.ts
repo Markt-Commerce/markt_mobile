@@ -224,6 +224,10 @@ export interface CheckoutRequest {
    * several orders, one per shop; the app shows them as separate cards and
    * sends whichever was tapped. */
   seller_id?: number;
+  /** A discount this shop offered in chat, if the buyer chose to spend it.
+   * The server re-checks it against this shop and this total, and spends it
+   * only if the order is created. */
+  discount_id?: number;
 }
 
 export interface CheckoutResponse {

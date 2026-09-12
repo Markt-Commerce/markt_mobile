@@ -82,7 +82,8 @@ export async function checkoutCart(data:CheckoutRequest): Promise<CheckoutRespon
     method: "POST",
     body: JSON.stringify(data),
   });
-  // Checkout empties the cart server-side, so the badge has to clear too.
+  // The bought items leave the basket when payment lands, not here, but
+  // the count can still move -- refresh the badge rather than guess.
   emitBadgeChanged();
   return res;
 }
