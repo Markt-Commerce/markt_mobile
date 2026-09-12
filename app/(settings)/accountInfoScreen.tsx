@@ -355,35 +355,9 @@ export default function AccountInfoScreen() {
     }
   };
 
-  const saveShopLocation = async () => {
-    if (shopLocSaving) return;
-    setShopLocSaving(true);
-    try {
-      const fix = await readCurrentLocation();
-      if (!fix) return;
-      // Sent as a pair — the server refuses a lone coordinate, and (0, 0) is
-      // what a failed geocode looks like rather than a shop in the Atlantic.
-      await updateSellerProfile({
-        shop_latitude: fix.coords.latitude,
-        shop_longitude: fix.coords.longitude,
-        ...(fix.label ? { shop_address: { street: fix.label } } : {}),
-      });
-      setShopLocLabel(fix.label ?? "Shop location saved");
-      show({
-        variant: "success",
-        title: "Shop location updated",
-        message: "Your shop can now be found by distance.",
-      });
-    } catch (e) {
-      show({
-        variant: "error",
-        title: "Could not save your shop location",
-        message: friendlyErrorMessage(e, "Please try again."),
-      });
-    } finally {
-      setShopLocSaving(false);
-    }
-  };
+  // The GPS-only shop-location handler lived here. Replaced by the
+  // picker screen: taking the current fix meant a seller had to be
+  // standing in their shop, and tapping it anywhere else moved the shop.
 
   const onSellerSubmit = sellerHandleSubmit((data) => {
     handleSave('/users/profile/seller', {
@@ -666,12 +640,16 @@ export default function AccountInfoScreen() {
                     proximity search at all — it only shows on the widest
                     rungs — and there was no way to set it after signup. */}
                 <View className="mt-4">
+                  {/* Opens the picker rather than taking the current GPS
+                      fix. A seller tapping this at home used to move their
+                      shop there silently, and they had to be standing in the
+                      shop for it to be right at all. */}
                   <LocationRow
                     title="Shop location"
-                    hint="Set this so buyers nearby can find you."
+                    hint="Where riders collect from, and what puts you in nearby search."
                     saved={shopLocLabel}
                     busy={shopLocSaving}
-                    onPress={saveShopLocation}
+                    onPress={() => nav.push("/(settings)/shopLocationScreen" as any)}
                   />
                 </View>
 

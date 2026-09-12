@@ -1,6 +1,10 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Modal } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+  initialWindowMetrics,
+} from "react-native-safe-area-context";
 import { X } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useTokens } from "../../theme/useTokens";
@@ -86,7 +90,13 @@ export default function AddressPickerSheet({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent={false}>
-      <SafeAreaView className="flex-1 bg-surface-page">
+      {/* Its own provider, seeded with the window metrics captured at launch.
+          A Modal renders in a separate native window that the app-level
+          SafeAreaProvider does not reach, so without this the insets are all
+          zero -- which is why this sheet sat under the status bar while the
+          saved-address screen, an ordinary screen, did not. */}
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+        <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "bottom"]}>
         <View className="flex-row items-center justify-between px-5 pb-2 pt-4">
           <Text className="text-[24px] font-bold text-text-primary">{title}</Text>
           <TouchableOpacity
@@ -114,7 +124,8 @@ export default function AddressPickerSheet({
           }}
           onPick={handlePicked}
         />
-      </SafeAreaView>
+        </SafeAreaView>
+      </SafeAreaProvider>
     </Modal>
   );
 }

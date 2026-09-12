@@ -108,7 +108,11 @@ export default function AddressList({
           <Search size={18} color={t.textSecondary} />
           <View className="flex-1">
             <Text className="text-[15px] text-text-primary">{r.formatted_address}</Text>
-            <Text className="mt-0.5 text-[12px] text-text-muted">Tap to use this place</Text>
+            {/* The city, so a result nowhere near the buyer is visibly wrong
+                rather than quietly plausible. */}
+            <Text className="mt-0.5 text-[12px] text-text-muted">
+              {r.context || "Tap to use this place"}
+            </Text>
           </View>
         </TouchableOpacity>
       ))}

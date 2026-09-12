@@ -1,9 +1,12 @@
 import { useCallback, useRef, useState } from "react";
 import * as Location from "expo-location";
+import { searchAddresses } from "../services/geocoding";
 import logger from "../utils/logger";
 
 export interface LookupResult {
   formatted_address: string;
+  /** City/state, so a result nowhere near the buyer is visibly wrong. */
+  context?: string | null;
   latitude: number;
   longitude: number;
 }
@@ -11,17 +14,15 @@ export interface LookupResult {
 /**
  * Turning what someone types, or where they are, into a place we can deliver.
  *
- * Deliberately built on expo-location, which uses the phone's own geocoder —
- * Apple's on iOS, Android's on Android. That is free and involves no API key
- * and no billing account. Google's Places Autocomplete would give better
- * results for a partial query, and it is one of the Maps APIs that actually
- * costs money per request, so it is not used here without that being a
- * deliberate, costed decision.
+ * Search runs on OpenStreetMap through Photon (see services/geocoding.ts),
+ * which needs no API key and no billing account — so address search does not
+ * depend on the Google Maps key at all, and costs nothing whatever is decided
+ * about Places Autocomplete. The phone's own geocoder is the fallback when
+ * Photon is unreachable.
  *
- * The practical consequence: search works well for a real place name
- * ("Sabo Market Ogbomoso") and poorly for a half-typed fragment. Current
- * location is the better path and is offered first, which is also the one
- * that gives a coordinate we know is right.
+ * Results are biased and distance-filtered around wherever the buyer is, once
+ * we know: an unbounded fuzzy match for a Nigerian query will cheerfully
+ * return a street in Berlin.
  */
 export function useAddressLookup() {
   const [results, setResults] = useState<LookupResult[]>([]);
@@ -32,6 +33,9 @@ export function useAddressLookup() {
   // Only the newest query may write results: someone typing produces several
   // in-flight lookups and a slow early one must not overwrite a fast later one.
   const queryId = useRef(0);
+  // Whatever we last knew about where the buyer is. Used to bias and
+  // distance-filter search; null until they use current location once.
+  const biasRef = useRef<{ latitude: number; longitude: number } | null>(null);
 
   const search = useCallback(async (query: string) => {
     const id = ++queryId.current;
@@ -45,18 +49,9 @@ export function useAddressLookup() {
     }
     setSearching(true);
     try {
-      const found = await Location.geocodeAsync(q);
+      const found = await searchAddresses(q, biasRef.current);
       if (id !== queryId.current) return;
-      // The OS geocoder returns coordinates without a formatted address, so
-      // the query is echoed back as the label. It is what the buyer typed,
-      // which is more recognisable to them than a re-derived string anyway.
-      setResults(
-        found.slice(0, 5).map((r) => ({
-          formatted_address: q,
-          latitude: r.latitude,
-          longitude: r.longitude,
-        }))
-      );
+      setResults(found);
     } catch (error) {
       if (id !== queryId.current) return;
       logger.error("Address search failed:", error);
@@ -92,6 +87,10 @@ export function useAddressLookup() {
         // A coordinate with a dull label still delivers. Never block on the
         // geocoder.
       }
+      biasRef.current = {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+      };
       return {
         formatted_address: label,
         latitude: pos.coords.latitude,
