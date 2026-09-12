@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "expo-router";
 import {
   View,
@@ -29,6 +29,8 @@ import { defaultProfilePicture } from "../../models/defaults";
 import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import CartFab from "../../components/CartFab";
+import QuickChatBottomSheet from "../../components/quickChatBottomSheet";
+import type { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import VerifiedBadge, { isVerifiedSeller } from "../../components/VerifiedBadge";
 import { useGamificationLookup } from "../../hooks/useGamificationLookup";
 import { useBadges } from "../../hooks/useBadges";
@@ -94,6 +96,25 @@ export default function Shop() {
   // component takes onAdd and neither section passed it, so tapping it did
   // exactly nothing and looked like a dead app.
   const { add: handleAddToCart, addingId } = useAddToCart();
+
+  // Chat from a tile opens the same quick-chat surface the feed uses.
+  // It previously pushed /chat/<seller user id>, but that route takes a
+  // numeric room id and does Number() on it -- so a USR_ id became NaN and
+  // the screen span forever waiting for a room that could not exist.
+  const [productForChat, setProductForChat] = useState<{
+    id: string;
+    name?: string;
+  } | null>(null);
+  const chatSheetRef = useRef<BottomSheetMethods | null>(null);
+
+  const openProductChat = useCallback(
+    (product: { id: string; name?: string }) => {
+      if (isOwnShop) return;
+      setProductForChat(product);
+      chatSheetRef.current?.expand();
+    },
+    [isOwnShop]
+  );
 
   const { profile: sellerGamification } = useGamificationLookup(shop?.user?.id);
   const { badges: sellerBadges } = useBadges(shop?.user?.id);
@@ -403,7 +424,7 @@ export default function Shop() {
                 isOwnShop={isOwnShop}
                 onAdd={handleAddToCart}
                 addingId={addingId}
-                onChat={() => router.push(`/chat/${shop?.user?.id}` as any)}
+                onChat={openProductChat}
                 products={
                   item.map((p) => ({
                     ...p,
@@ -441,7 +462,7 @@ export default function Shop() {
                   isOwnShop={isOwnShop}
                   onAdd={handleAddToCart}
                   addingId={addingId}
-                  onChat={() => router.push(`/chat/${shop?.user?.id}` as any)}
+                  onChat={openProductChat}
                   products={
                     item.map((p) => ({
                       ...p,
@@ -472,7 +493,20 @@ export default function Shop() {
       </ScrollView>
 
       {/* Outside the ScrollView so it stays put while the page moves. */}
-      <CartFab />
+      {productForChat && shop?.user?.id ? (
+        <QuickChatBottomSheet
+          sellerId={shop.user.id}
+          buyerId={user?.user_id ?? ""}
+          product_id={productForChat.id}
+          otherUser={{
+            username: shop.shop_name ?? shop.user.username,
+            profile_picture: shop.user.profile_picture ?? undefined,
+          }}
+          asBuyer
+          sheetRef={chatSheetRef}
+        />
+      ) : null}
+        <CartFab />
     </SafeAreaView>
   );
 }

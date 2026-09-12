@@ -34,6 +34,7 @@ import { useUser } from "../hooks/userContextProvider";
 import { isOwnProductListing } from "../utils/chatGuards";
 import { useTokens } from "../theme/useTokens";
 import { pickProfilePicture, type ChatOtherUser } from "../utils/chatAvatar";
+import { useKeyboardOverlap } from "../hooks/useKeyboardOverlap";
 
 export type QuickChatBottomSheetProps = {
   /** Seller's user id (UUID) — used when current user is buyer (CHATS_API §1.2) */
@@ -99,6 +100,10 @@ export default function QuickChatBottomSheet({
 
   // The room fetch and teardown keyed off the sheet's index callback; now it
   // keys off visibility, which is the same signal by another name.
+  // Only while the modal is open, so the listeners are not running behind
+  // every screen in the app.
+  const keyboardOverlap = useKeyboardOverlap(visible);
+
   useEffect(() => {
     setSheetOpen(visible);
     if (!visible) {
@@ -375,7 +380,15 @@ export default function QuickChatBottomSheet({
                 the whole fix: the bar rises with the keyboard because the
                 layout says so, not because anything measured it. */}
             {showChat && sheetFooter ? (
-              <View style={{ paddingBottom: insets.bottom }}>{sheetFooter}</View>
+              <View
+                // The home-indicator gap belongs under the input only while
+                // the keyboard is down. With it up, KeyboardAvoidingView has
+                // already lifted everything clear and the inset became a
+                // visible white strip between the bar and the keys.
+                style={{ paddingBottom: keyboardOverlap > 0 ? 0 : insets.bottom }}
+              >
+                {sheetFooter}
+              </View>
             ) : null}
           </KeyboardAvoidingView>
         </SafeAreaView>
