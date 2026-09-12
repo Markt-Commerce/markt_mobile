@@ -1,7 +1,11 @@
 import 'react-native-reanimated';
-import React, { useRef, useMemo, forwardRef, useState } from 'react';
+import React, { useCallback, useRef, useMemo, forwardRef, useState } from 'react';
 import { ActivityIndicator, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import BottomSheet, {
+  BottomSheetScrollView,
+  BottomSheetFooter,
+  type BottomSheetFooterProps,
+} from '@gorhom/bottom-sheet';
 import SheetBusyOverlay from './SheetBusyOverlay';
 import { useKeyboardOverlap, keyboardScrollPadding } from '../hooks/useKeyboardOverlap';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -168,6 +172,56 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
     }
   };
 
+  /**
+   * The action bar, docked rather than scrolled to.
+   *
+   * `BottomSheetFooter` renders outside the scroll view and sits above the
+   * keyboard, so "Create Product" is reachable from any field instead of
+   * being the very last thing in a long form — which meant scrolling past
+   * every optional detail to submit, with the keyboard still up.
+   *
+   * Shape borrowed from fieldgrid-mobile's input sheet: a hairline rule, the
+   * sheet's own background so it reads as part of the sheet rather than a
+   * floating bar, and the action sitting right.
+   */
+  const renderFooter = useCallback(
+    (props: BottomSheetFooterProps) => (
+      <BottomSheetFooter {...props} bottomInset={0}>
+        <View
+          className="flex-row items-center gap-3 px-4 pt-2.5 bg-surface-page border-t border-border"
+          style={{ paddingBottom: Math.max(insets.bottom, 10) }}
+        >
+          <Text className="flex-1 text-[12px] text-text-muted" numberOfLines={1}>
+            {stage === "uploading"
+              ? "Uploading images…"
+              : stage === "creating"
+                ? "Creating…"
+                : `${selectedCategories.length} categor${selectedCategories.length === 1 ? "y" : "ies"}`}
+          </Text>
+          <TouchableOpacity
+            disabled={sending}
+            onPress={handleSubmit(onSubmit)}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: sending, busy: sending }}
+            className={`min-h-[44px] flex-row items-center justify-center gap-2 rounded-xl px-5 ${
+              sending ? "bg-surface-sunken" : "bg-primary-fill"
+            }`}
+          >
+            {sending ? <ActivityIndicator size="small" color={t.textSecondary} /> : null}
+            <Text
+              className={`text-[15px] font-bold ${
+                sending ? "text-text-muted" : "text-text-on-primary"
+              }`}
+            >
+              {sending ? "Working…" : "Create Product"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </BottomSheetFooter>
+    ),
+    [sending, stage, insets.bottom, selectedCategories.length, handleSubmit, onSubmit, t]
+  );
+
   return (
     <BottomSheet
       ref={sheetRef}
@@ -185,6 +239,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
       keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
+      footerComponent={renderFooter}
     >
       <BottomSheetScrollView
         className="p-4"
@@ -261,21 +316,6 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
         <Input name='cost_per_item' label='Cost per Item (₦)' placeholder='What it costs you' control={control} keyboardType='numeric' errors={errors} />
         
 
-        {/* Submit Button */}
-        <TouchableOpacity
-          disabled={sending}
-          onPress={handleSubmit(onSubmit)} // call our merged submit handler
-          className={`bg-primary-fill p-3 rounded mt-4 flex-row items-center justify-center gap-2 ${sending ? "opacity-70" : ""}`}
-        >
-          {sending && <ActivityIndicator size="small" color="white" />}
-          <Text className="text-white text-center font-bold">
-            {stage === "uploading"
-              ? "Uploading images…"
-              : stage === "creating"
-                ? "Creating product…"
-                : "Create Product"}
-          </Text>
-        </TouchableOpacity>
         </View>
 
 
