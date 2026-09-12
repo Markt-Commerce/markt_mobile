@@ -3,7 +3,7 @@ import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'expo-router';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, Dimensions, Animated, Easing, FlatList, RefreshControl } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { Search, ChevronDown, AlertTriangle, ChevronRight, Pencil, Trash2, Plus, ShoppingBag, MessageCircle, FileText, Users } from 'lucide-react-native';
+import { Search, ChevronDown, AlertTriangle, ChevronRight, Pencil, Trash2, Plus, ShoppingBag, MessageCircle, FileText, Users, CheckCircle2, EyeOff } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSellerAnalyticsOverview, getSellerAnalyticsTimeseries } from '../../services/sections/analytics';
 import { getMyProducts, getMyProductsPage } from '../../services/sections/product';
@@ -456,33 +456,54 @@ export default function SellerDashboard() {
         onPress={() => setEditingProduct(item)}
         accessibilityRole="button"
         accessibilityLabel={`Edit ${item.name}. ${formatPrice(item.price)}, ${stock} in stock, ${isLive ? 'listed' : 'hidden'}.`}
-        className="flex-row items-center gap-3 px-4 py-3 border-b border-border"
+        className="flex-row items-center gap-3 py-3"
       >
         {thumb ? (
-          <Image source={{ uri: thumb }} className="w-12 h-12 rounded bg-media" />
+          <Image source={{ uri: thumb }} className="w-14 h-14 rounded-xl bg-media" />
         ) : (
-          <View className="w-12 h-12 rounded bg-media" />
+          <View className="w-14 h-14 rounded-xl bg-media" />
         )}
 
         <View className="flex-1 min-w-0">
-          <Text className="font-semibold text-[15px] text-text-primary" numberOfLines={1}>
-            {item.name}
-          </Text>
-          <View className="flex-row items-center gap-2 mt-1">
-            <Text className="text-sm font-bold text-text-primary">
-              {formatPrice(item.price)}
+          {/* State first. A seller scanning this list is looking for what is
+              wrong -- hidden, or out of stock -- not reading names. */}
+          <View className="flex-row items-center gap-1.5">
+            {isLive ? (
+              <CheckCircle2 size={13} color={t.successText} />
+            ) : (
+              <EyeOff size={13} color={t.textMuted} />
+            )}
+            <Text
+              className={`text-[12px] font-semibold ${isLive ? "text-success-text" : "text-text-muted"}`}
+            >
+              {isLive ? "Active" : "Hidden"}
             </Text>
-            <View className={`px-2 py-0.5 rounded-full ${out ? 'bg-danger-muted' : low ? 'bg-warning-muted' : 'bg-surface-sunken'}`}>
-              <Text className={`text-[11px] font-semibold ${out ? 'text-danger-text' : low ? 'text-warning-text' : 'text-text-secondary'}`}>
-                {out ? 'Out of stock' : `${stock} in stock`}
-              </Text>
-            </View>
-            {!isLive ? (
-              <View className="px-2 py-0.5 rounded-full bg-surface-sunken">
-                <Text className="text-[11px] font-semibold text-text-muted">Hidden</Text>
-              </View>
+            {out || low ? (
+              <>
+                <Text className="text-[12px] text-text-muted">·</Text>
+                <Text
+                  className={`text-[12px] font-semibold ${out ? "text-danger-text" : "text-warning-text"}`}
+                >
+                  {out ? "Out of stock" : "Low stock"}
+                </Text>
+              </>
             ) : null}
           </View>
+
+          <Text
+            className="mt-0.5 text-[15px] font-semibold text-text-primary"
+            numberOfLines={1}
+          >
+            {item.name}
+          </Text>
+
+          {/* Price and stock on one line, the way a spec sheet reads, rather
+              than each in its own pill -- the pills were three bordered
+              shapes inside a bordered row inside a bordered card. */}
+          <Text className="mt-0.5 text-[13px] text-text-secondary" numberOfLines={1}>
+            <Text className="font-bold text-text-primary">{formatPrice(item.price)}</Text>
+            {`  ·  ${stock} ${stock === 1 ? "stock" : "stocks"}`}
+          </Text>
         </View>
 
         <View className="flex-row items-center gap-1">
@@ -829,7 +850,7 @@ export default function SellerDashboard() {
             </>
           ) : (
             <>
-          <View className="rounded border p-6 bg-surface-raised border-border">
+          <View>
             <SearchField
               value={searchText}
               onChangeText={setSearchText}
@@ -884,14 +905,19 @@ export default function SellerDashboard() {
           ) : filteredInventory.length === 0 ? (
             <Text className="text-sm px-1 text-text-secondary">No products in inventory</Text>
           ) : (
-            <View className="rounded border overflow-hidden bg-surface-raised border-border">
-              <FlatList
-                data={filteredInventory}
-                keyExtractor={(it) => String(it.id ?? it.name)}
-                renderItem={renderProductItem}
-                scrollEnabled={false}
-              />
-            </View>
+            <FlatList
+              data={filteredInventory}
+              keyExtractor={(it) => String(it.id ?? it.name)}
+              renderItem={renderProductItem}
+              scrollEnabled={false}
+              // Rows run edge to edge with the hairline inset to start under
+              // the text, the list language the settings screens already
+              // speak. The card around them was a bordered box inside a
+              // bordered screen, and it cost width on every row.
+              ItemSeparatorComponent={() => (
+                <View className="h-px ml-[68px] bg-border" />
+              )}
+            />
           )}
               <Pager
                 page={invPage}

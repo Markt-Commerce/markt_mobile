@@ -168,6 +168,16 @@ export interface PlaceholderProduct {
     status?: string;
     category_ids?: number[];
     tag_ids?: number[];
+    /** The product's photos, as media ids, in the order they should show.
+     *
+     * The server has always accepted this; it was missing here, which is a
+     * large part of why nothing in the app could add a photo to a listing
+     * after it was created.
+     *
+     * Replaces the whole set. Leave it out to keep the photos as they are --
+     * sending an empty array removes them all, so a screen that only changes
+     * the price must not send it. */
+    media_ids?: number[];
   }
 
   // /models/product.ts
