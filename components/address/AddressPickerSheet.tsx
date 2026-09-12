@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Modal, SafeAreaView } from "react-native";
-import { X, PlusCircle } from "lucide-react-native";
+import { View, Text, TouchableOpacity, Modal } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { X } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useTokens } from "../../theme/useTokens";
 import AddressList from "./AddressList";

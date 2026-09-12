@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator, ScrollView } from "react-native";
-import { MapPin, Navigation, PlusCircle, Pencil, Search } from "lucide-react-native";
+import { MapPin, Navigation, Pencil, Search } from "lucide-react-native";
 import { useTokens } from "../../theme/useTokens";
 import SearchField from "../SearchField";
 import { useAddressLookup, type LookupResult } from "../../hooks/useAddressLookup";
