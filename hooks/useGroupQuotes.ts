@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   createDeliveryQuote,
   describeNotServiceable,
+  notServiceableMessage,
   notServiceableReason,
 } from "../services/sections/delivery";
 import type { DeliveryQuote } from "../models/delivery";
@@ -83,7 +84,9 @@ export function useGroupQuotes(
               // Only a serviceability refusal blocks. A network failure is
               // ours, and the server falls back to a flat estimate when no
               // quote id is sent, so it must not stop the sale.
-              blocked: reason ? describeNotServiceable(reason) : null,
+              blocked: reason
+                ? describeNotServiceable(reason, notServiceableMessage(error))
+                : null,
               loading: false,
             },
           }));

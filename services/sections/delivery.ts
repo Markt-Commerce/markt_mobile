@@ -48,8 +48,18 @@ export function notServiceableReason(error: unknown): NotServiceableReason | nul
   return null;
 }
 
+/** The server's own sentence for a refusal, when it has a specific one. */
+export function notServiceableMessage(error: unknown): string | null {
+  const body = (error as { body?: NotServiceableError })?.body;
+  return body?.error_type === "not_serviceable" ? (body.message ?? null) : null;
+}
+
 /** What to tell the buyer, and whether they can do anything about it. */
-export function describeNotServiceable(reason: NotServiceableReason): {
+export function describeNotServiceable(
+  reason: NotServiceableReason,
+  /** The server's own sentence, when it has a more specific one. */
+  detail?: string | null
+): {
   title: string;
   message: string;
   actionable: boolean;
@@ -85,8 +95,13 @@ export function describeNotServiceable(reason: NotServiceableReason): {
       };
     case "no_lane":
       return {
-        title: "Not between these two areas yet",
+        title: "Not between these two places yet",
+        // The server names the cities when they differ, because "we deliver
+        // in both of these areas but not between them" reads like a bug to
+        // someone who can see both are served. Fall back to the generic line
+        // for two zones inside one city that simply have no lane.
         message:
+          detail ||
           "We deliver in both of these areas, but not between them yet. We're working on it.",
         actionable: false,
       };
