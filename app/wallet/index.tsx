@@ -224,11 +224,29 @@ export default function WalletScreen() {
 
   const handleWithdraw = async () => {
     const amount = Number(withdrawAmount);
-    if (!Number.isFinite(amount) || amount < MIN_WITHDRAWAL_AMOUNT) {
+    // The minimum exists so a transfer fee is not spent moving a trivial
+    // amount, but it must never strand money: a shared-delivery saving is a
+    // couple of hundred naira, and a buyer who chose the wallet was told they
+    // could take it out whenever. So a balance under the minimum can always
+    // be withdrawn -- in one go, which is what stops a big balance being
+    // drained a naira at a time. Mirrors WalletService.request_withdrawal.
+    const wholeSmallBalance =
+      balance != null && balance < MIN_WITHDRAWAL_AMOUNT && amount === balance;
+    if (!Number.isFinite(amount) || amount <= 0) {
+      show({
+        variant: "error",
+        title: "Enter an amount",
+        message: "How much would you like to withdraw?",
+      });
+      return;
+    }
+    if (amount < MIN_WITHDRAWAL_AMOUNT && !wholeSmallBalance) {
       show({
         variant: "error",
         title: "Amount too low",
-        message: `Minimum withdrawal is ${formatNaira(MIN_WITHDRAWAL_AMOUNT)}.`,
+        message:
+          `Withdraw at least ${formatNaira(MIN_WITHDRAWAL_AMOUNT)}, or take ` +
+          `out your whole balance at once.`,
       });
       return;
     }
@@ -275,7 +293,9 @@ export default function WalletScreen() {
     }
   };
 
-  const canWithdraw = (balance ?? 0) >= MIN_WITHDRAWAL_AMOUNT;
+  // Anything at all can be withdrawn: over the minimum normally, or a small
+  // balance taken out whole.
+  const canWithdraw = (balance ?? 0) > 0;
 
   const inputClass = `h-14 rounded border px-4 text-[15px] mb-4 bg-surface-raised border-border text-text-primary`;
   const placeholderColor = t.textMuted;
@@ -478,8 +498,9 @@ export default function WalletScreen() {
               Withdraw to bank
             </Text>
             <Text className="text-[13px] mb-5 text-text-secondary">
-              Minimum {formatNaira(MIN_WITHDRAWAL_AMOUNT)}. Available{" "}
-              {formatNaira(balance ?? 0)}.
+              {balance != null && balance < MIN_WITHDRAWAL_AMOUNT
+                ? `Take out your whole ${formatNaira(balance)} balance — no minimum.`
+                : `Minimum ${formatNaira(MIN_WITHDRAWAL_AMOUNT)}. Available ${formatNaira(balance ?? 0)}.`}
             </Text>
             <TextInput
               value={withdrawAmount}

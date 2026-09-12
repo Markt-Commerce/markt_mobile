@@ -38,6 +38,8 @@ export type Address = {
     shipping_address?: Record<string, any>;
     last_order_date?: string;
     id?: number;
+    /** Where money owed back lands. Absent on older servers; treat as "card". */
+    refund_preference?: RefundPreference;
   };
 
   export interface SellerAccount {
@@ -111,9 +113,15 @@ export interface UpdateProfileRequest {
 }
 
 /** Request body for PATCH /api/v1/users/profile/buyer */
+/** Where money owed back should land. "card" sends it to the card that paid,
+ * over days; "wallet" is instant and withdrawable. Defaults to "card" — see
+ * ADR-002: turning someone's refund into store credit is theirs to choose. */
+export type RefundPreference = "card" | "wallet";
+
 export interface UpdateBuyerProfileRequest {
   buyername?: string;
   shipping_address?: ShippingAddress;
+  refund_preference?: RefundPreference;
 }
 
 /** Request body for PATCH /api/v1/users/profile/seller */

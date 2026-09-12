@@ -48,6 +48,8 @@ import type { SavedAddress } from "../../models/addresses";
 import type { CombinedDeliveryQuote } from "../../models/delivery";
 import { useGroupQuotes } from "../../hooks/useGroupQuotes";
 import { useSpendableDiscounts } from "../../hooks/useSpendableDiscounts";
+import { getUserProfile } from "../../services/sections/profile";
+import type { RefundPreference } from "../../models/profile";
 import ChatDiscountOption from "../../components/cart/ChatDiscountOption";
 import { discountAmountFor } from "../../models/chat";
 import { isActiveOrder, isPastOrder } from "../../utils/orderStatus";
@@ -108,6 +110,10 @@ function MyCartTab() {
   // one. Accepting a discount in chat used to change nothing at checkout.
   const { byGroup: groupDiscounts, refresh: refreshDiscounts } =
     useSpendableDiscounts(groups);
+  // Where this buyer asked for money owed back to go, so the share-a-trip
+  // toggle can say what will actually happen rather than assuming the card.
+  const [refundPreference, setRefundPreference] =
+    useState<RefundPreference>("card");
   // Never inferred: the buyer has to choose to share, because under
   // charge-then-refund their money leaves and comes back.
   // Per shop, not per basket. Each card becomes its own order with its own
@@ -208,6 +214,22 @@ function MyCartTab() {
   useEffect(() => {
     refreshCombined();
   }, [refreshCombined]);
+
+  useEffect(() => {
+    let alive = true;
+    getUserProfile()
+      .then((profile) => {
+        if (alive && profile?.buyer_account?.refund_preference) {
+          setRefundPreference(profile.buyer_account.refund_preference);
+        }
+      })
+      // The card is the default and the server decides for real either way;
+      // a profile we could not read is not worth a visible failure here.
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   /** Check out one shop's card. The rest of the basket stays where it is. */
   const checkoutGroup = async (group: CartGroup) => {
@@ -493,6 +515,7 @@ function MyCartTab() {
               g.seller_id != null ? (
                 <BatchDeliveryOption
                   quote={groupQuotes[g.seller_id]?.quote ?? null}
+                  refundPreference={refundPreference}
                   value={!!batchOptIn[g.seller_id]}
                   onChange={(next) =>
                     setBatchOptIn((prev) => ({ ...prev, [g.seller_id!]: next }))

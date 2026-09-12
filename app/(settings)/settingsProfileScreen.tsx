@@ -18,6 +18,7 @@ import {
   Trash2,
   Trophy,
   UserCog,
+  Undo2,
   Wallet,
 } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
@@ -183,6 +184,12 @@ export default function SettingsProfileScreen() {
             icon={Wallet}
             title="Wallet"
             onPress={() => router.push("/wallet" as any)}
+          />
+          <SettingsRow
+            icon={Undo2}
+            title="Refunds"
+            subtitle="Where money owed back lands"
+            onPress={() => router.push("/(settings)/refundPreferenceScreen" as any)}
           />
           <SettingsRow
             icon={Bookmark}
