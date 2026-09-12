@@ -103,7 +103,10 @@ function MyCartTab() {
   const groupQuotes = useGroupQuotes(groups, address);
   // Never inferred: the buyer has to choose to share, because under
   // charge-then-refund their money leaves and comes back.
-  const [batchOptIn, setBatchOptIn] = useState(false);
+  // Per shop, not per basket. Each card becomes its own order with its own
+  // delivery and its own ceiling, so one cart-wide toggle had to pick a
+  // single group's fee to quote and was wrong for every other one.
+  const [batchOptIn, setBatchOptIn] = useState<Record<number, boolean>>({});
 
   const fetchCart = useCallback(async (opts?: { silent?: boolean }) => {
     try {
@@ -229,7 +232,7 @@ function MyCartTab() {
           },
           address.directions || "Checkout from mobile",
           quote?.id,
-          batchOptIn
+          group.seller_id != null ? !!batchOptIn[group.seller_id] : false
         ),
         seller_id: group.seller_id ?? undefined,
       });
@@ -431,6 +434,17 @@ function MyCartTab() {
               ).then(() => fetchCart())
             }
             onChangeAddress={() => setPickerOpen(true)}
+            batchOption={
+              g.seller_id != null ? (
+                <BatchDeliveryOption
+                  quote={groupQuotes[g.seller_id]?.quote ?? null}
+                  value={!!batchOptIn[g.seller_id]}
+                  onChange={(next) =>
+                    setBatchOptIn((prev) => ({ ...prev, [g.seller_id!]: next }))
+                  }
+                />
+              ) : null
+            }
           >
             {g.items.map((item) => (
               <View key={item.id} className="flex-row justify-between py-1.5">
@@ -444,17 +458,6 @@ function MyCartTab() {
             ))}
           </CartGroupCard>
         ))}
-
-        {/* Batching shares a run between buyers; it is priced against a
-            real quote, so it hangs off the first shop that has one rather
-            than a cart-wide quote that no longer exists. */}
-        <BatchDeliveryOption
-          quote={
-            Object.values(groupQuotes).find((q) => q.quote)?.quote ?? null
-          }
-          value={batchOptIn}
-          onChange={setBatchOptIn}
-        />
 
         <AddressPickerSheet
           visible={pickerOpen}

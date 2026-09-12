@@ -32,6 +32,13 @@ interface Props {
   onClear: () => void;
   onChangeAddress: () => void;
   children?: React.ReactNode;
+  /** The "share this delivery" control for *this* shop.
+   *
+   * Each card becomes its own order with its own delivery, its own fee and
+   * its own ceiling, so sharing is a per-order decision. A single toggle for
+   * the whole basket had to pick one group's fee to quote and was wrong for
+   * every other one. */
+  batchOption?: React.ReactNode;
 }
 
 /**
@@ -43,7 +50,7 @@ interface Props {
  */
 export default function CartGroupCard({
   group, deliveringTo, deliveryFee, blockedReason, busy, disabled,
-  onCheckout, onClear, onChangeAddress, children,
+  onCheckout, onClear, onChangeAddress, children, batchOption,
 }: Props) {
   const t = useTokens();
   const [open, setOpen] = React.useState(false);
@@ -114,6 +121,10 @@ export default function CartGroupCard({
           </View>
         ) : null}
       </View>
+
+      {/* Only where a delivery is actually possible: offering to share a
+          trip that cannot happen is noise. */}
+      {!blocked && deliveryFee != null ? batchOption : null}
 
       <TouchableOpacity
         onPress={onCheckout}
