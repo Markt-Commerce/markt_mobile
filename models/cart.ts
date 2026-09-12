@@ -262,3 +262,24 @@ export interface GroupedCart {
   group_count: number;
   total_items: number;
 }
+
+
+// The Service Fee, mirrored from app/orders/fees.py so the card can show the
+// same total the server will charge. The server is the authority; this only
+// decides what the buyer is told before they commit.
+const SERVICE_FEE_RATE = 0.025;
+const SERVICE_FEE_FLOOR = 25;
+const SERVICE_FEE_CEILING = 1000;
+
+/** What Markt charges for servicing an order of this size.
+ *
+ * Takes the amount actually being paid for goods -- subtotal less any
+ * discount -- because that is what the server charges it on. A basket
+ * discounted to nothing owes no fee: there is no order to service. */
+export function serviceFeeFor(goodsTotal: number): number {
+  if (!goodsTotal || goodsTotal <= 0) return 0;
+  return Math.min(
+    Math.max(goodsTotal * SERVICE_FEE_RATE, SERVICE_FEE_FLOOR),
+    SERVICE_FEE_CEILING
+  );
+}

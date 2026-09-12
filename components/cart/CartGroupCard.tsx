@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, Image, ActivityIndicator } from "react-native";
 import { ChevronDown, ChevronUp, Store, Truck } from "lucide-react-native";
 import { useTokens } from "../../theme/useTokens";
+import { serviceFeeFor } from "../../models/cart";
 import type { CartGroup } from "../../models/cart";
 
 const money = (n: number) => {
@@ -63,6 +64,10 @@ export default function CartGroupCard({
   const t = useTokens();
   const [open, setOpen] = React.useState(false);
   const blocked = !!blockedReason;
+  // What is actually being paid for goods, which is what the fee is charged
+  // on -- a seller's discount is not partly taken back as a percentage.
+  const goodsTotal = Math.max(0, group.subtotal - (discountAmount ?? 0));
+  const serviceFee = serviceFeeFor(goodsTotal);
 
   return (
     <View className="mb-4 rounded-2xl border border-border bg-surface-raised p-4">
@@ -141,17 +146,25 @@ export default function CartGroupCard({
         ) : null}
 
         {!blocked && (deliveryFee != null || discountAmount) ? (
-          <View className="mt-2 flex-row justify-between border-t border-border pt-2">
-            <Text className="text-[14px] font-bold text-text-primary">Total</Text>
-            <Text className="text-[14px] font-bold text-text-primary">
-              {money(
-                Math.max(
-                  0,
-                  group.subtotal + (deliveryFee ?? 0) - (discountAmount ?? 0)
-                )
-              )}
-            </Text>
-          </View>
+          <>
+            {/* Itemised rather than folded into the total: a fee the buyer
+                only discovers by doing the arithmetic is a fee they feel
+                they were not told about. */}
+            <View className="mt-2 flex-row justify-between">
+              <Text className="text-[13px] text-text-secondary">Service fee</Text>
+              <Text className="text-[13px] text-text-primary">
+                {money(serviceFee)}
+              </Text>
+            </View>
+            <View className="mt-2 flex-row justify-between border-t border-border pt-2">
+              <Text className="text-[14px] font-bold text-text-primary">Total</Text>
+              <Text className="text-[14px] font-bold text-text-primary">
+                {money(
+                  Math.max(0, goodsTotal + (deliveryFee ?? 0) + serviceFee)
+                )}
+              </Text>
+            </View>
+          </>
         ) : null}
       </View>
 
