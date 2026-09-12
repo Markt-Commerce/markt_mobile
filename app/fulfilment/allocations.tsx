@@ -13,6 +13,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useBackTo } from "../../utils/goBack";
 import { ArrowLeft, Clock } from "lucide-react-native";
 import {
   listSellerAllocations,
@@ -37,6 +38,9 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function SellerAllocationsScreen() {
   const router = useRouter();
+  // Back, or the list this belongs under when there is no history --
+  // after paying, and on a notification that opened the app cold.
+  const goBack = useBackTo("/(tabs)/sellerDashboard");
   const t = useTokens();
   const { show } = useToast();
 
@@ -132,7 +136,7 @@ export default function SellerAllocationsScreen() {
     <SafeAreaView className="flex-1 bg-surface-page">
       <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => goBack()}
           className="h-10 w-10 rounded items-center justify-center border bg-surface-raised border-border"
           accessibilityRole="button"
           accessibilityLabel="Go back"
