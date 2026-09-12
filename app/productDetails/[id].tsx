@@ -4,7 +4,7 @@ import { View, Text, Image, ActivityIndicator, TouchableOpacity, ImageBackground
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { getProductById, trackProductView } from "../../services/sections/product";
 import { ProductDetail } from "../../models/products";
-import { ArrowLeft, ShoppingBag, ArrowBigDown, MessageCircle, ShoppingCart } from "lucide-react-native";
+import { ArrowLeft, ShoppingBag, ArrowBigDown, MessageCircle, ShoppingCart, MapPin } from "lucide-react-native";
 import { addToCart } from "../../services/sections/cart";
 import { useShopServiceable } from "../../hooks/useShopServiceable";
 import { getRecommendedProducts } from "../../services/sections/feed";
@@ -346,6 +346,22 @@ const addProductToCart = async (product:ProductDetail)=>{
         <View className="px-6">
           <Text className="text-2xl font-bold text-text-primary">{product.name}</Text>
           <Text className="text-base mt-1 text-text-secondary">sold by {product.seller.shop_name}</Text>
+          {/* Where the shop actually is. A buyer deciding whether to order
+              from somewhere two streets away should not have to guess, and it
+              is the same line the rider collects from. */}
+          {product.seller.shop_address?.formatted ? (
+            <View className="mt-1 flex-row items-start gap-1">
+              <MapPin size={13} color={t.textMuted} />
+              <Text className="flex-1 text-[13px] leading-4 text-text-muted">
+                {[
+                  product.seller.shop_address.formatted,
+                  product.seller.shop_address.city,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+              </Text>
+            </View>
+          ) : null}
           {/* "Compare at price" has been on the create form since the
               beginning and nothing ever rendered it, so a seller marking
               something down had no way to tell it had worked. */}

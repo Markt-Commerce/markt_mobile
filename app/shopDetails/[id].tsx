@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Share } from "lucide-react-native";
+import { ArrowLeft, Share , MapPin } from "lucide-react-native";
 import { useLocalSearchParams } from "expo-router";
 import { getSellerProducts } from "../../services/sections/product";
 import {
@@ -223,6 +223,23 @@ export default function Shop() {
                   <VerifiedBadge label="Verified seller" />
                 ) : null}
               </View>
+              {/* Where the shop is. Same line a rider collects from, and the
+                  thing a buyer needs to judge whether this shop is near
+                  enough to be worth ordering from. */}
+              {(shop as any)?.shop_address?.formatted ? (
+                <View className="mt-2 flex-row items-start gap-1">
+                  <MapPin size={14} color={t.textMuted} />
+                  <Text className="flex-1 text-[13px] leading-4 text-text-muted">
+                    {[
+                      (shop as any).shop_address.formatted,
+                      (shop as any).shop_address.city,
+                      (shop as any).shop_address.state,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </Text>
+                </View>
+              ) : null}
             </View>
           </View>
 

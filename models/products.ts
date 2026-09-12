@@ -121,6 +121,16 @@ export interface Product {
      *  when the seller has not pinned their shop. */
     shop_latitude?: number | null;
     shop_longitude?: number | null;
+    /** Where the shop is, in words. The coordinate is the authority on where
+     *  it actually is; this is what a person reads. Null until the seller
+     *  sets it. */
+    shop_address?: ShopAddress | null;
+  }
+
+  export interface ShopAddress {
+    formatted: string | null;
+    city: string | null;
+    state: string | null;
   }
 
   interface SellerUser{

@@ -36,6 +36,14 @@ export default function ShopLocationScreen() {
 
   const [query, setQuery] = React.useState("");
   const [pin, setPin] = React.useState<{ latitude: number; longitude: number } | null>(null);
+  // What the place is called, saved next to the coordinate. A buyer deciding
+  // whether to order from a shop two streets away should not have to read a
+  // latitude, and a rider given only a pin has nothing to ask for at the gate.
+  const [addressLine, setAddressLine] = React.useState<{
+    formatted: string | null;
+    city: string | null;
+    state: string | null;
+  } | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [coverage, setCoverage] = React.useState<{ serviceable: boolean; city: string | null } | null>(null);
@@ -48,6 +56,7 @@ export default function ShopLocationScreen() {
         if (s?.shop_latitude != null && s?.shop_longitude != null) {
           setPin({ latitude: s.shop_latitude, longitude: s.shop_longitude });
         }
+        if (s?.shop_address?.formatted) setAddressLine(s.shop_address);
       } catch (error) {
         logger.error("Could not load shop location:", error);
       } finally {
@@ -81,6 +90,9 @@ export default function ShopLocationScreen() {
       await updateSellerProfile({
         shop_latitude: pin.latitude,
         shop_longitude: pin.longitude,
+        // Only when we have one: overwriting a good address with nulls
+        // because the pin was nudged on the map would lose the useful half.
+        ...(addressLine?.formatted ? { shop_address: addressLine } : {}),
       });
       show({ variant: "success", title: "Shop location saved", message: "" });
       router.back();
@@ -142,6 +154,11 @@ export default function ShopLocationScreen() {
               key={`${r.latitude}-${r.longitude}-${i}`}
               onPress={() => {
                 setPin({ latitude: r.latitude, longitude: r.longitude });
+                setAddressLine({
+                  formatted: r.formatted_address,
+                  city: r.city ?? null,
+                  state: r.state ?? null,
+                });
                 setQuery("");
                 lookup.clear();
               }}
@@ -166,11 +183,27 @@ export default function ShopLocationScreen() {
               locating={lookup.locating}
               onUseCurrentLocation={async () => {
                 const found = await lookup.useCurrentLocation();
-                if (found) setPin({ latitude: found.latitude, longitude: found.longitude });
+                if (found) {
+                  setPin({ latitude: found.latitude, longitude: found.longitude });
+                  setAddressLine({
+                    formatted: found.formatted_address,
+                    city: found.city ?? null,
+                    state: found.state ?? null,
+                  });
+                }
               }}
               height={220}
             />
           </View>
+
+          {addressLine?.formatted ? (
+            <Text className="mt-3 text-[14px] leading-5 text-text-primary">
+              {addressLine.formatted}
+              {addressLine.city ? (
+                <Text className="text-text-secondary">{`\n${[addressLine.city, addressLine.state].filter(Boolean).join(", ")}`}</Text>
+              ) : null}
+            </Text>
+          ) : null}
 
           {!pin ? (
             <Text className="mt-3 text-[13px] leading-5 text-text-muted">
