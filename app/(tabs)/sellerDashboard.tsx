@@ -325,7 +325,10 @@ export default function SellerDashboard() {
           setOrdersPage(page);
         } else {
           const data = await getMyProductsPage(page, LIST_PAGE_SIZE);
+          // Both: the list renders filteredInventory, so writing only
+          // sellerInventory turned the page in state and nowhere else.
           setSellerInventory(data.items || []);
+          setFilteredInventory(data.items || []);
           setInvPages(data.pagination?.total_pages ?? 1);
           setInvPage(page);
         }
@@ -992,9 +995,15 @@ export default function SellerDashboard() {
         onSaved={(updated) => {
           // Patch in place rather than refetching the whole dashboard: the
           // seller is looking at this row and expects it to change now.
-          setSellerInventory((prev: any[]) =>
-            prev.map((p) => (p.id === updated.id ? { ...p, ...updated } : p))
-          );
+          //
+          // Both copies. The list renders filteredInventory, so patching only
+          // sellerInventory left the row on screen showing the old price
+          // until something refetched -- which is the bug this comment used
+          // to describe the fix for.
+          const patch = (prev: any[]) =>
+            prev.map((p) => (p.id === updated.id ? { ...p, ...updated } : p));
+          setSellerInventory(patch);
+          setFilteredInventory(patch);
         }}
       />
     </SafeAreaView>
