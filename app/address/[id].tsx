@@ -12,6 +12,8 @@ import {
 } from "../../services/sections/addresses";
 import { BUILDING_TYPES, type BuildingType, type SavedAddress } from "../../models/addresses";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
+import MapPinPicker from "../../components/address/MapPinPicker";
+import { useAddressLookup } from "../../hooks/useAddressLookup";
 import logger from "../../utils/logger";
 
 /**
@@ -38,6 +40,10 @@ export default function AddressInformation() {
   const [buildingType, setBuildingType] = React.useState<BuildingType>("house");
   const [entryCode, setEntryCode] = React.useState("");
   const [directions, setDirections] = React.useState("");
+  // The pin, separate from the saved address until Save is pressed. Moving it
+  // and then backing out should change nothing.
+  const [pin, setPin] = React.useState<{ latitude: number; longitude: number } | null>(null);
+  const lookup = useAddressLookup();
 
   React.useEffect(() => {
     (async () => {
@@ -51,6 +57,7 @@ export default function AddressInformation() {
           setBuildingType(found.building_type);
           setEntryCode(found.entry_code ?? "");
           setDirections(found.directions ?? "");
+          setPin({ latitude: found.latitude, longitude: found.longitude });
         }
       } catch (error) {
         logger.error("Could not load address:", error);
@@ -69,6 +76,12 @@ export default function AddressInformation() {
         building_type: buildingType,
         entry_code: entryCode.trim() || null,
         directions: directions.trim() || null,
+        // Only when it actually moved. Sending the same coordinates back on
+        // every save is a write that can only ever introduce drift.
+        ...(pin &&
+        (pin.latitude !== address?.latitude || pin.longitude !== address?.longitude)
+          ? { latitude: pin.latitude, longitude: pin.longitude }
+          : {}),
       });
       show({ variant: "success", title: "Address saved", message: "" });
       router.back();
@@ -156,8 +169,20 @@ export default function AddressInformation() {
         {/* Where it is. A map preview belongs here and is deliberately absent
             until there is a Maps API key — a blank grey rectangle reads as a
             broken feature rather than a missing key. */}
-        <View className="mx-5 rounded-xl bg-surface-sunken p-4">
-          <View className="flex-row items-start gap-2">
+        <View className="mx-5">
+          <MapPinPicker
+            latitude={pin?.latitude ?? address.latitude}
+            longitude={pin?.longitude ?? address.longitude}
+            onChange={setPin}
+            locating={lookup.locating}
+            onUseCurrentLocation={async () => {
+              const found = await lookup.useCurrentLocation();
+              if (found) {
+                setPin({ latitude: found.latitude, longitude: found.longitude });
+              }
+            }}
+          />
+          <View className="mt-3 flex-row items-start gap-2">
             <MapPin size={18} color={t.successText} />
             <View className="flex-1">
               <Text className="text-[15px] font-bold leading-5 text-text-primary">
@@ -166,9 +191,13 @@ export default function AddressInformation() {
               <Text className="mt-1 text-[13px] leading-5 text-text-secondary">
                 {address.formatted_address}
               </Text>
-              <Text className="mt-1 text-[11px] text-text-muted">
-                {address.latitude.toFixed(5)}, {address.longitude.toFixed(5)}
-              </Text>
+              {pin &&
+              (pin.latitude !== address.latitude ||
+                pin.longitude !== address.longitude) ? (
+                <Text className="mt-1 text-[12px] font-semibold text-primary-text">
+                  Pin moved — save to keep it
+                </Text>
+              ) : null}
             </View>
           </View>
         </View>
