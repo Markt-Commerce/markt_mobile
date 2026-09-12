@@ -69,3 +69,24 @@ export interface NotServiceableError {
   pickup_zone?: string;
   dropoff_zone?: string;
 }
+
+/** One rider collecting from several nearby shops for one buyer.
+ * Backend: POST /delivery/quote/combined. */
+export interface CombinedPickupShare {
+  seller_id: number;
+  charged_minor: number;
+  solo_fee_minor: number;
+  saved_minor: number;
+}
+
+export interface CombinedDeliveryQuote {
+  available: boolean;
+  /** Why not, when it isn't — shops_too_far_apart, no_saving,
+   * dropoff_not_serviceable. Lets the app say something specific instead of
+   * hiding the option with no explanation. */
+  reason: string | null;
+  combined_fee_minor: number | null;
+  separate_fee_minor: number | null;
+  saved_minor: number | null;
+  shares: CombinedPickupShare[];
+}

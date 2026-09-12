@@ -220,6 +220,10 @@ export interface CheckoutRequest {
   /** From POST /delivery/quote. Absent means the server's flat estimate. */
   delivery_quote_id?: string;
   batch_opt_in?: boolean;
+  /** Check out only this shop's items. A basket spanning several shops is
+   * several orders, one per shop; the app shows them as separate cards and
+   * sends whichever was tapped. */
+  seller_id?: number;
 }
 
 export interface CheckoutResponse {
@@ -233,4 +237,24 @@ export interface CheckoutResponse {
   discount?: number;
   total?: number;
   shipping_address?: ShippingAddressPayload;
+}
+
+/** One shop's worth of the basket — what will become one order.
+ * Backend: GET /cart/groups. A delivery quote prices one pickup to one
+ * dropoff, so a basket spanning two shops is two deliveries and two orders. */
+export interface CartGroup {
+  seller_id: number | null;
+  shop_name: string | null;
+  shop_slug: string | null;
+  banner_url: string | null;
+  item_count: number;
+  subtotal: number;
+  items: CartItem[];
+}
+
+export interface GroupedCart {
+  groups: CartGroup[];
+  /** More than one means the buyer checks out more than once. */
+  group_count: number;
+  total_items: number;
 }

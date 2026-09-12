@@ -9,6 +9,7 @@ import {
   UpdateCartItemResponse,
   CheckoutRequest,
   CheckoutResponse,
+  GroupedCart,
 } from "../../models/cart";
 import { ApiResponse } from "../../models/auth";
 import { setPendingCartCount } from "../notificationState";
@@ -84,4 +85,10 @@ export async function checkoutCart(data:CheckoutRequest): Promise<CheckoutRespon
   // Checkout empties the cart server-side, so the badge has to clear too.
   emitBadgeChanged();
   return res;
+}
+/** The basket split into the orders it will actually become — one per shop.
+ * Presenting it as a single list made it possible to build a cart that could
+ * never be paid for, because checkout refuses a multi-shop basket. */
+export async function getCartGroups(): Promise<GroupedCart> {
+  return request<GroupedCart>(`${BASE_URL}/cart/groups`, { method: "GET" });
 }

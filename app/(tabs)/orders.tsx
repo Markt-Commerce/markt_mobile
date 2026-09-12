@@ -35,15 +35,17 @@ import OrdersList from "../../components/orderList";
 import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import { useShippingAddress } from "../../hooks/useShippingAddress";
-import {
-  isShippingAddressUsable,
-  missingShippingFields,
-} from "../../utils/shippingAddress";
 import { clearIdempotencyKey } from "../../utils/idempotency";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
-import ShippingAddressCard from "../../components/shippingAddressCard";
-import DeliveryQuoteCard from "../../components/checkout/DeliveryQuoteCard";
 import BatchDeliveryOption from "../../components/checkout/BatchDeliveryOption";
+import CartGroupCard from "../../components/cart/CartGroupCard";
+import CombinedDeliveryBanner from "../../components/cart/CombinedDeliveryBanner";
+import AddressPickerSheet from "../../components/address/AddressPickerSheet";
+import { getCartGroups } from "../../services/sections/cart";
+import { getCombinedQuote, createDeliveryQuote } from "../../services/sections/delivery";
+import type { CartGroup } from "../../models/cart";
+import type { SavedAddress } from "../../models/addresses";
+import type { CombinedDeliveryQuote } from "../../models/delivery";
 import { useDeliveryQuote } from "../../hooks/useDeliveryQuote";
 import { isActiveOrder, isPastOrder } from "../../utils/orderStatus";
 import { onBadgeChanged } from "../../utils/badgeEvents";
@@ -79,6 +81,16 @@ function MyCartTab() {
   // abandoned attempt leaves the buyer looking at "your cart is empty" with
   // an unpaid order one tab away and nothing saying so.
   const [unpaid, setUnpaid] = useState<Order | null>(null);
+  // The basket as the orders it will become: one group per shop, because a
+  // delivery quote prices one pickup to one dropoff.
+  const [groups, setGroups] = useState<CartGroup[]>([]);
+  // Where all of this is going. One address for the whole basket, not one per
+  // card -- a buyer sending two orders to two different places is a case
+  // nobody has asked for, and offering it would make the common case slower.
+  const [address, setAddress] = useState<SavedAddress | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [combined, setCombined] = useState<CombinedDeliveryQuote | null>(null);
+  const [combineOptIn, setCombineOptIn] = useState(false);
   const delivery = useDeliveryQuote(cart, shipping.address, shipping.source);
   // Never inferred: the buyer has to choose to share, because under
   // charge-then-refund their money leaves and comes back.
@@ -90,6 +102,13 @@ function MyCartTab() {
       const [cartData, summaryData] = await Promise.all([getCart(), getCartSummary()]);
       setCart(cartData);
       setSummary(summaryData);
+      try {
+        setGroups((await getCartGroups()).groups);
+      } catch {
+        // Falling back to one unnamed group keeps the basket usable if the
+        // grouping call fails; an empty cart screen would be a lie.
+        setGroups([]);
+      }
       try {
         const orders = await getBuyerOrders(1, 10);
         setUnpaid(
@@ -135,74 +154,88 @@ function MyCartTab() {
     } catch { }
   };
 
-  const handleCheckout = async () => {
-    const missing = missingShippingFields(shipping.address);
-    if (delivery.blocked) {
-      // Checkout here creates the order and empties the cart, so letting this
-      // through would strand someone with an unpayable order and no basket.
-      show({
-        variant: "error",
-        title: delivery.blocked.title,
-        message: delivery.blocked.message,
-      });
+  /** Ask whether one rider could collect from every shop in the basket.
+   * Only meaningful with two or more shops and a chosen address. */
+  const refreshCombined = useCallback(async () => {
+    const sellerIds = groups
+      .map((g) => g.seller_id)
+      .filter((id): id is number => id != null);
+    if (sellerIds.length < 2 || !address) {
+      setCombined(null);
+      setCombineOptIn(false);
       return;
     }
-    if (missing.length > 0) {
-      // Name the fields. "Add a shipping address" was unhelpful when an address
-      // was already filled in and only one field was blank.
-      show({
-        variant: "error",
-        title: "Shipping address incomplete",
-        message: `Add your ${missing.join(", ")} before checking out.`,
-      });
+    try {
+      setCombined(
+        await getCombinedQuote({
+          seller_ids: sellerIds,
+          dropoff_latitude: address.latitude,
+          dropoff_longitude: address.longitude,
+        })
+      );
+    } catch {
+      // Not being able to price a shared trip never blocks the separate ones.
+      setCombined(null);
+    }
+  }, [groups, address]);
+
+  useEffect(() => {
+    refreshCombined();
+  }, [refreshCombined]);
+
+  /** Check out one shop's card. The rest of the basket stays where it is. */
+  const checkoutGroup = async (group: CartGroup) => {
+    if (processing) return;
+    if (!address) {
+      setPickerOpen(true);
       return;
     }
     try {
       setProcessing(true);
-      const checkout = await checkoutCart(
-        buildCheckoutRequest(
-          shipping.address!,
-          "Checkout from mobile",
-          // Without it the server uses its flat estimate, so a failed quote
-          // still lets someone buy something.
-          delivery.quote?.id,
+      const quote = await createDeliveryQuote({
+        seller_id: group.seller_id!,
+        dropoff_latitude: address.latitude,
+        dropoff_longitude: address.longitude,
+        item_count: group.item_count,
+      }).catch(() => null);
+
+      const checkout = await checkoutCart({
+        ...buildCheckoutRequest(
+          {
+            recipient_name: address.contact_name ?? undefined,
+            street_address: address.formatted_address,
+            city: "",
+            state: "",
+            country: "Nigeria",
+            latitude: address.latitude,
+            longitude: address.longitude,
+          },
+          address.directions || "Checkout from mobile",
+          quote?.id,
           batchOptIn
-        )
-      );
-      // The attempt is over the moment an order exists, so the key retires
-      // here. It only ever existed to make a *retry of this attempt* safe.
-      //
-      // It used to be cleared solely inside payment-result's try block, after
-      // verifyPayment succeeded — so if the buyer never reached that screen, or
-      // verification threw, the key survived the whole app session. The next
-      // checkout then replayed it and the server correctly returned the FIRST
-      // order: the app jumped to an already-paid order and the cart was never
-      // cleared, because a replay must not touch a cart that now holds
-      // different items.
-      clearIdempotencyKey("checkout-cart");
-      show({
-        variant: "success",
-        title: "Checkout successful",
-        message: "Proceeding to payment.",
+        ),
+        seller_id: group.seller_id ?? undefined,
       });
+      clearIdempotencyKey("checkout-cart");
       fetchCart();
       router.push(`/checkout/payment-method/${checkout.order_id}`);
     } catch (e) {
-      // Was a bare `catch {}` that discarded the error and always said "Please
-      // try again" -- advice that could never work when the cause was a
-      // rejected payload rather than a transient failure.
       show({
         variant: "error",
         title: "Checkout failed",
         message: friendlyErrorMessage(
           e,
-          "We couldn't create your order. Please check your details and try again."
+          "We couldn't create your order. Please try again."
         ),
       });
     } finally {
       setProcessing(false);
     }
   };
+
+  // The old whole-basket checkout lived here. Removed with the grouped
+  // cards: a second checkout path that nothing calls is exactly how the
+  // two cart screens drifted into using different endpoints.
 
   if (loading && !refreshing) {
     return (
@@ -341,76 +374,69 @@ function MyCartTab() {
             </Text>
           </TouchableOpacity>
         ) : null}
-        <ShippingAddressCard
-          address={shipping.address}
-          source={shipping.source}
-          loading={shipping.loading}
-          locating={shipping.locating}
-          locationDenied={shipping.locationDenied}
-          useCurrentLocation={shipping.useCurrentLocation}
-          updateAddress={shipping.updateAddress}
-          isDark={isDark}
+
+        {/* One card per shop. A delivery quote prices one pickup to one
+            dropoff, so a basket spanning two shops is two orders -- showing
+            it as a single list let a buyer build a cart that could never be
+            paid for. */}
+        <CombinedDeliveryBanner
+          quote={combined}
+          value={combineOptIn}
+          onChange={setCombineOptIn}
         />
-        <DeliveryQuoteCard
-          loading={delivery.loading}
-          quote={delivery.quote}
-          blocked={delivery.blocked}
-          onFixAddress={shipping.useCurrentLocation}
-        />
+
+        {groups.map((g) => (
+          <CartGroupCard
+            key={String(g.seller_id ?? "unknown")}
+            group={g}
+            deliveringTo={address?.label || address?.formatted_address || null}
+            deliveryFee={
+              combineOptIn && combined?.available
+                ? (combined.shares.find((s) => s.seller_id === g.seller_id)
+                    ?.charged_minor ?? 0) / 100
+                : delivery.quote
+                  ? delivery.quote.fee_minor / 100
+                  : null
+            }
+            blockedReason={
+              delivery.blocked && groups.length === 1
+                ? delivery.blocked.message
+                : null
+            }
+            busy={processing}
+            onCheckout={() => checkoutGroup(g)}
+            onClear={() =>
+              Promise.all(
+                g.items.map((i) => deleteCartItem(i.id).catch(() => null))
+              ).then(() => fetchCart())
+            }
+            onChangeAddress={() => setPickerOpen(true)}
+          >
+            {g.items.map((item) => (
+              <View key={item.id} className="flex-row justify-between py-1.5">
+                <Text className="flex-1 text-[13px] text-text-secondary" numberOfLines={1}>
+                  {item.quantity} x {item.product?.name ?? "Item"}
+                </Text>
+                <Text className="text-[13px] text-text-primary">
+                  {formatMoney((item.product_price ?? 0) * (item.quantity ?? 0))}
+                </Text>
+              </View>
+            ))}
+          </CartGroupCard>
+        ))}
+
         <BatchDeliveryOption
           quote={delivery.quote}
           value={batchOptIn}
           onChange={setBatchOptIn}
         />
-        <View className="mt-4 rounded border p-4 bg-surface-raised border-border">
-          <Text className="text-base font-extrabold mb-2 text-text-primary">Order Summary</Text>
-          <View className="flex-row justify-between py-1.5">
-            <Text className="text-sm text-text-secondary">Subtotal</Text>
-            <Text className="text-sm text-text-primary">{formatMoney(summary?.subtotal)}</Text>
-          </View>
-          <View className="flex-row justify-between py-1.5">
-            <Text className="text-sm text-text-secondary">Discount</Text>
-            <Text className="text-sm text-text-primary">−{formatMoney(summary?.discount)}</Text>
-          </View>
-          <View className="flex-row justify-between py-1.5">
-            <Text className="text-sm text-text-secondary">Delivery</Text>
-            <Text className="text-sm text-text-primary">
-              {delivery.quote
-                ? formatMoney(delivery.quote.fee_minor / 100)
-                : delivery.loading
-                  ? "…"
-                  : "—"}
-            </Text>
-          </View>
-          <View className="h-px my-2 bg-border" />
-          <View className="flex-row justify-between py-1.5">
-            <Text className="text-sm font-semibold text-text-primary">Total</Text>
-            <Text className="text-sm font-extrabold text-text-primary">
-              {formatMoney(
-                Number(summary?.total ?? 0) +
-                  (delivery.quote ? delivery.quote.fee_minor / 100 : 0)
-              )}
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={handleCheckout}
-            disabled={
-              processing ||
-              !isShippingAddressUsable(shipping.address) ||
-              !!delivery.blocked ||
-              delivery.loading
-            }
-            className={`mt-4 h-12 rounded items-center justify-center ${processing || !isShippingAddressUsable(shipping.address) || !!delivery.blocked || delivery.loading ? ("bg-surface-sunken") : "bg-primary-fill"}`}
-          >
-            <Text className={processing || !isShippingAddressUsable(shipping.address) || !!delivery.blocked || delivery.loading ? ("text-text-secondary") : "text-white font-semibold"}>
-              {processing
-                ? "Processing…"
-                : delivery.loading
-                  ? "Working out delivery…"
-                  : "Proceed to Checkout"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+
+        <AddressPickerSheet
+          visible={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          onChoose={setAddress}
+          selectedId={address?.id ?? null}
+        />
       </View>
     </ScrollView>
   );

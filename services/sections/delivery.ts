@@ -1,5 +1,6 @@
 import { request, BASE_URL } from "../api";
 import type {
+  CombinedDeliveryQuote,
   DeliveryQuote,
   DeliveryQuoteRequest,
   NotServiceableError,
@@ -90,4 +91,18 @@ export function describeNotServiceable(reason: NotServiceableReason): {
         actionable: false,
       };
   }
+}
+
+/** What one rider collecting from several shops would cost.
+ * Answers 200 with available:false and a reason when it isn't possible —
+ * not being able to share a delivery is an ordinary answer, not an error. */
+export async function getCombinedQuote(data: {
+  seller_ids: number[];
+  dropoff_latitude: number;
+  dropoff_longitude: number;
+}): Promise<CombinedDeliveryQuote> {
+  return request<CombinedDeliveryQuote>(`${BASE_URL}/delivery/quote/combined`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 }
