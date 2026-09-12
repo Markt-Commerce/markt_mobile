@@ -32,7 +32,15 @@ interface Blocked {
  */
 export function useDeliveryQuote(
   cart: Cart | null,
-  address: ShippingAddressPayload | null | undefined
+  address: ShippingAddressPayload | null | undefined,
+  /**
+   * Where the coordinates came from. "geolocation" means the device fixed
+   * the position and the buyer accepted it, which the server records as a
+   * confirmed dropoff; a saved or typed address is an approximation of
+   * wherever they said they live, and the difference matters to a rider
+   * looking for a door.
+   */
+  source?: "saved" | "geolocation" | "manual" | null
 ) {
   const [quote, setQuote] = useState<DeliveryQuote | null>(null);
   const [loading, setLoading] = useState(false);
@@ -88,6 +96,7 @@ export function useDeliveryQuote(
         dropoff_latitude: lat,
         dropoff_longitude: lng,
         item_count: itemCount || 1,
+        precision: source === "geolocation" ? "confirmed" : "approximate",
       });
       if (id !== requestId.current) return;
       setQuote(q);
@@ -109,7 +118,7 @@ export function useDeliveryQuote(
     } finally {
       if (id === requestId.current) setLoading(false);
     }
-  }, [sellerKey, lat, lng, itemCount]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sellerKey, lat, lng, itemCount, source]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchQuote();

@@ -78,7 +78,7 @@ function MyCartTab() {
   // abandoned attempt leaves the buyer looking at "your cart is empty" with
   // an unpaid order one tab away and nothing saying so.
   const [unpaid, setUnpaid] = useState<Order | null>(null);
-  const delivery = useDeliveryQuote(cart, shipping.address);
+  const delivery = useDeliveryQuote(cart, shipping.address, shipping.source);
 
   const fetchCart = useCallback(async (opts?: { silent?: boolean }) => {
     try {
