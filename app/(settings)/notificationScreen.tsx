@@ -13,9 +13,9 @@ export default function NotificationsScreen() {
   const { data, isLoading } = useNotifications();
   const update = useUpdateNotifications();
   const isUpdating = update.isPending;
-  const settings = data ?? { push: true, email: false, sms: true };
+  const settings = data ?? { push: true, email: true, sms: false, marketing: false };
 
-  const toggle = (k: 'push' | 'email' | 'sms', val: boolean) => {
+  const toggle = (k: 'push' | 'email' | 'sms' | 'marketing', val: boolean) => {
     if (isUpdating) return;
     update.mutate({ ...settings, [k]: val }, {
       onError(e) { Alert.alert('Failed', friendlyErrorMessage(e, 'Could not update your notification settings.')); }
@@ -82,6 +82,20 @@ export default function NotificationsScreen() {
               <Switch
                 value={!!settings.sms}
                 onValueChange={(v) => toggle('sms', v)}
+                disabled={isUpdating}
+                trackColor={{ false: t.borderStrong, true: t.textPrimary }}
+                thumbColor={t.textOnPrimary}
+              />
+            </View>
+
+            <View className="flex-row justify-between items-center px-4 py-4 border-t border-border-strong">
+              <View className="flex-1 pr-4">
+                <Text className="text-base font-bold text-text-primary">Deals and Recommendations</Text>
+                <Text className="text-sm mt-1 text-text-secondary">Promotions, offers, and product inspiration.</Text>
+              </View>
+              <Switch
+                value={!!settings.marketing}
+                onValueChange={(v) => toggle('marketing', v)}
                 disabled={isUpdating}
                 trackColor={{ false: t.borderStrong, true: t.textPrimary }}
                 thumbColor={t.textOnPrimary}
