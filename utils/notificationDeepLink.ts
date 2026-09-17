@@ -16,10 +16,15 @@ export interface NotificationDeepLinkData {
   type?: string | null;
   reference_type?: string | null;
   reference_id?: string | null;
+  /** The order's status, sent with order notifications. */
+  status?: string | null;
 }
 
+/** Statuses where the order is still moving, so tracking is the useful screen. */
+const IN_FLIGHT_STATUSES = ["ready_for_delivery", "shipped"];
+
 export function resolveNotificationRoute(data: NotificationDeepLinkData): string | null {
-  const { type, reference_type, reference_id } = data;
+  const { type, reference_type, reference_id, status } = data;
   if (!reference_id) return null;
 
   // Pending buyer decisions (9.1, 10.3) -- the action is inline in the
@@ -40,9 +45,16 @@ export function resolveNotificationRoute(data: NotificationDeepLinkData): string
     case "order":
       // Delivery-progress-shaped events land on tracking; everything else
       // (cancellation, refund) lands on the order summary.
-      return type === "delivery_failed"
-        ? `/orders/${reference_id}/track`
-        : `/orderdetail/${reference_id}`;
+      //
+      // An order_update carries the status it is announcing. "It is packed"
+      // and "a rider has it" are what people open to ask where the order is,
+      // so those go to tracking; delivered and the terminal states go to the
+      // summary, where the receipt and the return option are.
+      if (type === "delivery_failed") return `/orders/${reference_id}/track`;
+      if (type === "order_update" && status && IN_FLIGHT_STATUSES.includes(status)) {
+        return `/orders/${reference_id}/track`;
+      }
+      return `/orderdetail/${reference_id}`;
     case "post":
       return `/postDetails/${reference_id}`;
     case "product":
