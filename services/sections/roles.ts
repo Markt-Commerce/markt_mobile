@@ -47,6 +47,14 @@ export interface SellerDetails {
 /**
  * Give the account a buyer side, whether or not it has one yet.
  *
+ * Returns the profile as the server now sees it, so the caller can put that
+ * straight into context. That matters more than it looks: the startup gate
+ * in app/_layout.tsx redirects on `onboarding.next_step`, so a caller that
+ * navigated away while still holding a profile saying "choose_role" would
+ * be sent right back to the screen it had just finished. Taking the
+ * server's own response removes the window entirely -- there is no refresh
+ * to race.
+ *
  * Throws. Callers decide what a failure means, and for the onboarding
  * screens it means "do not pretend this worked" -- the person cannot use
  * the app without it, so it is not the best-effort write the old code
@@ -55,26 +63,27 @@ export interface SellerDetails {
 export async function ensureBuyerRole(
   profile: UserProfile | null | undefined,
   details: BuyerDetails
-): Promise<void> {
+): Promise<UserProfile | null> {
   const buyername = details.buyername?.trim();
 
   if (hasBuyerRole(profile)) {
-    if (buyername) await updateBuyerProfile({ buyername });
-    return;
+    if (buyername) return (await updateBuyerProfile({ buyername })) ?? null;
+    return profile ?? null;
   }
 
   // buyername is required by the create schema, so there has to be
   // something. A blank one would 422 and leave the account roleless, which
   // is the state this whole module exists to avoid.
-  await createBuyer({ buyername: buyername || 'Buyer' });
-  if (buyername) return;
+  const created = await createBuyer({ buyername: buyername || 'Buyer' });
+  return (created as unknown as UserProfile) ?? null;
 }
 
-/** The same, for the selling side. */
+/** The same, for the selling side. Returns the server's view of the
+ *  profile afterwards, for the reason described above. */
 export async function ensureSellerRole(
   profile: UserProfile | null | undefined,
   details: SellerDetails
-): Promise<void> {
+): Promise<UserProfile | null> {
   const shopName = details.shop_name?.trim();
   const location =
     details.shop_latitude != null && details.shop_longitude != null
@@ -86,24 +95,27 @@ export async function ensureSellerRole(
 
   if (hasSellerRole(profile)) {
     if (shopName || Object.keys(location).length) {
-      await updateSellerProfile({
-        ...(shopName ? { shop_name: shopName } : {}),
-        ...location,
-      });
+      return (
+        (await updateSellerProfile({
+          ...(shopName ? { shop_name: shopName } : {}),
+          ...location,
+        })) ?? null
+      );
     }
-    return;
+    return profile ?? null;
   }
 
   // shop_name, description and category_ids are all required by the create
   // schema. Categories are chosen later in the dashboard, so an empty list
   // is the honest value rather than a guess.
-  await createSeller({
+  const created = await createSeller({
     shop_name: shopName || 'My shop',
     description: details.description?.trim() || 'Tell buyers what you sell.',
     category_ids: [],
   });
 
   if (Object.keys(location).length) {
-    await updateSellerProfile(location);
+    return (await updateSellerProfile(location)) ?? null;
   }
+  return (created as unknown as UserProfile) ?? null;
 }

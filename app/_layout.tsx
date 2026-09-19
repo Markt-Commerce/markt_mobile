@@ -1,7 +1,7 @@
 // app/_layout.tsx
 import "react-native-reanimated";
 import "react-native-gesture-handler";
-import { Stack } from "expo-router";
+import { Stack, useSegments } from "expo-router";
 import { View, Text, ActivityIndicator, StatusBar } from "react-native";
 import "../global.css";
 import { UserProvider, useUser } from "../hooks/userContextProvider";
@@ -10,7 +10,7 @@ import { ToastProvider } from "../components/ToastProvider";
 import { ThemeProvider } from "../components/themeProvider";
 import { useTokens } from "../theme/useTokens";
 import { useTheme } from "../components/themeProvider";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RegisterRequest } from "../models/auth";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -18,6 +18,7 @@ import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import PaymentDeepLinkHandler from "../components/PaymentDeepLinkHandler";
 import NotificationsBootstrap from "../components/NotificationsBootstrap";
+import { navigateToOnboardingStep } from "../utils/authNavigation";
 import { GamificationProvider } from "../hooks/gamificationContext";
 import { CelebrationProvider } from "../hooks/useCelebration";
 import { BrowseLocationProvider } from "../hooks/browseLocationContext";
@@ -70,9 +71,33 @@ export default function RootLayout() {
 }
 
 export function AppStack() {
-  const { user, isRestoringSession, needsEmailVerification } = useUser();
+  const { user, profile, isRestoringSession, needsEmailVerification } = useUser();
   const { resolvedTheme } = useTheme();
   const isLoggedIn = !!user;
+  const segments = useSegments();
+
+  /**
+   * Finish what signup started, on the way back in.
+   *
+   * Login and the code screen both route on `onboarding.next_step`, but
+   * opening the app did not: a restored session went straight to "/", which
+   * resolves into the tabs. So an account that was interrupted partway
+   * through signup — and the one that matters most, an account created
+   * through Google or Apple that never got as far as choosing a role —
+   * reopened the app into a marketplace it had no role in, with nothing
+   * anywhere to send it back.
+   *
+   * Only from outside the onboarding group: those screens hand off to each
+   * other, and a redirect firing on every profile refresh would yank
+   * someone off the step they are busy filling in.
+   */
+  const pendingStep = profile?.onboarding?.next_step ?? null;
+  const inOnboarding = segments[0] === "(onboarding)";
+
+  useEffect(() => {
+    if (isRestoringSession || !isLoggedIn || !pendingStep || inOnboarding) return;
+    navigateToOnboardingStep(pendingStep);
+  }, [isRestoringSession, isLoggedIn, pendingStep, inOnboarding]);
   const isDark = resolvedTheme === "dark";
   const t = useTokens();
 

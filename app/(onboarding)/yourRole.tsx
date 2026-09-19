@@ -37,7 +37,7 @@ const OPTIONS = [
 export default function YourRole() {
   const router = useRouter();
   const t = useTokens();
-  const { setRole, refreshProfile, profile } = useUser();
+  const { setRole, refreshProfile, profile, setProfile } = useUser();
   const { name } = useLocalSearchParams<{ name?: string }>();
   const [choice, setChoice] = useState<"buyer" | "seller" | null>(null);
   const [saving, setSaving] = useState(false);
@@ -64,7 +64,12 @@ export default function YourRole() {
     // save is a nuisance; a role that fails to save is an unusable account.
     if (choice === "buyer") {
       try {
-        await ensureBuyerRole(profile, { buyername: name?.trim() });
+        // Take the server's own view of the account rather than refreshing
+        // for it afterwards. The startup gate in app/_layout.tsx redirects
+        // on next_step, so navigating away while context still held a
+        // profile saying "choose_role" would bounce straight back here.
+        const fresh = await ensureBuyerRole(profile, { buyername: name?.trim() });
+        if (fresh) setProfile(fresh);
       } catch (e) {
         logger.warn("onboarding: could not set up the buyer account", e);
         setError(

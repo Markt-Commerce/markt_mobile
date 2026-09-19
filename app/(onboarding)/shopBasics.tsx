@@ -36,7 +36,7 @@ export default function ShopBasics() {
   const [locationLabel, setLocationLabel] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { profile } = useUser();
+  const { profile, setProfile } = useUser();
   const valid = shopName.trim().length >= 2;
 
   /**
@@ -90,7 +90,7 @@ export default function ShopBasics() {
       // Apple, where the account arrives with no role at all. The failure
       // was logged and swallowed, so the seller reached the dashboard
       // without a shop.
-      await ensureSellerRole(profile, {
+      const fresh = await ensureSellerRole(profile, {
         shop_name: shopName.trim(),
         // Only as a pair — the backend refuses a lone coordinate anyway, and
         // sending one would be a round trip that can only fail.
@@ -98,6 +98,9 @@ export default function ShopBasics() {
           ? { shop_latitude: coords.latitude, shop_longitude: coords.longitude }
           : {}),
       });
+      // Same reason as yourRole: context must not still be holding a
+      // profile that says this step is outstanding.
+      if (fresh) setProfile(fresh);
     } catch (e) {
       // No longer best-effort. A shop name that fails to save is a
       // nuisance; a seller account that was never created is an account
