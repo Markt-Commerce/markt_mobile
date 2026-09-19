@@ -11,6 +11,53 @@ export function setOnUnauthorized(fn: (() => void) | null) {
   onUnauthorized = fn;
 }
 
+/** How long to wait before giving up on a request.
+ *
+ * React Native's fetch has no timeout at all: a request to a slow or
+ * unreachable host stays pending forever, and every caller that shows a
+ * "Sending…" state sits in it until the app is killed. That is what a hang
+ * in this app has always been -- not a bug in the screen, but a promise
+ * nobody was ever going to settle.
+ *
+ * Generous rather than snappy, because the backend genuinely is slow
+ * sometimes and cutting off a request that would have succeeded is its own
+ * kind of broken. The point is that it ends.
+ */
+const REQUEST_TIMEOUT_MS = 30_000;
+
+/** Uploads get much longer: a couple of photos on mobile data is minutes,
+ *  and the user is watching a progress state that means something. */
+const UPLOAD_TIMEOUT_MS = 120_000;
+
+export class TimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TimeoutError";
+  }
+}
+
+/** fetch, but it always finishes. */
+async function fetchWithTimeout(
+  url: string,
+  opts: RequestInit,
+  timeoutMs: number
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...opts, signal: controller.signal });
+  } catch (error: any) {
+    if (error?.name === "AbortError") {
+      throw new TimeoutError(
+        "That took too long. Check your connection and try again."
+      );
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function request<T = any>(path: string, opts: RequestInit = {}): Promise<T> {
   const url = path.startsWith("http") ? path : `${BASE_URL}${path}`;
 
@@ -41,10 +88,16 @@ export async function request<T = any>(path: string, opts: RequestInit = {}): Pr
     headers,
   };
 
+  const timeoutMs = isFormData ? UPLOAD_TIMEOUT_MS : REQUEST_TIMEOUT_MS;
+
   let res: Response;
   try {
-    res = await fetch(url, fetchOpts);
+    res = await fetchWithTimeout(url, fetchOpts, timeoutMs);
   } catch (networkErr) {
+    // A timeout is an answer, not a routing problem. Retrying it with a
+    // different slash would just wait another thirty seconds.
+    if (networkErr instanceof TimeoutError) throw networkErr;
+
     // Slash-mismatch safety net: some backend routes 308-redirect between
     // `/path` and `/path/`, and behind the proxy the redirect URL is built with
     // a cleartext http scheme, which release Android builds refuse to follow —
@@ -59,7 +112,7 @@ export async function request<T = any>(path: string, opts: RequestInit = {}): Pr
       ? pathPart.slice(0, -1)
       : `${pathPart}/`;
     try {
-      res = await fetch(`${toggledPath}${queryPart}`, fetchOpts);
+      res = await fetchWithTimeout(`${toggledPath}${queryPart}`, fetchOpts, timeoutMs);
     } catch {
       throw networkErr;
     }

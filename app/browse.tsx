@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft, WifiOff } from "lucide-react-native";
 import ProductDisplayComponent from "../components/productDisplayComponent";
@@ -28,6 +28,7 @@ import { EmptyStall } from "../components/illustrations/MarktIllustration";
  */
 export default function Browse() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const t = useTokens();
   const { add: addProductToCart, addingId } = useAddToCart();
   const [items, setItems] = useState<ProductResponse[]>([]);
@@ -173,7 +174,12 @@ export default function Browse() {
       )}
 
       {/* Anchored, not modal: it never blocks what the user came to see. */}
-      <View className="absolute left-0 right-0 bottom-0 px-4 pt-3 pb-7 border-t border-border bg-surface-overlay">
+      <View
+        className="absolute left-0 right-0 bottom-0 px-4 pt-3 border-t border-border bg-surface-overlay"
+        // Was pb-7 (28px). Android's navigation bar is taller than that, so
+        // the sign-up button it anchors sat underneath the system keys.
+        style={{ paddingBottom: Math.max(insets.bottom, 12) + 16 }}
+      >
         <Text className="text-[13px] text-center mb-2.5 text-text-secondary">
           Create an account to buy, chat, and save what you like.
         </Text>
