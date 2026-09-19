@@ -37,7 +37,7 @@ const OPTIONS = [
 export default function YourRole() {
   const router = useRouter();
   const t = useTokens();
-  const { setRole, refreshProfile } = useUser();
+  const { setRole, refreshProfile, profile } = useUser();
   const { name } = useLocalSearchParams<{ name?: string }>();
   const [choice, setChoice] = useState<"buyer" | "seller" | null>(null);
   const [saving, setSaving] = useState(false);
@@ -45,6 +45,17 @@ export default function YourRole() {
   const done = async () => {
     if (!choice || saving) return;
     setSaving(true);
+    try {
+      await finish(choice);
+    } finally {
+      // Always. The button used to be able to stay on "Setting up…"
+      // forever, because nothing reset it and the navigation below can
+      // legitimately do nothing -- see the guard note there.
+      setSaving(false);
+    }
+  };
+
+  const finish = async (choice: "buyer" | "seller") => {
     setRole(choice);
 
     // Saved here rather than on the name screen, because only now do we know
@@ -68,11 +79,12 @@ export default function YourRole() {
     // that guard reads the profile. Navigating before it has loaded means
     // replacing onto a screen that is not mounted yet, which does nothing at
     // all — so make sure it is loaded first.
+    let fresh: Awaited<ReturnType<typeof refreshProfile>> | undefined;
     try {
-      await Promise.race([
+      fresh = (await Promise.race([
         refreshProfile(),
         new Promise((resolve) => setTimeout(resolve, 4000)),
-      ]);
+      ])) as typeof fresh;
     } catch {
       // Guard falls back to "unknown", which permits.
     }
@@ -84,9 +96,23 @@ export default function YourRole() {
         pathname: "/(onboarding)/shopBasics",
         params: name ? { name } : {},
       });
-    } else {
-      router.replace("/(tabs)");
+      return;
     }
+
+    // The tabs live inside a Stack.Protected guarded on the address having
+    // been verified (app/_layout.tsx). When that guard is closed the route
+    // is not in the navigator at all, so replacing onto it does not fail --
+    // it does *nothing*, silently, and the screen stays exactly where it
+    // is. Combined with a button that never reset, that was the whole of
+    // "Setting up…" forever.
+    //
+    // So check, and send them somewhere that exists.
+    const latest = fresh ?? profile;
+    if (latest?.onboarding?.email_verified === false) {
+      router.replace("/(onboarding)/emailVerification");
+      return;
+    }
+    router.replace("/(tabs)");
   };
 
   return (

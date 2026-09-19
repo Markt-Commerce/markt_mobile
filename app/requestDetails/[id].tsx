@@ -16,7 +16,7 @@ import {
   Wallet,
   FileText,
 } from "lucide-react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useBackTo } from "../../utils/goBack";
 import { getRequestDetails } from "../../services/sections/request";
@@ -73,6 +73,7 @@ export default function BuyerRequestDetails() {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const t = useTokens();
+  const insets = useSafeAreaInsets();
   const iconColor = t.textPrimary;
   const mutedIconColor = t.textSecondary;
 
@@ -397,9 +398,11 @@ export default function BuyerRequestDetails() {
       {/* Bottom Action Bar — sellers only, never on your own request */}
       {showMessageBar && (
         <View
-          className={`absolute bottom-0 left-0 right-0 border-t px-6 pt-4 pb-8 ${
-            "bg-surface-page border-border"
-          }`}
+          className="absolute bottom-0 left-0 right-0 border-t px-6 pt-4 bg-surface-page border-border"
+          // pb-8 was 32px against an Android navigation bar of about 48,
+          // so the button sat behind the back and home keys. The inset is
+          // the only number that knows how tall that bar actually is.
+          style={{ paddingBottom: Math.max(insets.bottom, 16) + 16 }}
         >
           <TouchableOpacity
             onPress={() => chatSheetRef.current?.expand()}
