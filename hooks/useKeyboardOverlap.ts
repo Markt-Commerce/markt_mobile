@@ -78,7 +78,14 @@ export function keyboardScrollPadding(
   safeAreaBottom: number,
   restingPadding = 24
 ): number {
-  if (overlap <= 0) return restingPadding;
+  // No keyboard: the padding still has to clear whatever the system puts at
+  // the bottom of the screen. This returned the resting padding alone and
+  // ignored safeAreaBottom entirely, so on Android -- where the navigation
+  // bar is around 48dp and nothing else was holding the content up -- a
+  // footer pinned to the bottom of a sheet sat *behind* the back and home
+  // buttons. iOS never showed it because its callers take a different
+  // branch, which is why it survived.
+  if (overlap <= 0) return Math.max(safeAreaBottom, restingPadding);
   const usable =
     Platform.OS === "ios" ? Math.max(0, overlap - safeAreaBottom) : overlap;
   return usable + restingPadding;
