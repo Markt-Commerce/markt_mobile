@@ -1,5 +1,6 @@
 import React from "react";
 import DeliveryProgress from "../../components/orders/DeliveryProgress";
+import RiderCard from "../../components/orders/RiderCard";
 import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -15,6 +16,7 @@ import { useTokens, tokensFor } from "../../theme/useTokens";
 import { formatStatus } from "../../utils/formatStatus";
 import OrderProgress from "../../components/OrderProgress";
 import { formatDate, formatTime, parseServerDate } from "../../utils/datetime";
+import { useOrderTracking } from "../../hooks/useOrderTracking";
 
 function formatOrderDate(dateString?: string): string {
   if (!dateString) return "";
@@ -45,6 +47,10 @@ export default function OrderDetail() {
   // after paying, and on a notification that opened the app cold.
   const goBack = useBackTo("/(tabs)/orders");
   const [order, setOrder] = useState<Order | null>(null);
+  // Only for the rider -- the rest of this screen comes from the order
+  // itself. Keyed the same as the track screen, so opening one after the
+  // other does not fetch twice or let the two disagree on screen.
+  const { data: tracking } = useOrderTracking(id);
   const [loading, setLoading] = useState(true);
   // Order items only carry product_id/price/quantity/status (see temp.txt) — no
   // product name or image — so we resolve each item's product separately.
@@ -250,6 +256,17 @@ export default function OrderDetail() {
         {order.delivery ? (
           <View className="mb-4">
             <DeliveryProgress delivery={order.delivery} />
+            {/* Who has it, once somebody does. DeliveryProgress shows how
+                far along the parcel is and says nothing about the person
+                carrying it -- a buyer had to open the tracking screen,
+                and until now not even that named them. Shares its cache
+                entry with that screen, so this costs no extra request
+                once either has loaded. */}
+            {tracking?.delivery ? (
+              <View className="mt-3">
+                <RiderCard delivery={tracking.delivery} />
+              </View>
+            ) : null}
           </View>
         ) : null}
 
