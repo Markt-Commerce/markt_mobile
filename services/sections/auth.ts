@@ -1,4 +1,4 @@
-import { RegisterRequest, LoginRequest, AuthUser, ApiResponse, UserSwitchResponse, RoleCreationResult } from "../../models/auth";
+import { RegisterRequest, LoginRequest, AuthUser, ApiResponse, UserSwitchResponse, RoleCreationResult, CreateBuyerRequest, CreateSellerRequest } from "../../models/auth";
 import { CommonBuyerResponseData, CommonSellerResponseData } from "../../models/user";
 import { BASE_URL, request } from "../api";
 import { appendLocalFile } from "../../utils/formDataFile";
@@ -204,7 +204,7 @@ export async function switchUserRole(): Promise<UserSwitchResponse> {
  * @param data Buyer creation data (reuses RegisterRequest shape)
  * @returns Created/updated authenticated user object
  */
-export async function createBuyer(data: RegisterRequest['buyer_data']): Promise<RoleCreationResult> {
+export async function createBuyer(data: CreateBuyerRequest): Promise<RoleCreationResult> {
   const res = await request<RoleCreationResult>(`${BASE_URL}/users/create-buyer`, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -217,7 +217,7 @@ export async function createBuyer(data: RegisterRequest['buyer_data']): Promise<
  * @param data Seller creation data (reuses RegisterRequest shape)
  * @returns Created/updated authenticated user object
  */
-export async function createSeller(data: RegisterRequest['seller_data']): Promise<RoleCreationResult> {
+export async function createSeller(data: CreateSellerRequest): Promise<RoleCreationResult> {
   const res = await request<RoleCreationResult>(`${BASE_URL}/users/create-seller`, {
     method: 'POST',
     body: JSON.stringify(data),

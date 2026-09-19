@@ -8,7 +8,8 @@ import { useTokens } from "../../theme/useTokens";
 import { SuccessMark } from "../../components/illustrations/MarktIllustration";
 import * as Location from "expo-location";
 import { MapPin } from "lucide-react-native";
-import { updateSellerProfile } from "../../services/sections/profile";
+import { useUser } from "../../hooks/userContextProvider";
+import { ensureSellerRole } from "../../services/sections/roles";
 import * as haptics from "../../utils/haptics";
 import { logger } from "../../utils/logger";
 
@@ -34,6 +35,8 @@ export default function ShopBasics() {
   const [locating, setLocating] = useState(false);
   const [locationLabel, setLocationLabel] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { profile } = useUser();
   const valid = shopName.trim().length >= 2;
 
   /**
@@ -76,20 +79,35 @@ export default function ShopBasics() {
 
   const finish = async () => {
     if (saving) return;
+    setError(null);
     setSaving(true);
     haptics.celebrate();
 
     try {
-      await updateSellerProfile({
-        ...(shopName.trim() ? { shop_name: shopName.trim() } : {}),
+      // Create the shop if this account has no seller side yet, update it
+      // if it does. This only ever updated, which works after a password
+      // signup (registration makes the row) and never after Google or
+      // Apple, where the account arrives with no role at all. The failure
+      // was logged and swallowed, so the seller reached the dashboard
+      // without a shop.
+      await ensureSellerRole(profile, {
+        shop_name: shopName.trim(),
         // Only as a pair — the backend refuses a lone coordinate anyway, and
         // sending one would be a round trip that can only fail.
-        ...(coords ? { shop_latitude: coords.latitude, shop_longitude: coords.longitude } : {}),
+        ...(coords
+          ? { shop_latitude: coords.latitude, shop_longitude: coords.longitude }
+          : {}),
       });
     } catch (e) {
-      // Best-effort: a failed write must not strand a seller on the last step
-      // of signup. Both values are editable from the dashboard.
-      logger.warn("onboarding: could not save shop details", e);
+      // No longer best-effort. A shop name that fails to save is a
+      // nuisance; a seller account that was never created is an account
+      // that cannot sell, and cannot log back in either.
+      logger.warn("onboarding: could not set up the shop", e);
+      setError(
+        "We could not finish setting up your shop. Check your connection and try again."
+      );
+      setSaving(false);
+      return;
     }
 
     // replace, so the onboarding stack is gone for good.
@@ -172,6 +190,9 @@ export default function ShopBasics() {
         </ScrollView>
 
         <View className="px-6 pb-6 gap-3">
+          {error ? (
+            <Text className="text-[13px] text-danger-text">{error}</Text>
+          ) : null}
           <Pressable
             onPress={finish}
             disabled={!valid}

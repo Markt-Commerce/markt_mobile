@@ -7,6 +7,7 @@ import { useRegData } from "../../models/signupSteps";
 import { useUser } from "../../hooks/userContextProvider";
 import { AccountType } from "../../models/auth";
 import { getUserProfile } from "../../services/sections/profile";
+import { navigateToOnboardingStep } from "../../utils/authNavigation";
 import { logger } from "../../utils/logger";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
@@ -152,13 +153,9 @@ const EmailVerification = () => {
       // `replace`, not `push`: a verified account must not be able to swipe
       // back into the code screen, which would only 400 with "already
       // verified".
-      router.replace(
-        next === "seller_profile"
-          ? "/userdetSeller"
-          : next === "buyer_profile"
-            ? "/userdetBuyer"
-            : "/(tabs)"
-      );
+      // One router for every caller, so login and verification cannot drift
+      // apart about what a given next_step means.
+      navigateToOnboardingStep(next);
     } catch (error: any) {
       show({
         variant: "error",

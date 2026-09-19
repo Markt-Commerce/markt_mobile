@@ -8,6 +8,10 @@
  */
 export type OnboardingStep =
   | 'verify_email'
+  // Neither role yet. Signing in through Google or Apple produces exactly
+  // this: the provider proves the address and nothing else, so the account
+  // has no buyer row and no seller row until the question is answered.
+  | 'choose_role'
   | 'buyer_profile'
   | 'seller_profile';
 

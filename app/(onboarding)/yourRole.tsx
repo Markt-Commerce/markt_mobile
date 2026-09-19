@@ -6,7 +6,7 @@ import { ShoppingBag, Store, Check } from "lucide-react-native";
 import StepDots from "../../components/auth/StepDots";
 import { useTokens } from "../../theme/useTokens";
 import { useUser } from "../../hooks/userContextProvider";
-import { updateBuyerProfile } from "../../services/sections/profile";
+import { ensureBuyerRole } from "../../services/sections/roles";
 import { logger } from "../../utils/logger";
 
 /**
@@ -37,30 +37,40 @@ const OPTIONS = [
 export default function YourRole() {
   const router = useRouter();
   const t = useTokens();
-  const { setRole, refreshProfile } = useUser();
+  const { setRole, refreshProfile, profile } = useUser();
   const { name } = useLocalSearchParams<{ name?: string }>();
   const [choice, setChoice] = useState<"buyer" | "seller" | null>(null);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const done = async () => {
     if (!choice || saving) return;
+    setError(null);
     setSaving(true);
     setRole(choice);
 
-    // Saved here rather than on the name screen, because only now do we know
-    // the field it belongs in. Best-effort, and *bounded*: this used to be a
-    // bare await, so a slow or hanging request left the button disabled with
-    // no label change — indistinguishable from a button that does nothing.
-    // The name is editable in settings; stranding someone on the last step of
-    // signup to guarantee it is the worse trade.
-    if (name?.trim() && choice === "buyer") {
+    // Give the account the role it just chose.
+    //
+    // This used to call updateBuyerProfile, which only works if a buyer row
+    // already exists. Password signup creates one; signing in with Google
+    // or Apple does not — the provider proves the address and nothing else.
+    // So for every OAuth signup this failed, the failure was logged and
+    // swallowed, and the person landed in the app belonging to neither side
+    // of the marketplace. Nothing worked, because there was nothing to work
+    // as, and signing out made it permanent: login refused an account with
+    // no role at all.
+    //
+    // Not best-effort any more, for the same reason. A name that fails to
+    // save is a nuisance; a role that fails to save is an unusable account.
+    if (choice === "buyer") {
       try {
-        await Promise.race([
-          updateBuyerProfile({ buyername: name.trim() }),
-          new Promise((resolve) => setTimeout(resolve, 4000)),
-        ]);
+        await ensureBuyerRole(profile, { buyername: name?.trim() });
       } catch (e) {
-        logger.warn("onboarding: could not save display name", e);
+        logger.warn("onboarding: could not set up the buyer account", e);
+        setError(
+          "We could not finish setting up your account. Check your connection and try again."
+        );
+        return;
       }
     }
 
@@ -146,6 +156,9 @@ export default function YourRole() {
       </View>
 
       <View className="px-6 pb-6">
+        {error ? (
+          <Text className="text-[13px] mb-3 text-danger-text">{error}</Text>
+        ) : null}
         <Pressable
           onPress={done}
           disabled={!choice || saving}
