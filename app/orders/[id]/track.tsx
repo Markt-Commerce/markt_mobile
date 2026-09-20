@@ -14,6 +14,7 @@ import {
 } from "lucide-react-native";
 import RiderCard from "../../../components/orders/RiderCard";
 import { useOrderTracking } from "../../../hooks/useOrderTracking";
+import { hasLiveDeliveryCode, usePodCode } from "../../../hooks/usePodCode";
 import { useTheme } from "../../../components/themeProvider";
 import { useTokens, tokensFor } from "../../../theme/useTokens";
 import { formatDateTime } from "../../../utils/datetime";
@@ -54,6 +55,7 @@ export default function TrackOrderScreen() {
   // there, so a rider who arrived while the buyer was watching changed
   // nothing until they backed out and came in again.
   const { data: tracking, isLoading: loading, isError: error } = useOrderTracking(id);
+  const { data: pod } = usePodCode(id);
 
   const progressPct = useMemo(() => {
     if (!tracking) return 0;
@@ -228,14 +230,19 @@ export default function TrackOrderScreen() {
                     about to knock on their door -- while the rider has
                     had all three of theirs since accepting. */}
                 <RiderCard delivery={tracking.delivery} />
-                <TouchableOpacity
-                  onPress={() => router.push(`/orders/pod/${tracking.order_id}` as any)}
-                  className="mt-3"
-                >
-                  <Text className="text-primary text-sm font-semibold">
-                    View my delivery code →
-                  </Text>
-                </TouchableOpacity>
+                {/* Only while there is a code to show. This was
+                    unconditional, so a delivered order still invited the
+                    buyer into a screen whose code had already been used. */}
+                {hasLiveDeliveryCode(pod) && (
+                  <TouchableOpacity
+                    onPress={() => router.push(`/orders/pod/${tracking.order_id}` as any)}
+                    className="mt-3"
+                  >
+                    <Text className="text-primary text-sm font-semibold">
+                      View my delivery code →
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           )}

@@ -17,6 +17,7 @@ import { formatStatus } from "../../utils/formatStatus";
 import OrderProgress from "../../components/OrderProgress";
 import { formatDate, formatTime, parseServerDate } from "../../utils/datetime";
 import { useOrderTracking } from "../../hooks/useOrderTracking";
+import { hasLiveDeliveryCode, usePodCode } from "../../hooks/usePodCode";
 
 function formatOrderDate(dateString?: string): string {
   if (!dateString) return "";
@@ -51,6 +52,7 @@ export default function OrderDetail() {
   // itself. Keyed the same as the track screen, so opening one after the
   // other does not fetch twice or let the two disagree on screen.
   const { data: tracking } = useOrderTracking(id);
+  const { data: pod } = usePodCode(id);
   const [loading, setLoading] = useState(true);
   // Order items only carry product_id/price/quantity/status (see temp.txt) — no
   // product name or image — so we resolve each item's product separately.
@@ -265,6 +267,22 @@ export default function OrderDetail() {
             {tracking?.delivery ? (
               <View className="mt-3">
                 <RiderCard delivery={tracking.delivery} />
+                {/* This screen is where the delivery notification lands,
+                    so it is where a buyer looks when a rider is at the
+                    door -- and the code lived only on the track screen,
+                    one tap further in. Disappears once the rider has
+                    used it. */}
+                {hasLiveDeliveryCode(pod) && (
+                  <TouchableOpacity
+                    onPress={() => router.push(`/orders/pod/${id}` as any)}
+                    className="mt-3"
+                    accessibilityRole="button"
+                  >
+                    <Text className="text-primary text-sm font-semibold">
+                      View my delivery code →
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             ) : null}
           </View>

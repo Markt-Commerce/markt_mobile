@@ -190,6 +190,13 @@ export interface PodCode {
   ready: boolean;
   system: "single_order" | "run" | null;
   code: string | null;
+  /** The rider already used this code and the delivery is over.
+   *
+   *  Distinct from `ready: false`, which means there is no code *yet* --
+   *  waiting for a rider and being finished with one are opposite ends of
+   *  the delivery and the screen has to tell them apart. Optional because
+   *  an older backend does not send it. */
+  delivered?: boolean;
 }
 
 export interface OrderCancelResponse {
