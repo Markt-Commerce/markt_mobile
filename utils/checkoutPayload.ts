@@ -53,7 +53,8 @@ export function buildCheckoutPaymentInitRequest(
   shipping: ShippingAddressPayload,
   fulfilmentPreference: FulfilmentPreference,
   reliabilityFeeOptedIn: boolean,
-  deliveryQuoteId?: string
+  deliveryQuoteId?: string,
+  batchOptIn = false
 ): CheckoutPaymentInitRequest {
   return {
     shipping_address: shipping,
@@ -65,6 +66,15 @@ export function buildCheckoutPaymentInitRequest(
     // Omitted rather than sent as undefined when there is no quote: the
     // server treats absence as "use the flat estimate", which is what keeps
     // an older build (or a failed quote) working.
-    ...(deliveryQuoteId ? { delivery_quote_id: deliveryQuoteId } : {}),
+    //
+    // batch_opt_in rides along with the quote for the same reason it does
+    // in buildCheckoutRequest: sharing is priced against the solo quote,
+    // so without one there is no ceiling to cap the shared fee at. This
+    // builder dropped the flag entirely -- the field is on the request
+    // type and the server reads it (app/payments/schemas.py), so whenever
+    // this path goes live a buyer's opt-in would have been silently lost.
+    ...(deliveryQuoteId
+      ? { delivery_quote_id: deliveryQuoteId, batch_opt_in: batchOptIn }
+      : {}),
   };
 }

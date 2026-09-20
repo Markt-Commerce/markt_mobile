@@ -11,14 +11,13 @@
  * can't scan (no camera capability built into markt_logistics yet,
  * poor lighting, etc).
  */
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, KeyRound, Clock, Type as TypeIcon } from "lucide-react-native";
+import { ArrowLeft, KeyRound, Clock, PackageCheck, Type as TypeIcon } from "lucide-react-native";
 import QRCode from "react-native-qrcode-svg";
-import { getPodCode } from "../../../services/sections/orders";
-import { PodCode } from "../../../models/orders";
+import { usePodCode } from "../../../hooks/usePodCode";
 import { useTokens } from "../../../theme/useTokens";
 
 export default function OrderPodCodeScreen() {
@@ -26,32 +25,32 @@ export default function OrderPodCodeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useTokens();
 
-  const [data, setData] = useState<PodCode | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(false);
   const [showAsText, setShowAsText] = useState(false);
 
-  const load = useCallback(
-    (isRefresh = false) => {
-      if (!id) return;
-      if (isRefresh) setRefreshing(true);
-      else setLoading(true);
-      setError(false);
-      getPodCode(id)
-        .then(setData)
-        .catch(() => setError(true))
-        .finally(() => {
-          setLoading(false);
-          setRefreshing(false);
-        });
-    },
-    [id],
-  );
+  // Polled while the code is live, and invalidated when a delivery push
+  // lands. The confirm happens on the rider's phone, so this screen
+  // cannot learn it is finished any other way -- it used to fetch once
+  // on mount and then show a QR code for a delivery that was over.
+  const {
+    data,
+    isLoading: loading,
+    isError: error,
+    isRefetching: refreshing,
+    refetch,
+  } = usePodCode(id);
 
+  const delivered = !!data?.delivered;
+
+  // Once the rider has confirmed, this screen has nothing left to do.
+  // Leaving it up is what put a spent QR code underneath the
+  // gamification modal. A beat first, so the buyer sees it succeed
+  // rather than being thrown out of a screen that never acknowledged
+  // anything.
   useEffect(() => {
-    load();
-  }, [load]);
+    if (!delivered) return;
+    const timer = setTimeout(() => router.back(), 2200);
+    return () => clearTimeout(timer);
+  }, [delivered, router]);
 
   const cardClass = `rounded border p-4 bg-surface-raised border-border`;
   const labelClass = `text-sm text-text-secondary`;
@@ -81,7 +80,7 @@ export default function OrderPodCodeScreen() {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={() => load(true)}
+            onRefresh={() => refetch()}
             tintColor={t.textPrimary}
           />
         }
@@ -96,6 +95,17 @@ export default function OrderPodCodeScreen() {
               Could not load your code
             </Text>
             <Text className={`${labelClass} mt-2 text-center`}>Pull down to try again.</Text>
+          </View>
+        ) : delivered ? (
+          <View className="flex-1 justify-center items-center py-16">
+            <PackageCheck size={32} color={t.textPrimary} />
+            <Text className="font-semibold text-lg text-center mt-4 text-text-primary">
+              Delivered
+            </Text>
+            <Text className={`${labelClass} mt-2 text-center px-6`}>
+              Your rider confirmed this order. The code has been used and is no
+              longer needed.
+            </Text>
           </View>
         ) : !data.ready || !data.code ? (
           <View className="flex-1 justify-center items-center py-16">
