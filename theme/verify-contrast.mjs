@@ -66,6 +66,25 @@ const ACCEPTED = [
 const isAccepted = (theme, fg, bg) =>
   ACCEPTED.some((a) => a.theme === theme && a.fg === fg && a.bg === bg);
 
+/**
+ * The tier badge draws its colour as a foreground -- the icon's stroke
+ * and the tier name's text -- so every token tierColors.ts can return
+ * has to be one this file already holds to the text bar.
+ *
+ * Checked by reading that file rather than by trusting a comment in it.
+ * The ramp it used to return reached for `primaryMuted`, an
+ * rgba(...,0.16) background wash, which rendered Hustler's icon and
+ * label at 16% opacity -- invisible in both themes -- and `primaryFill`,
+ * which is 3.83:1 on the dark page. Neither is in TEXT or ACCENTS, so
+ * nothing here ever looked at them.
+ */
+const VERIFIED_FOREGROUNDS = new Set([...TEXT, ...ACCENTS]);
+const tierSrc = readFileSync(join(here, "tierColors.ts"), "utf8");
+const tierTokens = [...tierSrc.matchAll(/return t\.(\w+);/g)].map((m) => m[1]);
+const unverifiedTierTokens = [...new Set(tierTokens)].filter(
+  (token) => !VERIFIED_FOREGROUNDS.has(token)
+);
+
 let failures = 0;
 const rows = [];
 
@@ -131,6 +150,21 @@ for (const themeName of ["light", "dark"]) {
     );
     failures++;
   }
+}
+
+if (unverifiedTierTokens.length) {
+  failures += unverifiedTierTokens.length;
+  console.log(
+    `\nTIER BADGE: ${unverifiedTierTokens.join(", ")} ${
+      unverifiedTierTokens.length === 1 ? "is" : "are"
+    } drawn as a foreground by theme/tierColors.ts but never checked as one.\n` +
+      "  Either return a token from TEXT/ACCENTS, or add it to ACCENTS here\n" +
+      "  so its contrast against every surface is actually asserted."
+  );
+} else {
+  console.log(
+    `\ntier badge foregrounds: ${[...new Set(tierTokens)].join(", ")} — all verified`
+  );
 }
 
 const failed = rows.filter(([, , , , ok]) => !ok);
