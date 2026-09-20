@@ -3,9 +3,9 @@ import DeliveryProgress from "../../components/orders/DeliveryProgress";
 import RiderCard from "../../components/orders/RiderCard";
 import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useBackTo } from "../../utils/goBack";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, MapPin, CreditCard, FileText, User, Package } from "lucide-react-native";
 import { getOrderDetails } from "../../services/sections/orders";
 import { getProductById } from "../../services/sections/product";
@@ -17,6 +17,7 @@ import { formatStatus } from "../../utils/formatStatus";
 import OrderProgress from "../../components/OrderProgress";
 import { formatDate, formatTime, parseServerDate } from "../../utils/datetime";
 import { useOrderTracking } from "../../hooks/useOrderTracking";
+import { onNotificationsChanged } from "../../utils/notificationEvents";
 import { hasLiveDeliveryCode, usePodCode } from "../../hooks/usePodCode";
 
 function formatOrderDate(dateString?: string): string {
@@ -66,6 +67,25 @@ export default function OrderDetail() {
   const iconColor = t.textPrimary;
   const mutedColor = t.textSecondary;
 
+  /** The order itself, which does not change while the buyer looks at
+   *  it -- except that it does.
+   *
+   *  This ran once on mount and never again, so after a rider scanned
+   *  the delivery code the buyer came back to this screen and found it
+   *  still saying the parcel was on its way. The tracking and code
+   *  queries beside it were already refetching on a delivery push; the
+   *  order carrying `status` and `delivery.state` was the one thing
+   *  that was not. */
+  const refreshOrder = useCallback(async () => {
+    try {
+      setOrder(await getOrderDetails(id));
+    } catch (error) {
+      // A failed refresh leaves what is already on screen, which is
+      // the better of the two wrong answers.
+      console.warn("Could not refresh order", error);
+    }
+  }, [id]);
+
   useEffect(() => {
     const fetchOrder = async () => {
       try {
@@ -88,6 +108,19 @@ export default function OrderDetail() {
 
     fetchOrder();
   }, [id]);
+
+  // The rider's app is what moves this forward, so the push is the only
+  // thing that can tell the screen it has changed. Same signal the
+  // tracking query listens on.
+  useEffect(() => onNotificationsChanged(refreshOrder), [refreshOrder]);
+
+  // And on the way back in -- from the delivery-code screen, or from
+  // anywhere else the app was while a rider was finishing up.
+  useFocusEffect(
+    useCallback(() => {
+      void refreshOrder();
+    }, [refreshOrder])
+  );
 
   if (loading) {
     return (
