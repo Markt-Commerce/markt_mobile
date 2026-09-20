@@ -45,6 +45,7 @@ function vehicleLabel(vehicle?: string | null): string | null {
 export default function RiderCard({ delivery }: { delivery: TrackingDelivery }) {
   const t = useTokens();
   const rider = delivery.rider;
+  const delivered = delivery.logistical_status === 'COMPLETED';
 
   // Before a rider is found there is nobody to show. The step line is
   // still worth having, so this degrades to it rather than disappearing.
@@ -95,8 +96,16 @@ export default function RiderCard({ delivery }: { delivery: TrackingDelivery }) 
 
         {/* Hidden rather than disabled when there is no number: a call
             button that does nothing is worse than none. The rider's app
-            makes the same call on the same reasoning. */}
-        {!!rider?.phone_number && (
+            makes the same call on the same reasoning.
+
+            Gone once the delivery is done, too. That is the rider's own
+            personal number -- masking it behind a proxy needs a
+            telephony provider we do not have -- and it is shared for
+            one reason: the two of them have to find each other. Once
+            the parcel is handed over that reason is spent, and leaving
+            a call button on a finished order invites someone to ring a
+            stranger about something that is over. */}
+        {!!rider?.phone_number && !delivered && (
           <TouchableOpacity
             onPress={() => Linking.openURL(`tel:${rider.phone_number}`)}
             className="h-11 w-11 items-center justify-center rounded-full bg-primary"

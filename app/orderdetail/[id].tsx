@@ -53,6 +53,9 @@ export default function OrderDetail() {
   // other does not fetch twice or let the two disagree on screen.
   const { data: tracking } = useOrderTracking(id);
   const { data: pod } = usePodCode(id);
+  // Nothing more is going to happen to this order, so the screen should
+  // stop offering live actions for it.
+  const isFinished = order?.status === "delivered" || order?.status === "cancelled";
   const [loading, setLoading] = useState(true);
   // Order items only carry product_id/price/quantity/status (see temp.txt) — no
   // product name or image — so we resolve each item's product separately.
@@ -301,14 +304,24 @@ export default function OrderDetail() {
           ) : (
             // Only once there's something to track. On an unpaid order this
             // led to a tracking screen with nothing in it.
+            //
+            // Kept on a finished order rather than hidden: the screen it
+            // opens is the timeline of what happened and when, which is
+            // the closest thing the buyer has to a receipt for the
+            // delivery, and taking it away the moment the parcel lands
+            // is when they are most likely to want it. But "Track" is
+            // the wrong verb for something that has already arrived, so
+            // it stops claiming to be live.
             <TouchableOpacity
               className="bg-primary-fill h-12 rounded-xl justify-center items-center flex-row"
               onPress={() => router.push(`/orders/${id}/track`)}
               accessibilityRole="button"
-              accessibilityLabel="Track this order"
+              accessibilityLabel={
+                isFinished ? "See what happened with this order" : "Track this order"
+              }
             >
               <Text className="text-white font-bold text-[15px] mr-1.5">
-                Track order
+                {isFinished ? "Delivery details" : "Track order"}
               </Text>
               <ArrowRight size={18} color={t.textOnPrimary} strokeWidth={2.2} />
             </TouchableOpacity>
