@@ -71,24 +71,43 @@ export default function NotificationsBootstrap() {
           emitNotificationsChanged();
         });
 
+        // A tap while the app is running.
         responseSub = Notifications.addNotificationResponseReceivedListener(
           (response) => {
-            const data = response.notification.request.content.data as
-              | Record<string, unknown>
-              | undefined;
-            if (!data) return;
-            const route = resolveNotificationRoute({
-              type: data.type as string | undefined,
-              reference_type: data.reference_type as string | undefined,
-              reference_id: data.reference_id as string | undefined,
-            });
-            if (route) router.push(route as any);
+            routeFromResponse(response);
           }
         );
+
+        // A tap that *started* the app. The listener above never fires for
+        // these -- the response was delivered before it was attached -- so a
+        // notification tapped from a cold start, which is most of them, opened
+        // the app on whatever screen it happened to restore and appeared to do
+        // nothing.
+        const initial = await Notifications.getLastNotificationResponseAsync();
+        if (!cancelled && initial) routeFromResponse(initial);
       } catch (e) {
         logger.error("notification setup failed:", e);
       }
     })();
+
+    // Structural rather than Notifications.NotificationResponse: the module
+    // is imported dynamically (it throws at load time in Expo Go), so its
+    // types are not in scope out here.
+    function routeFromResponse(response: {
+      notification: { request: { content: { data?: unknown } } };
+    }) {
+      const data = response.notification.request.content.data as
+        | Record<string, unknown>
+        | undefined;
+      if (!data) return;
+      const route = resolveNotificationRoute({
+        type: data.type as string | undefined,
+        reference_type: data.reference_type as string | undefined,
+        reference_id: data.reference_id as string | undefined,
+        status: data.status as string | undefined,
+      });
+      if (route) router.push(route as any);
+    }
 
     return () => {
       cancelled = true;

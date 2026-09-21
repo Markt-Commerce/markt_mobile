@@ -27,11 +27,26 @@ export function navigateToGuestHome() {
  * only routes on it.
  */
 export function navigateToOnboardingStep(
-  nextStep: "verify_email" | "buyer_profile" | "seller_profile" | null | undefined
+  nextStep:
+    | "verify_email"
+    | "choose_role"
+    | "buyer_profile"
+    | "seller_profile"
+    | null
+    | undefined
 ) {
   switch (nextStep) {
     case "verify_email":
       router.replace("/emailVerification");
+      return;
+    // An account with neither role. Signing in through Google or Apple
+    // makes one: the provider proves the address, and nothing has yet
+    // asked whether this person is buying or selling. Anything that
+    // interrupted that question -- a closed app, a failed request -- used
+    // to leave the account here with nowhere to go, because the server
+    // reported no next step at all.
+    case "choose_role":
+      router.replace("/(onboarding)/yourRole");
       return;
     case "buyer_profile":
       router.replace("/userdetBuyer");

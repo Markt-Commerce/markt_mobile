@@ -161,17 +161,42 @@ export interface TrackingShipment {
   delivered_at: string | null;
 }
 
+/** The person bringing it, as the tracking endpoint returns them.
+ *
+ * The rider has had the buyer's name and number since assignments
+ * carried parties; this is the other half of that. The number is the
+ * rider's real one for the same reason -- masking both through a proxy
+ * needs a telephony provider we do not have yet.
+ */
+export interface TrackingRider {
+  name: string | null;
+  phone_number: string | null;
+  profile_picture: string | null;
+  vehicle_type: string | null;
+  rating: number | null;
+}
+
 export interface TrackingDelivery {
   assignment_id: string;
   status: string;
   logistical_status: string | null;
   assigned_at: string | null;
+  /** Null before a rider has been found, and on orders placed before
+   *  riders carried identities. */
+  rider?: TrackingRider | null;
 }
 
 export interface PodCode {
   ready: boolean;
   system: "single_order" | "run" | null;
   code: string | null;
+  /** The rider already used this code and the delivery is over.
+   *
+   *  Distinct from `ready: false`, which means there is no code *yet* --
+   *  waiting for a rider and being finished with one are opposite ends of
+   *  the delivery and the screen has to tell them apart. Optional because
+   *  an older backend does not send it. */
+  delivered?: boolean;
 }
 
 export interface OrderCancelResponse {

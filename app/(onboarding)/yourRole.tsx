@@ -6,7 +6,7 @@ import { ShoppingBag, Store, Check } from "lucide-react-native";
 import StepDots from "../../components/auth/StepDots";
 import { useTokens } from "../../theme/useTokens";
 import { useUser } from "../../hooks/userContextProvider";
-import { updateBuyerProfile } from "../../services/sections/profile";
+import { ensureBuyerRole } from "../../services/sections/roles";
 import { logger } from "../../utils/logger";
 
 /**
@@ -37,56 +37,110 @@ const OPTIONS = [
 export default function YourRole() {
   const router = useRouter();
   const t = useTokens();
-  const { setRole, refreshProfile } = useUser();
+  const { setRole, refreshProfile, profile, setProfile } = useUser();
   const { name } = useLocalSearchParams<{ name?: string }>();
   const [choice, setChoice] = useState<"buyer" | "seller" | null>(null);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const done = async () => {
     if (!choice || saving) return;
+    setError(null);
     setSaving(true);
+    try {
+      await finish(choice);
+    } finally {
+      // Always. The button used to be able to stay on "Setting up…"
+      // forever, because nothing reset it and the navigation below can
+      // legitimately do nothing -- see the guard note there.
+      setSaving(false);
+    }
+  };
+
+  const finish = async (choice: "buyer" | "seller") => {
     setRole(choice);
 
-    // Saved here rather than on the name screen, because only now do we know
-    // the field it belongs in. Best-effort, and *bounded*: this used to be a
-    // bare await, so a slow or hanging request left the button disabled with
-    // no label change — indistinguishable from a button that does nothing.
-    // The name is editable in settings; stranding someone on the last step of
-    // signup to guarantee it is the worse trade.
-    if (name?.trim() && choice === "buyer") {
+    // The most recent view of the account we have. Updated in place as the
+    // steps below learn more, so the navigation at the end decides on the
+    // freshest thing available rather than on whatever context happened to
+    // be holding when this started.
+    let latest = profile;
+
+    // Give the account the role it just chose.
+    //
+    // This used to call updateBuyerProfile, which only works if a buyer row
+    // already exists. Password signup creates one; signing in with Google
+    // or Apple does not — the provider proves the address and nothing else.
+    // So for every OAuth signup this failed, the failure was logged and
+    // swallowed, and the person landed in the app belonging to neither side
+    // of the marketplace. Nothing worked, because there was nothing to work
+    // as, and signing out made it permanent: login refused an account with
+    // no role at all.
+    //
+    // Not best-effort any more, for the same reason. A name that fails to
+    // save is a nuisance; a role that fails to save is an unusable account.
+    if (choice === "buyer") {
       try {
-        await Promise.race([
-          updateBuyerProfile({ buyername: name.trim() }),
-          new Promise((resolve) => setTimeout(resolve, 4000)),
-        ]);
+        // The create call answers with the account as the server now sees
+        // it, so there is no refresh to race afterwards — which matters,
+        // because the startup gate in app/_layout.tsx redirects on
+        // next_step and a stale "choose_role" would bounce the person
+        // straight back to this screen.
+        const fresh = await ensureBuyerRole(profile, { buyername: name?.trim() });
+        if (fresh) {
+          setProfile(fresh);
+          latest = fresh;
+        }
       } catch (e) {
-        logger.warn("onboarding: could not save display name", e);
+        logger.warn("onboarding: could not set up the buyer account", e);
+        setError(
+          "We could not finish setting up your account. Check your connection and try again."
+        );
+        return;
       }
     }
 
-    // The tabs are guarded on the account having verified its address, and
-    // that guard reads the profile. Navigating before it has loaded means
-    // replacing onto a screen that is not mounted yet, which does nothing at
-    // all — so make sure it is loaded first.
-    try {
-      await Promise.race([
-        refreshProfile(),
-        new Promise((resolve) => setTimeout(resolve, 4000)),
-      ]);
-    } catch {
-      // Guard falls back to "unknown", which permits.
-    }
     // `replace`, not `push`: finishing onboarding must not leave the flow in
     // history. The old emailVerification screen pushed, so an iOS swipe-back
     // landed the user right back inside signup.
+    //
+    // The shop itself is created on the next screen, which is where its
+    // name and location are asked for.
     if (choice === "seller") {
       router.replace({
         pathname: "/(onboarding)/shopBasics",
         params: name ? { name } : {},
       });
-    } else {
-      router.replace("/(tabs)");
+      return;
     }
+
+    // Only if the step above did not already hand one back. Bounded, so a
+    // slow server cannot leave the button disabled with no explanation.
+    if (latest === profile) {
+      try {
+        latest =
+          ((await Promise.race([
+            refreshProfile(),
+            new Promise((resolve) => setTimeout(resolve, 4000)),
+          ])) as typeof latest) ?? profile;
+      } catch {
+        // Guard falls back to "unknown", which permits.
+      }
+    }
+
+    // The tabs live inside a Stack.Protected guarded on the address having
+    // been verified (app/_layout.tsx). When that guard is closed the route
+    // is not in the navigator at all, so replacing onto it does not fail --
+    // it does *nothing*, silently, and the screen stays exactly where it
+    // is. Combined with a button that never reset, that was the whole of
+    // "Setting up…" forever.
+    //
+    // So check, and send them somewhere that exists.
+    if (latest?.onboarding?.email_verified === false) {
+      router.replace("/(onboarding)/emailVerification");
+      return;
+    }
+    router.replace("/(tabs)");
   };
 
   return (
@@ -146,6 +200,9 @@ export default function YourRole() {
       </View>
 
       <View className="px-6 pb-6">
+        {error ? (
+          <Text className="text-[13px] mb-3 text-danger-text">{error}</Text>
+        ) : null}
         <Pressable
           onPress={done}
           disabled={!choice || saving}

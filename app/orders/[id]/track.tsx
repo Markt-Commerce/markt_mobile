@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -12,8 +12,9 @@ import {
   Clock,
   XCircle,
 } from "lucide-react-native";
-import { trackOrder } from "../../../services/sections/orders";
-import { OrderTracking } from "../../../models/orders";
+import RiderCard from "../../../components/orders/RiderCard";
+import { useOrderTracking } from "../../../hooks/useOrderTracking";
+import { hasLiveDeliveryCode, usePodCode } from "../../../hooks/usePodCode";
 import { useTheme } from "../../../components/themeProvider";
 import { useTokens, tokensFor } from "../../../theme/useTokens";
 import { formatDateTime } from "../../../utils/datetime";
@@ -49,28 +50,12 @@ export default function TrackOrderScreen() {
   const isDark = resolvedTheme === "dark";
   const t = useTokens();
 
-  const [tracking, setTracking] = useState<OrderTracking | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    if (!id) return;
-    let cancelled = false;
-    setLoading(true);
-    trackOrder(id)
-      .then((data) => {
-        if (!cancelled) setTracking(data);
-      })
-      .catch(() => {
-        if (!cancelled) setError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
+  // Shared with the order detail screen, and refetched when a delivery
+  // push lands -- this screen used to fetch once on mount and then sit
+  // there, so a rider who arrived while the buyer was watching changed
+  // nothing until they backed out and came in again.
+  const { data: tracking, isLoading: loading, isError: error } = useOrderTracking(id);
+  const { data: pod } = usePodCode(id);
 
   const progressPct = useMemo(() => {
     if (!tracking) return 0;
@@ -240,20 +225,24 @@ export default function TrackOrderScreen() {
                 <Text className="font-bold mb-2 text-text-primary">
                   Delivery
                 </Text>
-                <View className="flex-row justify-between py-1.5">
-                  <Text className={labelClass}>Status</Text>
-                  <Text className={`${valueClass} capitalize`}>
-                    {(tracking.delivery.logistical_status ?? tracking.delivery.status).replace(/_/g, " ")}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => router.push(`/orders/pod/${tracking.order_id}` as any)}
-                  className="mt-2"
-                >
-                  <Text className="text-primary text-sm font-semibold">
-                    View my delivery code →
-                  </Text>
-                </TouchableOpacity>
+                {/* This was a single line reading "picked up". The buyer
+                    had no name, no face and no number for the one person
+                    about to knock on their door -- while the rider has
+                    had all three of theirs since accepting. */}
+                <RiderCard delivery={tracking.delivery} />
+                {/* Only while there is a code to show. This was
+                    unconditional, so a delivered order still invited the
+                    buyer into a screen whose code had already been used. */}
+                {hasLiveDeliveryCode(pod) && (
+                  <TouchableOpacity
+                    onPress={() => router.push(`/orders/pod/${tracking.order_id}` as any)}
+                    className="mt-3"
+                  >
+                    <Text className="text-primary text-sm font-semibold">
+                      View my delivery code →
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           )}

@@ -5,6 +5,7 @@
 
 import React, { useEffect } from "react";
 import { View, Text, TouchableOpacity, Keyboard } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Camera,
   Image as ImageIcon,
@@ -42,6 +43,7 @@ const OptionCard = ({
   disabled?: boolean;
 }) => {
   const t = useTokens();
+  const insets = useSafeAreaInsets();
 
   return (
     <TouchableOpacity
@@ -78,6 +80,7 @@ export default function ChatAttachmentSheet({
   onCreateDiscount,
   role = "buyer",
 }: Props) {
+  const insets = useSafeAreaInsets();
   useEffect(() => {
     if (visible) Keyboard.dismiss();
   }, [visible]);
@@ -108,6 +111,10 @@ export default function ChatAttachmentSheet({
       />
       <View
         className="absolute bottom-0 left-0 right-0 rounded-t shadow-level-2 overflow-hidden bg-surface-raised"
+        // The sheet is pinned to the bottom of an edge-to-edge window, so
+        // without this its last row of buttons sits under the navigation
+        // bar.
+        style={{ paddingBottom: insets.bottom }}
       >
         <View
           className="w-10 h-1 rounded self-center mt-3 mb-2 bg-border-strong"

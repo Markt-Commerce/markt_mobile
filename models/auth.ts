@@ -25,6 +25,28 @@ export interface RegisterRequest {
   address?: AddressData;
 }
 
+/** What POST /users/create-buyer takes.
+ *
+ * Its own type rather than a reuse of RegisterRequest["buyer_data"]:
+ * registration and "add this role to an account that already exists" are
+ * different contracts, and the create endpoint's own schema
+ * (BuyerCreateSchema) asks only for the name. The delivery address is
+ * collected later, on its own screen, so borrowing the registration shape
+ * described a call this endpoint never wanted. */
+export interface CreateBuyerRequest {
+  buyername: string;
+  shipping_address?: Record<string, string>;
+}
+
+/** What POST /users/create-seller takes (SellerCreateSchema). Policies are
+ *  set from the dashboard afterwards, not during signup. */
+export interface CreateSellerRequest {
+  shop_name: string;
+  description: string;
+  category_ids: number[];
+  policies?: Record<string, string>;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
