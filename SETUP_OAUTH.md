@@ -271,3 +271,12 @@ prebuild.
 | Google button missing *(dev build)* | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` is unset. |
 | Apple sign-in fails at the sheet | **Sign in with Apple** capability not ticked on the App ID (2.2). |
 | **409** on social sign-in | Working as designed: that email is a password account and the provider did not verify the address. Sign in with the password once to link. |
+
+
+
+GOOGLE_WEB_CLIENT_ID=133653295470-34aeeb89r7ck1e54csjn2uf5vemf4rk4.apps.googleusercontent.com
+GOOGLE_IOS_CLIENT_ID=133653295470-rj05ptsdt858d765d0c6rtivemqcf06b.apps.googleusercontent.com
+GOOGLE_ANDROID_CLIENT_ID=133653295470-gbkqaeo1ptlpds42ki96dokdj9qcphpd.apps.googleusercontent.com
+
+APPLE_BUNDLE_ID=com.marktcommerce.markt
+APPLE_SERVICES_ID=com.marktcommerce.markt.signin

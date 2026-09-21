@@ -10,22 +10,40 @@
       },
       "node": "24.15.0",
       "env": {
-        "DEBUG": "nativewind,react-native-css-interop"
+        "DEBUG": "nativewind,react-native-css-interop",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "133653295470-34aeeb89r7ck1e54csjn2uf5vemf4rk4.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "133653295470-rj05ptsdt858d765d0c6rtivemqcf06b.apps.googleusercontent.com"
       }
     },
     "preview2": {
       "android": {
         "gradleCommand": ":app:assembleRelease"
+      },
+      "env": {
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "133653295470-34aeeb89r7ck1e54csjn2uf5vemf4rk4.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "133653295470-rj05ptsdt858d765d0c6rtivemqcf06b.apps.googleusercontent.com"
       }
     },
     "preview3": {
-      "developmentClient": true
+      "developmentClient": true,
+      "env": {
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "133653295470-34aeeb89r7ck1e54csjn2uf5vemf4rk4.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "133653295470-rj05ptsdt858d765d0c6rtivemqcf06b.apps.googleusercontent.com"
+      }
     },
     "preview4": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "133653295470-34aeeb89r7ck1e54csjn2uf5vemf4rk4.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "133653295470-rj05ptsdt858d765d0c6rtivemqcf06b.apps.googleusercontent.com"
+      }
     },
     "production": {
-      "node": "24.15.0"
+      "node": "24.15.0",
+      "env": {
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "133653295470-34aeeb89r7ck1e54csjn2uf5vemf4rk4.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "133653295470-rj05ptsdt858d765d0c6rtivemqcf06b.apps.googleusercontent.com"
+      }
     }
   }
 }
