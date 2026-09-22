@@ -63,7 +63,8 @@
         {
           "iosUrlScheme": "com.googleusercontent.apps.133653295470-rj05ptsdt858d765d0c6rtivemqcf06b"
         }
-      ]
+      ],
+      "./plugins/withFixGoogleMapsPodspec.js"
     ],
     "extra": {
       "router": {},
