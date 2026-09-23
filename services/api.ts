@@ -7,6 +7,36 @@ export const BASE_URL = API_BASE_URL;
 
 /** Called on 401 — register from UserProvider to clear context and redirect */
 let onUnauthorized: (() => void) | null = null;
+
+/**
+ * Endpoints where a 401 means "those credentials are wrong", not "your
+ * session ended".
+ *
+ * Signing in with the wrong password returns 401, which used to run the
+ * session-expiry path: clear the token, drop the user, toast "Session
+ * expired — please sign in again", and navigate to the guest home. So
+ * mistyping a password threw you out to the create-account screen, told
+ * you a session you never had had expired, and unmounted the login screen
+ * before its own "Incorrect email or password" could be read.
+ *
+ * These are the paths that *establish* a session rather than spend one.
+ */
+const CREDENTIAL_PATHS = [
+  "/users/login",
+  "/users/register",
+  "/users/auth/oauth",
+  "/users/email-verification/verify",
+  "/users/password-reset",
+  "/users/password-reset/confirm",
+  "/deliveries/auth/login",
+  "/deliveries/auth/otp",
+];
+
+function isCredentialCheck(url: string): boolean {
+  // Compare on the path only: query strings and the host vary.
+  const path = url.split("?")[0].replace(/\/+$/, "");
+  return CREDENTIAL_PATHS.some((p) => path.endsWith(p));
+}
 export function setOnUnauthorized(fn: (() => void) | null) {
   onUnauthorized = fn;
 }
@@ -133,8 +163,12 @@ export async function request<T = any>(path: string, opts: RequestInit = {}): Pr
   if (!res.ok) {
     const errorBody = data as any;
 
-    // 401 = not logged in → clear session, redirect to login
-    if (res.status === 401) {
+    // 401 = the session is gone → clear it and send them to sign in.
+    //
+    // Unless this *was* the sign-in. A rejected password is an answer to a
+    // question the user just asked, and the screen that asked it is the
+    // right place to say so.
+    if (res.status === 401 && !isCredentialCheck(url)) {
       await setAuthToken(null);
       await clearUserSession();
       onUnauthorized?.();
