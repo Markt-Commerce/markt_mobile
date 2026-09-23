@@ -25,9 +25,11 @@ import type { PointsHistoryItem, LeaderboardRow as LBRow } from "../../types/gam
 import CountUp from "../../components/gamification/CountUp";
 import StreakCard from "../../components/gamification/StreakCard";
 import { tierColor } from "../../theme/tierColors";
+import { useBackTo } from "../../utils/goBack";
 
 export default function GamificationScreen() {
   const router = useRouter();
+  const goBack = useBackTo("/(tabs)/profile");
   const { resolvedTheme } = useTheme();
   const { user } = useUser();
   const isDark = resolvedTheme === "dark";
@@ -75,7 +77,7 @@ export default function GamificationScreen() {
           "border-border"
         }`}
       >
-        <TouchableOpacity onPress={() => router.back()} className="flex-row items-center">
+        <TouchableOpacity onPress={goBack} className="flex-row items-center">
           <ArrowLeft size={20} color={t.textPrimary} />
         </TouchableOpacity>
         <Text

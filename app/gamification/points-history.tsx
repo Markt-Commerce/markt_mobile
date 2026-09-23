@@ -16,9 +16,11 @@ import { getPointsHistory } from "../../services/sections/gamification";
 import { reasonLabel } from "../../utils/gamification";
 import type { PointsHistoryItem } from "../../types/gamification";
 import { formatDate } from "../../utils/datetime";
+import { useBackTo } from "../../utils/goBack";
 
 export default function PointsHistoryScreen() {
   const router = useRouter();
+  const goBack = useBackTo("/gamification");
   const t = useTokens();
 
   const [items, setItems] = useState<PointsHistoryItem[]>([]);
@@ -64,7 +66,7 @@ export default function PointsHistoryScreen() {
           "border-border"
         }`}
       >
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={goBack}>
           <ArrowLeft size={20} color={t.textPrimary} />
         </TouchableOpacity>
         <Text

@@ -35,6 +35,7 @@ import CreateNicheBottomSheet from "../components/nicheCreateBottomSheet";
 import type { InputSheetHandle } from "../components/InputSheet";
 import type { Niches, NichesListParams } from "../models/niches";
 import { friendlyErrorMessage } from "../utils/errorMessages";
+import { useBackTo } from "../utils/goBack";
 
 type Tab = "home" | "explore";
 type Sort = NonNullable<NichesListParams["sort"]>;
@@ -95,6 +96,7 @@ function CommunityAvatar({
 
 export default function CommunitiesScreen() {
   const router = useRouter();
+  const goBack = useBackTo("/(tabs)");
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const t = useTokens();
@@ -321,7 +323,7 @@ export default function CommunitiesScreen() {
     >
       <View className="flex-row items-center px-4 h-12">
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={goBack}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           accessibilityRole="button"
           accessibilityLabel="Go back"

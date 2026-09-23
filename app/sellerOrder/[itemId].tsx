@@ -37,10 +37,12 @@ import {
 } from "../../utils/orderTransitions";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import { TONE_BG, TONE_TEXT } from "../../theme/tone";
+import { useBackTo } from "../../utils/goBack";
 
 export default function SellerOrderDetail() {
   const { itemId } = useLocalSearchParams<{ itemId: string }>();
   const router = useRouter();
+  const goBack = useBackTo("/(tabs)/sellerDashboard");
   const t = useTokens();
   const { show } = useToast();
 
@@ -133,7 +135,7 @@ export default function SellerOrderDetail() {
             It may have been fulfilled or cancelled already.
           </Text>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={goBack}
             className="mt-6 px-6 h-11 rounded-lg bg-primary-fill items-center justify-center"
           >
             <Text className="text-white font-semibold">Go back</Text>
@@ -153,7 +155,7 @@ export default function SellerOrderDetail() {
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }} edges={["top", "bottom"]}>
       <View className="flex-row items-center px-4 py-3">
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={goBack}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityRole="button"
           accessibilityLabel="Go back"

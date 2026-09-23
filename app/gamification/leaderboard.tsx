@@ -18,9 +18,11 @@ import { useLeaderboard } from "../../hooks/useLeaderboard";
 import LeaderboardScopeTabs from "../../components/gamification/LeaderboardScopeTabs";
 import LeaderboardRow from "../../components/gamification/LeaderboardRow";
 import type { LeaderboardPeriod } from "../../types/gamification";
+import { useBackTo } from "../../utils/goBack";
 
 export default function LeaderboardScreen() {
   const router = useRouter();
+  const goBack = useBackTo("/gamification");
   const { resolvedTheme } = useTheme();
   const { user } = useUser();
   const isDark = resolvedTheme === "dark";
@@ -91,7 +93,7 @@ export default function LeaderboardScreen() {
     >
       <View className="flex-row items-center px-4 h-12">
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={goBack}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           accessibilityRole="button"
           accessibilityLabel="Go back"

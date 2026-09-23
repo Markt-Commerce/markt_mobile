@@ -16,9 +16,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getMarkets } from "../../services/sections/markets";
 import type { Market } from "../../services/sections/markets";
 import { useTokens } from "../../theme/useTokens";
+import { useBackTo } from "../../utils/goBack";
 
 export default function MarketsScreen() {
   const router = useRouter();
+  const goBack = useBackTo("/(tabs)");
   const [markets, setMarkets] = useState<Market[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -50,7 +52,7 @@ export default function MarketsScreen() {
         className="flex-row items-center px-6 py-4 border-b border-border"
       >
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={goBack}
           className="p-1 -ml-1"
           accessibilityRole="button"
           accessibilityLabel="Go back"

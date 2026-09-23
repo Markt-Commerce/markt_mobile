@@ -28,6 +28,7 @@ import RoleToggle from "../../components/auth/RoleToggle";
 import { Check, Circle } from "lucide-react-native";
 import { useTokens } from "../../theme/useTokens";
 import * as haptics from "../../utils/haptics";
+import BackButton from "../../components/BackButton";
 
 // --- Validation schema ---
 // No "confirm password". The field exists to catch a typo you cannot see —
@@ -143,13 +144,7 @@ export default function SignupScreen() {
           <View className="flex-1 px-6 pt-4 pb-8">
             {/* Header */}
             <View className="flex-row items-center mb-8">
-              <TouchableOpacity
-                onPress={() => router.back()}
-                className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <ArrowLeft size={20} color={iconColor} />
-              </TouchableOpacity>
+              <BackButton fallback={"/introduction"} />
             </View>
 
             {/* Title */}

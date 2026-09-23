@@ -8,9 +8,11 @@ import { useTokens } from "../../../theme/useTokens";
 import { useUser } from "../../../hooks/userContextProvider";
 import { useBadges } from "../../../hooks/useBadges";
 import { formatDate } from "../../../utils/datetime";
+import { useBackTo } from "../../../utils/goBack";
 
 export default function BadgeDetailScreen() {
   const router = useRouter();
+  const goBack = useBackTo("/gamification");
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { user } = useUser();
   const t = useTokens();
@@ -35,7 +37,7 @@ export default function BadgeDetailScreen() {
           "border-border"
         }`}
       >
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={goBack}>
           <ArrowLeft size={20} color={t.textPrimary} />
         </TouchableOpacity>
         <Text

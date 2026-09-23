@@ -39,3 +39,6 @@ yarn-error.*
 *.tsbuildinfo
 
 issues.md
+# Store listing screenshots — marketing assets, not app source.
+IPHONE/
+*:Zone.Identifier

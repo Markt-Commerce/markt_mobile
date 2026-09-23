@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useTokens } from "../../theme/useTokens";
+import BackButton from "../../components/BackButton";
 
 export default function VerificationScreen() {
   const router = useRouter();
@@ -14,13 +15,7 @@ export default function VerificationScreen() {
       <SafeAreaView className="flex-1 justify-center items-center px-4 bg-surface-page">
         <View className="w-full max-w-[480px]">
           <View className="flex-row items-center mb-8">
-            <TouchableOpacity
-              onPress={() => router.back()}
-              className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <ArrowLeft color={iconColor} size={20} />
-            </TouchableOpacity>
+            <BackButton fallback={"/(entrances)/login"} />
           </View>
 
           <Text className="text-[22px] font-bold leading-tight text-center pb-3 text-text-primary">

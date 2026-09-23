@@ -40,6 +40,7 @@ import FeedPostCard from "../../components/FeedPostCard";
 import type { FeedPost } from "../../types/feed";
 import { saveItem, unsaveItem } from "../../services/sections/saved";
 import { tierColor } from "../../theme/tierColors";
+import { useBackTo } from "../../utils/goBack";
 
 function ShopPostCard({ post, shop }: { post: ShopPost; shop: ShopData }) {
   const [saved, setSaved] = useState(false);
@@ -75,6 +76,7 @@ function ShopPostCard({ post, shop }: { post: ShopPost; shop: ShopData }) {
 
 export default function Shop() {
   const router = useRouter();
+  const goBack = useBackTo("/(tabs)/search");
   const { id } = useLocalSearchParams<{ id: string }>();
   const [shop, setShop] = useState<ShopData>();
   const [shopProducts, setShopProducts] = useState<ProductResponse[][]>([]);
@@ -191,7 +193,7 @@ export default function Shop() {
         <View
           className="flex-row items-center justify-between px-6 py-4 border-b border-border"
         >
-          <TouchableOpacity onPress={() => router.back()} className="p-1 -ml-1">
+          <TouchableOpacity onPress={goBack} className="p-1 -ml-1">
             <ArrowLeft size={24} color={t.textPrimary} />
           </TouchableOpacity>
           <Text

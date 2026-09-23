@@ -28,6 +28,7 @@ import Button from "../../components/button";
 import { useTokens } from "../../theme/useTokens";
 import StepProgress from "../../components/auth/StepProgress";
 import * as haptics from "../../utils/haptics";
+import BackButton from "../../components/BackButton";
 
 export default function AddAddressScreen() {
   const { show } = useToast();
@@ -244,12 +245,7 @@ export default function AddAddressScreen() {
         <View className="w-full max-w-[480px] mx-auto">
           {/* Header */}
           <View className="flex-row items-center justify-between pb-8 pt-4 px-6">
-            <TouchableOpacity
-              onPress={() => router.back()}
-              className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
-            >
-              <ArrowLeft color={iconColor} size={20} />
-            </TouchableOpacity>
+            <BackButton fallback={"/(tabs)"} />
             <Text className="text-xl font-bold text-center flex-1 pr-10 text-text-primary">
               Your location
             </Text>

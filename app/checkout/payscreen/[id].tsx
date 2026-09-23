@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useBackTo } from "../../../utils/goBack";
 import {
   View,
   Text,
@@ -21,6 +22,7 @@ import {
 
 export default function PayScreen() {
   const router = useRouter();
+  const goBack = useBackTo("/(tabs)/cart");
   const { show } = useToast();
   const t = useTokens();
 
@@ -148,7 +150,7 @@ export default function PayScreen() {
         </Text>
         <TouchableOpacity
           className="mt-4 px-6 py-3 rounded bg-primary-fill"
-          onPress={() => router.back()}
+          onPress={goBack}
         >
           <Text className="text-white font-semibold">Go back</Text>
         </TouchableOpacity>
@@ -162,7 +164,7 @@ export default function PayScreen() {
       edges={["top", "left", "right", "bottom"]}
     >
       <View className="flex-row items-center px-4 py-3">
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
+        <TouchableOpacity onPress={goBack} hitSlop={8}>
           <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>
         <Text

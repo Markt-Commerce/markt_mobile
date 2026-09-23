@@ -8,6 +8,7 @@
  */
 
 import React, { useCallback, useMemo, useState } from "react";
+import { useBackTo } from "../../utils/goBack";
 import {
   View,
   Text,
@@ -107,6 +108,7 @@ function TransactionRow({
 
 export default function WalletScreen() {
   const router = useRouter();
+  const goBack = useBackTo("/(tabs)/profile");
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
@@ -310,7 +312,7 @@ export default function WalletScreen() {
         <View className="bg-primary-fill px-5 pb-7">
           <View className="flex-row items-center justify-between h-12">
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={goBack}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               accessibilityRole="button"
               accessibilityLabel="Go back"

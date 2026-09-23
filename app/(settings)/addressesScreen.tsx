@@ -10,6 +10,7 @@ import type { SavedAddress } from "../../models/addresses";
 import type { LookupResult } from "../../hooks/useAddressLookup";
 import { useToast } from "../../components/ToastProvider";
 import logger from "../../utils/logger";
+import BackButton from "../../components/BackButton";
 
 /**
  * The address book in Profile.
@@ -71,14 +72,7 @@ export default function AddressesScreen() {
   return (
     <SafeAreaView className="flex-1 bg-surface-page">
       <View className="flex-row items-center gap-3 px-4 py-3">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          className="h-10 w-10 items-center justify-center rounded-full bg-surface-sunken"
-        >
-          <ArrowLeft size={20} color={t.textPrimary} />
-        </TouchableOpacity>
+        <BackButton fallback={"/(tabs)/profile"} />
         <Text className="text-[22px] font-bold text-text-primary">Saved addresses</Text>
       </View>
 

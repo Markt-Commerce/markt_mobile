@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Mail, ShieldCheck } from 'lucide-react-native';
+import { Mail, ShieldCheck } from 'lucide-react-native';
 
 import { Input, PasswordInput, OTPInput } from '../../components/inputs';
 import Button from '../../components/button';
@@ -13,6 +13,7 @@ import { useToast } from '../../components/ToastProvider';
 import { sendPasswordResetEmail, resetPassword } from '../../services/sections/auth';
 import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
+import BackButton from "../../components/BackButton";
 
 // Step 1: Email Schema
 const emailSchema = z.object({
@@ -132,13 +133,11 @@ const ForgotPasswordScreen = () => {
         >
           <View className="flex-1 px-6 pt-6">
             {/* Header */}
-            <TouchableOpacity
+            <BackButton
+              fallback={"/(entrances)/login"}
               onPress={handleBack}
-              className="h-10 w-10 items-center justify-center rounded border mb-8 bg-surface-sunken border-border"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <ArrowLeft size={20} color={iconColor} />
-            </TouchableOpacity>
+              style={{ marginBottom: 32 }}
+            />
 
             <View className="mb-8">
               <Text className="text-[32px] font-bold leading-tight text-text-primary">

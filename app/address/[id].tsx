@@ -4,7 +4,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Trash2, MapPin } from "lucide-react-native";
+import { Trash2, MapPin } from "lucide-react-native";
 import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import {
@@ -15,6 +15,7 @@ import { friendlyErrorMessage } from "../../utils/errorMessages";
 import MapPinPicker from "../../components/address/MapPinPicker";
 import { useAddressLookup } from "../../hooks/useAddressLookup";
 import logger from "../../utils/logger";
+import BackButton from "../../components/BackButton";
 
 /**
  * One saved address.
@@ -146,14 +147,7 @@ export default function AddressInformation() {
   return (
     <SafeAreaView className="flex-1 bg-surface-page">
       <View className="flex-row items-center justify-between px-4 py-3">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          className="h-10 w-10 items-center justify-center rounded-full bg-surface-sunken"
-        >
-          <ArrowLeft size={20} color={t.textPrimary} />
-        </TouchableOpacity>
+        <BackButton fallback={"/(settings)/addressesScreen"} />
         <Text className="text-[17px] font-bold text-text-primary">Address information</Text>
         <TouchableOpacity
           onPress={confirmDelete}

@@ -18,7 +18,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } fr
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useBackTo } from "../../../utils/goBack";
-import { ArrowLeft, Store, PackageX, XCircle } from "lucide-react-native";
+import { Store, PackageX, XCircle } from "lucide-react-native";
 import {
   getItemEscalation,
   removeEscalatedItem,
@@ -29,6 +29,7 @@ import { cancelOrder } from "../../../services/sections/orders";
 import { useTheme } from "../../../components/themeProvider";
 import { useTokens } from "../../../theme/useTokens";
 import { useToast } from "../../../components/ToastProvider";
+import BackButton from "../../../components/BackButton";
 
 export default function ItemEscalationScreen() {
   const router = useRouter();
@@ -135,14 +136,7 @@ export default function ItemEscalationScreen() {
   return (
     <SafeAreaView className="flex-1 bg-surface-page">
       <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
-        <TouchableOpacity
-          onPress={() => goBack()}
-          className="h-10 w-10 rounded items-center justify-center border bg-surface-raised border-border"
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <ArrowLeft size={18} color={t.textPrimary} />
-        </TouchableOpacity>
+        <BackButton fallback={"/(tabs)/orders"} />
         <Text
           className="flex-1 text-center text-lg font-bold -ml-10 text-text-primary"
         >
