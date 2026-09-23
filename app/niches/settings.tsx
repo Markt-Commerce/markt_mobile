@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Camera, Image as ImageIcon, Save } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
 import { SettingsSection, SettingsSwitchRow } from "../../components/SettingsList";
@@ -113,8 +114,14 @@ export default function NicheSettingsScreen() {
   }
 
   return (
-    <View className="flex-1 bg-surface-raised">
-      <ScreenHeader title="Community settings" onBack={() => router.back()} />
+    // SafeAreaView, not View: this screen draws its own header rather than
+    // using a navigation bar, so without the top inset the title sits under
+    // the clock and the notch.
+    <SafeAreaView className="flex-1 bg-surface-raised" edges={["top", "left", "right"]}>
+      <ScreenHeader
+        title="Community settings"
+        fallback={id ? `/niches/${id}` : "/myniches"}
+      />
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <SettingsSection title="Community identity">
           <View className="p-4">
@@ -148,6 +155,6 @@ export default function NicheSettingsScreen() {
         </SettingsSection>
         <TouchableOpacity disabled={saving} onPress={() => save()} className="mx-4 mt-6 h-12 rounded bg-primary-fill flex-row items-center justify-center"><Save size={18} color={t.textOnPrimary} /><Text className="text-text-on-primary font-bold ml-2">{saving ? "Saving…" : "Save changes"}</Text></TouchableOpacity>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }

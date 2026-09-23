@@ -8,6 +8,7 @@ import { useTokens } from "../../theme/useTokens";
 import { useBrowseLocation } from "../../hooks/browseLocationContext";
 import { LocationMark } from "../../components/illustrations/MarktIllustration";
 import * as haptics from "../../utils/haptics";
+import { useBackTo } from "../../utils/goBack";
 
 /**
  * Choose where to browse.
@@ -37,6 +38,7 @@ const AREAS = [
 export default function LocationPicker() {
   const t = useTokens();
   const router = useRouter();
+  const goBack = useBackTo("/(tabs)");
   const { location, setLocation } = useBrowseLocation();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +109,7 @@ export default function LocationPicker() {
     <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "left", "right", "bottom"]}>
       <View className="flex-row items-center gap-3 px-4 py-3">
         <Pressable
-          onPress={() => router.back()}
+          onPress={goBack}
           hitSlop={10}
           accessibilityRole="button"
           accessibilityLabel="Back"

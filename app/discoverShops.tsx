@@ -46,6 +46,7 @@ import LocationSwitcher from "../components/location/LocationSwitcher";
 import { useBrowseLocation } from "../hooks/browseLocationContext";
 import { useTokens } from "../theme/useTokens";
 import { ShopSkeletonCard } from "../components/SkeletonBlock";
+import { useBackTo } from "../utils/goBack";
 
 type SortKey = "nearby" | "rating" | "followers" | "recent";
 
@@ -67,6 +68,7 @@ function dedupeById<T extends { id: string | number }>(items: T[]): T[] {
 
 export default function DiscoverShopsScreen() {
   const router = useRouter();
+  const goBack = useBackTo("/(tabs)");
   const t = useTokens();
   const { location } = useBrowseLocation();
 
@@ -184,7 +186,7 @@ export default function DiscoverShopsScreen() {
           things near you. */}
       <View className="flex-row items-center gap-1 px-4 pt-1 pb-3">
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={goBack}
           className="p-1"
           hitSlop={8}
           accessibilityRole="button"

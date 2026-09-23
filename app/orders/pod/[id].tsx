@@ -15,10 +15,11 @@ import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, KeyRound, Clock, PackageCheck, Type as TypeIcon } from "lucide-react-native";
+import { KeyRound, Clock, PackageCheck, Type as TypeIcon } from "lucide-react-native";
 import QRCode from "react-native-qrcode-svg";
 import { usePodCode } from "../../../hooks/usePodCode";
 import { useTokens } from "../../../theme/useTokens";
+import BackButton from "../../../components/BackButton";
 
 export default function OrderPodCodeScreen() {
   const router = useRouter();
@@ -58,14 +59,7 @@ export default function OrderPodCodeScreen() {
   return (
     <SafeAreaView className="flex-1 bg-surface-page">
       <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="h-10 w-10 rounded items-center justify-center border bg-surface-raised border-border"
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <ArrowLeft size={18} color={t.textPrimary} />
-        </TouchableOpacity>
+        <BackButton fallback={"/(tabs)/orders"} />
         <Text
           className="flex-1 text-center text-lg font-bold -ml-10 text-text-primary"
         >

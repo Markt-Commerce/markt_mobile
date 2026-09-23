@@ -2,7 +2,7 @@ import React, { useCallback, useState, useEffect, useRef } from "react";
 import { View, Text, FlatList, Pressable, ActivityIndicator, RefreshControl, TouchableOpacity, ScrollView, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Plus, Compass, ArrowLeft } from "lucide-react-native";
+import { Plus, Compass } from "lucide-react-native";
 import { useToast } from "../components/ToastProvider";
 import { useUser } from "../hooks/userContextProvider";
 import { getMyNiches } from "../services/sections/niches";
@@ -16,6 +16,7 @@ import { useFeed } from "../hooks/useFeed";
 import type { FeedItem } from "../types/feed";
 import { isFeedPost } from "../types/feed";
 import FeedPostCard from "../components/FeedPostCard";
+import BackButton from "../components/BackButton";
 
 export default function MyNichesScreen() {
   const router = useRouter();
@@ -127,13 +128,7 @@ export default function MyNichesScreen() {
       <View className="px-6 pt-6 pb-5 border-b border-border-strong">
         <View className="flex-row items-center justify-between">
           <View className="flex-1">
-            <TouchableOpacity
-              onPress={() => router.back()}
-              className="h-10 w-10 rounded border items-center justify-center mb-4 bg-surface-sunken border-border"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <ArrowLeft size={20} color={t.textPrimary} />
-            </TouchableOpacity>
+            <BackButton fallback={"/(tabs)"} style={{ marginBottom: 16 }} />
             <Text className="text-2xl font-bold text-text-primary">My Niches</Text>
             <Text className="text-sm mt-1 text-text-secondary">
               {niches.length} niche{niches.length !== 1 ? "s" : ""} joined

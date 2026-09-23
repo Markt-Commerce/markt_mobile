@@ -4,11 +4,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft, ChevronsUpDown } from "lucide-react-native";
 import { useTokens } from "../../theme/useTokens";
+import { useBackTo } from "../../utils/goBack";
 
 
 
 export default function PaymentInfo() {
   const router = useRouter();
+  const goBack = useBackTo("/(tabs)/cart");
   const t = useTokens();
 
   const [useLinkedPhone, setUseLinkedPhone] = useState(false);
@@ -32,7 +34,7 @@ export default function PaymentInfo() {
         
         {/* Header */}
         <View className="flex-row items-center p-4 pb-2 justify-between bg-surface-raised">
-          <TouchableOpacity onPress={() => router.back()} className="size-12 items-center justify-center">
+          <TouchableOpacity onPress={goBack} className="size-12 items-center justify-center">
             <ArrowLeft size={24} color={t.textPrimary} />
           </TouchableOpacity>
           <Text className="text-lg font-bold text-center flex-1 pr-12 text-text-primary">

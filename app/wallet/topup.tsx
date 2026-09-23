@@ -7,6 +7,7 @@
  */
 
 import React, { useCallback, useRef, useState } from "react";
+import { useBackTo } from "../../utils/goBack";
 import { View, Text, ActivityIndicator, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -24,6 +25,7 @@ import {
 
 export default function WalletTopUpScreen() {
   const router = useRouter();
+  const goBack = useBackTo("/wallet");
   const { show } = useToast();
   const t = useTokens();
 
@@ -130,7 +132,7 @@ export default function WalletTopUpScreen() {
         </Text>
         <TouchableOpacity
           className="mt-4 px-6 py-3 rounded bg-primary-fill"
-          onPress={() => router.back()}
+          onPress={goBack}
           accessibilityRole="button"
         >
           <Text className="text-white font-semibold">Go back</Text>
@@ -146,7 +148,7 @@ export default function WalletTopUpScreen() {
     >
       <View className="flex-row items-center px-4 py-3">
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={goBack}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Cancel top-up"

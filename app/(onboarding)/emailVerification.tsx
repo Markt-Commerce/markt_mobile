@@ -18,6 +18,7 @@ import { useToast } from "../../components/ToastProvider"; // <-- toast
 import Button from "../../components/button";
 import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
+import BackButton from "../../components/BackButton";
 
 const schema = z.object({
   code: z
@@ -183,13 +184,7 @@ const EmailVerification = () => {
                 be a no-op on a screen whose only other exit is the code. The
                 login bounce does have a stack, and keeps its arrow. */}
             {router.canGoBack() ? (
-              <TouchableOpacity
-                onPress={() => router.back()}
-                className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <ArrowLeft color={iconColor} size={20} />
-              </TouchableOpacity>
+              <BackButton fallback={"/introduction"} />
             ) : (
               <View className="h-10 w-10" />
             )}

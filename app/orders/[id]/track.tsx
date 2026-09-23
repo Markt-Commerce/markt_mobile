@@ -4,7 +4,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useBackTo } from "../../../utils/goBack";
 import {
-  ArrowLeft,
   MapPin,
   Truck,
   PackageCheck,
@@ -18,6 +17,7 @@ import { hasLiveDeliveryCode, usePodCode } from "../../../hooks/usePodCode";
 import { useTheme } from "../../../components/themeProvider";
 import { useTokens, tokensFor } from "../../../theme/useTokens";
 import { formatDateTime } from "../../../utils/datetime";
+import BackButton from "../../../components/BackButton";
 
 // Overall-order stage order, used only to compute the progress bar --
 // the timeline itself is rendered directly from the backend's entries.
@@ -75,14 +75,7 @@ export default function TrackOrderScreen() {
     <SafeAreaView className="flex-1 bg-surface-page">
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
-        <TouchableOpacity
-          onPress={() => goBack()}
-          className="h-10 w-10 rounded items-center justify-center border bg-surface-raised border-border"
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <ArrowLeft size={18} color={t.textPrimary} />
-        </TouchableOpacity>
+        <BackButton fallback={"/(tabs)/orders"} />
         <Text
           className="flex-1 text-center text-lg font-bold -ml-10 text-text-primary"
         >

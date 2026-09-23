@@ -6,7 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useBackTo } from "../../utils/goBack";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, MapPin, CreditCard, FileText, User, Package } from "lucide-react-native";
+import { ArrowRight, MapPin, CreditCard, FileText, User, Package } from "lucide-react-native";
 import { getOrderDetails } from "../../services/sections/orders";
 import { getProductById } from "../../services/sections/product";
 import { Order, OrderItem } from "../../models/orders";
@@ -19,6 +19,7 @@ import { formatDate, formatTime, parseServerDate } from "../../utils/datetime";
 import { useOrderTracking } from "../../hooks/useOrderTracking";
 import { onNotificationsChanged } from "../../utils/notificationEvents";
 import { hasLiveDeliveryCode, usePodCode } from "../../hooks/usePodCode";
+import BackButton from "../../components/BackButton";
 
 function formatOrderDate(dateString?: string): string {
   if (!dateString) return "";
@@ -155,12 +156,7 @@ export default function OrderDetail() {
       <ScrollView className="px-6">
         {/* Header */}
         <View className="flex-row items-center py-6">
-          <TouchableOpacity
-            onPress={() => goBack()}
-            className="mr-4 h-10 w-10 rounded border items-center justify-center bg-surface-sunken border-border"
-          >
-            <ArrowLeft size={20} color={iconColor} />
-          </TouchableOpacity>
+          <BackButton fallback={"/(tabs)/orders"} style={{ marginRight: 16 }} />
           <View className="flex-1">
             <Text
               className="text-xl font-bold text-text-primary"

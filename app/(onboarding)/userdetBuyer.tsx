@@ -11,7 +11,7 @@ import {
   Image,
   Alert,
 } from "react-native";
-import { ArrowLeft, Image as ImageIcon, Check } from "lucide-react-native";
+import { Image as ImageIcon, Check } from "lucide-react-native";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -31,6 +31,7 @@ import { useWatch } from "react-hook-form";
 import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import StepProgress from "../../components/auth/StepProgress";
+import BackButton from "../../components/BackButton";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 const schema = z.object({
@@ -203,13 +204,7 @@ export default function UserInfoScreen() {
                   account cannot re-enter — it would only 400 with "already
                   verified". Shown only when there is somewhere real to go. */}
               {router.canGoBack() ? (
-                <TouchableOpacity
-                  onPress={() => router.back()}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
-                >
-                  <ArrowLeft size={20} color={iconColor} />
-                </TouchableOpacity>
+                <BackButton fallback={"/(tabs)"} />
               ) : (
                 <View className="h-10 w-10" />
               )}

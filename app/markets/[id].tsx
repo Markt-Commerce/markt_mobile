@@ -28,6 +28,7 @@ import PostDisplayComponent from "../../components/PostDisplayComponent";
 import { useTheme } from "../../components/themeProvider";
 import { useTokens, tokensFor } from "../../theme/useTokens";
 import VerifiedBadge, { isVerifiedSeller } from "../../components/VerifiedBadge";
+import { useBackTo } from "../../utils/goBack";
 
 type Tab = "sellers" | "products" | "posts";
 
@@ -81,6 +82,7 @@ function SellerRow({
 
 export default function MarketDetailScreen() {
   const router = useRouter();
+  const goBack = useBackTo("/markets");
   const { id } = useLocalSearchParams<{ id: string }>();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
@@ -170,7 +172,7 @@ export default function MarketDetailScreen() {
         className="flex-row items-center px-6 py-4 border-b border-border"
       >
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={goBack}
           className="p-1 -ml-1"
           accessibilityRole="button"
           accessibilityLabel="Go back"

@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, AlertTriangle } from "lucide-react-native";
 import { useTokens } from "../../theme/useTokens";
+import { useBackTo } from "../../utils/goBack";
 
 /** 11.5: itemised fee breakdown, shown before the buyer is sent to
  * Paystack. Params come straight from POST /payments/checkout/initialize's
@@ -11,6 +12,7 @@ import { useTokens } from "../../theme/useTokens";
  * re-fetch here. */
 export default function CheckoutConfirm() {
   const router = useRouter();
+  const goBack = useBackTo("/(tabs)/cart");
   const t = useTokens();
   const [proceeding, setProceeding] = useState(false);
 
@@ -84,7 +86,7 @@ export default function CheckoutConfirm() {
     >
       <ScrollView>
         <View className="flex-row items-center px-4 py-3 bg-surface-raised">
-          <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
+          <TouchableOpacity onPress={goBack} hitSlop={8}>
             <ArrowLeft size={24} color={t.textPrimary} />
           </TouchableOpacity>
           <Text className="ml-3 text-lg font-bold text-text-primary">

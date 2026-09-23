@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Search, Store } from "lucide-react-native";
+import { Search, Store } from "lucide-react-native";
 import { useTokens } from "../../theme/useTokens";
 import SearchField from "../../components/SearchField";
 import MapPinPicker from "../../components/address/MapPinPicker";
@@ -12,6 +12,7 @@ import { checkServiceable } from "../../services/sections/delivery";
 import { useToast } from "../../components/ToastProvider";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import logger from "../../utils/logger";
+import BackButton from "../../components/BackButton";
 
 /**
  * Where the shop is.
@@ -118,14 +119,7 @@ export default function ShopLocationScreen() {
   return (
     <SafeAreaView className="flex-1 bg-surface-page">
       <View className="flex-row items-center gap-3 px-4 py-3">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          className="h-10 w-10 items-center justify-center rounded-full bg-surface-sunken"
-        >
-          <ArrowLeft size={20} color={t.textPrimary} />
-        </TouchableOpacity>
+        <BackButton fallback={"/(tabs)/profile"} />
         <Text className="text-[20px] font-bold text-text-primary">Shop location</Text>
       </View>
 

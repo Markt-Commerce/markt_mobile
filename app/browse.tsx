@@ -14,6 +14,7 @@ import CartFab from "../components/CartFab";
 import type { Product as FeedProduct } from "../models/feed";
 import type { ProductResponse } from "../models/products";
 import { EmptyStall } from "../components/illustrations/MarktIllustration";
+import { useBackTo } from "../utils/goBack";
 
 /**
  * Browse without an account.
@@ -28,6 +29,7 @@ import { EmptyStall } from "../components/illustrations/MarktIllustration";
  */
 export default function Browse() {
   const router = useRouter();
+  const goBack = useBackTo("/introduction");
   const insets = useSafeAreaInsets();
   const t = useTokens();
   const { add: addProductToCart, addingId } = useAddToCart();
@@ -79,7 +81,7 @@ export default function Browse() {
     <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "left", "right"]}>
       <View className="flex-row items-center gap-3 px-4 py-3 border-b border-border">
         <Pressable
-          onPress={() => router.back()}
+          onPress={goBack}
           hitSlop={10}
           accessibilityRole="button"
           accessibilityLabel="Back"
@@ -184,7 +186,7 @@ export default function Browse() {
           Create an account to buy, chat, and save what you like.
         </Text>
         <Pressable
-          onPress={() => router.back()}
+          onPress={goBack}
           accessibilityRole="button"
           accessibilityLabel="Join Markt"
           className="h-12 rounded items-center justify-center bg-primary-fill"

@@ -24,6 +24,7 @@ import { navigateToAppHome, navigateToOnboardingStep } from "../../utils/authNav
 import { getUserProfile } from "../../services/sections/profile";
 import { useTokens } from "../../theme/useTokens";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
+import BackButton from "../../components/BackButton";
 
 const schema = z.object({
   email: z.string().min(1, "Email is required"),
@@ -158,13 +159,7 @@ export default function LoginScreen() {
           <View className="flex-1 px-6 pt-4 pb-8">
             {/* Header */}
             <View className="flex-row items-center mb-8">
-              <TouchableOpacity
-                onPress={() => router.back()}
-                className="h-10 w-10 items-center justify-center rounded border bg-surface-sunken border-border"
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <ArrowLeft size={20} color={iconColor} />
-              </TouchableOpacity>
+              <BackButton fallback={"/introduction"} />
             </View>
 
             {/* Title */}
