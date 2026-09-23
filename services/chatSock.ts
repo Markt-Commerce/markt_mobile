@@ -1,4 +1,5 @@
 import { io, Socket } from "socket.io-client";
+import { emitBadgeChanged } from "../utils/badgeEvents";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   ChatMessage,
@@ -105,6 +106,9 @@ class ChatSocket {
     // ===== Core events =====
     this.socket.on("message", (data: ChatMessage) => {
       this.messageListeners.forEach(fn => fn(data));
+      // Nudge the Chat tab badge. Cheap: listeners re-read the room list,
+      // and a message arriving is exactly when that count changes.
+      emitBadgeChanged();
       // if server echoes back client_id, drop matching queued item
       if ((data as any)?.client_id) this.dropQueuedByClientId((data as any).client_id);
     });
@@ -118,6 +122,22 @@ class ChatSocket {
       this.offerSentListeners.forEach(fn => fn(data));
       if (data?.client_id) this.dropQueuedByClientId(data.client_id);
     });
+    // A discount is a message, and the server sends it under its own event
+    // name with the chat message embedded. Nothing was listening, so a shop
+    // discount only appeared after a manual refresh while every other
+    // message arrived live.
+    //
+    // Fed into the same listeners as `message`: the thread already knows how
+    // to render message_type "discount", and the payload now carries the
+    // message_data the card draws itself from (markt_python).
+    this.socket.on("discount_offered", (data: any) => {
+      const message = data?.message;
+      if (!message) return;
+      this.messageListeners.forEach((fn) => fn(message as ChatMessage));
+      emitBadgeChanged();
+      if (data?.client_id) this.dropQueuedByClientId(data.client_id);
+    });
+
     this.socket.on("offer_confirmed", (data: any) => {
       this.offerConfirmedListeners.forEach(fn => fn(data));
     });

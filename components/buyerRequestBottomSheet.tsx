@@ -37,7 +37,13 @@ function getDateSevenDaysFromNow() {
 
 const requestSchema = z.object({
   title: z.string().min(1, "Title is required").max(150),
-  description: z.string().min(1, "Description is required").max(2000),
+  // 10, not 1: the API requires ten characters (BuyerRequestCreateSchema),
+  // so anything shorter passed validation here and came back a 422 the
+  // person had no way to interpret.
+  description: z
+    .string()
+    .min(10, "Add a little more detail — at least 10 characters")
+    .max(2000),
   budget: z.preprocess(
     (val) => Number(val),
     z.number().min(0, "Budget must be positive"),
@@ -193,6 +199,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
           name="title"
           control={control}
           label="Title"
+          required
           placeholder="Give your request a short title"
           errors={errors}
         />
@@ -202,6 +209,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
           name="description"
           control={control}
           label="What are you looking for?"
+          required
           placeholder="Describe the item, condition, quantity…"
           errors={errors}
           multiline

@@ -11,6 +11,12 @@ interface InputProps<TFieldValues extends FieldValues = FieldValues> extends Rea
   /** Optional field label rendered above the input. When set, the field also
    * gets its own bottom spacing so stacked form fields are evenly separated. */
   label?: string;
+  /** Marks the field as required in the label.
+   *
+   * Worth being explicit about: a form that only reveals which fields are
+   * required by refusing to submit makes the person guess, and they guess
+   * by filling everything in or by giving up. */
+  required?: boolean;
   secureTextEntry?: boolean;
   value?: string;
   onChangeText?: (text: string) => void;
@@ -29,6 +35,7 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
   name,
   placeholder,
   label,
+  required,
   secureTextEntry = false,
   value,
   onChangeText,
@@ -64,6 +71,14 @@ export function Input<TFieldValues extends FieldValues = FieldValues>({
       {label ? (
         <Text className="mb-2 text-[13px] font-semibold text-text-secondary">
           {label}
+          {required ? (
+            <Text
+              className="text-danger-text"
+              accessibilityLabel="required"
+            >
+              {" *"}
+            </Text>
+          ) : null}
         </Text>
       ) : null}
       <Controller

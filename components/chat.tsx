@@ -3,6 +3,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState, useLayoutEffect } from "react";
+import { emitBadgeChanged } from "../utils/badgeEvents";
 import {
   View,
   Text,
@@ -1079,6 +1080,11 @@ export default function ChatScreen({
       offReactionRemoved();
       offReactionStats();
       chatSocket.leaveRoom(roomId, myId);
+      // Opening the room is what clears its unread count server-side, so the
+      // Chat tab badge is stale from the moment this screen mounted. Nudge
+      // it on the way out rather than leaving a count for messages that have
+      // now been read.
+      emitBadgeChanged();
     };
   }, [roomId, myId, updateMessageReactions]);
 
