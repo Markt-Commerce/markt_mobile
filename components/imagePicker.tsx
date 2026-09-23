@@ -35,6 +35,13 @@ export type InstagramGridProps = {
   previewEnabled?: boolean;
   /** Also allow picking videos from the library (posts support video) */
   allowVideos?: boolean;
+  /** Offer the camera alongside the library.
+   *
+   * On by default: half of what people post is a thing in front of them
+   * right now, and making them leave, shoot, come back and find the photo
+   * is how a post does not get made. Off for anything that can only mean an
+   * existing file. */
+  allowCamera?: boolean;
 };
 
 export default function InstagramGrid({
@@ -50,6 +57,7 @@ export default function InstagramGrid({
   emptyLabel = "No posts yet",
   previewEnabled = true,
   allowVideos = false,
+  allowCamera = true,
 }: InstagramGridProps) {
   const [internalImages, setInternalImages] = useState<PickedImage[]>(value ?? []);
   const [viewerVisible, setViewerVisible] = useState(false);
@@ -82,6 +90,68 @@ export default function InstagramGrid({
     }
     return true;
   }, []);
+
+  /** Add what a picker handed back, respecting the cap. */
+  const addAssets = useCallback(
+    (assets: any[] | undefined) => {
+      const picked =
+        assets?.map((a) => ({
+          id: `${a.assetId || a.fileName || a.uri}-${a.width || 0}x${a.height || 0}`,
+          uri: a.uri,
+          fileName: (a as any).fileName ?? null,
+          width: a.width,
+          height: a.height,
+          mediaType: (a.type === "video" ? "video" : "image") as "image" | "video",
+          mimeType: (a as any).mimeType ?? null,
+        })) ?? [];
+      setImages([...images, ...picked].slice(0, max ?? Number.MAX_SAFE_INTEGER));
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [images, max]
+  );
+
+  const handleCamera = useCallback(async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Camera access needed", "Allow camera access to take a photo.");
+      return;
+    }
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ["images"],
+        quality: 0.9,
+      });
+      if (result.canceled) return;
+      addAssets(result.assets);
+    } catch (e: any) {
+      logger.warn("Camera capture failed", e);
+    }
+  }, [addAssets]);
+
+  /** What the add button does.
+   *
+   * With the camera available there are two answers, so ask -- but only
+   * then. A chooser with one option on it is a tap nobody asked for.
+   */
+  const handleAdd = useCallback(() => {
+    if (!canAddMore) {
+      Alert.alert(
+        "Limit reached",
+        `You can add up to ${max} image${max && max > 1 ? "s" : ""}.`
+      );
+      return;
+    }
+    if (!allowCamera) {
+      handlePick();
+      return;
+    }
+    Alert.alert("Add a photo", undefined, [
+      { text: "Take a photo", onPress: () => handleCamera() },
+      { text: "Choose from library", onPress: () => handlePick() },
+      { text: "Cancel", style: "cancel" },
+    ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allowCamera, canAddMore, max, handleCamera]);
 
   const handlePick = useCallback(async () => {
     if (!canAddMore) {
@@ -209,7 +279,7 @@ export default function InstagramGrid({
       </View>
 
       {showFloatingAdd && (
-        <Pressable onPress={handlePick} android_ripple={{ color: "#ffffff55" }} className="absolute right-4 bottom-4 w-14 h-14 rounded items-center justify-center bg-primary-fill">
+        <Pressable onPress={handleAdd} android_ripple={{ color: "#ffffff55" }} className="absolute right-4 bottom-4 w-14 h-14 rounded items-center justify-center bg-primary-fill">
           <Plus size={24} color="#ffffff" />
         </Pressable>
       )}

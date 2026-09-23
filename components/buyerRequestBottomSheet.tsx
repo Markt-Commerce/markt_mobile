@@ -276,6 +276,7 @@ const BuyerRequestFormBottomSheet = React.forwardRef<
         <View className="mb-6">
           <InstagramGrid
             value={Imagevalue}
+            max={5}
             onChange={(imgs) => setImageValue(imgs)}
             emptyPlaceholdersCount={3}
             emptyLabel="No images yet"

@@ -289,7 +289,7 @@ const ProductFormBottomSheet = forwardRef<InputSheetHandle | null, Props>(
           <Text className="text-xs mb-2 text-text-secondary">Long press on each image to remove it</Text>
         )}
         {/* <<< IMPORTANT: pass value & onChange so we can receive images >>> */}
-        <InstagramGrid value={Imagevalue} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} />
+        <InstagramGrid value={Imagevalue} max={5} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} />
 
         {/* Optional forms*/}
         <Text className="text-xs font-bold uppercase tracking-[2px] mt-6 mb-3 text-text-primary">Optional Details</Text>
