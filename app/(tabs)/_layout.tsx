@@ -16,6 +16,7 @@ import AppBar from "../../components/AppBar";
 import NavDrawer from "../../components/NavDrawer";
 import { useUser } from "../../hooks/userContextProvider";
 import { useCart } from "../../hooks/cartContext";
+import { useUnreadChats } from "../../hooks/useUnreadChats";
 import { useTokens } from "../../theme/useTokens";
 
 const TAB_BAR_CONTENT_HEIGHT = 52;
@@ -27,6 +28,7 @@ function TabsWithDrawer() {
   const { profile } = useUser();
   const role = profile?.current_role;
   const { itemCount } = useCart();
+  const { unreadRooms } = useUnreadChats();
   const t = useTokens();
   const insets = useSafeAreaInsets();
   const tabBarBottomInset = Math.max(insets.bottom, Platform.OS === "ios" ? 2 : 0);
@@ -138,6 +140,26 @@ function TabsWithDrawer() {
             options={{
               title: "Messages",
               tabBarLabel: "Chat",
+              // Conversations waiting, not messages waiting: "4" meaning four
+              // people are waiting on you is actionable; the same 4 meaning
+              // one person sent four lines is not, and on a badge the two
+              // look identical. Same cap and styling as the Orders badge.
+              tabBarBadge:
+                unreadRooms > 0 ? (unreadRooms > 99 ? "99+" : unreadRooms) : undefined,
+              tabBarBadgeStyle: {
+                backgroundColor: t.primaryFill,
+                color: t.textOnPrimary,
+                fontSize: 10,
+                fontWeight: "700",
+                minWidth: 18,
+                height: 18,
+                lineHeight: 14,
+                borderRadius: 9,
+              },
+              tabBarAccessibilityLabel:
+                unreadRooms > 0
+                  ? `Chat, ${unreadRooms} ${unreadRooms === 1 ? "conversation" : "conversations"} unread`
+                  : "Chat",
               tabBarIcon: ({ color, focused }) => (
                 <MessageCircle color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />
               ),
