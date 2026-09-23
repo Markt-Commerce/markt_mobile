@@ -1002,7 +1002,9 @@ export default function SellerDashboard() {
           if (product?.id) router.push(`/productDetails/${product.id}` as any);
         }}
       />
-      <CreateNicheBottomSheet ref={nicheFormRef} />
+      {/* onRefresh, like the product sheet above: a community you just made
+          should be on the dashboard that offered to make it. */}
+      <CreateNicheBottomSheet ref={nicheFormRef} onCreated={onRefresh} />
       <InventoryEditSheet
         product={editingProduct}
         visible={editingProduct != null}

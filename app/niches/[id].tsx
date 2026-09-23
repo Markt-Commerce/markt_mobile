@@ -242,6 +242,31 @@ export default function NicheDetailScreen() {
     }
   };
 
+  /** Put a freshly created post at the top of the feed it was posted to.
+   *
+   * The sheet was mounted with no onCreated, so posting inside a community
+   * left you looking at the list you were looking at before -- your own
+   * post missing from the one place you had just put it. Everywhere else
+   * that mounts this sheet refreshes; this screen was the exception.
+   *
+   * Reset to page one rather than prepend: the server decides the order,
+   * and a post inserted client-side would sit in a position the next page
+   * load disagrees with.
+   */
+  const handlePostCreated = useCallback(() => {
+    setHasError(false);
+    setPosts([]);
+    setHasMore(true);
+    if (page === 1) {
+      loadNichePosts();
+    } else {
+      setPage(1);
+    }
+    // The member and post counts in the header move too.
+    loadNicheDetail();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
   const handleRetry = () => {
     setHasError(false);
     setPosts([]);
@@ -431,7 +456,13 @@ export default function NicheDetailScreen() {
       </View>
 
       {/* Post create bottom sheet (only for joined members who are not banned) */}
-      {isJoined && !isBanned && canPost && <PostFormBottomSheet ref={postFormRef} nicheId={id} />}
+      {isJoined && !isBanned && canPost && (
+        <PostFormBottomSheet
+          ref={postFormRef}
+          nicheId={id}
+          onCreated={handlePostCreated}
+        />
+      )}
 
       <ContentActionsSheet
         target={actionsTarget}
