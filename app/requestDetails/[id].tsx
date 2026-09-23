@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useRef } from "react";
+import { MediaViewerModal } from "../../components/postMedia";
 import {
-  View,
-  Text,
-  Image,
-  ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
   Dimensions,
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import {
   ArrowLeft,
@@ -102,6 +104,7 @@ export default function BuyerRequestDetails() {
   };
 
   const imageUrls = resolveImageUrls(requestDetails?.images);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const isExpired = hasPassed(requestDetails?.expires_at);
   const statusRaw = (requestDetails?.status ?? "OPEN").toUpperCase();
   const statusLabel =
@@ -380,20 +383,36 @@ export default function BuyerRequestDetails() {
               contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 12 }}
             >
               {imageUrls.map((uri, i) => (
-                <Image
+                // Tappable, like every other photo in the app. These were
+                // plain Images with no handler, so the one place a buyer
+                // has actually attached reference photos -- "here is the
+                // connector I mean" -- was the one place you could not look
+                // at them properly.
+                <Pressable
                   key={i}
-                  source={{ uri }}
-                  style={{ width: width * 0.7, height: 208 }}
-                  className={`mr-3 rounded border ${
-                    "bg-surface-sunken border-border"
-                  }`}
-                  resizeMode="cover"
-                />
+                  onPress={() => setViewerIndex(i)}
+                  accessibilityRole="imagebutton"
+                  accessibilityLabel={`Photo ${i + 1} of ${imageUrls.length}. Opens full screen.`}
+                >
+                  <Image
+                    source={{ uri }}
+                    style={{ width: width * 0.7, height: 208 }}
+                    className="mr-3 rounded border bg-surface-sunken border-border"
+                    resizeMode="cover"
+                  />
+                </Pressable>
               ))}
             </ScrollView>
           </View>
         )}
       </ScrollView>
+
+      <MediaViewerModal
+        visible={viewerIndex !== null}
+        items={imageUrls.map((uri) => ({ uri, type: "image" as const }))}
+        initialIndex={viewerIndex ?? 0}
+        onClose={() => setViewerIndex(null)}
+      />
 
       {/* Bottom Action Bar — sellers only, never on your own request */}
       {showMessageBar && (
