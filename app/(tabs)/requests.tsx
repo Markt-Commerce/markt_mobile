@@ -189,7 +189,7 @@ export default function RequestsScreen() {
             </Text>
             <Text className="text-[13px] mt-0.5 leading-[18px] text-text-muted">
               {isBuyer
-                ? "Tell sellers what you need and let offers come to you."
+                ? "Tell sellers what you need. The ones who have it will message you."
                 : "Open requests from buyers looking for what you sell."}
             </Text>
           </View>
@@ -276,7 +276,7 @@ export default function RequestsScreen() {
               query.trim()
                 ? "Try a different search, or switch the filter to All."
                 : isBuyer
-                  ? "Create a request to tell sellers what you need and let the right offers come to you."
+                  ? "Create a request and the sellers who stock it will get in touch."
                   : "Check back later for active buyer requests that match your category."
             }
             actionLabel={isBuyer ? "Create request" : "Browse feed"}
