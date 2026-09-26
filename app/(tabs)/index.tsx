@@ -79,7 +79,9 @@ export default function FeedScreen() {
   const t = useTokens();
   const tokens = t; // `t` is shadowed by the tab .map((t) => …) below
 
-  const { role, user, setRole } = useUser();
+  // This screen keeps its own `profile` copy (fetched on focus, above), so the
+  // context setter is aliased rather than destructured over it.
+  const { role, user, setRole, setProfile: setContextProfile } = useUser();
   const feedTab = selectedTab;
   const {
     items,
@@ -275,6 +277,16 @@ export default function FeedScreen() {
       const res = await switchUserRole();
       const newRole = (res.user?.current_role ?? res.current_role) as "buyer" | "seller";
       setRole(newRole);
+      // `role` and `profile.current_role` are separate state, and the tab bar
+      // and the cart badge both read the profile one -- so updating only
+      // `role` here left the Orders badge counting cart items after a switch
+      // to seller, and the app bar showing the buyer name, until something
+      // else happened to refetch the profile. The drawer and the profile
+      // screen already set both; this switcher didn't.
+      const applyRole = (current: UserProfile | null) =>
+        current ? { ...current, current_role: newRole } : current;
+      setContextProfile(applyRole);
+      setProfile(applyRole);
       if (res.user?.email) {
         await setUserSession(
           { email: res.user.email, account_type: newRole, user_id: res.user.id },
