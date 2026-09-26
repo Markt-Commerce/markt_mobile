@@ -11,7 +11,6 @@ import {
   View,
 } from "react-native";
 import {
-  ArrowLeft,
   Eye,
   Clock,
   MessageCircle,
@@ -20,7 +19,7 @@ import {
 } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useBackTo } from "../../utils/goBack";
+import BackButton from "../../components/BackButton";
 import { getRequestDetails } from "../../services/sections/request";
 import { Request } from "../../models/request";
 import { parseDate } from "../../utils/parseDate";
@@ -66,7 +65,6 @@ export default function BuyerRequestDetails() {
   const router = useRouter();
   // Back, or the list this belongs under when there is no history --
   // after paying, and on a notification that opened the app cold.
-  const goBack = useBackTo("/(tabs)/requests");
   const { id } = useLocalSearchParams();
   const [requestDetails, setRequestDetails] = useState<Request>();
   const [loading, setLoading] = useState(true);
@@ -119,15 +117,7 @@ export default function BuyerRequestDetails() {
       }`}
     >
       <View className="flex-row items-center gap-3">
-        <TouchableOpacity
-          onPress={() => goBack()}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          className={`w-10 h-10 rounded items-center justify-center border ${
-            "bg-surface-sunken border-border"
-          }`}
-        >
-          <ArrowLeft size={20} color={iconColor} />
-        </TouchableOpacity>
+        <BackButton fallback="/(tabs)/requests" />
         <Text
           className={`text-lg font-bold tracking-tight ${
             "text-text-primary"
