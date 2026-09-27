@@ -5,43 +5,35 @@
  * Tabs: Home | Search | Requests | Orders | Messages
  * Profile: hidden (reached via drawer)
  */
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Platform, View } from "react-native";
 import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Home, Search, FileText, ShoppingBag, MessageCircle } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DrawerProvider, useDrawer } from "../../hooks/drawerContext";
-import { getUserProfile } from "../../services/sections/profile";
 import AppBar from "../../components/AppBar";
 import NavDrawer from "../../components/NavDrawer";
-import type { UserProfile } from "../../models/profile";
-import { useTheme } from "../../components/themeProvider";
+import { useUser } from "../../hooks/userContextProvider";
+import { useCart } from "../../hooks/cartContext";
+import { useUnreadChats } from "../../hooks/useUnreadChats";
+import { useTokens } from "../../theme/useTokens";
 
 const TAB_BAR_CONTENT_HEIGHT = 52;
 const TAB_BAR_PADDING_TOP = 6;
 const TAB_BAR_PADDING_BOTTOM = 2;
-const SURFACE_WHITE = "#FFFFFF";
-const SURFACE_BORDER = "#E4E4E7";
-const TEXT_BLACK = "#000000";
-const TEXT_MUTED = "#71717A";
-const BRAND_PRIMARY = "#E94C2A";
 
 function TabsWithDrawer() {
   const { isOpen, closeDrawer } = useDrawer();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const { profile } = useUser();
+  const role = profile?.current_role;
+  const { itemCount } = useCart();
+  const { unreadRooms } = useUnreadChats();
+  const t = useTokens();
   const insets = useSafeAreaInsets();
   const tabBarBottomInset = Math.max(insets.bottom, Platform.OS === "ios" ? 2 : 0);
   const tabBarHeight =
     TAB_BAR_CONTENT_HEIGHT + TAB_BAR_PADDING_TOP + TAB_BAR_PADDING_BOTTOM + tabBarBottomInset;
-
-  useEffect(() => {
-    getUserProfile()
-      .then(setProfile)
-      .catch(() => { });
-  }, []);
 
   const displayName =
     profile?.current_role === "buyer"
@@ -49,9 +41,10 @@ function TabsWithDrawer() {
       : profile?.seller_account?.shop_name ?? profile?.username ?? "User";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : SURFACE_WHITE }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.surfacePage }} edges={["top"]}>
       <View style={{ flex: 1 }}>
         <AppBar
+          showLocation
           title="Markt"
           avatarUri={profile?.profile_picture_url}
           avatarName={displayName}
@@ -68,22 +61,22 @@ function TabsWithDrawer() {
               textTransform: "uppercase",
               letterSpacing: 0.4,
             },
-            tabBarActiveTintColor: BRAND_PRIMARY,
-            tabBarInactiveTintColor: isDark ? "#c6c5cf" : TEXT_MUTED,
+            tabBarActiveTintColor: t.primaryText,
+            tabBarInactiveTintColor: t.textSecondary,
             tabBarItemStyle: {
               flex: 1,
               paddingVertical: 0,
             },
             tabBarStyle: {
-              backgroundColor: isDark ? "#1a1c1d" : SURFACE_WHITE,
+              backgroundColor: t.surfaceRaised,
               borderTopWidth: 1,
-              borderTopColor: isDark ? "#46464e" : SURFACE_BORDER,
+              borderTopColor: t.border,
               paddingTop: TAB_BAR_PADDING_TOP,
               paddingBottom: TAB_BAR_PADDING_BOTTOM + tabBarBottomInset,
               height: tabBarHeight,
               paddingHorizontal: 8,
               elevation: 0,
-              shadowColor: TEXT_BLACK,
+              shadowColor: "#000000", // a shadow is black in both themes
               shadowOffset: {
                 width: 0,
                 height: -4,
@@ -97,7 +90,7 @@ function TabsWithDrawer() {
             name="index"
             options={{
               title: "Home",
-              tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+              tabBarIcon: ({ color, focused }) => (
                 <Home color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />
               ),
             }}
@@ -106,7 +99,7 @@ function TabsWithDrawer() {
             name="search"
             options={{
               title: "Search",
-              tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+              tabBarIcon: ({ color, focused }) => (
                 <Search color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />
               ),
             }}
@@ -116,7 +109,28 @@ function TabsWithDrawer() {
             name="orders"
             options={{
               title: "Orders",
-              tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+              // Cap the label rather than let a long number stretch the pill
+              // and shove the tab layout around. undefined (not 0) hides it.
+              tabBarBadge: itemCount > 0 ? (itemCount > 99 ? "99+" : itemCount) : undefined,
+              tabBarBadgeStyle: {
+                // primaryFill, not primary: white on #E94C2A is 3.80:1 and
+                // fails AA in both themes.
+                backgroundColor: t.primaryFill,
+                color: t.textOnPrimary,
+                fontSize: 10,
+                fontWeight: "700",
+                minWidth: 18,
+                height: 18,
+                lineHeight: 14,
+                borderRadius: 9,
+              },
+              tabBarAccessibilityLabel:
+                itemCount > 0
+                  ? role === "seller"
+                    ? `Orders, ${itemCount} ${itemCount === 1 ? "order needs" : "orders need"} your attention`
+                    : `Orders, ${itemCount} ${itemCount === 1 ? "item" : "items"} in cart`
+                  : "Orders",
+              tabBarIcon: ({ color, focused }) => (
                 <ShoppingBag color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />
               ),
             }}
@@ -126,7 +140,27 @@ function TabsWithDrawer() {
             options={{
               title: "Messages",
               tabBarLabel: "Chat",
-              tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+              // Conversations waiting, not messages waiting: "4" meaning four
+              // people are waiting on you is actionable; the same 4 meaning
+              // one person sent four lines is not, and on a badge the two
+              // look identical. Same cap and styling as the Orders badge.
+              tabBarBadge:
+                unreadRooms > 0 ? (unreadRooms > 99 ? "99+" : unreadRooms) : undefined,
+              tabBarBadgeStyle: {
+                backgroundColor: t.primaryFill,
+                color: t.textOnPrimary,
+                fontSize: 10,
+                fontWeight: "700",
+                minWidth: 18,
+                height: 18,
+                lineHeight: 14,
+                borderRadius: 9,
+              },
+              tabBarAccessibilityLabel:
+                unreadRooms > 0
+                  ? `Chat, ${unreadRooms} ${unreadRooms === 1 ? "conversation" : "conversations"} unread`
+                  : "Chat",
+              tabBarIcon: ({ color, focused }) => (
                 <MessageCircle color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />
               ),
             }}
@@ -136,7 +170,7 @@ function TabsWithDrawer() {
             options={{
               title: "Requests",
               tabBarLabel: "Requests",
-              tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+              tabBarIcon: ({ color, focused }) => (
                 <FileText color={color} size={focused ? 24 : 22} strokeWidth={focused ? 2 : 1.5} />
               ),
             }}
@@ -154,18 +188,6 @@ function TabsWithDrawer() {
             }}
           />
           <Tabs.Screen
-            name="buyerOrders"
-            options={{
-              href: null,
-            }}
-          />
-          <Tabs.Screen
-            name="sellerOrders"
-            options={{
-              href: null,
-            }}
-          />
-          <Tabs.Screen
             name="sellerDashboard"
             options={{
               href: null,
@@ -176,7 +198,6 @@ function TabsWithDrawer() {
           visible={isOpen}
           onClose={closeDrawer}
           profile={profile}
-          onProfileLoaded={setProfile}
         />
       </View>
     </SafeAreaView>

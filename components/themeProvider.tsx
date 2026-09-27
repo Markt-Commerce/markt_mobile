@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { Appearance } from "react-native";
+import { Appearance, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme } from "nativewind";
+import { themeVars } from "../theme/vars";
 
 type Theme = "light" | "dark" | "system";
 type Resolved = "light" | "dark";
@@ -63,5 +64,15 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     [theme, resolved]
   );
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  // The variables are injected here rather than left to global.css alone.
+  // setColorScheme() only asks the OS to change the appearance and waits for
+  // it to echo back, so className-driven colours lagged the toggle -- and when
+  // the OS was already in the target scheme, no event fired and they never
+  // changed at all. Driving them from `resolved` makes this provider the one
+  // source of truth for both the JS tokens and the CSS variables.
+  return (
+    <ThemeContext.Provider value={value}>
+      <View style={[{ flex: 1 }, themeVars(resolved)]}>{children}</View>
+    </ThemeContext.Provider>
+  );
 };

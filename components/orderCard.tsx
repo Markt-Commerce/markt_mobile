@@ -1,7 +1,11 @@
 import React from "react";
 import { View, Text, Image, TouchableOpacity } from "react-native";
+import { Image as ImageIcon } from "lucide-react-native";
 import { Order, OrderItem, SellerOrderItem } from "../models/orders";
-import { useTheme } from "./themeProvider";
+import { formatNaira } from "../utils/formatCurrency";
+import { formatStatus, statusTone } from "../utils/formatStatus";
+import { useTokens } from "../theme/useTokens";
+import { TONE_BG, TONE_TEXT } from "../theme/tone";
 
 interface OrderCardProps {
   order: Order | OrderItem | SellerOrderItem | any;
@@ -21,37 +25,42 @@ function isOrderItem(o: any): o is OrderItem {
 }
 
 export default function OrderCard({ order, isSeller }: OrderCardProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   // Safe extraction with fallbacks
   let title = "Order";
   let subtitle = "";
   let priceText = "";
   let imageUri: string | undefined = undefined;
+  let statusText = "";
+  const rawStatus: string = (order as any)?.status ?? "";
   let progress: number | undefined = undefined;
 
   if (isSellerOrderItem(order)) {
     // SellerOrderItem
     title = order.product?.name ?? `Item ${order.id ?? ""}`;
     subtitle = `Order #: ${order.order?.order_number ?? order.order_id ?? ""}`;
-    priceText = typeof order.price !== "undefined" ? `$${order.price}` : "";
-    //imageUri = order.product?.image ?? undefined;
+    priceText = typeof order.price !== "undefined" ? formatNaira(order.price) : "";
+    imageUri = order.product?.image_url ?? undefined;
+    statusText = formatStatus(order.status);
   } else if (isOrder(order)) {
     // Order (buyer)
     const firstItem = Array.isArray(order.items) && order.items.length > 0 ? order.items[0] : undefined;
     title = firstItem?.product?.name ?? `Order ${order.order_number ?? order.id ?? ""}`;
-    subtitle = `Status: ${order.status ?? "unknown"}`;
+    subtitle = firstItem?.product?.name ? "" : "";
     // Prefer total, then subtotal, then compute
     const val = order.total ?? order.subtotal ?? 0;
-    priceText = typeof val === "number" ? `$${val}` : String(val ?? "");
-    //imageUri = firstItem?.product?.image ?? undefined;
+    priceText = typeof val === "number" ? formatNaira(val) : String(val ?? "");
+    imageUri = firstItem?.product?.image_url ?? undefined;
+    statusText = formatStatus(order.status);
   } else if (isOrderItem(order)) {
     // OrderItem (could be used in some contexts)
     title = order.product?.name ?? `Item ${order.product_id ?? ""}`;
-    subtitle = `Qty: ${order.quantity ?? 0} • Status: ${order.status ?? ""}`;
-    priceText = typeof order.price !== "undefined" ? `$${order.price}` : "";
-    
+    subtitle = `Qty: ${order.quantity ?? 0}`;
+    statusText = formatStatus(order.status);
+    imageUri = order.product?.image_url ?? undefined;
+    priceText = typeof order.price !== "undefined" ? formatNaira(order.price) : "";
+
   } else {
     // Unknown shape - defensive defaults
     title = order?.title ?? order?.name ?? `Order ${order?.id ?? ""}`;
@@ -69,39 +78,56 @@ export default function OrderCard({ order, isSeller }: OrderCardProps) {
 
   return (
     <View
-      className={`flex-row justify-between gap-4 px-4 py-3 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+      className="flex-row justify-between gap-4 px-4 py-3 border-b bg-surface-raised border-border"
     >
       <View className="flex-row gap-4 flex-1">
         {imageUri ? (
-          <Image source={{ uri: imageUri }} className="w-[70px] aspect-[3/4] rounded" />
+          <Image
+            source={{ uri: imageUri }}
+            className="w-14 h-14 rounded-lg bg-surface-sunken"
+          />
         ) : (
-          <View className={`w-[70px] aspect-[3/4] rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-            <Text className={`text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No image</Text>
+          // A neutral tile, not the words "No image". Every row said that,
+          // because imageUri was never assigned -- and even once it is, a
+          // missing thumbnail is not worth a sentence.
+          <View className="w-14 h-14 rounded-lg items-center justify-center bg-surface-sunken">
+            <ImageIcon size={18} color={t.textMuted} strokeWidth={1.8} />
           </View>
         )}
 
         <View className="flex-1 justify-center">
-          <Text className={`text-base font-medium ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className="text-base font-medium text-text-primary">
             {isSeller && isSellerOrderItem(order) ? `From: ${order.order?.buyer?.buyername ?? "Buyer"}` : title}
           </Text>
-          <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className="text-sm text-text-secondary">
             {isSeller && isSellerOrderItem(order)
               ? `Product: ${order.product?.name ?? title}`
               : subtitle}
           </Text>
-          <Text className={`text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{priceText}</Text>
+          <View className="flex-row items-center mt-1">
+            <Text className="text-sm font-semibold text-text-primary">
+              {priceText}
+            </Text>
+            {statusText ? (
+              <View className={`ml-2 px-2 py-0.5 rounded-full ${TONE_BG[statusTone(rawStatus)]}`}>
+                <Text className={`text-[11px] font-semibold ${TONE_TEXT[statusTone(rawStatus)]}`}>
+                  {statusText}
+                </Text>
+              </View>
+            ) : null}
+          </View>
         </View>
       </View>
 
       {typeof progress === "number" && (
         <View className="items-center gap-2">
-          <View className={`w-[88px] h-1 rounded overflow-hidden ${isDark ? "bg-[#46464e]" : "bg-border"}`}>
+          <View className="w-[88px] h-1 rounded overflow-hidden bg-border">
             <View
-              className="h-1 bg-primary"
+              className="h-1 bg-primary-fill"
               style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
             />
           </View>
-          <Text className={`text-sm font-medium ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{Math.round(progress)}%</Text>
+          <Text className="text-sm font-medium text-text-primary">{Math.round(progress)}%</Text>
         </View>
       )}
     </View>

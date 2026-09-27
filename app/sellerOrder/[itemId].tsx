@@ -1,0 +1,302 @@
+/**
+ * A seller's view of one order item.
+ *
+ * Sellers used to be sent to /orderdetail/<order_id> — the *buyer's* screen,
+ * which knows nothing about roles — so a seller opening their own order was
+ * offered "Pay now" and "Track Order" on a sale they were meant to fulfil.
+ *
+ * Actions live here rather than as Accept/Decline buttons in the list, so
+ * there's one place a seller acts on an order however they got to it, and so
+ * declining can carry the warning it deserves: it refunds the buyer.
+ */
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { ArrowLeft, Image as ImageIcon, MessageSquare } from "lucide-react-native";
+import Avatar from "../../components/Avatar";
+import { useTokens } from "../../theme/useTokens";
+import { useToast } from "../../components/ToastProvider";
+import { getSellerOrders, updateSellerOrderItem } from "../../services/sections/orders";
+import type { SellerOrderItem } from "../../models/orders";
+import { formatNaira } from "../../utils/formatCurrency";
+import { formatStatus, statusTone } from "../../utils/formatStatus";
+import {
+  nextStatuses,
+  STATUS_ACTION_LABEL,
+  type OrderItemStatus,
+} from "../../utils/orderTransitions";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
+import { TONE_BG, TONE_TEXT } from "../../theme/tone";
+import { useBackTo } from "../../utils/goBack";
+
+export default function SellerOrderDetail() {
+  const { itemId } = useLocalSearchParams<{ itemId: string }>();
+  const router = useRouter();
+  const goBack = useBackTo("/(tabs)/sellerDashboard");
+  const t = useTokens();
+  const { show } = useToast();
+
+  const [item, setItem] = useState<SellerOrderItem | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [working, setWorking] = useState(false);
+
+  // There is no GET for a single seller order item, so the item is found in
+  // the seller's own list. Bounded by the page size rather than fetching
+  // everything.
+  const load = useCallback(async () => {
+    try {
+      const res = await getSellerOrders(1, 50);
+      const found = (res.items ?? []).find((i) => String(i.id) === String(itemId));
+      setItem(found ?? null);
+    } catch {
+      setItem(null);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [itemId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const apply = async (next: OrderItemStatus) => {
+    if (!item) return;
+    setWorking(true);
+    try {
+      await updateSellerOrderItem(item.id, { status: next });
+      show({
+        variant: "success",
+        title:
+          next === "cancelled"
+            ? "Order declined"
+            : `Marked ${(STATUS_ACTION_LABEL[next] ?? next).toLowerCase()}`,
+      });
+      await load();
+    } catch (e) {
+      show({
+        variant: "error",
+        title: "Couldn't update",
+        // The server names both states on an illegal move, which is the only
+        // version a seller can act on.
+        message: friendlyErrorMessage(e, "Could not update this order."),
+      });
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const confirmThen = (next: OrderItemStatus) => {
+    if (next !== "cancelled") return apply(next);
+    // Declining refunds the buyer. Saying so is the difference between a
+    // decision and an accident.
+    Alert.alert(
+      "Decline this order?",
+      "The buyer is refunded and the item is cancelled. This can't be undone.",
+      [
+        { text: "Keep order", style: "cancel" },
+        { text: "Decline", style: "destructive", onPress: () => apply(next) },
+      ]
+    );
+  };
+
+  const bg = t.surfacePage;
+  const strong = "text-text-primary";
+  const muted = "text-text-muted";
+  const card = "bg-surface-sunken";
+
+  if (loading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: bg }} edges={["top", "bottom"]}>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={t.textPrimary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!item) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: bg }} edges={["top", "bottom"]}>
+        <View className="flex-1 items-center justify-center px-8">
+          <Text className={`text-[17px] font-semibold ${strong}`}>Order not found</Text>
+          <Text className={`text-[14px] mt-1 text-center ${muted}`}>
+            It may have been fulfilled or cancelled already.
+          </Text>
+          <TouchableOpacity
+            onPress={goBack}
+            className="mt-6 px-6 h-11 rounded-lg bg-primary-fill items-center justify-center"
+          >
+            <Text className="text-white font-semibold">Go back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const buyer = item.order?.buyer;
+  const buyerName = buyer?.buyername || buyer?.username || "Buyer";
+  const tone = statusTone(item.status);
+  const actions = nextStatuses(item.status);
+  const lineTotal = (item.price ?? 0) * (item.quantity ?? 1);
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: bg }} edges={["top", "bottom"]}>
+      <View className="flex-row items-center px-4 py-3">
+        <TouchableOpacity
+          onPress={goBack}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <ArrowLeft size={22} color={t.textPrimary} />
+        </TouchableOpacity>
+        <Text className={`text-[17px] font-bold ml-3 ${strong}`} numberOfLines={1}>
+          {item.order?.order_number ?? `Order ${item.order_id ?? ""}`}
+        </Text>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 32 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              load();
+            }}
+            tintColor={t.textPrimary}
+          />
+        }
+      >
+        <View className="px-4">
+          <View className={`rounded-xl p-4 ${card}`}>
+            <Text className={`text-[10px] font-bold uppercase tracking-[1.5px] ${muted}`}>
+              Status
+            </Text>
+            <View className="flex-row items-center mt-2">
+              <View className={`px-2.5 py-1 rounded-full ${TONE_BG[tone]}`}>
+                <Text
+                  className={`text-[13px] font-semibold ${TONE_TEXT[tone]}`}
+                >
+                  {formatStatus(item.status)}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View className={`rounded-xl p-4 mt-3 ${card}`}>
+            <View className="flex-row">
+              {item.product?.image_url ? (
+                <Image
+                  source={{ uri: item.product.image_url }}
+                  className="w-16 h-16 rounded-lg"
+                />
+              ) : (
+                <View
+                  className="w-16 h-16 rounded-lg items-center justify-center bg-surface-raised"
+                >
+                  <ImageIcon size={20} color={t.textMuted} />
+                </View>
+              )}
+              <View className="flex-1 ml-3">
+                <Text className={`text-[15px] font-semibold ${strong}`} numberOfLines={2}>
+                  {item.product?.name ?? "Product"}
+                </Text>
+                <Text className={`text-[13px] mt-1 ${muted}`}>
+                  Qty {item.quantity ?? 1} · {formatNaira(item.price ?? 0)} each
+                </Text>
+                <Text className={`text-[17px] font-bold mt-1 ${strong}`}>
+                  {formatNaira(lineTotal)}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View className={`rounded-xl p-4 mt-3 ${card}`}>
+            <Text className={`text-[10px] font-bold uppercase tracking-[1.5px] ${muted}`}>
+              Buyer
+            </Text>
+            <View className="flex-row items-center mt-2">
+              <Avatar
+                uri={buyer?.profile_picture_url ?? buyer?.profile_picture ?? undefined}
+                name={buyerName}
+                size={36}
+              />
+              <Text className={`flex-1 ml-3 text-[15px] font-semibold ${strong}`}>
+                {buyerName}
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push("/(tabs)/messages" as any)}
+                className="flex-row items-center px-3 h-9 rounded-lg bg-surface-raised"
+                accessibilityRole="button"
+                accessibilityLabel={`Message ${buyerName}`}
+              >
+                <MessageSquare size={14} color={t.textSecondary} />
+                <Text className={`text-[13px] font-semibold ml-1.5 ${strong}`}>
+                  Message
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Only moves the item can actually make. Delivery is deliberately
+              absent: it's confirmed by the buyer or the rider through the
+              POD/QR flow, and the server refuses it here. */}
+          <View className="mt-5">
+            {actions.length === 0 ? (
+              <Text className={`text-[14px] text-center ${muted}`}>
+                Nothing left to do on this order.
+              </Text>
+            ) : (
+              actions.map((next) => {
+                const destructive = next === "cancelled";
+                return (
+                  <TouchableOpacity
+                    key={next}
+                    onPress={() => confirmThen(next)}
+                    disabled={working}
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel={STATUS_ACTION_LABEL[next] ?? next}
+                    accessibilityState={{ busy: working, disabled: working }}
+                    className={`h-12 rounded-xl items-center justify-center mb-2.5 ${
+                      working ? "opacity-60" : ""
+                    } ${
+                      destructive
+                        ? "bg-danger-muted"
+                        : "bg-primary-fill"
+                    }`}
+                  >
+                    {working ? (
+                      <ActivityIndicator color={destructive ? t.dangerText : t.textOnPrimary} />
+                    ) : (
+                      <Text
+                        className={`text-[15px] font-bold ${
+                          destructive ? "text-danger-text" : "text-white"
+                        }`}
+                      >
+                        {STATUS_ACTION_LABEL[next] ?? next}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                );
+              })
+            )}
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}

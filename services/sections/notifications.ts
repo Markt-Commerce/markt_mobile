@@ -4,8 +4,10 @@ import { NotificationCount, NotificationResponse } from "../../models/notificati
 
 // Fetch products
 export async function getNotifications(page = 1, perPage = 10): Promise<NotificationResponse> {
+  // Trailing slash before the query: `/notifications` 308-redirects to cleartext
+  // `http://.../notifications/`, which release Android APKs block.
   const res = await request<NotificationResponse>(
-    `${BASE_URL}/notifications?page=${page}&per_page=${perPage}`,
+    `${BASE_URL}/notifications/?page=${page}&per_page=${perPage}`,
     { method: "GET" }
   );
   return res;

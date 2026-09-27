@@ -66,6 +66,8 @@ export interface BuyerProfile {
   recent_products: Product[];
   shop_name: string;
   shop_slug: string | null;
+  /** The shop's cover image. Null until the seller uploads one. */
+  banner_url: string | null;
   stats: Stats;
   total_raters: number;
   total_rating: number;

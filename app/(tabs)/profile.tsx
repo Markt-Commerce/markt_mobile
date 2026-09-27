@@ -4,101 +4,38 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
   ArrowRight,
+  ArrowRightLeft,
   Briefcase,
   CircleUserRound,
   LayoutGrid,
   Settings,
   ShieldCheck,
+  Trophy,
+  MapPin,
 } from "lucide-react-native";
 import BottomSheet from "@gorhom/bottom-sheet";
 import Avatar from "../../components/Avatar";
 import CreateRoleBottomSheet from "../../components/createRoleBottomSheet";
 import { useUser } from "../../hooks/userContextProvider";
 import { useToast } from "../../components/ToastProvider";
-import { getUserProfile } from "../../services/sections/profile";
 import { switchUserRole } from "../../services/sections/auth";
-import type { UserProfile } from "../../models/profile";
-import { useTheme } from "../../components/themeProvider";
-
-function Section({
-  title,
-  children,
-  isDark,
-}: {
-  title: string;
-  children: React.ReactNode;
-  isDark: boolean;
-}) {
-  return (
-    <View className="px-6 mt-8">
-      <Text className={`font-geist font-bold text-[11px] tracking-[2px] uppercase mb-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-        {title}
-      </Text>
-      <View className={`border rounded overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-        {children}
-      </View>
-    </View>
-  );
-}
-
-function Row({
-  icon: Icon,
-  title,
-  subtitle,
-  onPress,
-  last = false,
-  isDark,
-}: {
-  icon: React.ElementType;
-  title: string;
-  subtitle: string;
-  onPress: () => void;
-  last?: boolean;
-  isDark: boolean;
-}) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.8}
-      className={`flex-row items-center justify-between px-4 py-4 ${last ? "" : isDark ? "border-b border-[#46464e]" : "border-b border-border"}`}
-    >
-      <View className="flex-row items-center gap-3 flex-1 pr-3">
-        <View className={`w-10 h-10 rounded items-center justify-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-          <Icon size={18} color={isDark ? "#f0f1f2" : "#000000"} strokeWidth={1.7} />
-        </View>
-        <View className="flex-1">
-          <Text className={`font-geist font-bold text-[15px] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{title}</Text>
-          <Text className={`font-inter text-[13px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{subtitle}</Text>
-        </View>
-      </View>
-      <ArrowRight size={18} color={isDark ? "#c6c5cf" : "#71717A"} strokeWidth={1.7} />
-    </TouchableOpacity>
-  );
-}
-
-function StatPill({ label, active, isDark }: { label: string; active: boolean; isDark: boolean }) {
-  return (
-    <View className={`px-3 py-2 rounded border ${active ? (isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border") : (isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border")}`}>
-      <Text className={`font-geist font-bold text-[10px] tracking-[2px] uppercase ${active ? (isDark ? "text-[#f0f1f2]" : "text-black") : (isDark ? "text-[#c6c5cf]" : "text-tertiary")}`}>
-        {label}
-      </Text>
-    </View>
-  );
-}
+import { useTokens } from "../../theme/useTokens";
+import {
+  SettingsSection as Section,
+  SettingsRow as Row,
+} from "../../components/SettingsList";
+import { useGamificationContext } from "../../hooks/gamificationContext";
+import GamificationStrip from "../../components/gamification/GamificationStrip";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { role, setRole } = useUser();
+  const { role, setRole, profile, setProfile, refreshProfile } = useUser();
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const t = useTokens();
+  const [switchingRole, setSwitchingRole] = useState(false);
   const [createMode, setCreateMode] = useState<"buyer" | "seller" | null>(null);
   const createRoleRef = useRef<BottomSheet | null>(null);
-
-  useEffect(() => {
-    getUserProfile().then(setProfile).catch(() => setProfile(null));
-  }, []);
+  const { profile: gamification, badges: gamificationBadges } = useGamificationContext();
 
   useEffect(() => {
     if (createMode) {
@@ -116,7 +53,17 @@ export default function ProfileScreen() {
   const dualRole = hasBuyerAccount && hasSellerAccount;
 
   const handleSwitchRole = async () => {
+    // If the user doesn't have the other role yet, open the create sheet
+    // directly instead of hitting the switch API (which would just fail).
+    const targetRole = role === "buyer" ? "seller" : "buyer";
+    const hasTargetAccount = targetRole === "buyer" ? hasBuyerAccount : hasSellerAccount;
+    if (!hasTargetAccount) {
+      setCreateMode(targetRole);
+      return;
+    }
+
     try {
+      setSwitchingRole(true);
       const result = await switchUserRole();
       const nextRole = (result.user?.current_role ?? result.current_role) as "buyer" | "seller";
       setRole(nextRole);
@@ -134,7 +81,9 @@ export default function ProfileScreen() {
         message: `Now in ${nextRole} mode.`,
       });
     } catch {
-      setCreateMode(role === "buyer" ? "seller" : "buyer");
+      setCreateMode(targetRole);
+    } finally {
+      setSwitchingRole(false);
     }
   };
 
@@ -157,76 +106,96 @@ export default function ProfileScreen() {
   const handleCreated = (newRole: "buyer" | "seller") => {
     setRole(newRole);
     setCreateMode(null);
-    getUserProfile().then(setProfile).catch(() => setProfile(null));
+    void refreshProfile();
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
       <ScrollView
-        className={isDark ? "bg-[#1a1c1d]" : "bg-white"}
+        className={"bg-surface-page"}
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
-        <View className="px-6 pt-8">
-          <Text className={`font-geist font-bold text-[28px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-            Profile
+        {/* Same identity treatment as Settings: centred, no card. It was a
+            bordered box wrapping a bordered avatar and two stacked buttons, on
+            a screen whose rows are now full-bleed. */}
+        <View className="items-center px-6 pt-6 pb-6 bg-surface-raised">
+          <Avatar
+            uri={profile?.profile_picture_url}
+            name={displayName}
+            size={88}
+            className="rounded-full"
+          />
+          <Text
+            className="font-bold text-[22px] tracking-tight mt-3 text-text-primary"
+            numberOfLines={1}
+          >
+            {displayName}
           </Text>
-          <Text className={`font-inter text-base mt-2 leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-            Manage your identity, understand your active role, and jump into account tasks.
+          <Text
+            className="text-[14px] mt-0.5 text-text-muted"
+            numberOfLines={1}
+          >
+            @{profile?.username ?? "user"}
           </Text>
-        </View>
 
-        <View className="px-6 pt-8">
-          <View className={`border rounded px-5 py-5 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-            <View className="flex-row items-center gap-4">
-              <Avatar
-                uri={profile?.profile_picture_url}
-                name={displayName}
-                size={64}
-                className="rounded"
-              />
-              <View className="flex-1">
-                <Text className={`font-geist font-bold text-[24px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
-                  {displayName}
-                </Text>
-                <Text className={`font-inter text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={1}>
-                  @{profile?.username ?? "user"}
-                </Text>
-                <Text className={`font-geist font-bold text-[10px] tracking-[2px] uppercase mt-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                  {role} account active
-                </Text>
-              </View>
+          <View className="flex-row flex-wrap justify-center gap-2 mt-4">
+            <View className="px-3 py-1.5 rounded-full bg-primary-fill">
+              <Text className="font-bold text-[11px] uppercase tracking-wider text-white">
+                {role}
+              </Text>
             </View>
+          </View>
 
-            <View className="flex-row gap-2 mt-4">
-              <StatPill label="Buyer" active={role === "buyer"} isDark={isDark} />
-              <StatPill label="Seller" active={role === "seller"} isDark={isDark} />
-            </View>
-
-            <View className="flex-row gap-3 mt-5">
-              <TouchableOpacity
-                onPress={() => router.push("/(settings)/accountInfoScreen")}
-                activeOpacity={0.85}
-                className="flex-1 h-12 rounded bg-primary items-center justify-center"
+          <View className="flex-row gap-2.5 mt-5 w-full">
+            <TouchableOpacity
+              onPress={() => router.push("/(settings)/accountInfoScreen")}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile"
+              className="flex-1 h-11 rounded-xl items-center justify-center bg-surface-sunken"
+            >
+              <Text className="font-semibold text-[14px] text-text-primary">
+                Edit profile
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleSwitchRole}
+              activeOpacity={0.85}
+              disabled={switchingRole}
+              accessibilityRole="button"
+              accessibilityState={{ busy: switchingRole }}
+              className={`flex-1 h-11 rounded-xl items-center justify-center flex-row ${
+                "bg-text-primary"
+              } ${switchingRole ? "opacity-60" : ""}`}
+            >
+              <ArrowRightLeft size={15} color={t.surfacePage} strokeWidth={2.2} />
+              <Text
+                className="font-semibold text-[14px] ml-1.5 text-surface-page"
+                numberOfLines={1}
               >
-                <Text className="text-white font-geist font-bold text-[11px] tracking-[2px] uppercase">
-                  Edit Profile
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleSwitchRole}
-                activeOpacity={0.85}
-                className={`flex-1 h-12 rounded border items-center justify-center ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
-              >
-                <Text className={`font-geist font-bold text-[11px] tracking-[2px] uppercase ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                  {dualRole ? `Switch to ${role === "buyer" ? "Seller" : "Buyer"}` : `Create ${role === "buyer" ? "Seller" : "Buyer"}`}
-                </Text>
-              </TouchableOpacity>
-            </View>
+                {switchingRole
+                  ? "Switching…"
+                  : dualRole
+                    ? `${role === "buyer" ? "Seller" : "Buyer"} mode`
+                    : `Create ${role === "buyer" ? "seller" : "buyer"}`}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        <Section title="Role Overview" isDark={isDark}>
+        {gamification && (
+          <View className="px-4 pb-2">
+            <GamificationStrip
+              profile={gamification}
+              badges={gamificationBadges}
+              onPress={() => router.push("/gamification" as any)}
+              onBadgePress={(b) => router.push(`/gamification/badge/${b.slug}` as any)}
+            />
+          </View>
+        )}
+
+        <Section title="Role Overview">
           <Row
             icon={CircleUserRound}
             title="Buyer Identity"
@@ -238,7 +207,6 @@ export default function ProfileScreen() {
             onPress={() => {
               void handleRoleRowPress("buyer");
             }}
-            isDark={isDark}
           />
           <Row
             icon={Briefcase}
@@ -252,32 +220,39 @@ export default function ProfileScreen() {
               void handleRoleRowPress("seller");
             }}
             last
-            isDark={isDark}
           />
         </Section>
 
-        <Section title="Account Navigation" isDark={isDark}>
+        <Section title="Account Navigation">
+          <Row
+            icon={Trophy}
+            title="Rewards & Badges"
+            onPress={() => router.push("/gamification" as any)}
+          />
+          {/* Buyers only: a seller's pickup point is their shop location,
+              set in shop settings, not a list of delivery addresses. */}
+          {role === "buyer" ? (
+            <Row
+              icon={MapPin}
+              title="Addresses"
+              onPress={() => router.push("/(settings)/addressesScreen" as any)}
+            />
+          ) : null}
           <Row
             icon={Settings}
             title="Settings"
-            subtitle="Appearance, notifications, security, and support controls."
             onPress={() => router.push("/(settings)/settingsProfileScreen")}
-            isDark={isDark}
           />
           <Row
             icon={LayoutGrid}
             title="My Niches"
-            subtitle="Review the communities you run or participate in."
             onPress={() => router.push("/myniches" as any)}
-            isDark={isDark}
           />
           <Row
             icon={ShieldCheck}
             title="Help & Policies"
-            subtitle="Read support guidance, privacy information, and platform details."
             onPress={() => router.push("/support/help" as any)}
             last
-            isDark={isDark}
           />
         </Section>
       </ScrollView>

@@ -6,12 +6,19 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { View, Text, Image, TouchableOpacity, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { Link } from "expo-router";
 import { ShoppingCart, Package } from "lucide-react-native";
 import { ProductDetail } from "../models/products";
 import { getProductById } from "../services/sections/product";
 import { resolveProductImageUri } from "../utils/imageUri";
+import { useTokens } from "../theme/useTokens";
 
 type EmbeddedProduct = {
   id: string;
@@ -40,10 +47,16 @@ export default function ChatProductDisplayComponent({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const t = useTokens();
+  const iconColor = t.textSecondary;
 
   const id = embeddedProduct?.id ?? productId;
   const displayName = product?.name ?? embeddedProduct?.name ?? "Product";
-  const displayPrice = product?.price ?? (typeof embeddedProduct?.price === "number" ? embeddedProduct.price : Number(embeddedProduct?.price) || 0);
+  const displayPrice =
+    product?.price ??
+    (typeof embeddedProduct?.price === "number"
+      ? embeddedProduct.price
+      : Number(embeddedProduct?.price) || 0);
   const displayImage =
     resolveProductImageUri(product) ?? resolveProductImageUri(embeddedProduct);
 
@@ -55,7 +68,8 @@ export default function ChatProductDisplayComponent({
     const idToFetch = embeddedProduct?.id ?? productId;
     const embeddedImage = resolveProductImageUri(embeddedProduct);
     const hasEmbeddedMeta =
-      embeddedProduct?.id && (embeddedProduct?.name || embeddedProduct?.price != null);
+      embeddedProduct?.id &&
+      (embeddedProduct?.name || embeddedProduct?.price != null);
 
     if (hasEmbeddedMeta && embeddedImage) {
       setProduct(null);
@@ -86,39 +100,67 @@ export default function ChatProductDisplayComponent({
     return () => {
       cancelled = true;
     };
-  }, [productId, embeddedProduct?.id, embeddedProduct?.name, embeddedProduct?.image_url, embeddedProduct?.image]);
+  }, [
+    productId,
+    embeddedProduct?.id,
+    embeddedProduct?.name,
+    embeddedProduct?.image_url,
+    embeddedProduct?.image,
+  ]);
 
   if (!id) return null;
 
   if (loading) {
     return (
-      <View className="rounded overflow-hidden border border-border bg-white min-w-[240px] max-w-[280px] p-3">
+      <View
+        className="rounded overflow-hidden border min-w-[240px] max-w-[280px] p-3 bg-surface-raised border-border"
+      >
         <View className="flex-row gap-3 items-stretch">
-          <View className="w-[100px] h-[72px] rounded bg-surface shrink-0" />
+          <View
+            className="w-[100px] h-[72px] rounded shrink-0 bg-media"
+          />
           <View className="flex-1 justify-center">
-            <View className="h-4 bg-surface rounded w-3/4 mb-2" />
-            <View className="h-3 bg-surface rounded w-1/3" />
+            <View
+              className="h-4 rounded w-3/4 mb-2 bg-media"
+            />
+            <View
+              className="h-3 rounded w-1/3 bg-media"
+            />
           </View>
         </View>
-        <ActivityIndicator size="small" color="#000000" className="mt-2" />
+        <ActivityIndicator
+          size="small"
+          color={t.textPrimary}
+          className="mt-2"
+        />
       </View>
     );
   }
 
   if (error && !embeddedProduct?.name) {
     return (
-      <View className="rounded border border-border bg-surface px-4 py-3">
-        <Text className="text-tertiary text-sm">Product no longer available</Text>
+      <View
+        className="rounded border px-4 py-3 bg-surface-sunken border-border"
+      >
+        <Text
+          className="text-sm text-text-secondary"
+        >
+          Product no longer available
+        </Text>
       </View>
     );
   }
 
   return (
-    <View className="rounded overflow-hidden border border-border bg-white min-w-[240px] max-w-[280px]">
+    <View
+      className="rounded overflow-hidden border min-w-[240px] max-w-[280px] bg-surface-raised border-border"
+    >
       <Link href={`/productDetails/${id}`} asChild>
         <TouchableOpacity activeOpacity={0.85}>
           <View className="flex-row p-3 gap-3 items-stretch">
-            <View className="w-[100px] h-[72px] rounded bg-surface overflow-hidden items-center justify-center shrink-0">
+            <View
+              className="w-[100px] h-[72px] rounded overflow-hidden items-center justify-center shrink-0 bg-media"
+            >
               {displayImage && !imageError ? (
                 <Image
                   source={{ uri: displayImage }}
@@ -128,17 +170,29 @@ export default function ChatProductDisplayComponent({
                 />
               ) : (
                 <View className="items-center justify-center p-2">
-                  <Package size={20} color="#71717A" />
-                  <Text className="text-tertiary text-[9px] mt-0.5">Product</Text>
+                  <Package size={20} color={iconColor} />
+                  <Text
+                    className="text-[9px] mt-0.5 text-text-secondary"
+                  >
+                    Product
+                  </Text>
                 </View>
               )}
             </View>
             <View className="flex-1 justify-center min-w-0 py-0.5">
-              <Text className="text-black font-semibold text-sm" numberOfLines={2}>
+              <Text
+                className="font-semibold text-sm text-text-primary"
+                numberOfLines={2}
+              >
                 {displayName}
               </Text>
-              <Text className="text-black font-semibold text-base mt-0.5">
-                ₦{typeof displayPrice === "number" ? displayPrice.toLocaleString() : String(displayPrice)}
+              <Text
+                className="font-semibold text-base mt-0.5 text-text-primary"
+              >
+                ₦
+                {typeof displayPrice === "number"
+                  ? displayPrice.toLocaleString()
+                  : String(displayPrice)}
               </Text>
             </View>
           </View>
@@ -147,7 +201,7 @@ export default function ChatProductDisplayComponent({
       {showAddToCart && onAddToCart && (
         <TouchableOpacity
           onPress={() => onAddToCart(id)}
-          className="mx-3 mb-3 py-2.5 rounded bg-primary flex-row items-center justify-center gap-2"
+          className="mx-3 mb-3 py-2.5 rounded bg-primary-fill flex-row items-center justify-center gap-2"
         >
           <ShoppingCart size={18} color="white" />
           <Text className="text-white font-semibold text-sm">Add to Cart</Text>

@@ -1,88 +1,171 @@
 import React from "react";
-import { View, Text, Image, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
+import { MessageSquare } from "lucide-react-native";
 import { BuyerRequest } from "../models/feed";
 import { router } from "expo-router";
-
-type Buyer = {
-    profile_picture_url?: string;
-    username?: string;
-};
+import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
+import { useUser } from "../hooks/userContextProvider";
+import Avatar from "./Avatar";
+import { hasPassed, msUntil } from "../utils/datetime";
 
 type Props = {
-    req: BuyerRequest;
-    onMessagePress?: () => void;
+  req: BuyerRequest;
+  onMessagePress?: () => void;
 };
 
+/** "3 days left" reads better than a date when the point is urgency. */
 const formatDeadline = (d?: string | number | Date) => {
-    if (!d) return "No deadline";
-    const date = d instanceof Date ? d : new Date(d);
-    if (isNaN(date.getTime())) return "Invalid date";
-    return date.toDateString();
+  if (!d) return null;
+  const msLeft = msUntil(d);
+  if (msLeft === null) return null;
+  if (msLeft <= 0) return "Closed";
+
+  const days = Math.floor(msLeft / 86_400_000);
+  if (days >= 7) return `${Math.floor(days / 7)}w left`;
+  if (days >= 1) return `${days}d left`;
+
+  const hours = Math.floor(msLeft / 3_600_000);
+  if (hours >= 1) return `${hours}h left`;
+  return "Closing soon";
 };
 
 const RequestDisplayComponent: React.FC<Props> = ({ req, onMessagePress }) => {
-    return (
-        <TouchableOpacity onPress={() => router.push(`/requestDetails/${req.id}`)} activeOpacity={0.85} className="px-6 pt-6">
-            <View className="rounded border border-border bg-white p-5">
-                <View className="flex-row items-center justify-between mb-4">
-                    <View className="flex-row items-center flex-1 pr-3">
-                        <Image
-                            source={{
-                                uri:
-                                    req.buyer?.profile_picture_url ||
-                                    "https://placehold.co/40x40?text=User",
-                            }}
-                            className="w-10 h-10 rounded mr-3 bg-surface"
-                        />
-                        <View>
-                            <Text className="font-geist font-bold text-black text-base">
-                                {req.buyer?.username || "Unknown buyer"}
-                            </Text>
-                            <View className="mt-1 flex-row items-center">
-                                <View className="h-1.5 w-1.5 rounded bg-primary mr-2" />
-                                <Text className="text-[10px] font-geist font-bold text-tertiary uppercase tracking-wider">Buyer request</Text>
-                            </View>
-                        </View>
-                    </View>
-                    <View className="px-3 py-1.5 rounded bg-surface border border-border">
-                        <Text className="text-[10px] font-geist font-bold text-black uppercase tracking-wider">
-                            Open
-                        </Text>
-                    </View>
-                </View>
+  const { resolvedTheme } = useTheme();
+  const { user } = useUser();
+  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
-                <Text
-                    className="font-geist font-bold text-black text-lg mb-1"
-                    numberOfLines={2}
-                >
-                    {req.title || "Untitled request"}
-                </Text>
-                <Text className="text-tertiary font-inter text-sm mb-4 leading-6" numberOfLines={3}>
-                    {req.description || "No description provided."}
-                </Text>
+  // No messaging yourself about your own request.
+  const isOwnRequest =
+    !!user?.user_id && String(req.user?.id ?? req.user_id) === String(user.user_id);
 
-                <View className="flex-row items-center justify-between border-t border-border pt-4">
-                    <View>
-                        <Text className="text-base font-geist font-bold text-black">
-                            ₦{(req.budget ?? 0).toLocaleString()}
-                        </Text>
-                        <Text className="text-[11px] font-inter text-tertiary mt-0.5">
-                            Deadline: {formatDeadline(req.deadline)}
-                        </Text>
-                    </View>
-                    <TouchableOpacity
-                        className="px-5 py-2.5 bg-primary rounded"
-                        onPress={() => onMessagePress?.()}
-                        activeOpacity={0.85}
-                    >
-                        <Text className="text-white text-xs font-geist font-bold tracking-[1px] uppercase">
-                            Message
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </TouchableOpacity>
-    );
+  const isExpired = hasPassed(req.expires_at);
+  const statusRaw = (req.status ?? "OPEN").toUpperCase();
+  const statusLabel = statusRaw === "OPEN" && isExpired ? "EXPIRED" : statusRaw;
+  const isOpen = statusLabel === "OPEN";
+  const deadline = formatDeadline(req.expires_at);
+
+  return (
+    <TouchableOpacity
+      onPress={() => router.push(`/requestDetails/${req.id}`)}
+      activeOpacity={0.6}
+      accessibilityRole="button"
+      accessibilityLabel={`Request: ${req.title || "Untitled"}, budget ₦${(
+        req.budget ?? 0
+      ).toLocaleString()}${deadline ? `, ${deadline}` : ""}`}
+      // Full-bleed. This used to be a rounded, bordered card inset by 16px on
+      // each side, sitting inside a screen that already draws its own borders --
+      // three competing outlines per row and 32px of width given away for
+      // nothing. The row now runs edge to edge and a single hairline separates
+      // one request from the next.
+      className={`px-4 py-3 border-b ${
+        "bg-surface-raised border-border"
+      }`}
+    >
+      {/* Who, and how the request stands */}
+      <View className="flex-row items-center mb-2">
+        <Avatar
+          uri={req.user?.profile_picture_url}
+          name={req.user?.username}
+          size={28}
+        />
+        <View className="flex-1 ml-2.5">
+          <Text
+            className="text-[14px] text-text-secondary"
+            numberOfLines={1}
+          >
+            <Text className="font-semibold text-text-primary">
+              {req.user?.username || "Unknown buyer"}
+            </Text>
+            {deadline ? `  ·  ${deadline}` : ""}
+          </Text>
+        </View>
+
+        {/* Tint only, no outline. Colour already carries the meaning; the
+            border was a third weight fighting the card and the pill. */}
+        <View
+          className={`px-2.5 py-1 rounded-full ${
+            isOpen
+              ? "bg-primary-muted"
+              : isDark
+                ? "bg-surface-sunken"
+                : "bg-surface-sunken"
+          }`}
+        >
+          <Text
+            className={`text-[10px] font-bold uppercase tracking-wider ${
+              isOpen ? "text-primary" : "text-text-muted"
+            }`}
+          >
+            {statusLabel}
+          </Text>
+        </View>
+      </View>
+
+      {/* What they want */}
+      <Text
+        className={`font-bold text-[16px] leading-[21px] ${
+          "text-text-primary"
+        }`}
+        numberOfLines={1}
+      >
+        {req.title || "Untitled request"}
+      </Text>
+      {req.description ? (
+        <Text
+          className={`text-[13px] leading-[18px] mt-0.5 ${
+            "text-text-muted"
+          }`}
+          numberOfLines={2}
+        >
+          {req.description}
+        </Text>
+      ) : null}
+
+      {/* Budget and the action. No border-t: the gap does that job, and the
+          budget is what a seller actually scans for, so it leads. */}
+      <View className="flex-row items-center justify-between mt-2.5">
+        <View className="flex-row items-baseline">
+          <Text
+            className={`text-[10px] font-bold uppercase tracking-[1.2px] mr-1.5 ${
+              "text-text-muted"
+            }`}
+          >
+            Budget
+          </Text>
+          <Text
+            className="text-[16px] font-bold text-text-primary"
+          >
+            ₦{(req.budget ?? 0).toLocaleString()}
+          </Text>
+        </View>
+
+        {!isOwnRequest && onMessagePress ? (
+          <TouchableOpacity
+            className={`flex-row items-center px-4 h-9 rounded-lg justify-center ${
+              "bg-text-primary"
+            }`}
+            onPress={onMessagePress}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={`Message ${req.user?.username || "buyer"} about this request`}
+          >
+            <MessageSquare
+              size={14}
+              color={t.surfacePage}
+              strokeWidth={2.2}
+            />
+            <Text
+              className="text-[13px] font-semibold ml-1.5 text-surface-page"
+            >
+              Message
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+    </TouchableOpacity>
+  );
 };
 
 export default RequestDisplayComponent;

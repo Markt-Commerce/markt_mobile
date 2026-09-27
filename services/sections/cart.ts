@@ -9,28 +9,44 @@ import {
   UpdateCartItemResponse,
   CheckoutRequest,
   CheckoutResponse,
+  GroupedCart,
 } from "../../models/cart";
 import { ApiResponse } from "../../models/auth";
+import { setPendingCartCount } from "../notificationState";
+import { emitBadgeChanged } from "../../utils/badgeEvents";
 
 // Get cart
 export async function getCart(): Promise<Cart> {
-  const res = await request<Cart>(`${BASE_URL}/cart`, {
+  // Trailing slash: `/cart` 308-redirects to cleartext `http://.../cart/`, which
+  // release Android APKs block — hitting the canonical URL avoids the redirect.
+  const res = await request<Cart>(`${BASE_URL}/cart/`, {
     method: "GET",
   });
+  // Cache the count so the background reminder worker can nudge an abandoned
+  // cart without a network call.
+  try {
+    await setPendingCartCount(res?.items?.length ?? 0);
+  } catch {
+    /* non-fatal */
+  }
   return res;
 }
 
 // Clear cart
 export async function clearCart(): Promise<void> {
-  await request<void>(`${BASE_URL}/cart`, {
+  // Trailing slash — see getCart: the slash-less URL 308-redirects to cleartext
+  // http, which release Android blocks.
+  await request<void>(`${BASE_URL}/cart/`, {
     method: "DELETE",
   });
+  emitBadgeChanged();
 }
 
 export async function deleteCartItem(id:number) {
   await request<void>(`${BASE_URL}/cart/items/${id}`, {
     method: "DELETE",
   });
+  emitBadgeChanged();
 }
 
 export async function updateCartItem(id:number,data:{ quantity: number}): Promise<UpdateCartItemResponse> {
@@ -38,6 +54,7 @@ export async function updateCartItem(id:number,data:{ quantity: number}): Promis
     method: "PUT",
     body: JSON.stringify(data),
   });
+  emitBadgeChanged();
   return res.data!;
 }
 
@@ -47,6 +64,7 @@ export async function addToCart(data: AddToCartRequest): Promise<AddToCartRespon
     method: "POST",
     body: JSON.stringify(data),
   });
+  emitBadgeChanged();
   return res;
 }
 
@@ -64,5 +82,14 @@ export async function checkoutCart(data:CheckoutRequest): Promise<CheckoutRespon
     method: "POST",
     body: JSON.stringify(data),
   });
+  // The bought items leave the basket when payment lands, not here, but
+  // the count can still move -- refresh the badge rather than guess.
+  emitBadgeChanged();
   return res;
+}
+/** The basket split into the orders it will actually become — one per shop.
+ * Presenting it as a single list made it possible to build a cart that could
+ * never be paid for, because checkout refuses a multi-shop basket. */
+export async function getCartGroups(): Promise<GroupedCart> {
+  return request<GroupedCart>(`${BASE_URL}/cart/groups`, { method: "GET" });
 }

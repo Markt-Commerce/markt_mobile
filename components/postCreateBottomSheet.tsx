@@ -1,7 +1,7 @@
 import 'react-native-reanimated';
 import React, { forwardRef, useMemo, useState } from "react";
-import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
+import InputSheet, { type InputSheetHandle } from "./InputSheet";
+import { ActivityIndicator, View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,14 +13,16 @@ import InstagramGrid, { InstagramGridProps } from "./imagePicker";
 import { Category } from "../models/categories";
 import { getAllCategories } from "../services/sections/categories";
 import { X } from "lucide-react-native";
-import { getSellerProducts } from "../services/sections/product";
+import { getMyProducts } from "../services/sections/product";
 import { PlaceholderProduct } from "../models/products";
 import { uploadImage, attemptMultipleUpload } from "../services/sections/media";
 import { MediaResponse } from "../models/media";
 import { createPost } from "../services/sections/post";
 import { createNichePost } from "../services/sections/niches";
 import { useToast } from "./ToastProvider";
-import { useTheme } from "./themeProvider";
+import { friendlyErrorMessage } from "../utils/errorMessages";
+import { useTokens } from "../theme/useTokens";
+import logger from "../utils/logger";
 
 const postSchema = z.object({
   caption: z.string().max(1000, "Caption too long").optional(),
@@ -35,18 +37,21 @@ export type PostFormData = z.infer<typeof postSchema>;
 
 interface PostFormBottomSheetProps {
   nicheId?: string;
+  /** Fired after a post is created, so the feed showing it can refresh.
+   * No navigation: a post's home is the feed, unlike a product, which has a
+   * detail page of its own worth landing on. */
+  onCreated?: () => void;
 }
 
-const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomSheetProps>(
-  ({ nicheId }, ref) => {
+const PostFormBottomSheet = React.forwardRef<InputSheetHandle | null, PostFormBottomSheetProps>(
+  ({ nicheId, onCreated }, ref) => {
 
-    const sheetRef = React.useRef<BottomSheet | null>(null);
+    const sheetRef = React.useRef<InputSheetHandle | null>(null);
     React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
     //user
     const { user } = useUser();
     const { show } = useToast();
-    const { resolvedTheme } = useTheme();
-    const isDark = resolvedTheme === "dark";
+    const t = useTokens();
 
     const [postImages, setpostImages] = useState<string[]>([]);
 
@@ -55,9 +60,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
 
     //draft or active
     const [postStatus, setPostStatus] = useState<"active" | "draft">("active")
-
-    const snapPoints = useMemo(() => ["50%", "85%"], []);
-    const { control, handleSubmit, formState: { errors } } = useForm<PostFormData>({
+    const { control, handleSubmit, reset, formState: { errors } } = useForm<PostFormData>({
       resolver: zodResolver(postSchema) as any
     });
 
@@ -76,73 +79,63 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
       path: ["category_ids"]
     });
 
-    const submitForm = async (data: PostFormData) => {
+    // Single submit path: upload images, build the payload, create the post,
+    // and only on success clear the form and close. A single toast either way
+    // (previously two functions each fired their own, so a failure showed both
+    // an error AND a success).
+    const onSubmit = async (data: PostFormData) => {
+      if (sending) return;
       try {
         setSending(true);
-        data.products = postProducts.map((prod) => { return { product_id: prod.id }; });
-        
+
+        const ImageResponse = await attemptMultipleUpload(Imagevalue);
+        const imageIds = ImageResponse.map((imgId) => imgId.media.id);
+
+        // ensure category_ids includes selectedCategories if not provided by form UI
+        const category_ids =
+          (data as any)?.category_ids && (data as any).category_ids.length > 0
+            ? (data as any).category_ids
+            : selectedCategories.map((c) => c.id);
+
+        const payload = {
+          ...data,
+          category_ids,
+          status: postStatus,
+          products: currentProducts.map((val) => ({ product_id: val })),
+          media_ids: imageIds ?? [],
+        };
+
         // If nicheId is provided, create a niche post instead
         if (nicheId) {
-          await createNichePost(nicheId, data);
+          await createNichePost(nicheId, payload);
         } else {
-          await createPost(data);
+          await createPost(payload);
         }
-        
+
         show({
           variant: "success",
           title: "Post Created",
-          message: "Your post has been successfully created."
+          message: "Your post has been created successfully.",
         });
+
+        // Clear the form + local state, then close the sheet.
+        reset();
+        setImageValue([]);
+        setSelectedCategories([]);
+        setCurrentProducts([]);
         sheetRef.current?.close();
-        
+        onCreated?.();
       } catch (error) {
+        logger.error("Failed to create post:", error);
         show({
           variant: "error",
           title: "Error creating post",
-          message: "There was a problem creating the post. Please try again later."
+          message: friendlyErrorMessage(error, "There was a problem creating the post. Please try again later."),
         });
+      } finally {
+        setSending(false);
       }
-    }
-
-
-    const handleLocalSubmit = async (data: PostFormData) => {
-    try {
-      setSending(true);
-      const ImageResponse = await attemptMultipleUpload(Imagevalue);
-
-      const imageIds = ImageResponse.map((imgId)=>imgId.media.id)
-      // ensure category_ids includes selectedCategories if not provided by form UI
-      const category_ids = (data && (data as any).category_ids && (data as any).category_ids.length > 0)
-        ? (data as any).category_ids
-        : selectedCategories.map(c => c.id);
-
-      // prepare payload: keep form data, add category_ids (if we generated them) and add images
-      const payload = {
-        ...data,
-        category_ids,
-        status: postStatus,
-        products: currentProducts.map((val)=>{
-          return {product_id:val}
-        }),
-        media_ids: imageIds ?? [],
-      };
-
-      // call parent-provided onSubmit
-      submitForm(payload);
-      setSending(false);
-      show({
-        variant: "success",
-        title: "Post Created",
-        message: "Your post has been created successfully."
-      })
-    } catch (err) {
-      show({
-        variant: "error",
-        title: "Error creating post",
-        message: "There was a problem creating the post. Please try again later."
-      })
-    }
-  };
+    };
 
     React.useEffect(() => {
       async function fetchCategories() {
@@ -150,7 +143,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
             const cats = await getAllCategories();
             setCategories(cats);
         } catch (error) {
-            console.error("Failed to fetch categories:", error);
+            logger.error("Failed to fetch categories:", error);
             //Todo: handle error appropriately, e.g., show a message to the user in the UI 
         }
       }
@@ -169,11 +162,13 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
     React.useEffect(() => {
       async function fetchProducts() {
         try {
-          //work on this later. user_id is a string. Might bring up a Nan if we don't check properly
-          const products = await getSellerProducts(Number(user?.user_id) || 0); //ensure user_id is a number
+          // Use the dedicated "my products" route. The old getSellerProducts
+          // path took a numeric seller_id, but user_id is a string ("USR_..."),
+          // so Number() gave NaN -> 0 and it always fetched nothing.
+          const products = await getMyProducts();
           setProductList(products);
         } catch (error) {
-          console.error("Failed to fetch products:", error);
+          logger.error("Failed to fetch products:", error);
         }
       }
       if (productVisible) {
@@ -184,52 +179,70 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
     //media/images
 
 
+  const footer = (
+      <>
+        <Text className="flex-1 text-[12px] text-text-muted" numberOfLines={1}>
+          {sending ? "Posting…" : `${currentProducts.length} product${currentProducts.length === 1 ? "" : "s"} tagged`}
+        </Text>
+        <TouchableOpacity
+          disabled={sending}
+          onPress={handleSubmit(onSubmit)}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: sending, busy: sending }}
+          className={`min-h-[44px] flex-row items-center justify-center gap-2 rounded-xl px-5 ${
+            sending ? "bg-surface-sunken" : "bg-primary-fill"
+          }`}
+        >
+          {sending ? <ActivityIndicator size="small" color={t.textSecondary} /> : null}
+          <Text className={`text-[15px] font-bold ${sending ? "text-text-muted" : "text-text-on-primary"}`}>
+            {sending ? "Posting…" : "Create Post"}
+          </Text>
+        </TouchableOpacity>
+      </>
+    );
+
     return (
-      <BottomSheet 
-        ref={ref} 
-        index={-1} 
-        snapPoints={snapPoints} 
-        enablePanDownToClose
-        backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}
-        handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
+      <InputSheet
+        ref={sheetRef}
+        title="Create Post"
+        busy={sending}
+        footer={footer}
       >
-        <BottomSheetScrollView className="p-4">
-        <Text className={`text-lg font-geist font-bold mb-3 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Post</Text>
 
           {/* Caption */}
-          <Input name="caption" className="" control={control} numberOfLines={10} placeholder="What's on your mind?"></Input>
+          <Input name="caption" control={control} label="Caption" placeholder="Share a product you're curious about…" multiline numberOfLines={6} />
 
           {/* Images */}
-          <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Images</Text>
+          <Text className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary">Images</Text>
           {Array.isArray(Imagevalue) && Imagevalue.length > 0 && (
-            <Text className={`text-xs font-inter mb-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Long press on each image to remove it</Text>
+            <Text className="text-xs mb-2 text-text-secondary">Long press on each image to remove it</Text>
           )}
           {/* <<< IMPORTANT: pass value & onChange so we can receive images >>> */}
-          <InstagramGrid value={Imagevalue} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} />
+          <InstagramGrid value={Imagevalue} max={5} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} allowVideos />
   
 
           {/* Categories */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Categories</Text>
+        <Text className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary">Categories</Text>
         <View className="flex-row flex-wrap gap-3 p-3 pr-4">
           {selectedCategories.map(cat => (
-            <View key={cat.id.toString()} className={`flex-row items-center border rounded px-3 py-1 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-              <Text className={`text-sm font-medium mr-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{cat.name}</Text>
+            <View key={cat.id.toString()} className="flex-row items-center border rounded px-3 py-1 bg-surface-sunken border-border">
+              <Text className="text-sm font-medium mr-2 text-text-primary">{cat.name}</Text>
               <TouchableOpacity onPress={() => removeCategory(cat.id)}>
-                <X size={16} color={isDark ? "#f0f1f2" : "#000000"} />
+                <X size={16} color={t.textPrimary} />
               </TouchableOpacity>
             </View>
           ))}
           <TouchableOpacity
             onPress={() => setModalVisible(true)}
-            className={`border rounded px-4 py-2 justify-center items-center ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+            className="border rounded px-4 py-2 justify-center items-center bg-surface-raised border-border"
           >
-            <Text className={`text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>+ Add Categories</Text>
+            <Text className="text-sm font-bold text-text-primary">+ Add Categories</Text>
           </TouchableOpacity>
         </View>
-        {errors.category_ids && <Text className="text-error text-xs font-geist mt-1">{errors.category_ids.message}</Text>}
+        {errors.category_ids && <Text className="text-danger-text text-xs mt-1">{errors.category_ids.message}</Text>}
 
           {/* Products */}
-          <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Tag Products</Text>
+          <Text className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary">Tag Products</Text>
 
           {/* Selected Products Section */}
           {currentProducts.length > 0 && (
@@ -239,11 +252,11 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
                 .map(product => (
                   <View
                     key={product.id}
-                    className={`flex-row items-center border rounded px-3 py-1 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+                    className="flex-row items-center border rounded px-3 py-1 bg-surface-sunken border-border"
                   >
-                    <Text className={`text-sm font-medium mr-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{product.name}</Text>
+                    <Text className="text-sm font-medium mr-2 text-text-primary">{product.name}</Text>
                     <TouchableOpacity onPress={() => setCurrentProducts(prev => prev.filter(pId => pId !== product.id))}>
-                      <X size={16} color={isDark ? "#f0f1f2" : "#000000"} />
+                      <X size={16} color={t.textPrimary} />
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -251,18 +264,11 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
           )}
           <TouchableOpacity
             onPress={() => setProductVisible(true)}
-            className={`border rounded px-4 py-2 justify-center items-center mb-3 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+            className="border rounded px-4 py-2 justify-center items-center mb-3 bg-surface-raised border-border"
           >
-            <Text className={`text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>+ Tag Products</Text>
+            <Text className="text-sm font-bold text-text-primary">+ Tag Products</Text>
           </TouchableOpacity>
 
-
-          {/* Submit Button */}
-          <TouchableOpacity className="bg-primary p-3 rounded" onPress={
-              handleSubmit(handleLocalSubmit)
-          } disabled={sending}>
-            <Text className="text-white text-center font-geist font-bold">{sending ? "Sending..." : "Create Post"}</Text>
-          </TouchableOpacity>
 
           <CategoryAddition
             visible={modalVisible}
@@ -271,7 +277,6 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
             onClose={() => setModalVisible(false)}
             onConfirm={(selected) => setSelectedCategories(selected)}
           />
-        </BottomSheetScrollView>
 
       {/* For Product Picker */}
       <ProductPicker 
@@ -289,7 +294,7 @@ const PostFormBottomSheet = React.forwardRef<BottomSheet | null, PostFormBottomS
           setCurrentProducts(prev => prev.filter(pId => pId !== product.id));
         }}
       />
-      </BottomSheet>
+      </InputSheet>
     );
   }
 );

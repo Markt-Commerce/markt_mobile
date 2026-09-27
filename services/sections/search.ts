@@ -11,5 +11,7 @@ export async function search(query: string, page = 1, perPage = 20): Promise<Sea
     page: String(page),
     per_page: String(perPage),
   });
-  return request<SearchResponse>(`/search?${params.toString()}`, { method: "GET" });
+  // Trailing slash before the query: `/search` 308-redirects to cleartext
+  // `http://.../search/`, which release Android APKs block.
+  return request<SearchResponse>(`/search/?${params.toString()}`, { method: "GET" });
 }

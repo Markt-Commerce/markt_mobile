@@ -1,188 +1,272 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import React, { useMemo } from "react";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter , useLocalSearchParams } from "expo-router";
-import { ArrowLeft, MapPin, Truck, PackageCheck, CheckCircle2, Clock } from "lucide-react-native";
-import { getOrderDetails } from "../../../services/sections/orders";
-import { Order } from "../../../models/orders";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useBackTo } from "../../../utils/goBack";
+import {
+  MapPin,
+  Truck,
+  PackageCheck,
+  CheckCircle2,
+  Clock,
+  XCircle,
+} from "lucide-react-native";
+import RiderCard from "../../../components/orders/RiderCard";
+import { useOrderTracking } from "../../../hooks/useOrderTracking";
+import { hasLiveDeliveryCode, usePodCode } from "../../../hooks/usePodCode";
+import { useTheme } from "../../../components/themeProvider";
+import { useTokens, tokensFor } from "../../../theme/useTokens";
+import { formatDateTime } from "../../../utils/datetime";
+import BackButton from "../../../components/BackButton";
 
+// Overall-order stage order, used only to compute the progress bar --
+// the timeline itself is rendered directly from the backend's entries.
+const STAGE_ORDER = ["created", "paid", "shipped", "delivered"];
 
-const { id } = useLocalSearchParams();
-
-type Step = {
-  key: "placed" | "pending_payment" | "shipped" | "out" | "delivered";
-  label: string;
-  time?: string;
-  done?: boolean;
+const ITEM_STATUS_LABEL: Record<string, string> = {
+  pending: "Pending",
+  processing: "Being prepared",
+  shipped: "Shipped",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
 };
+
+function timelineIcon(status: string, isDark: boolean) {
+  const color = tokensFor(isDark).textPrimary;
+  if (status === "cancelled") return <XCircle size={16} color={tokensFor(isDark).dangerText} />;
+  if (status === "delivered") return <CheckCircle2 size={16} color={color} />;
+  if (status === "shipped") return <Truck size={16} color={color} />;
+  if (status === "paid") return <PackageCheck size={16} color={color} />;
+  return <Clock size={16} color={color} />;
+}
 
 export default function TrackOrderScreen() {
   const router = useRouter();
-  // const { data, loading } = useOrderTracking(id as string);
+  // Back, or the list this belongs under when there is no history --
+  // after paying, and on a notification that opened the app cold.
+  const goBack = useBackTo("/(tabs)/orders");
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
-  const [orderDetails, setOrderDetails] = useState<Order>();
-
-  const [steps, setSteps] = useState<Step[]>();
+  // Shared with the order detail screen, and refetched when a delivery
+  // push lands -- this screen used to fetch once on mount and then sit
+  // there, so a rider who arrived while the buyer was watching changed
+  // nothing until they backed out and came in again.
+  const { data: tracking, isLoading: loading, isError: error } = useOrderTracking(id);
+  const { data: pod } = usePodCode(id);
 
   const progressPct = useMemo(() => {
-    const total = steps?.length;
-    const done = steps?.filter((s) => s.done).length;
-    return Math.round((done || 0) / (total || 1) * 100);
-  }, [steps]);
+    if (!tracking) return 0;
+    if (tracking.timeline.some((t) => t.status === "cancelled")) return 100;
+    const reached = tracking.timeline
+      .map((t) => STAGE_ORDER.indexOf(t.status))
+      .filter((i) => i >= 0);
+    const furthest = reached.length ? Math.max(...reached) : 0;
+    return Math.round(((furthest + 1) / STAGE_ORDER.length) * 100);
+  }, [tracking]);
 
-  useEffect(() => {
-    // Fetch order tracking data here and update steps accordingly
-    const fetchTrackingData = async () => {
-
-      const steps: Step[] = [
-        { key: "placed", label: "Order placed",  done: true },
-        { key: "pending_payment", label: "Pending payment",  done: true },
-        { key: "shipped", label: "Shipped", done: true },
-        { key: "out", label: "Out for delivery",  done: false },
-        { key: "delivered", label: "Delivered",  done: false },
-      ];
-      const data = await getOrderDetails(id as string);
-      // Update steps based on fetched data
-      let isSet = false;
-      
-      for (const step of steps) {
-        if (isSet) {
-          isSet = step.key === data.status;
-        }
-        step.done = !isSet;
-      }
-      setSteps(steps);
-    };
-
-    fetchTrackingData();
-  }, [id]);
-
-  const StatusIcon = ({ k, done }: { k: Step["key"]; done?: boolean }) => {
-    const color = done ? "#000000" : "#A1A1AA";
-    if (k === "placed") return <Clock size={16} color={color} />;
-    if (k === "pending_payment") return <PackageCheck size={16} color={color} />;
-    if (k === "shipped") return <Truck size={16} color={color} />;
-    if (k === "out") return <MapPin size={16} color={color} />;
-    return <CheckCircle2 size={16} color={color} />;
-  };
+  const cardClass = `rounded border p-4 bg-surface-raised border-border`;
+  const labelClass = `text-sm text-text-secondary`;
+  const valueClass = `text-sm text-text-primary`;
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-surface-page">
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="h-10 w-10 rounded items-center justify-center bg-white border border-border"
+        <BackButton fallback={"/(tabs)/orders"} />
+        <Text
+          className="flex-1 text-center text-lg font-bold -ml-10 text-text-primary"
         >
-          <ArrowLeft size={18} color="#000000" />
-        </TouchableOpacity>
-        <Text className="flex-1 text-center text-lg font-geist font-bold text-black -ml-10">
           Track order
         </Text>
         <View className="w-10" />
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 20 }}>
-        {/* Progress header */}
-        <View className="px-4">
-          <View className="rounded bg-white border border-border p-4">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-black font-geist font-bold">Order #{orderDetails?.id}</Text>
-              <Text className="text-black font-semibold">{progressPct}%</Text>
-            </View>
-            <View className="mt-3 h-2 w-full rounded bg-border overflow-hidden">
-              <View className="h-2 bg-primary rounded" style={{ width: `${progressPct}%` }} />
-            </View>
-            <Text className="mt-2 text-tertiary text-xs">Estimated delivery: Today, 2–4 PM</Text>
-          </View>
+      {loading ? (
+        <View className="flex-1 justify-center items-center py-16">
+          <ActivityIndicator size="large" color={t.textPrimary} />
         </View>
-
-        {/* Timeline */}
-        <View className="px-4 mt-4">
-          <View className="rounded bg-white border border-border p-4">
-            {steps?.map((s, idx) => {
-              const last = idx === steps.length - 1;
-              return (
-                <View key={s.key} className="flex-row">
-                  {/* Left rail */}
-                  <View className="items-center mr-3">
-                    <View
-                      className={`h-6 w-6 rounded items-center justify-center ${
-                        s.done ? "bg-primary" : "bg-surface-dim"
-                      }`}
-                    >
-                      <StatusIcon k={s.key} done={s.done} />
-                    </View>
-                    {!last ? (
-                      <View className={`flex-1 w-[2px] ${s.done ? "bg-primary" : "bg-border"}`} />
-                    ) : (
-                      <View className="w-[2px] flex-1" />
-                    )}
-                  </View>
-
-                  {/* Content */}
-                  <View className={`pb-5 ${last ? "pb-0" : ""} flex-1`}>
-                    <Text
-                      className={`text-base ${
-                        s.done ? "text-black font-semibold" : "text-tertiary font-medium"
-                      }`}
-                    >
-                      {s.label}
-                    </Text>
-                    {!!s.time && (
-                      <Text className="text-xs text-tertiary mt-1">{s.time}</Text>
-                    )}
-                    {/* {s.meta && <Text className="text-xs text-[#8e7a74] mt-1">{s.meta}</Text>} */}
-                  </View>
-                </View>
-              );
-            })}
-          </View>
+      ) : error || !tracking ? (
+        <View className="flex-1 justify-center items-center px-6 py-16">
+          <Text className="font-semibold text-lg text-center text-text-primary">
+            Could not load tracking
+          </Text>
+          <Text className={`${labelClass} mt-2 text-center`}>Please try again later.</Text>
         </View>
-
-        {/* Map / location placeholder */}
-        <View className="px-4 mt-4">
-          <View className="rounded bg-white border border-border overflow-hidden">
-            <View className="h-44 bg-surface items-center justify-center">
-              {/* <MapView style={{ height: 220 }} initialRegion={...}>
-                <Marker coordinate={{ latitude, longitude }} />
-              </MapView> */}
-              {/* <MapPin size={22} color="#000000" />
-              <Text className="mt-2 text-[#7b6660] text-sm">Live map appears here</Text> */}
-            </View>
-           
-          </View>
-        </View>
-
-        {/* Order details card */}
-        <View className="px-4 mt-4">
-          <View className="rounded bg-white border border-border p-4">
-            <Text className="text-black font-geist font-bold mb-2">Delivery details</Text>
-
-            <View className="flex-row justify-between py-1.5">
-              <Text className="text-sm text-tertiary">Courier</Text>
-              <Text className="text-sm text-black">Markt Logistics</Text>
-            </View>
-            <View className="flex-row justify-between py-1.5">
-              <Text className="text-sm text-tertiary">Tracking ID</Text>
-              <Text className="text-sm text-black">MK-8F2X-901234</Text>
-            </View>
-            <View className="flex-row justify-between py-1.5">
-              <Text className="text-sm text-tertiary">Address</Text>
-              <Text className="text-sm text-right text-black w-48">
-                221B Market Street, Lower Allston, MA
+      ) : (
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 20 }}>
+          {/* Progress header */}
+          <View className="px-4">
+            <View className={cardClass}>
+              <View className="flex-row items-center justify-between">
+                <Text className="font-bold text-text-primary">
+                  Order #{tracking.order_number ?? tracking.order_id}
+                </Text>
+                <Text className="font-semibold text-text-primary">
+                  {progressPct}%
+                </Text>
+              </View>
+              <View className="mt-3 h-2 w-full rounded overflow-hidden bg-border">
+                <View className="h-2 bg-primary-fill rounded" style={{ width: `${progressPct}%` }} />
+              </View>
+              <Text className={`mt-2 text-xs capitalize ${labelClass}`}>
+                Status: {tracking.status.replace(/_/g, " ")}
               </Text>
             </View>
-
-            {/* Later hooks:
-            <TouchableOpacity onPress={() => contactCourier()} className="mt-3 h-11 rounded bg-[#000000] items-center justify-center">
-              <Text className="text-white font-semibold">Contact courier</Text>
-            </TouchableOpacity> */}
           </View>
-        </View>
 
-        <View className="h-6" />
-      </ScrollView>
+          {/* Timeline */}
+          <View className="px-4 mt-4">
+            <View className={cardClass}>
+              {tracking.timeline.map((s, idx) => {
+                const last = idx === tracking.timeline.length - 1;
+                return (
+                  <View key={`${s.status}-${idx}`} className="flex-row">
+                    <View className="items-center mr-3">
+                      <View
+                        className="h-6 w-6 rounded items-center justify-center bg-surface-sunken"
+                      >
+                        {timelineIcon(s.status, isDark)}
+                      </View>
+                      {!last && (
+                        <View className="flex-1 w-[2px] bg-border" />
+                      )}
+                    </View>
+                    <View className={`pb-5 ${last ? "pb-0" : ""} flex-1`}>
+                      <Text className="text-base font-semibold text-text-primary">
+                        {s.label}
+                      </Text>
+                      {!!s.timestamp && (
+                        <Text className={`text-xs mt-1 ${labelClass}`}>
+                          {formatDateTime(s.timestamp, { withYear: true })}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Per-item status */}
+          <View className="px-4 mt-4">
+            <View className={cardClass}>
+              <Text className="font-bold mb-3 text-text-primary">
+                Items ({tracking.items.length})
+              </Text>
+              {tracking.items.map((item) => (
+                <View
+                  key={item.id}
+                  className={`flex-row items-center justify-between py-2 border-border ${item !== tracking.items[tracking.items.length - 1] ? "border-b" : ""}`}
+                >
+                  <View className="flex-1 pr-3">
+                    <Text className={valueClass} numberOfLines={1}>
+                      Item {item.id} · Qty {item.quantity}
+                    </Text>
+                  </View>
+                  <View
+                    className="px-2 py-0.5 rounded bg-media"
+                  >
+                    <Text
+                      className="text-[10px] font-bold uppercase tracking-wider text-text-secondary"
+                    >
+                      {ITEM_STATUS_LABEL[item.status] ?? item.status}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Shipment */}
+          {tracking.shipment && (
+            <View className="px-4 mt-4">
+              <View className={cardClass}>
+                <Text className="font-bold mb-2 text-text-primary">
+                  Shipment
+                </Text>
+                {tracking.shipment.carrier && (
+                  <View className="flex-row justify-between py-1.5">
+                    <Text className={labelClass}>Carrier</Text>
+                    <Text className={valueClass}>{tracking.shipment.carrier}</Text>
+                  </View>
+                )}
+                {tracking.shipment.tracking_number && (
+                  <View className="flex-row justify-between py-1.5">
+                    <Text className={labelClass}>Tracking No.</Text>
+                    <Text className={valueClass}>{tracking.shipment.tracking_number}</Text>
+                  </View>
+                )}
+                {tracking.shipment.tracking_url && (
+                  <TouchableOpacity
+                    onPress={() => Linking.openURL(tracking.shipment!.tracking_url!)}
+                    className="mt-2"
+                  >
+                    <Text className="text-primary text-sm font-semibold">View carrier tracking →</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* Rider / delivery assignment */}
+          {tracking.delivery && (
+            <View className="px-4 mt-4">
+              <View className={cardClass}>
+                <Text className="font-bold mb-2 text-text-primary">
+                  Delivery
+                </Text>
+                {/* This was a single line reading "picked up". The buyer
+                    had no name, no face and no number for the one person
+                    about to knock on their door -- while the rider has
+                    had all three of theirs since accepting. */}
+                <RiderCard delivery={tracking.delivery} />
+                {/* Only while there is a code to show. This was
+                    unconditional, so a delivered order still invited the
+                    buyer into a screen whose code had already been used. */}
+                {hasLiveDeliveryCode(pod) && (
+                  <TouchableOpacity
+                    onPress={() => router.push(`/orders/pod/${tracking.order_id}` as any)}
+                    className="mt-3"
+                  >
+                    <Text className="text-primary text-sm font-semibold">
+                      View my delivery code →
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* Shipping address */}
+          {tracking.shipping_address && (
+            <View className="px-4 mt-4">
+              <View className={cardClass}>
+                <View className="flex-row items-center gap-2 mb-2">
+                  <MapPin size={16} color={t.textSecondary} />
+                  <Text className="font-bold text-text-primary">
+                    Delivery address
+                  </Text>
+                </View>
+                <Text className={valueClass}>
+                  {[
+                    tracking.shipping_address.recipient_name,
+                    tracking.shipping_address.street_address,
+                    tracking.shipping_address.city,
+                    tracking.shipping_address.state,
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          <View className="h-6" />
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }

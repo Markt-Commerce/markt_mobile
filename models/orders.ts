@@ -22,6 +22,35 @@ export interface Order {
     buyername: string;
     profile_picture_url?: string;
   };
+  /** Null on orders checked out without a delivery quote, which is most of
+   * the older ones -- so callers must handle its absence rather than assume. */
+  delivery?: OrderDelivery | null;
+}
+
+/** Where the parcel is. Mirrors the backend's DeliveryState. */
+export type DeliveryState =
+  | "quoted"
+  | "paid"
+  | "awaiting_dispatch"
+  | "job_created"
+  | "assigned"
+  | "picked_up"
+  | "in_transit"
+  | "delivered"
+  | "failed"
+  | "cancelled";
+
+export interface OrderDelivery {
+  state: DeliveryState;
+  /** Naira. The settled share once a shared run has closed, the solo fee
+   * before that -- `settled` says which. */
+  fee: number | null;
+  distance_km?: number | null;
+  external_job_id?: string | null;
+  last_status_at?: string | null;
+  failure_reason?: string | null;
+  batch_opt_in?: boolean;
+  settled?: boolean;
 }
 
 export interface CreateOrderRequest {
@@ -55,7 +84,11 @@ export interface OrderItem {
     options: Record<string, string>;
   };
   product?: {
+    /** Since markt_python's order-item product summary: an order item used to
+     *  carry only product_id, which is why order rows showed "No image". */
+    id?: string;
     name: string;
+    image_url?: string | null;
   };
 }
 
@@ -68,18 +101,20 @@ export interface SellerOrderItem {
   status: 'pending' | 'completed' | 'cancelled' | string;
   variant: string | null;
   product: {
+    id?: string;
     name: string;
+    image_url?: string | null;
   };
   order: {
     id: string;
     created_at: string;
     order_number: string | null;
     buyer: {
-      [x: string]: string;
-      [x: string]: string;
       id: number;
-      buyername: string;
-      profile_picture_url: string;
+      buyername?: string;
+      username?: string;
+      profile_picture?: string | null;
+      profile_picture_url?: string | null;
     };
   };
 }
@@ -101,4 +136,91 @@ export interface PayOrderPayload {
 
 export interface UpdateOrderItemPayload {
   status: string;
+}
+
+export interface TrackingTimelineEntry {
+  status: string;
+  label: string;
+  timestamp: string | null;
+}
+
+export interface TrackingItem {
+  id: number;
+  product_id: string;
+  quantity: number;
+  status: string;
+  seller_id: number;
+}
+
+export interface TrackingShipment {
+  carrier: string | null;
+  tracking_number: string | null;
+  tracking_url: string | null;
+  status: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
+}
+
+/** The person bringing it, as the tracking endpoint returns them.
+ *
+ * The rider has had the buyer's name and number since assignments
+ * carried parties; this is the other half of that. The number is the
+ * rider's real one for the same reason -- masking both through a proxy
+ * needs a telephony provider we do not have yet.
+ */
+export interface TrackingRider {
+  name: string | null;
+  phone_number: string | null;
+  profile_picture: string | null;
+  vehicle_type: string | null;
+  rating: number | null;
+}
+
+export interface TrackingDelivery {
+  assignment_id: string;
+  status: string;
+  logistical_status: string | null;
+  assigned_at: string | null;
+  /** Null before a rider has been found, and on orders placed before
+   *  riders carried identities. */
+  rider?: TrackingRider | null;
+}
+
+export interface PodCode {
+  ready: boolean;
+  system: "single_order" | "run" | null;
+  code: string | null;
+  /** The rider already used this code and the delivery is over.
+   *
+   *  Distinct from `ready: false`, which means there is no code *yet* --
+   *  waiting for a rider and being finished with one are opposite ends of
+   *  the delivery and the screen has to tell them apart. Optional because
+   *  an older backend does not send it. */
+  delivered?: boolean;
+}
+
+export interface OrderCancelResponse {
+  order_id: string;
+  status: string;
+  cancelled_at: string | null;
+  cancel_reason: string | null;
+  refund_amount: number;
+}
+
+export interface DeliveryWaitChoiceResponse {
+  order_id: string;
+  choice: "wait" | "pay_now";
+  fallback_consent: boolean;
+  refund_amount: number;
+}
+
+export interface OrderTracking {
+  order_id: string;
+  order_number: string | null;
+  status: string;
+  timeline: TrackingTimelineEntry[];
+  shipping_address: Record<string, any> | null;
+  items: TrackingItem[];
+  shipment: TrackingShipment | null;
+  delivery: TrackingDelivery | null;
 }

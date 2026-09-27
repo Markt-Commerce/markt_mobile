@@ -1,8 +1,25 @@
 /**
- * Discover Shops — Full shop discovery with search and filters
+ * Discover Shops.
+ *
+ * Rebuilt around where the shopper is, which is the question the old screen
+ * never asked. It was a flat alphabetical-ish list of contact rows with a sort
+ * rail on top — usable, but it could not tell you whether a shop was down the
+ * road or in another state.
+ *
+ * The reference for this is the delivery-app pattern (location header,
+ * category chips, image-led cards), with one deliberate departure: those cards
+ * lead with a delivery fee and an ETA, and Markt sellers have neither. Copying
+ * the layout would have left the two most prominent slots empty. Distance is
+ * the honest stand-in — it is real data, and it answers the same question.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import SearchField from "../components/SearchField";
+import {
+  FilterChip,
+  FilterRail,
+  RailDivider,
+} from "../components/FilterChip";
 import {
   View,
   Text,
@@ -11,62 +28,77 @@ import {
   TextInput,
   ActivityIndicator,
   ScrollView,
+  RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Search, ArrowLeft } from "lucide-react-native";
+import { ArrowLeft, Search, SlidersHorizontal } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { debounce } from "lodash";
-import { getShops, getShopCategories } from "../services/sections/shops";
-import type { ShopLite, ShopCategory } from "../services/sections/shops";
-import Avatar from "../components/Avatar";
+import {
+  getShops,
+  getShopCategories,
+  type ShopLite,
+  type ShopCategory,
+  type ShopsLocationInfo,
+} from "../services/sections/shops";
+import ShopCard from "../components/shops/ShopCard";
+import LocationSwitcher from "../components/location/LocationSwitcher";
+import { useBrowseLocation } from "../hooks/browseLocationContext";
+import { useTokens } from "../theme/useTokens";
+import { ShopSkeletonCard } from "../components/SkeletonBlock";
+import { useBackTo } from "../utils/goBack";
 
-function ShopRow({ shop, onPress }: { shop: ShopLite; onPress: () => void }) {
-  const label = shop.shop_name || shop.user?.username || "Shop";
+type SortKey = "nearby" | "rating" | "followers" | "recent";
 
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      className="flex-row items-center px-6 py-4 border-b border-border bg-white"
-      activeOpacity={0.7}
-      accessibilityRole="button"
-      accessibilityLabel={`View ${label}`}
-    >
-      <Avatar uri={shop.user?.profile_picture} name={label} size={56} className="rounded" />
-      <View className="flex-1 ml-4">
-        <Text className="text-black font-geist font-bold text-base" numberOfLines={1}>
-          {label}
-        </Text>
-        {shop.stats && (
-          <Text className="text-tertiary font-inter text-xs mt-1">
-            {shop.stats.product_count} products · {shop.stats.follower_count} followers
-          </Text>
-        )}
-      </View>
-      {shop.verification_status === "verified" && (
-        <View className="px-2 py-0.5 rounded bg-surface">
-          <Text className="text-tertiary font-geist font-medium text-[10px] uppercase tracking-wider">Verified</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
+const SORTS: { key: SortKey; label: string }[] = [
+  { key: "nearby", label: "Nearest" },
+  { key: "rating", label: "Top rated" },
+  { key: "followers", label: "Popular" },
+  { key: "recent", label: "New" },
+];
+
+function dedupeById<T extends { id: string | number }>(items: T[]): T[] {
+  const seen = new Set<string | number>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
 }
 
 export default function DiscoverShopsScreen() {
   const router = useRouter();
+  const goBack = useBackTo("/(tabs)");
+  const t = useTokens();
+  const { location } = useBrowseLocation();
+
   const [shops, setShops] = useState<ShopLite[]>([]);
   const [categories, setCategories] = useState<ShopCategory[]>([]);
+  const [scope, setScope] = useState<ShopsLocationInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasNext, setHasNext] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"rating" | "name" | "recent" | "followers">("rating");
+
+  // Default to nearest when we know where the user is, and to rating when we
+  // do not. Sorting by a distance nobody can measure would just be rating
+  // wearing a different label.
+  const [sortBy, setSortBy] = useState<SortKey>(location ? "nearby" : "rating");
+
+  // Ref guard, not state — onEndReached can fire more than once before a state
+  // update flushes, letting two calls fetch the same page and append duplicate
+  // ids (causing the FlatList "same key" error).
+  const fetchingRef = useRef(false);
 
   const fetchShops = useCallback(
     async (p: number, append: boolean) => {
+      if (fetchingRef.current) return;
+      fetchingRef.current = true;
       if (append) setLoadingMore(true);
-      else if (p === 1) setLoading(true);
+      else if (p === 1 && !append) setLoading(true);
       try {
         const res = await getShops({
           page: p,
@@ -75,22 +107,30 @@ export default function DiscoverShopsScreen() {
           category: selectedCategory || undefined,
           sort_by: sortBy,
           active_only: true,
+          // Sent whatever the sort is: a distance is worth showing on a
+          // top-rated list too. The server only *filters* on it for "nearby".
+          latitude: location?.latitude,
+          longitude: location?.longitude,
         });
-        if (append) {
-          setShops((prev) => [...prev, ...(res.shops ?? [])]);
-        } else {
-          setShops(res.shops ?? []);
-        }
+        setShops((prev) =>
+          append ? dedupeById([...prev, ...(res.shops ?? [])]) : dedupeById(res.shops ?? [])
+        );
+        setScope(res.location ?? null);
         setHasNext(res.pagination?.has_next ?? false);
         setPage(p);
       } catch {
-        if (!append) setShops([]);
+        if (!append) {
+          setShops([]);
+          setScope(null);
+        }
       } finally {
         setLoading(false);
         setLoadingMore(false);
+        setRefreshing(false);
+        fetchingRef.current = false;
       }
     },
-    [search, selectedCategory, sortBy]
+    [search, selectedCategory, sortBy, location?.latitude, location?.longitude]
   );
 
   const debouncedFetch = useCallback(
@@ -100,10 +140,10 @@ export default function DiscoverShopsScreen() {
 
   useEffect(() => {
     fetchShops(1, false);
-  }, [selectedCategory, sortBy]);
+  }, [selectedCategory, sortBy, location?.latitude, location?.longitude]);
 
   useEffect(() => {
-    if (search !== undefined) debouncedFetch(1);
+    debouncedFetch(1);
   }, [search]);
 
   useEffect(() => {
@@ -116,123 +156,164 @@ export default function DiscoverShopsScreen() {
     if (!loadingMore && hasNext) fetchShops(page + 1, true);
   };
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchShops(1, false);
+  };
+
+  /**
+   * One line saying what the list actually is, so a widened radius is stated
+   * rather than implied. Silence here is how "these are all far away" becomes
+   * "there are no shops".
+   */
+  const scopeLine = (() => {
+    if (loading || shops.length === 0) return null;
+    if (scope?.applied && scope.radius_km) {
+      return `${shops.length === 1 ? "1 shop" : `${shops.length} shops`} within ${scope.radius_km} km`;
+    }
+    if (sortBy === "nearby" && !scope?.applied) {
+      return location
+        ? "Nothing close by — showing shops everywhere"
+        : "Set your location to see what's nearby";
+    }
+    return null;
+  })();
+
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-      <View className="flex-row items-center px-6 py-4 border-b border-border">
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["top"]}>
+      {/* Header: where you are, not what the screen is called. The title was
+          the most prominent thing on a screen whose whole job is showing
+          things near you. */}
+      <View className="flex-row items-center gap-1 px-4 pt-1 pb-3">
         <TouchableOpacity
-          onPress={() => router.back()}
-          className="p-1 -ml-1"
+          onPress={goBack}
+          className="p-1"
+          hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={24} color="#000000" />
+          <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>
-        <Text className="flex-1 text-xl font-geist font-bold text-black text-center pr-8">
-          Discover Shops
-        </Text>
-      </View>
-
-      <View className="px-4 py-3 flex-row items-center bg-surface rounded mx-6 mt-4">
-        <Search size={20} color="#71717A" />
-        <TextInput
-          className="ml-3 flex-1 text-black font-inter text-base"
-          placeholder="Search shops..."
-          placeholderTextColor="#A1A1AA"
-          value={search}
-          onChangeText={setSearch}
-        />
-      </View>
-
-      {/* Categories Chips */}
-      {categories.length > 0 && (
-        <View className="mt-2">
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 12, gap: 12 }}
-          >
-            <TouchableOpacity
-              onPress={() => setSelectedCategory(null)}
-              className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === null ? "bg-primary" : "bg-surface"}`}
-            >
-              <Text
-                className={`font-geist font-semibold text-sm ${selectedCategory === null ? "text-white" : "text-tertiary"}`}
-              >
-                All
-              </Text>
-            </TouchableOpacity>
-            {categories.map((c) => (
-              <TouchableOpacity
-                key={c.id}
-                onPress={() => setSelectedCategory(c.slug)}
-                className={`py-2 px-4 min-h-[40px] justify-center rounded ${selectedCategory === c.slug ? "bg-primary" : "bg-surface"}`}
-              >
-                <Text
-                  className={`font-geist font-semibold text-sm ${selectedCategory === c.slug ? "text-white" : "text-tertiary"}`}
-                >
-                  {c.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+        <View className="flex-1">
+          <Text className="text-[11px] font-medium uppercase tracking-wider text-text-muted">
+            Shops near
+          </Text>
+          <LocationSwitcher compact />
         </View>
-      )}
-
-      {/* Sort Chips */}
-      <View className="mb-2">
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 8, gap: 12 }}
-        >
-          {(["rating", "followers", "recent", "name"] as const).map((s) => (
-            <TouchableOpacity
-              key={s}
-              onPress={() => setSortBy(s)}
-              className={`py-1.5 px-3 min-h-[32px] justify-center rounded border ${sortBy === s ? "bg-primary border-primary" : "bg-transparent border-border"}`}
-            >
-              <Text
-                className={`font-geist font-medium text-xs ${sortBy === s ? "text-white" : "text-tertiary"}`}
-              >
-                {s === "rating" ? "Top rated" : s === "followers" ? "Popular" : s === "recent" ? "Recent" : "A–Z"}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
       </View>
+
+      <SearchField
+        value={search}
+        onChangeText={setSearch}
+        placeholder="Search shops"
+        className="mx-4 mb-3"
+      />
+
+      {/* Sort, then categories, on one rail — two stacked rails ate a third of
+          the screen before a single shop appeared.
+
+          `flexGrow: 0` is doing real work: a horizontal ScrollView in a
+          column has no intrinsic height, so it stretched to fill whatever
+          the list below it did not claim, leaving the chips floating in the
+          middle of a tall empty band with gaps above and below. */}
+      <FilterRail>
+        <SlidersHorizontal size={14} color={t.textMuted} strokeWidth={2} />
+        {SORTS.map(({ key, label }) => (
+          <FilterChip
+            key={key}
+            label={label}
+            tone="neutral"
+            active={sortBy === key}
+            onPress={() => setSortBy(key)}
+          />
+        ))}
+
+        {categories.length > 0 ? <RailDivider /> : null}
+
+        {categories.length > 0 ? (
+          <FilterChip
+            label="All"
+            active={selectedCategory === null}
+            onPress={() => setSelectedCategory(null)}
+          />
+        ) : null}
+        {categories.map((c) => (
+          <FilterChip
+            key={c.id}
+            label={c.name}
+            active={selectedCategory === c.slug}
+            onPress={() =>
+              setSelectedCategory(selectedCategory === c.slug ? null : c.slug)
+            }
+          />
+        ))}
+      </FilterRail>
+
+      {scopeLine ? (
+        <Text className="px-4 pb-2 text-[12px] text-text-muted">{scopeLine}</Text>
+      ) : null}
 
       {loading ? (
-        <View className="flex-1 justify-center items-center py-16">
-          <ActivityIndicator size="large" color="#000000" />
-          <Text className="text-tertiary text-sm mt-2">Loading shops…</Text>
+        // Skeletons rather than a spinner: the shape of what is coming is
+        // itself information, and it stops the list jumping when it lands.
+        <View className="flex-1 px-4">
+          {[0, 1, 2].map((i) => (
+            <ShopSkeletonCard key={i} />
+          ))}
         </View>
       ) : shops.length === 0 ? (
-        <View className="flex-1 justify-center items-center px-6 py-16">
-          <Text className="text-black font-semibold text-lg text-center">No shops found</Text>
-          <Text className="text-tertiary text-sm mt-2 text-center">
-            Try a different search or filter.
+        <View className="flex-1 items-center justify-center px-10">
+          <Text className="text-center text-[17px] font-bold text-text-primary">
+            No shops here yet
           </Text>
+          <Text className="mt-2 text-center text-[13px] leading-5 text-text-secondary">
+            {search || selectedCategory
+              ? "Try a different search, or clear the filters."
+              : "Try widening your area, or check back soon."}
+          </Text>
+          {search || selectedCategory ? (
+            <TouchableOpacity
+              onPress={() => {
+                setSearch("");
+                setSelectedCategory(null);
+              }}
+              className="mt-5 h-10 items-center justify-center rounded-full px-5 bg-surface-sunken"
+            >
+              <Text className="text-[13px] font-semibold text-text-primary">
+                Clear filters
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       ) : (
         <FlatList
+          className="flex-1"
           data={shops}
           keyExtractor={(item) => String(item.id)}
           renderItem={({ item }) => (
-            <ShopRow
+            <ShopCard
               shop={item}
               onPress={() => router.push(`/shopDetails/${item.id}`)}
             />
           )}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={t.textSecondary}
+            />
+          }
           ListFooterComponent={
             loadingMore ? (
-              <View className="py-6 items-center">
-                <ActivityIndicator size="small" color="#000000" />
+              <View className="items-center py-6">
+                <ActivityIndicator size="small" color={t.textSecondary} />
               </View>
             ) : null
           }
-          contentContainerStyle={{ paddingBottom: 24 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
+          showsVerticalScrollIndicator={false}
         />
       )}
     </SafeAreaView>

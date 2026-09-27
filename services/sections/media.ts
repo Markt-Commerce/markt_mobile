@@ -2,7 +2,9 @@ import { BASE_URL,request } from "../api";
 import { ProductImageResponse,SocialPostMediaResponse, RequestImageResponse, MediaResponse, MediaUploadResponse } from "../../models/media";
 import { InstagramGridProps } from '../../components/imagePicker'
 import { Media } from "../../models/feed";
-import { Buffer } from 'buffer';
+import logger from '../../utils/logger';
+import { appendLocalFile } from '../../utils/formDataFile';
+import { prepareImageForUpload } from '../../utils/imagePrep';
 
 /** 
  * Uploads an image
@@ -31,8 +33,12 @@ export async function attemptMultipleUpload(
       formList?.map(
       async (img)=>{
         const formData = new FormData();
-        //attempt to determine the type of the image
-        let mimeType: string | undefined = (img as any).type;
+        // Prefer the exact mime type reported by the picker; `type` is kept as
+        // a legacy fallback but ignored when it's just an "image"/"video"
+        // discriminator rather than a real mime type.
+        let mimeType: string | undefined =
+          (img as any).mimeType ?? (img as any).type;
+        if (mimeType && !mimeType.includes("/")) mimeType = undefined;
 
         // If type not provided try to infer from the uri or filename
         if (!mimeType) {
@@ -76,23 +82,38 @@ export async function attemptMultipleUpload(
         // ensure a filename exists; if not, derive from mime type
         const name = img.fileName ?? `upload.${mimeType.split('/')[1] || 'jpg'}`;
 
-        // Read the file as an ArrayBuffer/Blob and append that to FormData
         const uri = img.uri || '';
+        const isVideo =
+          (img as any).mediaType === 'video' ||
+          (mimeType?.startsWith('video/') ?? false) ||
+          /\.(mp4|mov|m4v|mkv|avi|webm)(\?|#|$)/i.test(uri);
 
-        formData.append('file', {
-          uri,
-          name: name,
-          type: mimeType
-        } as any);
-        // optional debug
-        console.log(formData.getAll('file'));
-        try {
-          const result = await uploadImage(formData);
-          return result;
-        } catch (error) {
-          console.error("Upload failed:", error);
+        // Classic `{uri, name, type}` parts throw "Unsupported FormDataPart
+        // implementation" under Expo's fetch — append a File (Blob) instead.
+        if (isVideo) {
+          appendLocalFile(formData, 'file', uri, name);
+        } else {
+          // Downscale/re-encode so backend dimension/size/format limits pass.
+          // When re-encoded the temp file is a .jpg — let File derive the
+          // filename so the extension matches the actual content.
+          const prepped = await prepareImageForUpload({
+            uri,
+            width: (img as any).width,
+            height: (img as any).height,
+          });
+          appendLocalFile(
+            formData,
+            'file',
+            prepped.uri,
+            prepped.uri === uri ? name : undefined,
+          );
         }
-        //return result
+        // NOTE: this is a plain service function, not a React component, so it
+        // must NOT call hooks (useToast() here caused "Invalid hook call").
+        // Let the failure propagate — the calling component shows the toast in
+        // its own catch, and this avoids returning `undefined` into the id list.
+        const result = await uploadImage(formData);
+        return result;
       }) as Promise<MediaUploadResponse>[]
     );
     return ImageResponse;

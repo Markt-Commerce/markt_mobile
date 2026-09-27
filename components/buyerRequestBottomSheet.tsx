@@ -1,6 +1,13 @@
 import React, { Ref, useState } from "react";
-import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
+import InputSheet, { type InputSheetHandle } from "./InputSheet";
+import {
+  ActivityIndicator,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,26 +21,33 @@ import { pickImage } from "../services/imageSelection";
 import { uploadImage, attemptMultipleUpload } from "../services/sections/media";
 import { MediaResponse } from "../models/media";
 import { createBuyerRequest } from "../services/sections/request";
-import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { CreateRequestPayload } from "../models/request";
 import { useToast } from "./ToastProvider";
+import { friendlyErrorMessage } from "../utils/errorMessages";
+import { useTokens } from "../theme/useTokens";
+import logger from "../utils/logger";
 
-//temporary date parser to create an expiry date. This default expiry date would be seven days from when the request was first placed
+// Default expiry: seven days from when the request is placed. The backend
+// expects an ISO datetime (marshmallow DateTime), so return ISO — a "DD/MM/YY"
+// string would fail validation and the request would never be created.
 function getDateSevenDaysFromNow() {
-  const today = new Date(Date.now());
-
-  const futureDate = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const day = String(futureDate.getDate()).padStart(2, '0');
-  const month = String(futureDate.getMonth() + 1).padStart(2, '0');
-  const year = String(futureDate.getFullYear()).slice(-2);
-
-  return `${day}/${month}/${year}`;
+  const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  return futureDate.toISOString();
 }
 
 const requestSchema = z.object({
   title: z.string().min(1, "Title is required").max(150),
-  description: z.string().min(1, "Description is required").max(2000),
-  budget: z.preprocess((val) => Number(val), z.number().min(0, "Budget must be positive")),
+  // 10, not 1: the API requires ten characters (BuyerRequestCreateSchema),
+  // so anything shorter passed validation here and came back a 422 the
+  // person had no way to interpret.
+  description: z
+    .string()
+    .min(10, "Add a little more detail — at least 10 characters")
+    .max(2000),
+  budget: z.preprocess(
+    (val) => Number(val),
+    z.number().min(0, "Budget must be positive"),
+  ),
   category_ids: z.array(z.number()).optional(),
   media_ids: z.array(z.number()).optional(),
   expires_at: z.string().default(getDateSevenDaysFromNow()).optional(),
@@ -41,167 +55,244 @@ const requestSchema = z.object({
 
 export type RequestFormData = z.infer<typeof requestSchema>;
 
-const BuyerRequestFormBottomSheet = React.forwardRef<BottomSheetMethods | null, {}>(
-  (props, ref) => {
-    const sheetRef = React.useRef<BottomSheetMethods | null>(null);
-    React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
-    const {show} = useToast();
+const BuyerRequestFormBottomSheet = React.forwardRef<
+  InputSheetHandle | null,
+  { onCreated?: () => void }
+>(({ onCreated }, ref) => {
+  const sheetRef = React.useRef<InputSheetHandle | null>(null);
+  React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
+  const { show } = useToast();
+  const t = useTokens();
+  const [requestImages, setRequestImages] = useState<string[]>([]);
 
-    const snapPoints = React.useMemo(() => ["50%", "85%"], []);
-    const [requestImages, setRequestImages] = useState<string[]>([]);
+  requestSchema.refine(() => selectedCategories?.length ?? 0 > 0, {
+    path: ["category_ids"],
+  });
 
-    requestSchema.refine(()=> selectedCategories?.length ?? 0 > 0,{
-      path: ["category_ids"]
-    });
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<RequestFormData>({
+    resolver: zodResolver(requestSchema) as any, // todo: remember to solve later
+  });
 
-    const { control, handleSubmit, formState: { errors } } = useForm<RequestFormData>({
-      resolver: zodResolver(requestSchema) as any // todo: remember to solve later
-    });
-    
-    const [Imagevalue, setImageValue] = React.useState<InstagramGridProps["value"]>(requestImages ? requestImages.map((uri, index) => ({ id: index.toString(), uri })) : []);
+  const [Imagevalue, setImageValue] = React.useState<
+    InstagramGridProps["value"]
+  >(
+    requestImages
+      ? requestImages.map((uri, index) => ({ id: index.toString(), uri }))
+      : [],
+  );
 
-    //categories
-    const [modalVisible, setModalVisible] = React.useState(false);
-    const [categories, setCategories] = React.useState<Category[]>([]);
-    const [selectedCategories, setSelectedCategories] = React.useState<Category[]>([]);
+  //categories
+  const [modalVisible, setModalVisible] = React.useState(false);
+  const [categories, setCategories] = React.useState<Category[]>([]);
+  const [selectedCategories, setSelectedCategories] = React.useState<
+    Category[]
+  >([]);
 
-    const [sending, setSending] = React.useState(false);
+  const [sending, setSending] = React.useState(false);
 
-    React.useEffect(() => {
-      async function fetchCategories() {
-        try {
-            const cats = await getAllCategories();
-            setCategories(cats);
-        } catch (error) {
-            console.error("Failed to fetch categories:", error);
-            //Todo: handle error appropriately, e.g., show a message to the user in the UI 
-        }
+  React.useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const cats = await getAllCategories();
+        setCategories(cats);
+      } catch (error) {
+        logger.error("Failed to fetch categories:", error);
+        //Todo: handle error appropriately, e.g., show a message to the user in the UI
       }
-      fetchCategories();
-    }, []);
+    }
+    fetchCategories();
+  }, []);
 
-    const removeCategory = (id: Number) => {
-      setSelectedCategories(prev => prev.filter(c => c.id !== id));
-    };
+  const removeCategory = (id: Number) => {
+    setSelectedCategories((prev) => prev.filter((c) => c.id !== id));
+  };
 
+  // Single submit path: upload images, build the payload, create the request,
+  // and only on success clear the form and close. try/finally guarantees the
+  // button leaves its "Sending…" state even when creation fails.
+  const onSubmit = async (data: RequestFormData) => {
+    if (sending) return;
+    try {
+      setSending(true);
 
-    const createRequest = async(request: CreateRequestPayload) => {
-        try {
-          setSending(true);
-          const newRequest = await createBuyerRequest(request);
-          show({
-            variant: "success",
-            title: "Request Created",
-            message: "Your request has been successfully created."
-          });
-          setSending(false);
-          sheetRef.current?.close();
-        } catch (error) {
-          show({
-            variant: "error",
-            title: "Error creating buyer request",
-            message: "There was a problem creating the buyer request. Please try again later."
-          });
-        }
-      }
-
-    const handleLocalSubmit = async (data: RequestFormData) => {
-    try{
-      console.log("sending request")
       const ImageResponse = await attemptMultipleUpload(Imagevalue);
-
-      const imageIds = ImageResponse.map((imgId)=>imgId.media.id)
+      const imageIds = ImageResponse.map((imgId) => imgId.media.id);
 
       // ensure category_ids includes selectedCategories if not provided by form UI
-      const category_ids = (data && (data as any).category_ids && (data as any).category_ids.length > 0)
-        ? (data as any).category_ids
-        : selectedCategories.map(c => c.id);
+      const category_ids =
+        data &&
+        (data as any).category_ids &&
+        (data as any).category_ids.length > 0
+          ? (data as any).category_ids
+          : selectedCategories.map((c) => c.id);
 
-      // prepare payload: keep form data, add category_ids (if we generated them) and add images
-      const payload = {
+      // Backend expects media_ids (the old `images` key was silently dropped).
+      const payload: CreateRequestPayload = {
         ...data,
         category_ids,
-        // include raw image objects for parent to handle upload or attach to request body
-        //remember to work on this later
-        images: imageIds ?? [],
+        media_ids: imageIds ?? [],
       };
 
-      // call parent-provided onSubmit
-      await createRequest(payload);
-      console.log("all done, created request successfully")
-    } catch (err) {
-      console.error("Create product failed:", err);
-      // optionally: show UI feedback here
+      await createBuyerRequest(payload);
+
+      show({
+        variant: "success",
+        title: "Request Created",
+        message: "Your request has been successfully created.",
+      });
+
+      // Clear the form + local state, then close the sheet.
+      reset();
+      setImageValue([]);
+      setSelectedCategories([]);
+      sheetRef.current?.close();
+      onCreated?.();
+    } catch (error) {
+      logger.error("Create buyer request failed:", error);
+      show({
+        variant: "error",
+        title: "Error creating buyer request",
+        message: friendlyErrorMessage(error, "There was a problem creating the buyer request. Please try again later."),
+      });
+    } finally {
+      setSending(false);
     }
-  }
+  };
 
-    return (
-      <BottomSheet ref={sheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose>
-        <BottomSheetScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}>
-        <Text className="text-lg font-geist font-bold text-black mb-4">Create Buyer Request</Text>
+  const footer = (
+    <>
+      <Text className="flex-1 text-[12px] text-text-muted" numberOfLines={1}>
+        {sending ? "Sending…" : `${selectedCategories.length} categor${selectedCategories.length === 1 ? "y" : "ies"}`}
+      </Text>
+      <TouchableOpacity
+        disabled={sending}
+        onPress={handleSubmit(onSubmit)}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: sending, busy: sending }}
+        className={`min-h-[44px] flex-row items-center justify-center gap-2 rounded-xl px-5 ${
+          sending ? "bg-surface-sunken" : "bg-primary-fill"
+        }`}
+      >
+        {sending ? <ActivityIndicator size="small" color={t.textSecondary} /> : null}
+        <Text className={`text-[15px] font-bold ${sending ? "text-text-muted" : "text-text-on-primary"}`}>
+          {sending ? "Sending…" : "Create Request"}
+        </Text>
+      </TouchableOpacity>
+    </>
+  );
 
-          {/* Title */}
-          <Input name="title" control={control} placeholder="Title" errors={errors} />
+  return (
+    <InputSheet
+      ref={sheetRef}
+      title="Create Buyer Request"
+      busy={sending}
+      footer={footer}
+    >
 
-          {/* Description */}
-          <Input name="description" control={control} placeholder="Description" errors={errors} multiline numberOfLines={4} style={{height: 100, textAlignVertical: 'top'}} />
+        {/* Title */}
+        <Input
+          name="title"
+          control={control}
+          label="Title"
+          required
+          placeholder="Give your request a short title"
+          errors={errors}
+        />
 
-          {/* Budget */}
-          <Input name="budget" control={control} placeholder="Budget" errors={errors} keyboardType="numeric" />
+        {/* Description */}
+        <Input
+          name="description"
+          control={control}
+          label="What are you looking for?"
+          required
+          placeholder="Describe the item, condition, quantity…"
+          errors={errors}
+          multiline
+          numberOfLines={5}
+        />
 
-          {/* Category IDs */}
-          <Text className="mb-2 text-xs font-geist font-bold text-tertiary uppercase tracking-[2px]">Categories</Text>
-          <View className="flex-row flex-wrap gap-3 mb-4">
-            {selectedCategories.map(cat => (
-              <View key={cat.id.toString()} className="flex-row items-center bg-surface border border-border rounded px-3 py-1">
-                <Text className="text-black text-sm font-medium mr-2">{cat.name}</Text>
-                <TouchableOpacity onPress={() => removeCategory(cat.id)}>
-                  <X size={16} color="#000000" />
-                </TouchableOpacity>
-              </View>
-            ))}
-            <TouchableOpacity
-              onPress={() => setModalVisible(true)}
-              className="bg-white border border-border rounded px-4 py-2 justify-center items-center"
+        {/* Budget */}
+        <Input
+          name="budget"
+          control={control}
+          label="Budget (₦)"
+          placeholder="e.g. 15000"
+          errors={errors}
+          keyboardType="numeric"
+        />
+
+        {/* Category IDs */}
+        <Text
+          className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary"
+        >
+          Categories
+        </Text>
+        <View className="flex-row flex-wrap gap-3 mb-4">
+          {selectedCategories.map((cat) => (
+            <View
+              key={cat.id.toString()}
+              className="flex-row items-center border rounded px-3 py-1 bg-surface-sunken border-border"
             >
-              <Text className="text-black text-sm font-bold">+ Add Categories</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Images Select */}
-          <Text className="mb-2 text-xs font-geist font-bold text-tertiary uppercase tracking-[2px]">Images</Text>
-          {Array.isArray(Imagevalue) && Imagevalue.length > 0 && (
-            <Text className="text-tertiary text-xs mb-2">Long press on each image to remove it</Text>
-          )}
-          <View className="mb-6">
-            <InstagramGrid
-              value={Imagevalue}
-              onChange={(imgs) => setImageValue(imgs)}
-              emptyPlaceholdersCount={3}
-              emptyLabel="No images yet"
-            />
-          </View>
-
+              <Text
+                className="text-sm font-medium mr-2 text-text-primary"
+              >
+                {cat.name}
+              </Text>
+              <TouchableOpacity onPress={() => removeCategory(cat.id)}>
+                <X size={16} color={t.textPrimary} />
+              </TouchableOpacity>
+            </View>
+          ))}
           <TouchableOpacity
-            disabled={sending}
-            className="bg-primary py-4 rounded items-center justify-center"
-            onPress={handleSubmit(handleLocalSubmit)}
+            onPress={() => setModalVisible(true)}
+            className="border rounded px-4 py-2 justify-center items-center bg-surface-raised border-border"
           >
-            <Text className="text-white font-geist font-semibold">{sending ? "Sending…" : "Create Request"}</Text>
+            <Text
+              className="text-sm font-bold text-text-primary"
+            >
+              + Add Categories
+            </Text>
           </TouchableOpacity>
+        </View>
 
-
-          <CategoryAddition
-            visible={modalVisible}
-            categories={categories}
-            parentSelectedCategories={selectedCategories}
-            onClose={() => setModalVisible(false)}
-            onConfirm={(selected) => setSelectedCategories(selected)}
+        {/* Images Select */}
+        <Text
+          className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary"
+        >
+          Images
+        </Text>
+        {Array.isArray(Imagevalue) && Imagevalue.length > 0 && (
+          <Text
+            className="text-xs mb-2 text-text-secondary"
+          >
+            Long press on each image to remove it
+          </Text>
+        )}
+        <View className="mb-6">
+          <InstagramGrid
+            value={Imagevalue}
+            max={5}
+            onChange={(imgs) => setImageValue(imgs)}
+            emptyPlaceholdersCount={3}
+            emptyLabel="No images yet"
           />
-        </BottomSheetScrollView>
-      </BottomSheet>
-    );
-  }
-);
+        </View>
+
+
+        <CategoryAddition
+          visible={modalVisible}
+          categories={categories}
+          parentSelectedCategories={selectedCategories}
+          onClose={() => setModalVisible(false)}
+          onConfirm={(selected) => setSelectedCategories(selected)}
+        />
+    </InputSheet>
+  );
+});
 
 export default BuyerRequestFormBottomSheet;

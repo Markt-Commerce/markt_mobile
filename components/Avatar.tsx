@@ -4,7 +4,9 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, Platform } from "react-native";
+import { View, Text, Platform } from "react-native";
+import { Image } from "expo-image";
+import { useTokens } from "../theme/useTokens";
 
 function getInitials(name: string | null | undefined, fallback = "?"): string {
   if (!name || typeof name !== "string") return fallback;
@@ -19,12 +21,12 @@ function getInitials(name: string | null | undefined, fallback = "?"): string {
 
 /** Pick a consistent background hue from a string (deterministic) */
 function getAvatarColor(name: string | null | undefined): string {
-  if (!name) return "#71717A";
+  if (!name) return "#876d64";
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const hues = ["#000000", "#71717A"];
+  const hues = ["#e26136", "#60758a", "#178b1f", "#876d64"];
   return hues[Math.abs(hash) % hues.length];
 }
 
@@ -33,10 +35,13 @@ interface AvatarProps {
   name?: string | null;
   size?: number;
   className?: string;
+  /** People are circular by default; shop discovery tiles use a soft square. */
+  shape?: "circle" | "rounded";
 }
 
-export default function Avatar({ uri, name, size = 40, className = "" }: AvatarProps) {
+function Avatar({ uri, name, size = 40, className = "", shape = "circle" }: AvatarProps) {
   const [imageError, setImageError] = useState(false);
+  const t = useTokens();
 
   useEffect(() => {
     setImageError(false);
@@ -48,34 +53,41 @@ export default function Avatar({ uri, name, size = 40, className = "" }: AvatarP
 
   return (
     <View
-      className={`rounded overflow-hidden flex items-center justify-center ${className}`}
+      className={`${className} overflow-hidden flex items-center justify-center`}
       style={{
         width: size,
         height: size,
-        backgroundColor: hasValidUri ? "#F4F4F5" : bgColor,
+        borderRadius: shape === "circle" ? size / 2 : Math.min(12, size * 0.25),
+        backgroundColor: hasValidUri ? t.media : bgColor,
       }}
     >
       {hasValidUri ? (
         <Image
           source={{ uri }}
           style={{ width: size, height: size }}
-          resizeMode="cover"
+          contentFit="cover"
+          recyclingKey={uri}
+          cachePolicy="memory-disk"
           onError={() => setImageError(true)}
         />
       ) : (
-        <Text
-          className="text-white font-geist font-bold"
-          style={{
-            fontSize: size * 0.42,
-            textAlign: "center",
-            textAlignVertical: "center",
-            lineHeight: size, // Force line height to match size for vertical centering
-            ...(Platform.OS === "android" && { includeFontPadding: false }),
-          }}
-        >
-          {initials}
-        </Text>
+        <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center" }}>
+          <Text
+            className="text-white font-semibold"
+            style={{
+              fontSize: size * 0.4,
+              textAlign: "center",
+              ...(Platform.OS === "android" && { includeFontPadding: false }),
+            }}
+          >
+            {initials}
+          </Text>
+        </View>
       )}
     </View>
   );
 }
+
+// All props are primitives, so the default shallow compare is exactly right —
+// and Avatar renders once per feed row, chat bubble and list item.
+export default React.memo(Avatar);

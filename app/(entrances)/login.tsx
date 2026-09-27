@@ -16,11 +16,15 @@ import { loginUser } from "../../services/sections/auth";
 import { useUser } from "../../hooks/userContextProvider";
 import { Input, PasswordInput } from "../../components/inputs";
 import Button from "../../components/button";
+import RoleToggle from "../../components/auth/RoleToggle";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRegData } from "../../models/signupSteps";
 import { useToast } from "../../components/ToastProvider";
-import { navigateToAppHome } from "../../utils/authNavigation"; 
-import { useTheme } from "../../components/themeProvider";
+import { navigateToAppHome, navigateToOnboardingStep } from "../../utils/authNavigation";
+import { getUserProfile } from "../../services/sections/profile";
+import { useTokens } from "../../theme/useTokens";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
+import BackButton from "../../components/BackButton";
 
 const schema = z.object({
   email: z.string().min(1, "Email is required"),
@@ -32,9 +36,8 @@ export default function LoginScreen() {
   const { role, setRole, setUser } = useUser();
   const { setRegData } = useRegData();
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
+  const t = useTokens();
+  const iconColor = t.textPrimary;
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -72,24 +75,38 @@ export default function LoginScreen() {
         message: `Signed in as ${userData.email.toLowerCase()}`,
       });
 
-      navigateToAppHome();
+      // Resume an interrupted signup rather than dropping someone into the
+      // tabs with a half-built account. Best-effort: a failed profile read
+      // must not block a successful sign-in.
+      try {
+        const profile = await getUserProfile();
+        navigateToOnboardingStep(profile.onboarding?.next_step);
+      } catch {
+        navigateToAppHome();
+      }
     } catch (error: any) {
-      const errMsg =
-        typeof error === "object" && error?.message
-          ? String(error.message)
-          : "Please try again.";
+      const errMsg = friendlyErrorMessage(
+        error,
+        "Could not sign you in. Please try again.",
+        {
+          400: "Incorrect email or password.",
+          401: "Incorrect email or password.",
+          403: "Incorrect email or password.",
+        },
+      );
 
-      // If backend asks for email verification, route + info toast
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "message" in error &&
-        typeof (error as any).message === "string" &&
-        (error as any).message.toLowerCase().includes("verify") &&
-        (error as any).message.toLowerCase().includes("email")
-      ) {
+      // An unfinished signup, not a failed sign-in: the account exists and
+      // the password was right, it just never verified its address. Send
+      // them to the code screen rather than telling them "login failed",
+      // which is both wrong and a dead end.
+      //
+      // Recognised by the flag the server sets, not by the wording of the
+      // message. That substring match was the only thing that worked before,
+      // because `abort()` was dropping the structured payload on the way out.
+      const body = error?.body;
+      if (body?.error_type === "unverified_email") {
         setRegData({
-          email: data.email,
+          email: body.email ?? data.email,
           password: data.password,
           account_type: role || "buyer",
           username: "",
@@ -98,11 +115,19 @@ export default function LoginScreen() {
 
         show({
           variant: "info",
-          title: "Verify your email",
-          message: "We need to verify your email before you can sign in.",
+          title: "Verify your email first",
+          message: body.code_sent
+            ? "We've sent a fresh code to your inbox."
+            : "Enter the code we sent you, or ask for a new one.",
         });
 
-        router.push("/emailVerification");
+        // `sent` tells the code screen whether one is already on its way, so
+        // it neither asks for a duplicate nor sits on a 60-second countdown
+        // for a code the server declined to send.
+        router.push({
+          pathname: "/emailVerification",
+          params: body.code_sent ? { sent: "1" } : {},
+        });
         return;
       }
 
@@ -120,7 +145,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-page">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -134,37 +159,31 @@ export default function LoginScreen() {
           <View className="flex-1 px-6 pt-4 pb-8">
             {/* Header */}
             <View className="flex-row items-center mb-8">
-              <TouchableOpacity
-                onPress={() => router.back()}
-                className={`h-10 w-10 items-center justify-center rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <ArrowLeft size={20} color={iconColor} />
-              </TouchableOpacity>
+              <BackButton fallback={"/introduction"} />
             </View>
 
             {/* Title */}
             <View className="mb-8">
-              <Text className={`text-[32px] font-geist font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className="text-[32px] font-bold leading-tight text-text-primary">
                 Welcome{"\n"}back
               </Text>
-              <Text className={`font-inter text-base mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className="text-base mt-2 text-text-secondary">
                 Sign in to continue your journey.
               </Text>
             </View>
 
             {/* Panel */}
-            <View className={`rounded border px-5 py-8 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+            <View>
               {/* Error banner */}
               {error ? (
-                <View className="mb-6 rounded bg-error-bg px-4 py-3 border border-error/10">
-                  <Text className="font-inter text-error text-sm">{error}</Text>
+                <View className="mb-6 rounded bg-danger-muted px-4 py-3 border border-danger/10">
+                  <Text className="text-danger-text text-sm">{error}</Text>
                 </View>
               ) : null}
 
               {/* Email */}
               <View className="mb-6">
-                <Text className={`mb-2 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Email Address</Text>
+                <Text className="mb-2 text-[13px] font-semibold text-text-secondary">Email Address</Text>
                 <Input
                   placeholder="Enter your email"
                   control={control}
@@ -172,6 +191,7 @@ export default function LoginScreen() {
                   errors={errors}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  autoCorrect={false}
                   autoComplete="email"
                   textContentType="emailAddress"
                 />
@@ -179,7 +199,7 @@ export default function LoginScreen() {
 
               {/* Password — eye toggle */}
               <View className="mb-2">
-                <Text className={`mb-2 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Password</Text>
+                <Text className="mb-2 text-[13px] font-semibold text-text-secondary">Password</Text>
                 <PasswordInput
                   placeholder="Enter your password"
                   control={control}
@@ -191,36 +211,14 @@ export default function LoginScreen() {
               {/* Forgot password */}
               <View className="items-end mb-8">
                 <Link href="/forgotPassword">
-                  <Text className={`font-inter text-sm underline ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Forgot Password?</Text>
+                  <Text className="text-sm underline text-text-secondary">Forgot Password?</Text>
                 </Link>
               </View>
 
               {/* Role toggle */}
               <View className="mb-10">
-                <Text className={`mb-3 text-sm font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Continue as</Text>
-                <View className={`flex-row items-center rounded p-1 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-                  <TouchableOpacity
-                    onPress={() => setRole("buyer")}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: role === "buyer" }}
-                    className={`flex-1 rounded py-2.5 items-center ${role === "buyer" ? "bg-primary shadow-sm" : ""}`}
-                  >
-                    <Text className={`font-geist font-bold text-sm ${role === "buyer" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                      Buyer
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => setRole("seller")}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: role === "seller" }}
-                    className={`flex-1 rounded py-2.5 items-center ${role === "seller" ? "bg-primary shadow-sm" : ""}`}
-                  >
-                    <Text className={`font-geist font-bold text-sm ${role === "seller" ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                      Seller
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                <Text className="mb-2 text-[13px] font-semibold text-text-secondary">Continue as</Text>
+                <RoleToggle value={role} onChange={setRole} />
               </View>
 
               {/* Submit */}
@@ -235,11 +233,11 @@ export default function LoginScreen() {
               {/* Sign up */}
               <View className="mt-8 items-center">
                 <Text
-                  className={`font-inter text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                  className="text-sm text-text-secondary"
                 >
                   Don’t have an account?{" "}
                   <Text 
-                    className={`font-geist font-bold underline ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}
+                    className="font-bold underline text-text-primary"
                     onPress={() => router.navigate("/signup")}
                   >
                     Sign up

@@ -1,11 +1,12 @@
 //for image upload
 import * as ImagePicker from 'expo-image-picker';
+import logger from '../utils/logger';
 
 export const pickImage = async () : Promise<string | null | undefined> => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
   
     if (permissionResult.granted === false) {
-      console.log("Permission to access camera roll is required!");
+      logger.warn("Permission to access camera roll is required!");
       return;
     }
   

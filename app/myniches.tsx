@@ -1,8 +1,8 @@
 import React, { useCallback, useState, useEffect, useRef } from "react";
-import { View, Text, FlatList, Pressable, ActivityIndicator, RefreshControl, TouchableOpacity } from "react-native";
+import { View, Text, FlatList, Pressable, ActivityIndicator, RefreshControl, TouchableOpacity, ScrollView, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Plus, ChevronRight, Compass, ArrowLeft } from "lucide-react-native";
+import { Plus, Compass } from "lucide-react-native";
 import { useToast } from "../components/ToastProvider";
 import { useUser } from "../hooks/userContextProvider";
 import { getMyNiches } from "../services/sections/niches";
@@ -10,6 +10,13 @@ import { Niches } from "../models/niches";
 import CreateNicheBottomSheet from "../components/nicheCreateBottomSheet";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { useTheme } from "../components/themeProvider";
+import { useTokens } from "../theme/useTokens";
+import logger from "../utils/logger";
+import { useFeed } from "../hooks/useFeed";
+import type { FeedItem } from "../types/feed";
+import { isFeedPost } from "../types/feed";
+import FeedPostCard from "../components/FeedPostCard";
+import BackButton from "../components/BackButton";
 
 export default function MyNichesScreen() {
   const router = useRouter();
@@ -17,37 +24,35 @@ export default function MyNichesScreen() {
   const { role } = useUser();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const nicheFormRef = useRef<BottomSheet | null>(null);
   const [niches, setNiches] = useState<Niches[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const {
+    items,
+    initialLoading: feedLoading,
+    refreshing: feedRefreshing,
+    loadingMore,
+    refresh: refreshFeed,
+    loadMore,
+  } = useFeed("joined_niches");
 
   const fetchNiches = useCallback(
-    async (pageNum = 1, isRefresh = false) => {
+    async (isRefresh = false) => {
       try {
         if (isRefresh) setRefreshing(true);
         else setLoading(true);
 
-        const response = await getMyNiches(pageNum, 10);
-        const nicheList = response.items.map((m) => m.niche);
-        if (isRefresh) {
-          setNiches(nicheList);
-          setPage(1);
-        } else {
-          setNiches((prev) => (pageNum === 1 ? nicheList : [...prev, ...nicheList]));
-          setPage(pageNum);
-        }
-
-        setHasMore(pageNum < response.pagination.total_pages);
+        const response = await getMyNiches(1, 50);
+        setNiches(response.items.map((m) => m.niche));
       } catch (err) {
         show({
           variant: "error",
           title: "Error loading niches",
           message: "Failed to load your niches. Please try again.",
         });
-        console.error("Error loading niches:", err);
+        logger.error("Error loading niches:", err);
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -57,17 +62,12 @@ export default function MyNichesScreen() {
   );
 
   useEffect(() => {
-    fetchNiches(1, false);
+    fetchNiches(false);
   }, []);
 
-  const handleLoadMore = () => {
-    if (!loading && !refreshing && hasMore) {
-      fetchNiches(page + 1, false);
-    }
-  };
-
   const handleRefresh = () => {
-    fetchNiches(1, true);
+    fetchNiches(true);
+    refreshFeed();
   };
 
   const renderNicheItem = useCallback(
@@ -80,48 +80,31 @@ export default function MyNichesScreen() {
           })
         }
         android_ripple={{ color: isDark ? "#ffffff11" : "#00000011" }}
-        className="px-6 mb-4"
+        className="mr-3"
       >
-        <View className={`rounded overflow-hidden border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-          <View className="flex-row">
+        <View className="w-44 rounded-xl overflow-hidden border bg-surface-raised border-border">
+          <View>
             {/* Niche Icon/Image */}
-            <View className={`w-24 h-24 justify-center items-center ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-              <Text className={`text-3xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                {(item.name ?? "").charAt(0).toUpperCase() || "?"}
-              </Text>
+            <View className="h-20 justify-center items-center bg-surface-sunken">
+              {item.image_url ? (
+                <Image source={{ uri: item.image_url }} className="w-full h-full" resizeMode="cover" />
+              ) : (
+                <Text className="text-3xl font-bold text-text-primary">
+                  {(item.name ?? "").charAt(0).toUpperCase() || "?"}
+                </Text>
+              )}
             </View>
 
             {/* Content */}
-            <View className="flex-1 p-4 justify-between">
+            <View className="p-3">
               <View>
-                <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
+                <Text className="font-bold text-base text-text-primary" numberOfLines={1}>
                   {item.name ?? "Unnamed"}
                 </Text>
-                <Text className={`text-xs font-inter mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={2}>
-                  {item.description ?? ""}
+                <Text className="text-[11px] mt-1 text-text-secondary" numberOfLines={1}>
+                  {item.member_count} members · {item.post_count} posts
                 </Text>
               </View>
-
-              {/* Stats */}
-              <View className="flex-row gap-4 mt-2">
-                <View>
-                  <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Members</Text>
-                  <Text className={`font-geist font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                    {item.member_count}
-                  </Text>
-                </View>
-                <View>
-                  <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Posts</Text>
-                  <Text className={`font-geist font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                    {item.post_count}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Arrow */}
-            <View className="w-10 justify-center items-center pr-2">
-              <ChevronRight size={18} color={isDark ? "#c6c5cf" : "#71717A"} strokeWidth={1.5} />
             </View>
           </View>
         </View>
@@ -130,91 +113,109 @@ export default function MyNichesScreen() {
     [router, isDark]
   );
 
-  if (loading) {
+  if (loading && feedLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top"]}>
+      <SafeAreaView className="flex-1 bg-surface-page" edges={["top"]}>
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+          <ActivityIndicator size="large" color={t.textPrimary} />
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top"]}>
-      <View className={`px-6 py-6 border-b ${isDark ? "border-[#46464e]" : "border-border"}`}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["top"]}>
+      <View className="px-6 pt-6 pb-5 border-b border-border-strong">
         <View className="flex-row items-center justify-between">
           <View className="flex-1">
-            <TouchableOpacity
-              onPress={() => router.back()}
-              className={`h-10 w-10 rounded border items-center justify-center mb-4 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <ArrowLeft size={20} color={isDark ? "#f0f1f2" : "#000000"} />
-            </TouchableOpacity>
-            <Text className={`text-2xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>My Niches</Text>
-            <Text className={`text-sm font-inter mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+            <BackButton fallback={"/(tabs)"} style={{ marginBottom: 16 }} />
+            <Text className="text-2xl font-bold text-text-primary">My Niches</Text>
+            <Text className="text-sm mt-1 text-text-secondary">
               {niches.length} niche{niches.length !== 1 ? "s" : ""} joined
             </Text>
           </View>
           {role === "seller" && (
             <TouchableOpacity
               onPress={() => nicheFormRef.current?.expand?.()}
-              className="flex-row items-center gap-2 px-6 py-3 rounded bg-primary"
+              className="flex-row items-center gap-2 px-6 py-3 rounded bg-primary-fill"
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel="Create community"
             >
-              <Plus size={18} color="#fff" strokeWidth={2} />
-              <Text className="text-white font-geist font-bold text-sm">Create</Text>
+              <Plus size={18} color={t.textOnPrimary} strokeWidth={2} />
+              <Text className="text-white font-bold text-sm">Create</Text>
             </TouchableOpacity>
           )}
         </View>
       </View>
 
       <FlatList
-        data={niches}
+        data={items}
         keyExtractor={(item) => item.id}
-        renderItem={renderNicheItem}
-        onEndReached={handleLoadMore}
+        renderItem={({ item }: { item: FeedItem }) =>
+          isFeedPost(item) ? <FeedPostCard post={item} /> : null
+        }
+        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+        onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={isDark ? "#f0f1f2" : "#000000"} />
+          <RefreshControl refreshing={refreshing || feedRefreshing} onRefresh={handleRefresh} tintColor={t.textPrimary} />
         }
         ListFooterComponent={
-          loading ? (
+          loadingMore ? (
             <View className="py-6">
-              <ActivityIndicator size="small" color={isDark ? "#f0f1f2" : "#000000"} />
+              <ActivityIndicator size="small" color={t.textPrimary} />
             </View>
           ) : null
         }
         ListEmptyComponent={
-          !loading ? (
+          !feedLoading ? (
             <View className="items-center justify-center py-20 px-8">
-              <View className={`w-24 h-24 rounded items-center justify-center mb-6 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-                <Compass size={40} color={isDark ? "#c6c5cf" : "#71717A"} strokeWidth={1.5} />
+              <View className="mb-5">
+                <Compass size={44} color={t.textMuted} strokeWidth={1.5} />
               </View>
-              <Text className={`font-geist font-bold text-xl text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                No niches yet
+              <Text className="font-bold text-xl text-center text-text-primary">
+                {niches.length === 0 ? "No niches yet" : "No posts yet"}
               </Text>
-              <Text className={`font-inter text-base mt-2 text-center leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                Join or create a community to connect with others.
+              <Text className="text-base mt-2 text-center leading-6 text-text-secondary">
+                {niches.length === 0
+                  ? "Join or create a community to connect with others."
+                  : "Posts from your communities will appear here."}
               </Text>
               <TouchableOpacity
                 onPress={() => router.push("/discoverNiches")}
-                className="mt-8 h-12 px-8 rounded bg-primary items-center justify-center"
+                className="mt-8 h-12 px-8 rounded bg-primary-fill items-center justify-center"
               >
-                <Text className="text-white font-geist font-bold text-base">Explore communities</Text>
+                <Text className="text-white font-bold text-base">Explore communities</Text>
               </TouchableOpacity>
             </View>
           ) : null
         }
-        contentContainerStyle={{ paddingBottom: 100, paddingTop: 24 }}
+        ListHeaderComponent={
+          <View className="py-5 pl-6">
+            <Text className="font-bold text-lg mb-3 text-text-primary">
+              Your communities
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {niches.map((niche) => (
+                <View key={niche.id}>{renderNicheItem({ item: niche })}</View>
+              ))}
+              <TouchableOpacity
+                onPress={() => router.push("/discoverNiches")}
+                className="w-28 h-20 rounded-xl border items-center justify-center mr-6 border-border-strong"
+              >
+                <Compass size={20} color={t.textSecondary} />
+                <Text className="text-xs font-semibold mt-1 text-text-secondary">Explore</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        }
+        contentContainerStyle={{ paddingBottom: 100 }}
       />
       {role === "seller" && (
         <CreateNicheBottomSheet
           ref={nicheFormRef}
-          onCreated={() => fetchNiches(1, true)}
+          onCreated={() => fetchNiches(true)}
         />
       )}
     </SafeAreaView>

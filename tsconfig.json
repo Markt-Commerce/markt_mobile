@@ -4,8 +4,6 @@
     "jsx": "react",
     "strict": true,
     "target": "es2018",
-    "module": "node16",
-    "moduleResolution": "node16",
     "types": ["nativewind/types"],
     "lib": [ 
       "es2018",

@@ -1,27 +1,125 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "expo-router";
-import { View, Text, ImageBackground, ScrollView, Image, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  ImageBackground,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Share, Heart, MessageCircle } from "lucide-react-native";
+import { ArrowLeft, Share , MapPin } from "lucide-react-native";
 import { useLocalSearchParams } from "expo-router";
 import { getSellerProducts } from "../../services/sections/product";
-import { getUserPublicProfile, getUserShopInfo, followSeller, unfollowSeller } from "../../services/sections/users";
+import {
+  getUserPublicProfile,
+  getUserShopInfo,
+  followSeller,
+  unfollowSeller,
+} from "../../services/sections/users";
 import { ProductResponse } from "../../models/products";
-import { ShopData } from "../../models/user";
+import { ShopData, Post as ShopPost } from "../../models/user";
 import { useToast } from "../../components/ToastProvider";
+import { useUser } from "../../hooks/userContextProvider";
+import { useAddToCart } from "../../hooks/useAddToCart";
 import ProductDisplayComponent from "../../components/productDisplayComponent";
 import { Product } from "../../models/feed";
-import PostDisplayComponent from "../../components/PostDisplayComponent";
 import { defaultProfilePicture } from "../../models/defaults";
+import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
+import CartFab from "../../components/CartFab";
+import QuickChatBottomSheet from "../../components/quickChatBottomSheet";
+import type { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
+import VerifiedBadge, { isVerifiedSeller } from "../../components/VerifiedBadge";
+import { useGamificationLookup } from "../../hooks/useGamificationLookup";
+import { useBadges } from "../../hooks/useBadges";
+import TierBadge from "../../components/gamification/TierBadge";
+import BadgeGrid from "../../components/gamification/BadgeGrid";
+import FeedPostCard from "../../components/FeedPostCard";
+import type { FeedPost } from "../../types/feed";
+import { saveItem, unsaveItem } from "../../services/sections/saved";
+import { tierColor } from "../../theme/tierColors";
+import { useBackTo } from "../../utils/goBack";
+
+function ShopPostCard({ post, shop }: { post: ShopPost; shop: ShopData }) {
+  const [saved, setSaved] = useState(false);
+  const feedPost: FeedPost = {
+    id: post.id,
+    type: "post",
+    caption: post.caption,
+    user: {
+      id: shop.user.id,
+      username: shop.shop_name || shop.user.username,
+      profile_picture: shop.user.profile_picture,
+    },
+    media: (post.media ?? []).map((item) => ({ url: item.url, type: item.type })),
+    likes_count: post.likes_count ?? 0,
+    comments_count: post.comments_count ?? 0,
+    created_at: post.created_at,
+    niche: null,
+  };
+
+  const toggleSaved = async () => {
+    const previous = saved;
+    setSaved(!previous);
+    try {
+      if (previous) await unsaveItem("post", post.id);
+      else await saveItem("post", post.id);
+    } catch {
+      setSaved(previous);
+    }
+  };
+
+  return <FeedPostCard post={feedPost} saved={saved} onToggleSaved={toggleSaved} />;
+}
 
 export default function Shop() {
   const router = useRouter();
+  const goBack = useBackTo("/(tabs)/search");
   const { id } = useLocalSearchParams<{ id: string }>();
   const [shop, setShop] = useState<ShopData>();
   const [shopProducts, setShopProducts] = useState<ProductResponse[][]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"products" | "posts">("products");
   const { show } = useToast();
+  const { user } = useUser();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
+  // This shop is mine. Role is not enough: a seller browsing in buyer mode
+  // is a buyer as far as `role` goes, and was offered Add and Chat on their
+  // own catalogue.
+  const isOwnShop =
+    !!user?.user_id && !!shop?.user?.id && shop.user.id === user.user_id;
+
+  // The Add button on these tiles rendered but was wired to nothing: the
+  // component takes onAdd and neither section passed it, so tapping it did
+  // exactly nothing and looked like a dead app.
+  const { add: handleAddToCart, addingId } = useAddToCart();
+
+  // Chat from a tile opens the same quick-chat surface the feed uses.
+  // It previously pushed /chat/<seller user id>, but that route takes a
+  // numeric room id and does Number() on it -- so a USR_ id became NaN and
+  // the screen span forever waiting for a room that could not exist.
+  const [productForChat, setProductForChat] = useState<{
+    id: string;
+    name?: string;
+  } | null>(null);
+  const chatSheetRef = useRef<BottomSheetMethods | null>(null);
+
+  const openProductChat = useCallback(
+    (product: { id: string; name?: string }) => {
+      if (isOwnShop) return;
+      setProductForChat(product);
+      chatSheetRef.current?.expand();
+    },
+    [isOwnShop]
+  );
+
+  const { profile: sellerGamification } = useGamificationLookup(shop?.user?.id);
+  const { badges: sellerBadges } = useBadges(shop?.user?.id);
 
   useEffect(() => {
     const fetchShopData = async () => {
@@ -30,13 +128,15 @@ export default function Shop() {
         setShop(profileData);
         setIsFollowing((profileData as any).is_followed ?? false);
         const sellerProducts = await getSellerProducts(profileData.id);
-        setShopProducts((prev) => [...prev, ...groupProducts(sellerProducts)]);
+        setShopProducts(groupProducts(sellerProducts));
       } catch (error) {
         show({
           title: "Error getting shop data",
-          message: "There was an error fetching the shop information. Please try again later." + error,
-          variant: "error"
-        })
+          message:
+            "There was an error fetching the shop information. Please try again later." +
+            error,
+          variant: "error",
+        });
       }
     };
     fetchShopData();
@@ -48,7 +148,7 @@ export default function Shop() {
       groupedProducts.push(products.slice(i, i + 2));
     }
     return groupedProducts;
-  }
+  };
 
   const handleFollowToggle = async () => {
     const followeeId = shop?.user?.id;
@@ -77,7 +177,9 @@ export default function Shop() {
       show({
         variant: "error",
         title: "Error",
-        message: isFollowing ? "Could not unfollow shop." : "Could not follow shop.",
+        message: isFollowing
+          ? "Could not unfollow shop."
+          : "Could not follow shop.",
       });
     } finally {
       setFollowLoading(false);
@@ -85,28 +187,40 @@ export default function Shop() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-surface-page">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-
         {/* Header with back button */}
-        <View className="flex-row items-center justify-between px-6 py-4 border-b border-border">
-          <TouchableOpacity onPress={() => router.back()} className="p-1 -ml-1">
-            <ArrowLeft size={24} color="#000000" />
+        <View
+          className="flex-row items-center justify-between px-6 py-4 border-b border-border"
+        >
+          <TouchableOpacity onPress={goBack} className="p-1 -ml-1">
+            <ArrowLeft size={24} color={t.textPrimary} />
           </TouchableOpacity>
-          <Text className="text-black text-xl font-geist font-bold flex-1 text-center pr-4">Shop</Text>
+          <Text
+            className="text-xl font-bold flex-1 text-center pr-4 text-text-primary"
+          >
+            Shop
+          </Text>
           <TouchableOpacity className="p-1">
-            <Share size={24} color="#000000" />
+            <Share size={24} color={t.textPrimary} />
           </TouchableOpacity>
         </View>
 
-        {/* Cover Image */}
-        <ImageBackground
-          source={{
-            uri: shop?.user.profile_picture || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
-          }}
-          className="w-full h-56 overflow-hidden bg-surface"
-          resizeMode="cover"
-        />
+        {/* Cover image.
+            This used to render the shop's *avatar* blown up to full width, so
+            every shop page showed the same picture twice — once stretched
+            across the top and once as the circle sitting on it. Sellers now
+            have a real banner; when there is none, a tinted block is a better
+            answer than the avatar again. */}
+        {shop?.banner_url ? (
+          <ImageBackground
+            source={{ uri: shop.banner_url }}
+            className="w-full h-56 overflow-hidden bg-media"
+            resizeMode="cover"
+          />
+        ) : (
+          <View className="w-full h-56 bg-primary-muted" />
+        )}
 
         {/* Profile Section */}
         <View className="px-6 py-6">
@@ -116,20 +230,54 @@ export default function Shop() {
               source={{
                 uri: shop?.user.profile_picture || defaultProfilePicture,
               }}
-              className="w-24 h-24 rounded border-4 border-white bg-surface"
+              className="w-24 h-24 rounded-full border-4 border-surface-page bg-surface-sunken"
             />
             <View className="flex-1 pb-1">
               <View className="flex-row items-center gap-2">
-                <Text className="text-black text-2xl font-geist font-bold">{shop?.shop_name}</Text>
+                <Text
+                  className="text-2xl font-bold text-text-primary"
+                >
+                  {shop?.shop_name}
+                </Text>
+                {sellerGamification && (
+                  <TierBadge
+                    tier={sellerGamification.tier.key}
+                    stars={sellerGamification.tier.stars}
+                    colorHex={tierColor(sellerGamification.tier?.key, t)}
+                    size="sm"
+                  />
+                )}
               </View>
               <View className="flex-row items-center gap-2 mt-2">
-                <Text className="text-black text-sm font-geist font-bold">{shop?.average_rating || 0}</Text>
-                <View className="px-2 py-0.5 rounded bg-surface">
-                  <Text className="text-tertiary text-[10px] font-geist font-bold uppercase tracking-wider">
-                    {shop?.verification_status || "Unverified"}
+                <Text
+                  className="text-sm font-bold text-text-primary"
+                >
+                  {shop?.average_rating || 0}
+                </Text>
+                {/* Only shown when actually verified. This printed the raw
+                    status, so an unverified shop displayed "pending" inside
+                    something shaped like a badge. */}
+                {isVerifiedSeller(shop?.verification_status) ? (
+                  <VerifiedBadge label="Verified seller" />
+                ) : null}
+              </View>
+              {/* Where the shop is. Same line a rider collects from, and the
+                  thing a buyer needs to judge whether this shop is near
+                  enough to be worth ordering from. */}
+              {(shop as any)?.shop_address?.formatted ? (
+                <View className="mt-2 flex-row items-start gap-1">
+                  <MapPin size={14} color={t.textMuted} />
+                  <Text className="flex-1 text-[13px] leading-4 text-text-muted">
+                    {[
+                      (shop as any).shop_address.formatted,
+                      (shop as any).shop_address.city,
+                      (shop as any).shop_address.state,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
                   </Text>
                 </View>
-              </View>
+              ) : null}
             </View>
           </View>
 
@@ -137,76 +285,230 @@ export default function Shop() {
           <View className="flex-row gap-3 mb-6">
             {shop?.user && (shop as any).can_follow !== false && (
               <TouchableOpacity
-                className={`flex-1 rounded h-12 items-center justify-center ${isFollowing ? "bg-surface" : "bg-primary"
-                  }`}
+                className={`flex-1 rounded h-12 items-center justify-center ${
+                  isFollowing
+                    ? isDark
+                      ? "bg-dark-elevated"
+                      : "bg-surface-sunken"
+                    : "bg-primary-fill"
+                }`}
                 onPress={handleFollowToggle}
                 disabled={followLoading}
               >
-                <Text className={`font-geist font-bold text-sm ${isFollowing ? "text-black" : "text-white"}`}>
-                  {followLoading ? "Loading…" : isFollowing ? "Following" : "Follow"}
+                <Text
+                  className={`font-bold text-sm ${isFollowing ? ("text-text-primary") : "text-white"}`}
+                >
+                  {followLoading
+                    ? "Loading..."
+                    : isFollowing
+                      ? "Following"
+                      : "Follow"}
                 </Text>
               </TouchableOpacity>
             )}
           </View>
 
           {/* Stats Row */}
-          <View className="flex-row justify-between gap-4 py-6 border-t border-b border-border">
+          <View
+            className="flex-row justify-between gap-4 py-6 border-t border-b border-border"
+          >
             <View className="flex-1 items-center">
-              <Text className="text-black text-xl font-geist font-bold">{shop?.stats.product_count || 0}</Text>
-              <Text className="text-tertiary font-inter text-xs mt-1">Products</Text>
+              <Text
+                className="text-xl font-bold text-text-primary"
+              >
+                {shop?.stats.product_count || 0}
+              </Text>
+              <Text
+                className="text-text-secondary text-xs mt-1"
+              >
+                Products
+              </Text>
             </View>
             <View className="flex-1 items-center">
-              <Text className="text-black text-xl font-geist font-bold">{shop?.stats.post_count || 0}</Text>
-              <Text className="text-tertiary font-inter text-xs mt-1">Posts</Text>
+              <Text
+                className="text-xl font-bold text-text-primary"
+              >
+                {shop?.stats.post_count || 0}
+              </Text>
+              <Text
+                className="text-text-secondary text-xs mt-1"
+              >
+                Posts
+              </Text>
             </View>
             <View className="flex-1 items-center">
-              <Text className="text-black text-xl font-geist font-bold">{shop?.stats.follower_count || 0}</Text>
-              <Text className="text-tertiary font-inter text-xs mt-1">Followers</Text>
+              <Text
+                className="text-xl font-bold text-text-primary"
+              >
+                {shop?.stats.follower_count || 0}
+              </Text>
+              <Text
+                className="text-text-secondary text-xs mt-1"
+              >
+                Followers
+              </Text>
             </View>
           </View>
         </View>
 
+        {/* Badges earned */}
+        {sellerBadges.filter((b) => b.earned).length > 0 && (
+          <View
+            className="px-6 py-6 border-b border-border"
+          >
+            <Text
+              className="text-text-primary text-xl font-bold mb-4"
+            >
+              Badges earned
+            </Text>
+            <BadgeGrid
+              badges={sellerBadges.filter((b) => b.earned)}
+              onBadgePress={(b) => router.push(`/gamification/badge/${b.slug}` as any)}
+            />
+          </View>
+        )}
+
         {/* Description */}
         {shop?.description && (
-          <View className="px-6 py-6 border-b border-border">
-            <Text className="text-black font-inter text-base leading-7">{shop?.description}</Text>
+          <View
+            className="px-6 py-6 border-b border-border"
+          >
+            <Text
+              className="text-text-primary text-base leading-7"
+            >
+              {shop?.description}
+            </Text>
           </View>
         )}
 
         {/* Tabs */}
-        <View className="flex-row border-b border-border px-6 gap-8">
-          <View className="flex-1 items-center border-b-[2px] border-primary pb-4 pt-6">
-            <Text className="text-black text-sm font-geist font-bold">Products</Text>
-          </View>
-          <View className="flex-1 items-center border-b-[2px] border-transparent pb-4 pt-6">
-            <Text className="text-tertiary text-sm font-geist font-bold">Posts</Text>
-          </View>
+        <View
+          className="flex-row border-b px-6 gap-8 border-border"
+        >
+          <TouchableOpacity
+            className={`flex-1 items-center border-b-[2px] pb-4 pt-6 ${activeTab === "products" ? "border-primary" : "border-transparent"}`}
+            onPress={() => setActiveTab("products")}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === "products" }}
+          >
+            <Text
+              className={`text-sm font-bold ${activeTab === "products" ? ("text-text-primary") : "text-text-secondary"}`}
+            >
+              Products
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className={`flex-1 items-center border-b-[2px] pb-4 pt-6 ${activeTab === "posts" ? "border-primary" : "border-transparent"}`}
+            onPress={() => setActiveTab("posts")}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === "posts" }}
+          >
+            <Text
+              className={`text-sm font-bold ${activeTab === "posts" ? ("text-text-primary") : "text-text-secondary"}`}
+            >
+              Posts
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Featured */}
-        <Text className="text-black text-xl font-geist font-bold px-6 pb-4 pt-8">Featured</Text>
+        {activeTab === "products" ? (
+          <>
+            {/* Featured */}
+            <Text
+              className="text-text-primary text-xl font-bold px-6 pb-4 pt-8"
+            >
+              Featured
+            </Text>
 
-        {groupProducts(shop?.recent_products!).map((item, idx) => (
-          <ProductDisplayComponent
-            key={idx}
-            products={item.map(p => ({ ...p, description: p.description ?? "" })) as Product[]}
-          />
-        ))}
+            {groupProducts(shop?.recent_products ?? []).map((item, idx) => (
+              <ProductDisplayComponent
+                key={idx}
+                isOwnShop={isOwnShop}
+                onAdd={handleAddToCart}
+                addingId={addingId}
+                onChat={openProductChat}
+                products={
+                  item.map((p) => ({
+                    ...p,
+                    description: p.description ?? "",
+                    // `recent_products` is a deliberately slim summary and
+                    // sends a flat `image` string, while the tile reads
+                    // `images[0].media.original_url` like every other product
+                    // list. So every featured tile rendered with a URI of
+                    // `undefined` — blank on this screen and fine two
+                    // sections below, from the same component.
+                    images:
+                      (p as any).images ??
+                      ((p as any).image
+                        ? [{ media: { original_url: (p as any).image } }]
+                        : []),
+                  })) as Product[]
+                }
+              />
+            ))}
 
-        {/* All Products */}
-        <Text className="text-black text-xl font-geist font-bold px-6 pb-4 pt-8">All Products</Text>
+            {/* All Products */}
+            <Text
+              className="text-text-primary text-xl font-bold px-6 pb-4 pt-8"
+            >
+              All Products
+            </Text>
 
-        <View className="px-2">
-          {shopProducts.map((item, i) => (
-            <ProductDisplayComponent
-              key={i}
-              products={item.map(p => ({ ...p, description: p.description ?? "" })) as Product[]}
-            />
-          ))}
-        </View>
+            <View className="px-2">
+              {shopProducts.map((item, i) => (
+                <ProductDisplayComponent
+                  key={i}
+                  // Was missing here: the own-shop guard only reached the
+                  // Featured section, so a seller's own catalogue still
+                  // offered Add and Chat further down the same screen.
+                  isOwnShop={isOwnShop}
+                  onAdd={handleAddToCart}
+                  addingId={addingId}
+                  onChat={openProductChat}
+                  products={
+                    item.map((p) => ({
+                      ...p,
+                      description: p.description ?? "",
+                    })) as Product[]
+                  }
+                />
+              ))}
+            </View>
+          </>
+        ) : (
+          <View className="pt-2">
+            {(shop?.recent_posts ?? []).length === 0 ? (
+              <View className="items-center justify-center py-16 px-6">
+                <Text className="text-text-secondary text-sm text-center">
+                  This shop hasn't posted anything yet.
+                </Text>
+              </View>
+            ) : (
+              (shop?.recent_posts ?? []).map((post) => (
+                <ShopPostCard key={post.id} post={post} shop={shop!} />
+              ))
+            )}
+          </View>
+        )}
 
         <View className="h-10" />
       </ScrollView>
+
+      {/* Outside the ScrollView so it stays put while the page moves. */}
+      {productForChat && shop?.user?.id ? (
+        <QuickChatBottomSheet
+          sellerId={shop.user.id}
+          buyerId={user?.user_id ?? ""}
+          product_id={productForChat.id}
+          otherUser={{
+            username: shop.shop_name ?? shop.user.username,
+            profile_picture: shop.user.profile_picture ?? undefined,
+          }}
+          asBuyer
+          sheetRef={chatSheetRef}
+        />
+      ) : null}
+        <CartFab />
     </SafeAreaView>
   );
 }

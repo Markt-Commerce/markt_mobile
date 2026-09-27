@@ -6,40 +6,75 @@
  * - Message seller (buyers)
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { View, Text, TouchableOpacity, Pressable } from "react-native";
-import { Link } from "expo-router";
-import { ShoppingCart, MessageCircle, UserPlus } from "lucide-react-native";
+import { Link, useRouter } from "expo-router";
+import { MessageCircle, MoreHorizontal, ShoppingCart, Tag } from "lucide-react-native";
 import type { FeedProduct } from "../types/feed";
 import { addToCart } from "../services/sections/cart";
-import { followSeller, unfollowSeller } from "../services/sections/users";
 import SkeletonImage from "./SkeletonImage";
+import Avatar from "./Avatar";
 import { useUser } from "../hooks/userContextProvider";
 import { useToast } from "./ToastProvider";
-import { useTheme } from "./themeProvider";
+import { useGamificationLookup } from "../hooks/useGamificationLookup";
+import TierBadge from "./gamification/TierBadge";
+import BadgeChip from "./gamification/BadgeChip";
+import { useTokens } from "../theme/useTokens";
+import { formatPrice } from "../utils/money";
+import { discountPercent } from "./Price";
+import { tierColor } from "../theme/tierColors";
+import { parseServerDate } from "../utils/datetime";
 
 interface Props {
   product: FeedProduct;
   onMessageSeller?: (product: FeedProduct) => void;
+  /** Opens the save / share / report / block sheet. Omit to hide the "…". */
+  onOpenActions?: (product: FeedProduct) => void;
 }
 
-export default function FeedProductCard({ product, onMessageSeller }: Props) {
+function compactAge(value: string) {
+  const parsed = parseServerDate(value);
+  if (!parsed) return "";
+  const timestamp = parsed.getTime();
+  const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+  if (seconds < 60) return "now";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d`;
+  return `${Math.floor(seconds / 604800)}w`;
+}
+
+function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
+  const router = useRouter();
   const { role, user } = useUser();
   const isOwnProduct = user?.user_id && product.seller?.user?.id && product.seller.user.id === user.user_id;
   const { show } = useToast();
   const [adding, setAdding] = useState(false);
   const [isFollowing, setIsFollowing] = useState(product.seller?.is_followed ?? false);
-  const [followLoading, setFollowLoading] = useState(false);
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
   const followeeId = product.seller?.user?.id;
   const followerCount = product.seller?.follower_count ?? 0;
+  const { profile: sellerGamification } = useGamificationLookup(followeeId);
+  const topBadges = useMemo(
+    () =>
+      [...(sellerGamification?.badges ?? [])]
+        .sort((a, b) => b.priority - a.priority)
+        .slice(0, 2),
+    [sellerGamification]
+  );
+
+  // Follow state can change elsewhere (seller profile, another card for the
+  // same seller); re-seed from the refreshed payload rather than staying on
+  // whatever was true at mount.
+  useEffect(() => {
+    setIsFollowing(product.seller?.is_followed ?? false);
+  }, [product.seller?.user?.id, product.seller?.is_followed]);
 
   const imageUrl = product.images?.[0]?.url;
   const isBuyer = role === "buyer";
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = useCallback(async () => {
     if (adding) return;
     setAdding(true);
     try {
@@ -62,41 +97,85 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
     } finally {
       setAdding(false);
     }
-  };
+  }, [adding, product.id, product.name, show]);
 
-  const handleMessageSeller = () => {
+  const handleMessageSeller = useCallback(() => {
     onMessageSeller?.(product);
-  };
+  }, [onMessageSeller, product]);
 
-  const handleFollowToggle = async (e: { stopPropagation?: () => void }) => {
-    e?.stopPropagation?.();
-    if (!followeeId || followLoading) return;
-    setFollowLoading(true);
-    const prev = isFollowing;
-    setIsFollowing(!isFollowing);
-    try {
-      if (isFollowing) {
-        await unfollowSeller(followeeId);
-        show({ variant: "success", title: "Unfollowed", message: "You unfollowed this seller." });
-      } else {
-        await followSeller(followeeId);
-        show({ variant: "success", title: "Following", message: "You are now following this seller." });
-      }
-    } catch {
-      setIsFollowing(prev);
-      show({ variant: "error", title: "Error", message: isFollowing ? "Could not unfollow." : "Could not follow." });
-    } finally {
-      setFollowLoading(false);
-    }
-  };
+  const handleOpenActions = useCallback(() => {
+    onOpenActions?.(product);
+  }, [onOpenActions, product]);
+
+  const handleOpenShop = useCallback(() => {
+    if (!product.seller?.id) return;
+    router.push(`/shopDetails/${product.seller.id}`);
+  }, [router, product.seller?.id]);
 
   return (
-    <View className="mb-8 px-6">
-      <View className={`rounded overflow-hidden border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+    <View className="flex-row px-4 py-3 border-b bg-surface-raised border-border">
+      <Pressable
+        onPress={handleOpenShop}
+        disabled={!product.seller?.id}
+        className="mr-3 self-start"
+        accessibilityRole="link"
+        accessibilityLabel={`View ${product.seller?.shop_name ?? "seller"}'s shop`}
+      >
+        <Avatar
+          uri={product.seller?.user?.profile_picture}
+          name={product.seller?.shop_name ?? product.seller?.user?.username}
+          size={42}
+        />
+      </Pressable>
+
+      <View className="flex-1 min-w-0">
+        <View className="flex-row items-center min-h-[22px] mb-0.5">
+          <Pressable onPress={handleOpenShop} disabled={!product.seller?.id} className="flex-row items-center flex-shrink gap-1.5">
+            <Text className="font-bold text-[15px] flex-shrink text-text-primary" numberOfLines={1}>
+              {product.seller?.shop_name ?? product.seller?.user?.username ?? "Seller"}
+            </Text>
+            {sellerGamification && (
+              <TierBadge
+                tier={sellerGamification.tier.key}
+                stars={sellerGamification.tier.stars}
+                colorHex={tierColor(sellerGamification.tier?.key, t)}
+                size="sm"
+              />
+            )}
+            {topBadges.map((badge) => (
+              <BadgeChip key={badge.slug} badge={badge} size="xs" />
+            ))}
+          </Pressable>
+          <Text className="text-[13px] text-text-secondary">
+            {` · ${compactAge(product.created_at)}${isFollowing ? " · following" : ""}`}
+          </Text>
+          {onOpenActions ? (
+            <Pressable
+              onPress={handleOpenActions}
+              hitSlop={10}
+              className="ml-auto w-8 h-8 -mr-1 -my-1 items-center justify-center"
+              accessibilityRole="button"
+              accessibilityLabel={`More options for ${product.name}`}
+            >
+              <MoreHorizontal size={20} color={t.textSecondary} />
+            </Pressable>
+          ) : null}
+        </View>
+
         <Link href={`/productDetails/${product.id}`} asChild>
-          <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}>
-            {/* Image occupying ~70% of the card layout as per DESIGN.md mandata */}
-            <View className={`w-full aspect-[4/5] relative ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+          <Pressable>
+            <View className="flex-row items-start gap-2 mb-1.5">
+              <Tag size={17} color={t.dangerText} strokeWidth={2.2} />
+              <Text className="flex-1 text-[16px] leading-5 font-semibold text-text-primary" numberOfLines={2}>
+                {product.name}
+              </Text>
+            </View>
+            <View
+              // bg-media, not a surface: a letterboxed or still-loading image was
+              // sitting on a lighter patch than the card containing it.
+              className="w-full aspect-square overflow-hidden border bg-media border-border"
+              style={{ borderRadius: 12 }}
+            >
               {imageUrl ? (
                 <SkeletonImage
                   source={{ uri: imageUrl }}
@@ -106,83 +185,95 @@ export default function FeedProductCard({ product, onMessageSeller }: Props) {
                 />
               ) : (
                 <View className="flex-1 items-center justify-center">
-                  <Text className={`font-geist font-bold text-xs tracking-widest uppercase ${isDark ? "text-[#46464e]" : "text-surface-dim"}`}>Image Pending</Text>
+                  <Text className="text-sm text-text-secondary">No image</Text>
                 </View>
               )}
-              
-              {/* Floating Price Badge */}
-              <View className="absolute left-6 bottom-6 rounded h-10 px-4 bg-primary items-center justify-center border border-primary/20">
-                <Text className="text-sm font-geist font-bold text-white tracking-widest">
-                  ₦{product.price.toLocaleString()}
-                </Text>
-              </View>
-            </View>
-
-            {/* Info */}
-            <View className="p-6">
-              <View className="flex-row justify-between items-start gap-4 mb-2">
-                <Text
-                  className={`flex-1 text-lg font-geist font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
-                  numberOfLines={2}
-                >
-                  {product.name}
-                </Text>
-                {followeeId && !isOwnProduct && (
-                  <TouchableOpacity
-                    onPress={(e) => handleFollowToggle(e)}
-                    disabled={followLoading}
-                    activeOpacity={0.8}
-                    className={`h-8 px-4 rounded items-center justify-center border ${isFollowing ? (isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border") : "bg-primary border-primary"}`}
-                    accessibilityRole="button"
-                    accessibilityLabel={isFollowing ? "Unfollow" : "Follow"}
-                  >
-                    <Text className={`text-[10px] font-geist font-bold tracking-widest uppercase ${isFollowing ? (isDark ? "text-[#c6c5cf]" : "text-tertiary") : "text-white"}`}>
-                      {followLoading ? "…" : isFollowing ? "Following" : "Follow"}
+              <View className="absolute left-3 bottom-3 flex-row items-center gap-1.5">
+                <View className="rounded-full bg-primary-fill px-3 py-1.5">
+                  <Text className="text-sm font-bold text-text-on-primary">{formatPrice(product.price)}</Text>
+                </View>
+                {/* Compact here on purpose: a struck-through price and a
+                    badge do not fit over an image without covering it. The
+                    saving is the part worth carrying to the card; the old
+                    price belongs on the product page. */}
+                {discountPercent(product.price, product.compare_at_price) !== null ? (
+                  <View className="rounded-full bg-success-fill px-2 py-1">
+                    <Text className="text-[11px] font-bold text-on-success-fill">
+                      {discountPercent(product.price, product.compare_at_price)}% off
                     </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              <View className="flex-row items-center gap-2 mb-6">
-                <Text className={`font-geist font-bold text-[10px] tracking-widest uppercase ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={1}>
-                  {product.seller?.shop_name ?? "Independent Seller"}
-                </Text>
-                <View className={`h-1 w-1 rounded ${isDark ? "bg-[#46464e]" : "bg-surface-dim"}`} />
-                <Text className={`font-inter text-[11px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                  {followerCount.toLocaleString()} Shapers
-                </Text>
-              </View>
-
-              {/* Action Bar: RESERVING PRIMARY FOR CONVERSION ONLY */}
-              <View className={`flex-row gap-4 pt-2 border-t mt-2 ${isDark ? "border-[#46464e]" : "border-border"}`}>
-                <TouchableOpacity
-                  onPress={handleAddToCart}
-                  disabled={adding}
-                  activeOpacity={0.8}
-                  className="flex-1 h-14 rounded bg-primary flex-row items-center justify-center gap-3 shadow-sm"
-                  accessibilityRole="button"
-                >
-                  <ShoppingCart size={20} color="#ffffff" strokeWidth={2} />
-                  <Text className="text-white font-geist font-bold text-xs tracking-widest uppercase">
-                    {adding ? "Adding" : "Add to collection"}
-                  </Text>
-                </TouchableOpacity>
-
-                {!isOwnProduct && isBuyer && (
-                  <TouchableOpacity
-                    onPress={handleMessageSeller}
-                    activeOpacity={0.8}
-                    className={`w-14 h-14 rounded border border-primary items-center justify-center ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}
-                    accessibilityRole="button"
-                  >
-                    <MessageCircle size={22} color="#E94C2A" strokeWidth={1.5} />
-                  </TouchableOpacity>
-                )}
+                  </View>
+                ) : null}
               </View>
             </View>
           </Pressable>
         </Link>
+
+        <View className="flex-row items-center mt-2 gap-1.5">
+          {(product.rating > 0 || product.reviews_count > 0) && (
+            <Text className="text-xs text-text-secondary">
+              ★ {product.rating.toFixed(1)}{product.reviews_count > 0 && ` · ${product.reviews_count} reviews`}
+            </Text>
+          )}
+          {/* No Follow button. It occupied a full row on every card from a
+              seller you hadn't followed, competing with Add to cart and Chat --
+              the two things the card exists for. Following is an action you
+              take on someone's profile, which is a tap away from the name
+              above; the header already reads "· following" when you do. */}
+        </View>
+
+        {/* Nothing to act on for your own listing: you cannot buy from
+            yourself and you cannot message yourself, so the row goes rather
+            than sitting there disabled. isOwnProduct already hid Chat; Add
+            to cart was left behind, so a seller browsing in buyer mode was
+            invited to buy their own product and only found out on tap. */}
+        {isBuyer && !isOwnProduct && (
+          <View className="flex-row gap-2 mt-2 pt-2 border-t border-border">
+            <TouchableOpacity
+              onPress={handleAddToCart}
+              disabled={adding}
+              className="flex-1 flex-row items-center justify-center gap-2 h-10 rounded-full bg-surface-sunken"
+              accessibilityRole="button"
+              accessibilityLabel={`Add ${product.name} to cart`}
+            >
+              <ShoppingCart size={18} color={t.textSecondary} />
+              <Text className="font-semibold text-sm text-text-primary">
+                {adding ? "Adding…" : "Add to cart"}
+              </Text>
+            </TouchableOpacity>
+            {!isOwnProduct && (
+              <TouchableOpacity
+                onPress={handleMessageSeller}
+                className="flex-1 flex-row items-center justify-center gap-2 h-10 rounded-full bg-surface-sunken"
+                accessibilityRole="button"
+                accessibilityLabel={`Message seller about ${product.name}`}
+              >
+                <MessageCircle size={18} color={t.textSecondary} />
+                <Text className="font-semibold text-sm text-text-primary">Chat</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </View>
     </View>
   );
 }
+
+// See FeedPostCard — same reasoning. Seller identity and follow state are
+// compared explicitly because the seller object is rebuilt on every fetch.
+export default React.memo(FeedProductCard, (prev, next) => {
+  const a = prev.product;
+  const b = next.product;
+  return (
+    a.id === b.id &&
+    a.name === b.name &&
+    a.price === b.price &&
+    a.rating === b.rating &&
+    a.reviews_count === b.reviews_count &&
+    a.images === b.images &&
+    a.seller?.user?.id === b.seller?.user?.id &&
+    a.seller?.is_followed === b.seller?.is_followed &&
+    a.seller?.follower_count === b.seller?.follower_count &&
+    prev.onMessageSeller === next.onMessageSeller &&
+    prev.onOpenActions === next.onOpenActions
+  );
+});

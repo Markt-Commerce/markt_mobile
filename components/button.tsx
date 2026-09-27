@@ -1,6 +1,6 @@
 import { Text, View, TouchableOpacity, TouchableOpacityProps, ActivityIndicator } from "react-native";
-import React from "react";
-import { useTheme } from "./themeProvider";
+import React, { useState } from "react";
+import { useTokens } from "../theme/useTokens";
 
 type ButtonVariant = "primary" | "conversion" | "secondary" | "outline";
 
@@ -33,25 +33,29 @@ const Button = ({
   ...rest
 }: ButtonProps) => {
   const isDisabled = disabled || loading;
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
+  const [pressed, setPressed] = useState(false);
 
   const variantStyles = {
+    // primary-fill, not primary. `primary` is the brand *swatch*, and in dark
+    // it is a light orange (#F4805F) -- a white label on it measures 2.59:1.
+    // primary-fill exists precisely to be sat on: 5.01:1 in dark. Light is
+    // unchanged at 3.80:1, which is the brand call flagged in DARKMODE_AUDIT.
     primary: {
-      container: isDisabled ? "bg-surface-dim" : "bg-primary",
-      text: isDisabled ? "text-tertiary" : "text-white",
+      container: isDisabled ? "bg-surface-sunken" : "bg-primary-fill",
+      text: isDisabled ? "text-text-muted" : "text-text-on-primary",
     },
     conversion: {
-      container: isDisabled ? "bg-surface-dim" : "bg-primary",
-      text: isDisabled ? "text-tertiary" : "text-white",
+      container: isDisabled ? "bg-surface-sunken" : "bg-primary-fill",
+      text: isDisabled ? "text-text-muted" : "text-text-on-primary",
     },
     secondary: {
-      container: isDark ? "bg-[#2f3132]" : "bg-surface",
-      text: isDark ? "text-[#f0f1f2]" : "text-secondary",
+      container: "bg-surface-sunken",
+      text: "text-text-primary",
     },
     outline: {
-      container: `bg-transparent border ${isDark ? "border-[#46464e]" : "border-border"}`,
-      text: isDark ? "text-[#f0f1f2]" : "text-secondary",
+      container: `bg-transparent border border-border-strong`,
+      text: "text-text-primary",
     },
   };
 
@@ -59,7 +63,12 @@ const Button = ({
 
   return (
     <TouchableOpacity
-      className={`flex h-12 flex-row items-center justify-center rounded px-6 ${s.container}`}
+      className={`flex h-14 flex-row items-center justify-center rounded-2xl px-6 active:opacity-90 ${s.container}`}
+      // A press that does nothing visible reads as a dead control. 0.98 is
+      // enough to feel and small enough not to look like a bounce.
+      style={{ transform: [{ scale: pressed ? 0.98 : 1 }] }}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.85}
@@ -69,11 +78,11 @@ const Button = ({
       {...rest}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={variant === "outline" || variant === "secondary" || isDisabled ? (isDark ? "#f0f1f2" : "#000000") : "#ffffff"} />
+        <ActivityIndicator size="small" color={variant === "outline" || variant === "secondary" || isDisabled ? (t.textPrimary) : t.textOnPrimary} />
       ) : children != null ? (
         children
       ) : (
-        <Text className={`text-base font-inter font-semibold tracking-wide ${s.text}`} numberOfLines={1}>
+        <Text className={`text-[16px] font-bold ${s.text}`} numberOfLines={1}>
           {text}
         </Text>
       )}

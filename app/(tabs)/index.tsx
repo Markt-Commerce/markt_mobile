@@ -11,14 +11,15 @@ import {
   type NativeScrollEvent,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Plus, Search, Compass } from "lucide-react-native";
+import { Plus, Search, Compass, Store } from "lucide-react-native";
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from "@gorhom/bottom-sheet";
 import { useRouter, useFocusEffect } from "expo-router";
-import type { FeedItem, FeedProduct } from "../../types/feed";
+import type { FeedItem, FeedPost, FeedProduct } from "../../types/feed";
 import { useUser } from "../../hooks/userContextProvider";
 import { switchUserRole } from "../../services/sections/auth";
 import { setUserSession } from "../../services/authStorage";
 import ProductFormBottomSheet from "../../components/productCreateBottomSheet";
+import { type InputSheetHandle } from "../../components/InputSheet";
 import PostFormBottomSheet from "../../components/postCreateBottomSheet";
 import BuyerRequestFormBottomSheet from "../../components/buyerRequestBottomSheet";
 import CreateNicheBottomSheet from "../../components/nicheCreateBottomSheet";
@@ -30,21 +31,41 @@ import FeedPostCard from "../../components/FeedPostCard";
 import FeedProductCard from "../../components/FeedProductCard";
 import ShopStrip from "../../components/ShopStrip";
 import { useFeed } from "../../hooks/useFeed";
+import ContentActionsSheet, { type ContentActionsTarget } from "../../components/ContentActionsSheet";
 import { isFeedPost, isFeedProduct } from "../../types/feed";
 import { getMyNiches } from "../../services/sections/niches";
 import { getUserProfile } from "../../services/sections/profile";
 import type { Niches } from "../../models/niches";
 import type { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
+import { saveItem, unsaveItem } from "../../services/sections/saved";
 
+// Early launch: only the main feed is live. Discover/Trending/Following are
+// hidden until their backend pipelines are ready — restore entries here to bring
+// them back.
 const MAIN_TABS = [
   { id: "for_you" as const, label: "For You" },
-  { id: "discover" as const, label: "Discover" },
-  { id: "trending" as const, label: "Trending" },
-  { id: "following" as const, label: "Following" },
+  // { id: "discover" as const, label: "Discover" },
+  // { id: "trending" as const, label: "Trending" },
+  // { id: "following" as const, label: "Following" },
 ];
 
 type TabId = "for_you" | "discover" | "trending" | "following" | string;
+
+// Hoisted so FlatList doesn't see a new element/object/function identity on
+// every render of the screen.
+const LIST_CONTENT_STYLE = { paddingBottom: 40 };
+const keyExtractor = (item: FeedItem) => item.id;
+
+// Cards carry a bottom hairline but no bottom margin, so consecutive posts sat
+// flush against each other -- the next author's name landed immediately under
+// the previous card's action row and the two read as one block. A separator
+// (rather than a margin on the card) keeps the gap strictly between items, so
+// there's no dangling space after the last one.
+const FEED_ITEM_GAP = 10;
+const FeedItemSeparator = () => <View style={{ height: FEED_ITEM_GAP }} />;
+const SIDE_DATA_TTL_MS = 60 * 1000;
 
 export default function FeedScreen() {
   const router = useRouter();
@@ -55,16 +76,28 @@ export default function FeedScreen() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
+  const tokens = t; // `t` is shadowed by the tab .map((t) => …) below
 
-  const { role, user, setRole } = useUser();
+  // This screen keeps its own `profile` copy (fetched on focus, above), so the
+  // context setter is aliased rather than destructured over it.
+  const { role, user, setRole, setProfile: setContextProfile } = useUser();
   const feedTab = selectedTab;
-  const { items, loading, loadingMore, hasNext, error, refresh, loadMore } = useFeed(feedTab);
+  const {
+    items,
+    initialLoading,
+    refreshing,
+    loadingMore,
+    error,
+    refresh,
+    loadMore,
+  } = useFeed(feedTab);
   const snapPoints = useMemo(() => ["30%"], []);
   const [menuIndex, setMenuIndex] = useState(-1);
 
   // Bottom sheet refs
   const createMenuRef = useRef<BottomSheet>(null);
-  const productFormRef = useRef<BottomSheet>(null);
+  const productFormRef = useRef<InputSheetHandle>(null);
   const postFormRef = useRef<BottomSheet>(null);
   const requestFormRef = useRef<BottomSheet>(null);
   const nicheFormRef = useRef<BottomSheet>(null);
@@ -75,28 +108,130 @@ export default function FeedScreen() {
   const [selectedBuyerId, setSelectedBuyerId] = useState<string>("");
   const [productForChat, setProductForChat] = useState<FeedProduct | null>(null);
 
-  // Shop strip collapse on scroll: hide when scrolling down, show when scrolling up
+  // Save / share / report / block. The sheet lives here rather than in the
+  // card so only one is ever mounted, and so blocking can drop the blocked
+  // author's items from the list immediately.
+  const [actionsTarget, setActionsTarget] = useState<ContentActionsTarget | null>(null);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [savedOverrides, setSavedOverrides] = useState<Record<string, boolean>>({});
+  const [hiddenAuthorIds, setHiddenAuthorIds] = useState<Set<string>>(new Set());
+
+  const openPostActions = useCallback((post: FeedPost) => {
+    setActionsTarget({
+      type: "post",
+      id: post.id,
+      title: post.caption?.trim() ? post.caption.trim().slice(0, 60) : "This post",
+      authorId: post.user?.id,
+      authorName: post.user?.username,
+      isOwn: !!user?.user_id && post.user?.id === user.user_id,
+      shareUrl: `markt://post/${post.id}`,
+    });
+  }, [user?.user_id]);
+
+  const openProductActions = useCallback((product: FeedProduct) => {
+    setActionsTarget({
+      type: "product",
+      id: product.id,
+      title: product.name,
+      authorId: product.seller?.user?.id,
+      authorName: product.seller?.shop_name ?? product.seller?.user?.username,
+      isOwn: !!user?.user_id && product.seller?.user?.id === user.user_id,
+      shareUrl: `markt://product/${product.id}`,
+    });
+  }, [user?.user_id]);
+
+  const handleSavedChange = useCallback((next: boolean) => {
+    const id = actionsTarget?.id;
+    if (!id) return;
+    if (actionsTarget?.type === "post") {
+      setSavedOverrides((prev) => ({ ...prev, [id]: next }));
+    }
+    setSavedIds((prev) => {
+      const copy = new Set(prev);
+      if (next) copy.add(id);
+      else copy.delete(id);
+      return copy;
+    });
+  }, [actionsTarget?.id, actionsTarget?.type]);
+
+  const togglePostSaved = useCallback(async (post: FeedPost) => {
+    const wasSaved = savedOverrides[post.id] ?? post.is_saved ?? savedIds.has(post.id);
+    setSavedOverrides((prev) => ({ ...prev, [post.id]: !wasSaved }));
+    setSavedIds((prev) => {
+      const next = new Set(prev);
+      if (wasSaved) next.delete(post.id);
+      else next.add(post.id);
+      return next;
+    });
+    try {
+      if (wasSaved) await unsaveItem("post", post.id);
+      else await saveItem("post", post.id);
+    } catch {
+      setSavedOverrides((prev) => ({ ...prev, [post.id]: wasSaved }));
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        if (wasSaved) next.add(post.id);
+        else next.delete(post.id);
+        return next;
+      });
+      show({ variant: "error", title: "Could not update saved posts", message: "Please try again." });
+    }
+  }, [savedIds, savedOverrides, show]);
+
+  // The server filters blocked authors out of the next feed response; this
+  // removes them from what's already on screen so the block reads as instant.
+  const handleBlocked = useCallback((userId: string) => {
+    setHiddenAuthorIds((prev) => new Set(prev).add(userId));
+  }, []);
+
+  // Shop strip collapse on scroll: hide after a sustained scroll down, show only
+  // after a sustained scroll back up. Distance is accumulated per-direction so a
+  // single small/jittery scroll event can't flip the state — that's what made it glitchy.
   const [stripCollapsed, setStripCollapsed] = useState(false);
   const lastScrollY = useRef(0);
+  const upAccum = useRef(0);
+  const downAccum = useRef(0);
   const stripHeight = useRef(new Animated.Value(1)).current; // 1 = expanded, 0 = collapsed
+
+  const HIDE_AFTER_SCROLL_DOWN = 100;
+  const SHOW_AFTER_SCROLL_UP = 800;
 
   useEffect(() => {
     Animated.timing(stripHeight, {
       toValue: stripCollapsed ? 0 : 1,
-      duration: 200,
+      duration: 250,
       useNativeDriver: false, // height/maxHeight requires false
     }).start();
   }, [stripCollapsed]);
 
-  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const y = e.nativeEvent.contentOffset.y;
+  const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const y = Math.max(0, e.nativeEvent.contentOffset.y);
     const dy = y - lastScrollY.current;
     lastScrollY.current = y;
-    if (dy > 8 && y > 60) setStripCollapsed(true);
-    else if (dy < -8) setStripCollapsed(false);
-  };
 
-  const openProductChat = (product: FeedProduct) => {
+    if (y === 0) {
+      upAccum.current = 0;
+      downAccum.current = 0;
+      if (stripCollapsed) setStripCollapsed(false);
+      return;
+    }
+
+    if (dy > 0) {
+      downAccum.current += dy;
+      upAccum.current = 0;
+      if (!stripCollapsed && downAccum.current > HIDE_AFTER_SCROLL_DOWN) {
+        setStripCollapsed(true);
+      }
+    } else if (dy < 0) {
+      upAccum.current += -dy;
+      downAccum.current = 0;
+      if (stripCollapsed && upAccum.current > SHOW_AFTER_SCROLL_UP) {
+        setStripCollapsed(false);
+      }
+    }
+  }, [stripCollapsed]);
+
+  const openProductChat = useCallback((product: FeedProduct) => {
     const sellerUserId = product.seller?.user?.id;
     if (isOwnProductListing(user?.user_id, sellerUserId)) {
       show({
@@ -108,7 +243,7 @@ export default function FeedScreen() {
     }
     setProductForChat(product);
     productChatSheetRef.current?.expand();
-  };
+  }, [user?.user_id, show]);
 
   const openMenu = () => setMenuIndex(0);
   const closeMenu = () => setMenuIndex(-1);
@@ -142,6 +277,16 @@ export default function FeedScreen() {
       const res = await switchUserRole();
       const newRole = (res.user?.current_role ?? res.current_role) as "buyer" | "seller";
       setRole(newRole);
+      // `role` and `profile.current_role` are separate state, and the tab bar
+      // and the cart badge both read the profile one -- so updating only
+      // `role` here left the Orders badge counting cart items after a switch
+      // to seller, and the app bar showing the buyer name, until something
+      // else happened to refetch the profile. The drawer and the profile
+      // screen already set both; this switcher didn't.
+      const applyRole = (current: UserProfile | null) =>
+        current ? { ...current, current_role: newRole } : current;
+      setContextProfile(applyRole);
+      setProfile(applyRole);
       if (res.user?.email) {
         await setUserSession(
           { email: res.user.email, account_type: newRole, user_id: res.user.id },
@@ -177,56 +322,64 @@ export default function FeedScreen() {
     }
   }, []);
 
+  // Home is the tab users bounce back to constantly. Refetching the niche
+  // chips and profile on literally every focus meant two requests per return
+  // trip for data that changes rarely; a short TTL keeps them fresh without
+  // the churn. fetchMyNiches is still called directly after creating a niche.
+  const sideDataFetchedAt = useRef(0);
   useFocusEffect(
     useCallback(() => {
+      if (Date.now() - sideDataFetchedAt.current < SIDE_DATA_TTL_MS) return;
+      sideDataFetchedAt.current = Date.now();
       fetchMyNiches();
       getUserProfile().then(setProfile).catch(() => setProfile(null));
     }, [fetchMyNiches])
   );
 
-  useEffect(() => {
-    refresh();
-  }, [selectedTab]);
+  // The tab-change fetch lives in useFeed now — it knows whether the tab's
+  // cache is warm. Refetching from here defeated that cache on every mount.
 
   useEffect(() => {
     if (!error) return;
-    // Don't toast "Unauthorized" — we redirect to login; avoid spam from parallel 401s
-    if (error.toLowerCase().includes("unauthorized")) return;
+    // useFeed stores user-friendly messages only (401s are swallowed there).
     show({ variant: "error", title: "Feed error", message: error });
   }, [error]);
 
   // Header: shop strip + tabs (search lives in nav Search tab only to avoid duplicate)
-  const Header = () => (
+  // Memoized because it sits outside the list and would otherwise rebuild the
+  // whole tab strip on every scroll-threshold crossing.
+  const header = useMemo(
+    () => (
     <>
       <Animated.View
         style={{
           overflow: "hidden",
           maxHeight: stripHeight.interpolate({
             inputRange: [0, 1],
-            outputRange: [0, 130],
+            outputRange: [0, 92],
           }),
         }}
       >
         <ShopStrip />
       </Animated.View>
 
-      <View className={`border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+      <View className="border-b bg-surface-raised border-border">
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 8, gap: 16 }}
+          contentContainerStyle={{ paddingHorizontal: 16, gap: 24 }}
         >
           {MAIN_TABS.map((t) => (
             <TouchableOpacity
               key={t.id}
               onPress={() => setSelectedTab(t.id)}
-              className="py-1 relative"
+              className="h-12 justify-center relative"
               accessibilityRole="tab"
               accessibilityState={{ selected: selectedTab === t.id }}
               accessibilityLabel={t.label}
             >
               <Text
-                className={`font-geist font-bold text-[13px] tracking-widest uppercase ${selectedTab === t.id ? "text-primary" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                className={`font-semibold text-[15px] ${selectedTab === t.id ? "text-primary" : "text-text-secondary"}`}
               >
                 {t.label}
               </Text>
@@ -234,11 +387,11 @@ export default function FeedScreen() {
                 <View
                   style={{
                     position: "absolute",
-                    bottom: -8,
+                    bottom: 0,
                     left: 0,
                     right: 0,
-                    height: 2,
-                    backgroundColor: "#E94C2A",
+                    height: 3,
+                    backgroundColor: tokens.primaryText,
                   }}
                 />
               )}
@@ -248,13 +401,13 @@ export default function FeedScreen() {
             <TouchableOpacity
               key={n.id}
               onPress={() => setSelectedTab(n.id)}
-              className={`py-1 px-4 rounded relative ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+              className="h-12 justify-center relative"
               accessibilityRole="tab"
               accessibilityState={{ selected: selectedTab === n.id }}
               accessibilityLabel={n.name}
             >
               <Text
-                className={`font-geist font-bold text-[10px] tracking-widest uppercase ${selectedTab === n.id ? "text-primary" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                className={`font-semibold text-[14px] ${selectedTab === n.id ? "text-primary" : "text-text-secondary"}`}
                 numberOfLines={1}
                 style={{ maxWidth: 100 }}
               >
@@ -264,11 +417,11 @@ export default function FeedScreen() {
                 <View
                   style={{
                     position: "absolute",
-                    bottom: -5,
+                    bottom: 0,
                     left: 0,
                     right: 0,
-                    height: 2,
-                    backgroundColor: "#E94C2A",
+                    height: 3,
+                    backgroundColor: tokens.primaryText,
                   }}
                 />
               )}
@@ -276,87 +429,137 @@ export default function FeedScreen() {
           ))}
           <TouchableOpacity
             onPress={() => router.push("/discoverNiches")}
-            className="py-1 px-3 flex-row items-center gap-2"
+            className="h-12 flex-row items-center gap-1.5"
             accessibilityRole="button"
             accessibilityLabel="Explore communities"
           >
-            <Compass size={16} color="#E94C2A" strokeWidth={2} />
-            <Text className="font-geist font-bold text-[13px] tracking-widest uppercase text-primary">Explore</Text>
+            <Compass size={16} color={t.primaryText} strokeWidth={2} />
+            <Text className="font-semibold text-[14px] text-primary">Explore</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push("/markets")}
+            className="h-12 flex-row items-center gap-1.5"
+            accessibilityRole="button"
+            accessibilityLabel="Browse markets"
+          >
+            <Store size={16} color={t.primaryText} strokeWidth={2} />
+            <Text className="font-semibold text-[14px] text-primary">Markets</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
 
       {role === "seller" && loadedStartCards && (
-        <View className={`py-4 px-4 ${isDark ? "bg-[#1a1c1d]" : "bg-surface"}`}>
+        <View className="py-4 px-4 bg-surface-sunken">
           <StartCards onRemoved={() => setLoadedStartCards(false)} />
         </View>
       )}
     </>
+    ),
+    [stripHeight, isDark, selectedTab, myNiches, role, loadedStartCards, router]
   );
 
-  const renderItem = ({ item }: { item: FeedItem }) => {
-    if (isFeedPost(item)) return <FeedPostCard post={item} />;
-    if (isFeedProduct(item))
-      return (
-        <FeedProductCard
-          product={item}
-          onMessageSeller={openProductChat}
-        />
-      );
-    return null;
-  };
+  // loadMore already no-ops when there is no next page or a request is in
+  // flight, so this stays stable instead of churning with hasNext.
+  const handleEndReached = useCallback(() => {
+    loadMore();
+  }, [loadMore]);
+
+  const visibleItems = useMemo(() => {
+    if (hiddenAuthorIds.size === 0) return items;
+    return items.filter((item) => {
+      const authorId = isFeedPost(item)
+        ? item.user?.id
+        : item.seller?.user?.id;
+      return !authorId || !hiddenAuthorIds.has(authorId);
+    });
+  }, [items, hiddenAuthorIds]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: FeedItem }) => {
+      if (isFeedPost(item))
+        return (
+          <FeedPostCard
+            post={item}
+            onOpenActions={openPostActions}
+            saved={savedOverrides[item.id] ?? item.is_saved ?? savedIds.has(item.id)}
+            onToggleSaved={togglePostSaved}
+          />
+        );
+      if (isFeedProduct(item))
+        return (
+          <FeedProductCard
+            product={item}
+            onMessageSeller={openProductChat}
+            onOpenActions={openProductActions}
+          />
+        );
+      return null;
+    },
+    [openProductChat, openPostActions, openProductActions, savedIds, savedOverrides, togglePostSaved]
+  );
 
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right"]}>
-      <Header />
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right"]}>
+      {header}
       <FlatList
-        className={isDark ? "bg-[#1a1c1d]" : "bg-white"}
-        data={items}
-        keyExtractor={(item) => item.id}
+        className={"bg-surface-page"}
+        data={visibleItems}
+        keyExtractor={keyExtractor}
         renderItem={renderItem}
+        ItemSeparatorComponent={FeedItemSeparator}
         onScroll={handleScroll}
         scrollEventThrottle={16}
-        onEndReached={() => hasNext && loadMore()}
+        onEndReached={handleEndReached}
         onEndReachedThreshold={0.5}
-        refreshing={loading}
+        refreshing={refreshing}
         onRefresh={refresh}
-        ListHeaderComponent={<View className="h-4" />}
+        // Feed rows are tall (a full-bleed square image each), so a small
+        // window keeps far fewer mounted cells and offscreen images alive.
+        removeClippedSubviews
+        initialNumToRender={4}
+        maxToRenderPerBatch={4}
+        windowSize={7}
+        updateCellsBatchingPeriod={50}
         ListFooterComponent={
           loadingMore ? (
             <View className="py-2 items-center">
-              <ActivityIndicator size="small" color="#E94C2A" />
-              <Text className={`font-geist font-bold text-[10px] tracking-widest uppercase mt-4 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Discovering more content</Text>
+              <ActivityIndicator size="small" color={t.primaryText} />
+              <Text className="font-bold text-[10px] tracking-widest uppercase mt-4 text-text-secondary">Discovering more content</Text>
             </View>
           ) : <View className="h-10" />
         }
         ListEmptyComponent={
-          !loading ? (
+          initialLoading ? (
+            <View className="py-20 items-center">
+              <ActivityIndicator size="large" color={t.primaryText} />
+            </View>
+          ) : (
             <View className="items-center justify-center py-12 px-8">
-              <View className={`w-24 h-24 rounded items-center justify-center mb-8 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-                <Search size={40} color={isDark ? "#f0f1f2" : "#A1A1AA"} strokeWidth={1} />
+              <View className="mb-6">
+                <Search size={44} color={t.textMuted} strokeWidth={1.5} />
               </View>
-              <Text className={`font-geist font-bold text-2xl text-center leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className="font-bold text-2xl text-center leading-tight text-text-primary">
                 {selectedTab === "following" ? "Expand your\ncommunity" : "The gallery is\nempty for now"}
               </Text>
-              <Text className={`font-inter text-base mt-4 text-center leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className="text-base mt-4 text-center leading-6 text-text-secondary">
                 {role === "buyer"
                   ? "Explore trending creators or discover unique products curated just for you."
                   : "Start building your presence. Post your first product or share a story."}
               </Text>
               <TouchableOpacity
                 onPress={openMenu}
-                className="mt-10 h-14 px-12 rounded bg-primary items-center justify-center"
+                className="mt-10 h-14 px-12 rounded bg-primary-fill items-center justify-center"
                 activeOpacity={0.8}
                 accessibilityRole="button"
                 accessibilityLabel="Create something new"
               >
-                <Text className="text-white font-geist font-bold text-sm tracking-widest uppercase">Begin Creating</Text>
+                <Text className="text-white font-bold text-sm tracking-widest uppercase">Begin Creating</Text>
               </TouchableOpacity>
             </View>
-          ) : null
+          )
         }
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={LIST_CONTENT_STYLE}
       />
 
       <BottomSheet
@@ -366,59 +569,59 @@ export default function FeedScreen() {
         enablePanDownToClose
         backdropComponent={renderMenuBackdrop}
         onChange={handleMenuChange}
-        backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}
-        handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
+        backgroundStyle={{ backgroundColor: t.surfacePage }}
+        handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
       >
-        <BottomSheetView className={`flex-1 p-4 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
-          <Text className={`text-lg font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create</Text>
+        <BottomSheetView className="flex-1 p-4 bg-surface-overlay">
+          <Text className="text-lg font-bold mb-4 text-text-primary">Create</Text>
 
           {role === "buyer" && (
             <>
-              <TouchableOpacity onPress={() => openForm("request")} className={`border-b py-4 ${isDark ? "border-[#46464e]" : "border-border"}`} activeOpacity={0.7}>
-                <Text className={`font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Buyer Request</Text>
-                <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Describe what you need and your budget.</Text>
+              <TouchableOpacity onPress={() => openForm("request")} className="border-b py-4 border-border-strong" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create Buyer Request</Text>
+                <Text className="text-xs mt-0.5 text-text-secondary">Describe what you need and your budget.</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => openForm("post")} className={`border-b py-4 ${isDark ? "border-[#46464e]" : "border-border"}`} activeOpacity={0.7}>
-                <Text className={`font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Post</Text>
-                <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Share updates, photos, or deals.</Text>
+              <TouchableOpacity onPress={() => openForm("post")} className="border-b py-4 border-border-strong" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create Post</Text>
+                <Text className="text-xs mt-0.5 text-text-secondary">Share updates, photos, or deals.</Text>
               </TouchableOpacity>
             </>
           )}
           {role === "seller" && (
             <>
-              <TouchableOpacity onPress={() => openForm("product")} className={`border-b py-4 ${isDark ? "border-[#46464e]" : "border-border"}`} activeOpacity={0.7}>
-                <Text className={`font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Product</Text>
-                <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Add a new item to your shop.</Text>
+              <TouchableOpacity onPress={() => openForm("product")} className="border-b py-4 border-border-strong" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create Product</Text>
+                <Text className="text-xs mt-0.5 text-text-secondary">Add a new item to your shop.</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => openForm("post")} className={`border-b py-4 ${isDark ? "border-[#46464e]" : "border-border"}`} activeOpacity={0.7}>
-                <Text className={`font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Post</Text>
-                <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Share updates, photos, or deals.</Text>
+              <TouchableOpacity onPress={() => openForm("post")} className="border-b py-4 border-border-strong" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create Post</Text>
+                <Text className="text-xs mt-0.5 text-text-secondary">Share updates, photos, or deals.</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => { closeMenu(); router.push("/(tabs)/requests"); }} className={`border-b py-4 ${isDark ? "border-[#46464e]" : "border-border"}`} activeOpacity={0.7}>
-                <Text className={`font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Make offer</Text>
-                <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Browse requests and submit offers.</Text>
+              <TouchableOpacity onPress={() => { closeMenu(); router.push("/(tabs)/requests"); }} className="border-b py-4 border-border-strong" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Make offer</Text>
+                <Text className="text-xs mt-0.5 text-text-secondary">Browse requests and submit offers.</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => openForm("niche")} className={`border-b py-4 ${isDark ? "border-[#46464e]" : "border-border"}`} activeOpacity={0.7}>
-                <Text className={`font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create community</Text>
-                <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Start a topic-based niche for your audience.</Text>
+              <TouchableOpacity onPress={() => openForm("niche")} className="border-b py-4 border-border-strong" activeOpacity={0.7}>
+                <Text className="font-semibold text-base text-text-primary">Create community</Text>
+                <Text className="text-xs mt-0.5 text-text-secondary">Start a topic-based niche for your audience.</Text>
               </TouchableOpacity>
             </>
           )}
           {hasBothRoles ? (
             <TouchableOpacity onPress={handleSwitchMode} className="py-4" activeOpacity={0.7}>
-              <Text className={`font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Switch mode</Text>
-              <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Change between Buyer and Seller.</Text>
+              <Text className="font-semibold text-base text-text-primary">Switch mode</Text>
+              <Text className="text-xs mt-0.5 text-text-secondary">Change between Buyer and Seller.</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity onPress={handleCreateAccount} className="py-4" activeOpacity={0.7}>
-              <Text className={`font-semibold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className="font-semibold text-base text-text-primary">
                 {role === "buyer" && !profile?.is_seller
                   ? "Create seller account"
                   : role === "seller" && !profile?.is_buyer
                     ? "Create buyer account"
                     : "Switch mode"}
               </Text>
-              <Text className={`text-xs mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className="text-xs mt-0.5 text-text-secondary">
                 {!profile?.is_seller
                   ? "Add a seller account to list products and manage a shop."
                   : !profile?.is_buyer
@@ -431,9 +634,17 @@ export default function FeedScreen() {
       </BottomSheet>
 
       {/* Imported Bottom Sheets */}
-      <ProductFormBottomSheet ref={productFormRef} />
-      <PostFormBottomSheet ref={postFormRef} />
-      <BuyerRequestFormBottomSheet ref={requestFormRef} />
+      <ProductFormBottomSheet
+        ref={productFormRef}
+        // The feed is cached per tab, so a newly created product would not
+        // appear until the cache aged out.
+        onCreated={(product) => {
+          refresh();
+          if (product?.id) router.push(`/productDetails/${product.id}` as any);
+        }}
+      />
+      <PostFormBottomSheet ref={postFormRef} onCreated={refresh} />
+      <BuyerRequestFormBottomSheet ref={requestFormRef} onCreated={refresh} />
       {role === "seller" && (
         <CreateNicheBottomSheet
           ref={nicheFormRef}
@@ -441,12 +652,24 @@ export default function FeedScreen() {
         />
       )}
 
+      <ContentActionsSheet
+        target={actionsTarget}
+        saved={!!actionsTarget && (
+          actionsTarget.type === "post"
+            ? (savedOverrides[actionsTarget.id] ?? savedIds.has(actionsTarget.id))
+            : savedIds.has(actionsTarget.id)
+        )}
+        onClose={() => setActionsTarget(null)}
+        onSavedChange={handleSavedChange}
+        onBlocked={handleBlocked}
+      />
+
       {/* FAB — bottom right, opens create menu */}
       <TouchableOpacity
         onPress={toggleMenu}
-        className="absolute bottom-10 right-4 w-14 h-14 rounded bg-primary items-center justify-center shadow-lg"
+        className="absolute bottom-4 right-4 w-14 h-14 rounded-full bg-primary-fill items-center justify-center shadow-lg"
         style={{
-          shadowColor: "#000",
+          shadowColor: t.textPrimary,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.2,
           shadowRadius: 6,

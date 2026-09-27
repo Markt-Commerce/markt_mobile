@@ -1,7 +1,8 @@
 import 'react-native-reanimated';
-import React, { useRef, useMemo, forwardRef, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput } from 'react-native';
-import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import React, { useRef, forwardRef, useState } from 'react';
+import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import InputSheet, { type InputSheetHandle } from './InputSheet';
+import SheetBusyOverlay from './SheetBusyOverlay';
 import { useForm } from 'react-hook-form';
 import { z } from "zod";
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,13 +18,17 @@ import { createPost } from '../services/sections/post';
 import { CreateProductRequest } from '../models/products';
 import { createProduct } from '../services/sections/product';
 import { useToast } from './ToastProvider';
-import { useTheme } from './themeProvider';
+import { friendlyErrorMessage } from '../utils/errorMessages';
+import logger from '../utils/logger';
+import { useTokens } from "../theme/useTokens";
 
 
 // Zod Schema for Validation
+// Mirrors the backend ProductCreateSchema limits (name 2–100 chars, price ≥ 0.01)
+// so validation fails fast client-side instead of after a full image upload.
 const productSchema = z.object({
-  name: z.string().min(1, "Product name is required").max(200),
-  price: z.preprocess((val) => Number(val), z.number().min(0, "Price must be non-negative")),
+  name: z.string().min(2, "Product name must be at least 2 characters").max(100, "Product name must be at most 100 characters"),
+  price: z.preprocess((val) => Number(val), z.number().min(0.01, "Price must be at least ₦0.01")),
   stock: z.preprocess((val) => Number(val), z.number().min(0, "Stock must be non-negative")),
   description: z.string().max(2000).optional(),
   category_ids: z.array(z.number()).optional(),
@@ -34,7 +39,7 @@ const productSchema = z.object({
     name: z.string().min(1, "Variant name is required")
   })).optional(),
   sku: z.string().max(100).optional(),
-  compare_at_price: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()).default(0.01),
+  compare_at_price: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()),
   cost_per_item: z.preprocess((val) => val === "" ? undefined : Number(val), z.number().min(0).optional()).default(0.01),
   status: z.enum(['active', 'inactive']).optional(),
   tag_ids: z.array(z.number()).optional(),
@@ -46,21 +51,29 @@ interface Props {
   onClose?: () => void;
   productCategories?: Category[];
   productImages?: string[];
+  /**
+   * The product that was just created.
+   *
+   * Creating one used to be a dead end: a toast, the sheet closes, and every
+   * list the seller is looking at still shows the world as it was. The
+   * dashboard has no refetch-on-focus, so a new product stayed invisible
+   * until a manual pull-to-refresh. Callers use this to update what is on
+   * screen and, where it makes sense, to open the thing that was made.
+   */
+  onCreated?: (product: { id?: string | number }) => void;
 }
 
-const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
+const ProductFormBottomSheet = forwardRef<InputSheetHandle | null, Props>(
   (props, ref) => {
 
-    const sheetRef = React.useRef<BottomSheet | null>(null);
-    React.useImperativeHandle(ref, () => sheetRef.current!, [sheetRef.current]);
-    const { resolvedTheme } = useTheme();
-    const isDark = resolvedTheme === "dark";
+    const sheetRef = React.useRef<InputSheetHandle | null>(null);
+    React.useImperativeHandle(ref, () => sheetRef.current!, []);
+    const t = useTokens();
 
     productSchema.refine(()=> selectedCategories?.length ?? 0 > 0,{
       path: ["category_ids"]
     });
 
-  const snapPoints = useMemo(() => ['50%', '90%'], []);
   const { show } = useToast();
 
 
@@ -74,9 +87,13 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
 
   // images state: store PickedImage[] from InstagramGrid
   const [Imagevalue, setImageValue] = React.useState<InstagramGridProps["value"]>(productImages ? productImages.map((uri, index) => ({ id: index.toString(), uri })) : []);
-  const [sending, setSending] = React.useState(false);
+  // Submission stage drives the slow-network UI protection: while not idle the
+  // button is locked (no double-submit), the sheet can't be swiped closed, and
+  // the form is non-interactive.
+  const [stage, setStage] = useState<"idle" | "uploading" | "creating">("idle");
+  const sending = stage !== "idle";
 
-  const { control, handleSubmit, formState: { errors } } = useForm<ProductFormData>({
+  const { control, handleSubmit, reset, formState: { errors } } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema) as any,
   });
 
@@ -86,7 +103,7 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
               const cats = await getAllCategories();
               setCategories(cats);
           } catch (error) {
-              console.error("Failed to fetch categories:", error);
+              logger.error("Failed to fetch categories:", error);
           }
       }
       fetchCategories();
@@ -96,157 +113,201 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
     setSelectedCategories(prev => prev.filter(c => c.id !== id));
   };
 
-  const submitProduct = async (product: CreateProductRequest) => {
-        try {
-          setSending(true);
-          const newProduct = await createProduct(product);
-          show({
-            variant: "success",
-            title: "Product Created",
-            message: "Your product has been successfully created."
-          });
-          setSending(false);
-          sheetRef?.current?.close();
-        } catch (error) {
-          show({
-            variant: "error",
-            title: "Error creating product",
-            message: "There was a problem creating the product. Please try again later."
-          });
-        }
-      }
-
-
-  const handleLocalSubmit = async (data: ProductFormData) => {
+  // Single submit path: upload images, build the payload, create the product,
+  // and only on success clear the form and close. try/finally guarantees the
+  // button leaves its "Sending..." state even when creation fails (previously
+  // an error left `sending` stuck true forever).
+  const onSubmit = async (data: ProductFormData) => {
+    if (sending) return;
+    // Checked here rather than in the zod schema because the images are not a
+    // form field -- they live in their own picker state and are uploaded on
+    // submit. A listing with no photo is one nobody buys from, so this is a
+    // refusal rather than a warning.
+    if (!Array.isArray(Imagevalue) || Imagevalue.length === 0) {
+      show({
+        variant: "error",
+        title: "Add at least one photo",
+        message: "Products with a photo are the ones buyers actually open.",
+      });
+      return;
+    }
     try {
-      //upload images first
-      const ImageResponse = await attemptMultipleUpload(Imagevalue);
+      setStage("uploading");
 
-      const imageIds = ImageResponse.map((imgId)=>imgId.media.id)
+      // upload images first
+      const ImageResponse = await attemptMultipleUpload(Imagevalue);
+      const imageIds = ImageResponse
+        .filter((img) => img && img.media && img.media.id)
+        .map((imgId) => imgId.media.id);
 
       // ensure category_ids includes selectedCategories if not provided by form UI
       const category_ids = (data && (data as any).category_ids && (data as any).category_ids.length > 0)
         ? (data as any).category_ids
         : selectedCategories.map(c => c.id);
 
-      //server requires cost_per_item and compare_at_price to be equal or greater than 0.01
-      data.compare_at_price = data.compare_at_price ?? 0.01;
-      data.cost_per_item = data.cost_per_item ?? 0.01;
+      // Both are optional on the server; it only validates them when present
+      // (>= 0.01). Defaulting them to 0.01 recorded "this used to cost one
+      // kobo" on every product where the seller left the field blank, which
+      // is why the discount UI had to compare the two numbers rather than
+      // simply check whether a compare-at price exists. Omitted now.
+      if (!data.compare_at_price) delete (data as any).compare_at_price;
+      if (!data.cost_per_item) delete (data as any).cost_per_item;
 
-      // prepare payload: keep form data, add category_ids (if we generated them) and add images
       const payload: CreateProductRequest = {
         ...data,
         category_ids,
         media_ids: imageIds ?? [],
       };
 
-      // call parent-provided onSubmit
-      await submitProduct(payload);
-      console.log("completed... all good")
-    } catch (err) {
-      console.error("Create product failed:", err);
-      // optionally: show UI feedback here
+      setStage("creating");
+      const created = await createProduct(payload);
+
+      show({
+        variant: "success",
+        title: "Product Created",
+        message: "Your product has been created successfully."
+      });
+
+      // Clear the form + local state, then close the sheet.
+      reset();
+      setImageValue([]);
+      setSelectedCategories([]);
+      sheetRef.current?.close();
+      // After the close, so the caller can navigate without racing the
+      // sheet's dismissal animation.
+      props.onCreated?.(created ?? {});
+    } catch (error) {
+      logger.error("Create product failed:", error);
+      show({
+        variant: "error",
+        title: "Error creating product",
+        message: friendlyErrorMessage(error, "There was a problem creating the product. Please try again later.")
+      });
+    } finally {
+      setStage("idle");
     }
   };
 
+  /**
+   * The action bar, pinned rather than scrolled to.
+   *
+   * A sibling of the scroll view inside InputSheet, so "above the keyboard"
+   * is a layout fact rather than a calculation. Shape from fieldgrid-mobile's
+   * input sheet: a hairline rule, the sheet's own background, status text
+   * left and the action right.
+   */
+  const footer = (
+    <>
+      <Text className="flex-1 text-[12px] text-text-muted" numberOfLines={1}>
+        {stage === "uploading"
+          ? "Uploading images…"
+          : stage === "creating"
+            ? "Creating…"
+            : !Array.isArray(Imagevalue) || Imagevalue.length === 0
+              ? "Add at least one photo"
+              : `${selectedCategories.length} categor${selectedCategories.length === 1 ? "y" : "ies"} selected`}
+      </Text>
+      <TouchableOpacity
+        disabled={sending}
+        onPress={handleSubmit(onSubmit)}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: sending, busy: sending }}
+        className={`min-h-[44px] flex-row items-center justify-center gap-2 rounded-xl px-5 ${
+          sending ? "bg-surface-sunken" : "bg-primary-fill"
+        }`}
+      >
+        {sending ? <ActivityIndicator size="small" color={t.textSecondary} /> : null}
+        <Text
+          className={`text-[15px] font-bold ${
+            sending ? "text-text-muted" : "text-text-on-primary"
+          }`}
+        >
+          {sending ? "Working…" : "Create Product"}
+        </Text>
+      </TouchableOpacity>
+    </>
+  );
+
   return (
-    <BottomSheet 
-      ref={ref} 
-      index={-1} 
-      snapPoints={snapPoints} 
-      enablePanDownToClose
-      backgroundStyle={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}
-      handleIndicatorStyle={{ backgroundColor: isDark ? "#46464e" : "#E4E4E7" }}
+    <InputSheet
+      ref={sheetRef}
+      title="Create Product"
+      busy={sending}
+      onClose={props.onClose}
+      footer={footer}
+      overlay={
+        <SheetBusyOverlay
+          visible={sending}
+          title={stage === "uploading" ? "Uploading images" : "Creating your product"}
+          subtitle={
+            stage === "uploading"
+              ? "Keep this sheet open until it finishes."
+              : "Almost done."
+          }
+        />
+      }
     >
-      <BottomSheetScrollView className="p-4">
-        <Text className={`text-lg font-geist font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Product</Text>
+      <View pointerEvents={sending ? "none" : "auto"}>
 
         {/* Product Name */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Product Name</Text>
-        <Input name='name' placeholder='Product Name' control={control}></Input>
-        {errors.name && <Text className="text-error text-xs font-geist mt-1">{errors.name.message}</Text>}
+        <Input name='name' label='Product Name' placeholder='e.g. Wireless headphones' control={control} errors={errors} />
 
         {/* Price */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Price</Text>
-        <Input name='price' placeholder='Price' control={control} keyboardType='numeric'></Input>
-        {errors.price && <Text className="text-error text-xs font-geist mt-1">{errors.price.message}</Text>}
+        <Input name='price' label='Price (₦)' placeholder='e.g. 15000' control={control} keyboardType='numeric' errors={errors} />
 
         {/* Stock */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Stock</Text>
-        <Input name='stock' placeholder='Stock' control={control} keyboardType='numeric'></Input>
-        {errors.stock && <Text className="text-error text-xs font-geist mt-1">{errors.stock.message}</Text>}
+        <Input name='stock' label='Stock' placeholder='How many are available?' control={control} keyboardType='numeric' errors={errors} />
 
         {/* Description */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Description</Text>
-        <Input name='description' placeholder='Description' control={control} multiline></Input>
-        {errors.description && <Text className="text-error text-xs font-geist mt-1">{errors.description.message}</Text>}
+        <Input name='description' label='Description' placeholder='Describe your product…' control={control} multiline errors={errors} />
 
         {/* Category IDs */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Categories</Text>
+        <Text className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary">Categories</Text>
         <View className="flex-row flex-wrap gap-3 p-3 pr-4">
           {selectedCategories.map(cat => (
-            <View key={cat.id.toString()} className={`flex-row items-center border rounded px-3 py-1 ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-              <Text className={`text-sm font-medium mr-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{cat.name}</Text>
+            <View key={cat.id.toString()} className="flex-row items-center border rounded px-3 py-1 bg-surface-sunken border-border">
+              <Text className="text-sm font-medium mr-2 text-text-primary">{cat.name}</Text>
               <TouchableOpacity onPress={() => removeCategory(cat.id)}>
-                <X size={16} color={isDark ? "#f0f1f2" : "#000000"} />
+                <X size={16} color={t.textPrimary} />
               </TouchableOpacity>
             </View>
           ))}
           <TouchableOpacity
             onPress={() => setModalVisible(true)}
-            className={`border rounded px-4 py-2 justify-center items-center ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+            className="border rounded px-4 py-2 justify-center items-center bg-surface-raised border-border"
           >
-            <Text className={`text-sm font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>+ Add Categories</Text>
+            <Text className="text-sm font-bold text-text-primary">+ Add Categories</Text>
           </TouchableOpacity>
         </View>
-        {errors.category_ids && <Text className="text-error text-xs font-geist mt-1">{errors.category_ids.message}</Text>}
+        {errors.category_ids && <Text className="text-danger-text text-xs mt-1">{errors.category_ids.message}</Text>}
 
         {/* Product Images */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Product Images</Text>
+        <Text className="mb-2 text-xs font-bold uppercase tracking-[2px] text-text-secondary">
+          Product Images <Text className="text-danger-text">*</Text>
+        </Text>
         {Array.isArray(Imagevalue) && Imagevalue.length > 0 && (
-          <Text className={`text-xs font-inter mb-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Long press on each image to remove it</Text>
+          <Text className="text-xs mb-2 text-text-secondary">Long press on each image to remove it</Text>
         )}
         {/* <<< IMPORTANT: pass value & onChange so we can receive images >>> */}
-        <InstagramGrid value={Imagevalue} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} />
+        <InstagramGrid value={Imagevalue} max={5} onChange={(imgs) => setImageValue(imgs)} emptyPlaceholdersCount={3} />
 
         {/* Optional forms*/}
-        <Text className={`text-xs font-geist font-bold uppercase tracking-[2px] mt-6 mb-3 ${isDark ? "text-[#f0f1f2]" : "text-tertiary"}`}>Optional Details</Text>
+        <Text className="text-xs font-bold uppercase tracking-[2px] mt-6 mb-3 text-text-primary">Optional Details</Text>
 
         {/* Barcode */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Barcode</Text>
-        <Input name='barcode' placeholder='Barcode' control={control}></Input>
-        {errors.barcode && <Text className="text-error text-xs font-geist mt-1">{errors.barcode.message}</Text>}
+        <Input name='barcode' label='Barcode' placeholder='Scan or enter a barcode' control={control} errors={errors} />
 
         {/* Weight */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Weight (in grams)</Text>
-        <Input name='weight' placeholder='Weight' control={control} keyboardType='numeric' value='0'></Input>
-        {errors.weight && <Text className="text-error text-xs font-geist mt-1">{errors.weight.message}</Text>}
+        <Input name='weight' label='Weight (grams)' placeholder='e.g. 500' control={control} keyboardType='numeric' errors={errors} />
 
         {/* SKU */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>SKU</Text>
-        <Input name='sku' placeholder='SKU' control={control}></Input>
-        {errors.sku && <Text className="text-error text-xs font-geist mt-1">{errors.sku.message}</Text>}
+        <Input name='sku' label='SKU' placeholder='Your stock-keeping code' control={control} errors={errors} />
 
         {/* Compare at Price */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Compare at Price</Text>
-        <Input name='compare_at_price' placeholder='Compare at Price' control={control} keyboardType='numeric' value='0'></Input>
-        {errors.compare_at_price && <Text className="text-error text-xs font-geist mt-1">{errors.compare_at_price.message}</Text>}
+        <Input name='compare_at_price' label='Compare at Price (₦)' placeholder='Leave blank if not on sale' control={control} keyboardType='numeric' errors={errors} />
 
         {/* Cost per Item */}
-        <Text className={`mb-2 text-xs font-geist font-bold uppercase tracking-[2px] ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Cost per Item</Text>
-        <Input name='cost_per_item' placeholder='Cost per Item' control={control} keyboardType='numeric' value='0'></Input>
-        {errors.cost_per_item && <Text className="text-error text-xs font-geist mt-1">{errors.cost_per_item.message}</Text>}
-        
-
-        {/* Submit Button */}
-        <TouchableOpacity
-          disabled={sending}
-          onPress={handleSubmit(handleLocalSubmit)} // call our merged submit handler
-          className="bg-primary p-3 rounded mt-4"
-        >
-          <Text className="text-white text-center font-geist font-bold">{sending ? "Sending..." : "Create Product"}</Text>
-        </TouchableOpacity>
-
+        <Input name='cost_per_item' label='Cost per Item (₦)' placeholder='What it costs you' control={control} keyboardType='numeric' errors={errors} />
 
         <CategoryAddition
           visible={modalVisible}
@@ -255,8 +316,8 @@ const ProductFormBottomSheet = forwardRef<BottomSheet | null, Props>(
           onClose={() => setModalVisible(false)}
           onConfirm={(selected) => setSelectedCategories(selected)}
           />
-      </BottomSheetScrollView>
-    </BottomSheet>
+      </View>
+    </InputSheet>
   );
 }
 );

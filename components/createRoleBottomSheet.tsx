@@ -1,7 +1,6 @@
 import React, { forwardRef, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from "react-native";
-import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from "react-native";
+import InputSheet, { type InputSheetHandle } from "./InputSheet";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +9,8 @@ import { Category } from "../models/categories";
 import CategoryAddition from "./categoryAddition";
 import { createBuyer, createSeller } from "../services/sections/auth";
 import { useToast } from "./ToastProvider";
+import { friendlyErrorMessage } from "../utils/errorMessages";
+import { useTokens } from "../theme/useTokens";
 
 type Mode = "buyer" | "seller" | null;
 
@@ -32,12 +33,12 @@ interface Props {
   onCreated?: (role: "buyer" | "seller") => void; 
 }
 
-const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mode, onClose, onCreated }, ref) => {
-  const sheetRef = useRef<BottomSheetMethods | null>(null);
-  React.useImperativeHandle(ref, () => sheetRef.current as BottomSheetMethods, []);
-
-  const snapPoints = useMemo(() => ["45%", "80%"], []);
+const CreateRoleBottomSheet = forwardRef<InputSheetHandle | null, Props>(({ mode, onClose, onCreated }, ref) => {
+  const t = useTokens();
+  const sheetRef = useRef<InputSheetHandle | null>(null);
+  React.useImperativeHandle(ref, () => sheetRef.current as InputSheetHandle, []);
   const { show } = useToast();
+  const [sending, setSending] = useState(false);
 
   // categories (for seller)
   const [categories, setCategories] = useState<Category[]>([]);
@@ -86,50 +87,104 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
   };
 
   const submitBuyer = async (data: BuyerForm) => {
+    if (sending) return;
     try {
+      setSending(true);
       await createBuyer({
         buyername: data.buyername,
         shipping_address: {},
       } as any);
       show({ variant: "success", title: "Buyer created", message: "Buyer account created." });
+      resetBuyer();
       onCreated?.("buyer");
       closeSheet();
     } catch (err) {
-      show({ variant: "error", title: "Create failed", message: "Could not create buyer account." });
+      show({
+        variant: "error",
+        title: "Create failed",
+        message: friendlyErrorMessage(err, "Could not create the buyer account. Please try again."),
+      });
+    } finally {
+      setSending(false);
     }
   };
 
   const submitSeller = async (data: SellerForm) => {
+    if (sending) return;
+    // ensure at least one category selected via the UI
+    if (!selectedCategories || selectedCategories.length === 0) {
+      show({ variant: "error", title: "Validation", message: "Select at least one category." });
+      return;
+    }
     try {
-      // ensure at least one category selected via the UI
-      if (!selectedCategories || selectedCategories.length === 0) {
-        show({ variant: "error", title: "Validation", message: "Select at least one category." });
-        return;
-      }
-
+      setSending(true);
       const payload = {
         shop_name: data.shop_name,
         description: data.description,
         category_ids: selectedCategories.map((c) => c.id),
         policies: {},
       };
-      const resultdata = await createSeller(payload as any);
-      console.log("Seller created:", resultdata);
+      await createSeller(payload as any);
       show({ variant: "success", title: "Seller created", message: "Seller account created." });
+      resetSeller();
+      setSelectedCategories([]);
       onCreated?.("seller");
       closeSheet();
     } catch (err) {
-      show({ variant: "error", title: "Create failed", message: "Could not create seller account." });
+      show({
+        variant: "error",
+        title: "Create failed",
+        message: friendlyErrorMessage(err, "Could not create the seller account. Please try again."),
+      });
+    } finally {
+      setSending(false);
     }
   };
 
+  // One sheet, two forms — so the action bar has to know which one it is
+  // submitting. Both write through the same `sending` flag.
+  const footer = (
+    <>
+      <Text className="flex-1 text-[12px] text-text-muted" numberOfLines={1}>
+        {sending
+          ? "Creating…"
+          : mode === "seller"
+            ? `${selectedCategories.length} categor${selectedCategories.length === 1 ? "y" : "ies"}`
+            : ""}
+      </Text>
+      <TouchableOpacity
+        disabled={sending || !mode}
+        onPress={
+          mode === "seller"
+            ? handleSubmitSeller(submitSeller)
+            : handleSubmitBuyer(submitBuyer)
+        }
+        accessibilityRole="button"
+        accessibilityState={{ disabled: sending || !mode, busy: sending }}
+        className={`min-h-[44px] flex-row items-center justify-center gap-2 rounded-xl px-5 ${
+          sending || !mode ? "bg-surface-sunken" : "bg-primary-fill"
+        }`}
+      >
+        {sending ? <ActivityIndicator size="small" color={t.textSecondary} /> : null}
+        <Text
+          className={`text-[15px] font-bold ${
+            sending || !mode ? "text-text-muted" : "text-text-on-primary"
+          }`}
+        >
+          {sending ? "Creating…" : mode === "seller" ? "Create shop" : "Create account"}
+        </Text>
+      </TouchableOpacity>
+    </>
+  );
+
   return (
-    <BottomSheet ref={sheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose onClose={onClose}>
-      <BottomSheetScrollView contentContainerStyle={{ padding: 16 }}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 12, color: "#000000" }}>
-            {mode === "buyer" ? "Create Buyer Account" : mode === "seller" ? "Create Seller Account" : "Create Account"}
-          </Text>
+    <InputSheet
+      ref={sheetRef}
+      title={mode === "buyer" ? "Create Buyer Account" : mode === "seller" ? "Create Seller Account" : "Create Account"}
+      busy={sending}
+      onClose={onClose}
+      footer={footer}
+    >
 
           {mode === "buyer" && (
             <View>
@@ -144,7 +199,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                     onChangeText={onChange}
                     style={{
                       borderWidth: 1,
-                      borderColor: "#E4E4E7",
+                      borderColor: t.border,
                       padding: 10,
                       borderRadius: 8,
                       marginBottom: 6,
@@ -152,13 +207,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                   />
                 )}
               />
-              {buyerErrors.buyername && <Text style={{ color: "#ba1a1a", marginBottom: 6 }}>{buyerErrors.buyername.message}</Text>}
-              <TouchableOpacity
-                onPress={handleSubmitBuyer(submitBuyer)}
-                style={{ backgroundColor: "#000000", padding: 12, borderRadius: 8, alignItems: "center" }}
-              >
-                <Text style={{ color: "#fff", fontWeight: "700" }}>Create Buyer Account</Text>
-              </TouchableOpacity>
+              {buyerErrors.buyername && <Text style={{ color: t.dangerText, marginBottom: 6 }}>{buyerErrors.buyername.message}</Text>}
             </View>
           )}
 
@@ -175,7 +224,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                     onChangeText={onChange}
                     style={{
                       borderWidth: 1,
-                      borderColor: "#E4E4E7",
+                      borderColor: t.border,
                       padding: 10,
                       borderRadius: 8,
                       marginBottom: 6,
@@ -183,7 +232,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                   />
                 )}
               />
-              {sellerErrors.shop_name && <Text style={{ color: "#ba1a1a", marginBottom: 6 }}>{sellerErrors.shop_name.message}</Text>}
+              {sellerErrors.shop_name && <Text style={{ color: t.dangerText, marginBottom: 6 }}>{sellerErrors.shop_name.message}</Text>}
 
               <Text style={{ marginBottom: 6 }}>Description</Text>
               <Controller
@@ -197,7 +246,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                     multiline
                     style={{
                       borderWidth: 1,
-                      borderColor: "#E4E4E7",
+                      borderColor: t.border,
                       padding: 10,
                       borderRadius: 8,
                       marginBottom: 6,
@@ -207,12 +256,12 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
                   />
                 )}
               />
-              {sellerErrors.description && <Text style={{ color: "#ba1a1a", marginBottom: 6 }}>{sellerErrors.description.message}</Text>}
+              {sellerErrors.description && <Text style={{ color: t.dangerText, marginBottom: 6 }}>{sellerErrors.description.message}</Text>}
 
               <Text style={{ marginBottom: 6 }}>Categories</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                 {selectedCategories.map((c) => (
-                  <View key={c.id} style={{ backgroundColor: "#F4F4F5", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, marginRight: 8, marginBottom: 8 }}>
+                  <View key={c.id} style={{ backgroundColor: t.surfaceSunken, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, marginRight: 8, marginBottom: 8 }}>
                     <Text>{c.name}</Text>
                   </View>
                 ))}
@@ -220,16 +269,9 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
 
               <TouchableOpacity
                 onPress={() => setCategoryModalVisible(true)}
-                style={{ borderWidth: 1, borderColor: "#E4E4E7", padding: 10, borderRadius: 8, marginBottom: 12 }}
+                style={{ borderWidth: 1, borderColor: t.border, padding: 10, borderRadius: 8, marginBottom: 12 }}
               >
                 <Text>Select categories</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={handleSubmitSeller(submitSeller)}
-                style={{ backgroundColor: "#000000", padding: 12, borderRadius: 8, alignItems: "center" }}
-              >
-                <Text style={{ color: "#fff", fontWeight: "700" }}>Create Seller Account</Text>
               </TouchableOpacity>
 
               <CategoryAddition
@@ -244,9 +286,7 @@ const CreateRoleBottomSheet = forwardRef<BottomSheetMethods | null, Props>(({ mo
               />
             </View>
           )}
-        </KeyboardAvoidingView>
-      </BottomSheetScrollView>
-    </BottomSheet>
+    </InputSheet>
   );
 });
 

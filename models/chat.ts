@@ -1,5 +1,15 @@
 // /models/chat.ts
-export type MessageType = "text" | "image" | "video" | "product" | "offer";
+export type MessageType =
+  | "text"
+  | "image"
+  | "video"
+  | "product"
+  /** A buyer naming their own price. */
+  | "offer"
+  /** A seller offering the buyer a discount. Sent by the server since
+   *  the feature existed; the app had no branch for it, so these
+   *  rendered as empty bubbles. */
+  | "discount";
 
 export interface ChatRoomLite {
   id: number;
@@ -38,6 +48,12 @@ export interface ChatMessage {
   pending?: boolean;
   error?: string | null;
   sender_username?: string;
+  sender?: {
+    id?: string;
+    username?: string | null;
+    profile_picture?: string | null;
+    profile_picture_url?: string | null;
+  };
 }
 
 export interface PaginationMeta {
@@ -134,4 +150,45 @@ export interface OfflineQueueItem {
   payload: Record<string, any>;   // socket payload
   // optional ack correlation
   client_id?: string;
+}
+
+
+/** An offer a seller made in chat that this buyer can still spend.
+ *
+ * `seller_id` is the seller *account* id, which is what the cart groups by --
+ * the offer itself records the seller's user id, and the server joins the two
+ * so the app never has to guess which shop card an offer belongs to. */
+export interface SpendableDiscount {
+  id: number;
+  seller_id: number;
+  room_id: number | null;
+  discount_type: "percentage" | "fixed_amount";
+  discount_value: number;
+  minimum_order_amount: number | null;
+  maximum_discount_amount: number | null;
+  expires_at: string;
+  discount_message: string | null;
+  product_id: string | null;
+}
+
+/** What an offer takes off a given subtotal, mirroring the server's rules so
+ * the buyer sees the same number before they commit. The server decides for
+ * real at checkout; this only decides what to show. */
+export function discountAmountFor(
+  discount: SpendableDiscount,
+  subtotal: number
+): number {
+  if (discount.minimum_order_amount && subtotal < discount.minimum_order_amount) {
+    return 0;
+  }
+  let amount =
+    discount.discount_type === "percentage"
+      ? (subtotal * discount.discount_value) / 100
+      : discount.discount_value;
+  if (discount.maximum_discount_amount != null) {
+    amount = Math.min(amount, discount.maximum_discount_amount);
+  }
+  // Never more than the basket: a fixed offer larger than what is being
+  // bought would otherwise show a negative total.
+  return Math.min(amount, subtotal);
 }

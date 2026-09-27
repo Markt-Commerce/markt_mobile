@@ -5,13 +5,15 @@ import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Mail, ShieldCheck } from 'lucide-react-native';
+import { Mail, ShieldCheck } from 'lucide-react-native';
 
 import { Input, PasswordInput, OTPInput } from '../../components/inputs';
 import Button from '../../components/button';
 import { useToast } from '../../components/ToastProvider';
 import { sendPasswordResetEmail, resetPassword } from '../../services/sections/auth';
-import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
+import BackButton from "../../components/BackButton";
 
 // Step 1: Email Schema
 const emailSchema = z.object({
@@ -31,9 +33,8 @@ const resetSchema = z.object({
 const ForgotPasswordScreen = () => {
   const router = useRouter();
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-  const iconColor = isDark ? "#f0f1f2" : "#000000";
+  const t = useTokens();
+  const iconColor = t.textPrimary;
   
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
@@ -83,7 +84,7 @@ const ForgotPasswordScreen = () => {
       show({
         variant: "error",
         title: "Request Failed",
-        message: error instanceof Error ? error.message : "Could not send reset code",
+        message: friendlyErrorMessage(error, "Could not send the reset code. Please check the email address and try again."),
       });
     } finally {
       setLoading(false);
@@ -106,7 +107,7 @@ const ForgotPasswordScreen = () => {
       show({
         variant: "error",
         title: "Reset Failed",
-        message: error instanceof Error ? error.message : "Could not reset password",
+        message: friendlyErrorMessage(error, "Could not reset your password. Please check the code and try again."),
       });
     } finally {
       setLoading(false);
@@ -120,7 +121,7 @@ const ForgotPasswordScreen = () => {
   };
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
+    <SafeAreaView className="flex-1 bg-surface-page">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -132,21 +133,19 @@ const ForgotPasswordScreen = () => {
         >
           <View className="flex-1 px-6 pt-6">
             {/* Header */}
-            <TouchableOpacity
+            <BackButton
+              fallback={"/(entrances)/login"}
               onPress={handleBack}
-              className={`h-10 w-10 items-center justify-center rounded border mb-8 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <ArrowLeft size={20} color={iconColor} />
-            </TouchableOpacity>
+              style={{ marginBottom: 32 }}
+            />
 
             <View className="mb-8">
-              <Text className={`text-[32px] font-geist font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+              <Text className="text-[32px] font-bold leading-tight text-text-primary">
                 {step === 1 && "Forgot\npassword?"}
                 {step === 2 && "Enter\ncode"}
                 {step === 3 && "New\npassword"}
               </Text>
-              <Text className={`font-inter text-base mt-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+              <Text className="text-base mt-2 text-text-secondary">
                 {step === 1 && "Don't worry, it happens. Enter your email below to receive a reset code."}
                 {step === 2 && `We've sent a 6-digit code to ${email}. Enter it below.`}
                 {step === 3 && "Set a strong password to protect your account."}
@@ -156,7 +155,7 @@ const ForgotPasswordScreen = () => {
             {step === 1 && (
               <View className="space-y-6">
                 <View>
-                  <Text className={`text-sm font-geist font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Email Address</Text>
+                  <Text className="text-sm font-bold mb-2 text-text-primary">Email Address</Text>
                   <Input
                     placeholder="Enter your email"
                     control={emailControl}
@@ -182,7 +181,7 @@ const ForgotPasswordScreen = () => {
             {step === 2 && (
               <View className="space-y-6">
                 <View>
-                  <Text className={`text-sm font-geist font-bold mb-4 ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Verification Code</Text>
+                  <Text className="text-sm font-bold mb-4 text-text-primary">Verification Code</Text>
                   <OTPInput 
                     value={code} 
                     onChange={setCode} 
@@ -202,8 +201,8 @@ const ForgotPasswordScreen = () => {
                   onPress={() => onSendCode({ email })}
                   className="items-center mt-4"
                 >
-                  <Text className={`font-inter text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                    Didn't receive the code? <Text className={`font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Resend</Text>
+                  <Text className="text-sm text-text-secondary">
+                    Didn't receive the code? <Text className="font-bold text-text-primary">Resend</Text>
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -212,7 +211,7 @@ const ForgotPasswordScreen = () => {
             {step === 3 && (
               <View className="space-y-6">
                 <View>
-                  <Text className={`text-sm font-geist font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>New Password</Text>
+                  <Text className="text-sm font-bold mb-2 text-text-primary">New Password</Text>
                   <PasswordInput
                     placeholder="Minimum 8 characters"
                     control={passwordControl}
@@ -222,7 +221,7 @@ const ForgotPasswordScreen = () => {
                 </View>
 
                 <View className="mt-4">
-                  <Text className={`text-sm font-geist font-bold mb-2 ${isDark ? "text-[#f0f1f2]" : "text-secondary"}`}>Confirm Password</Text>
+                  <Text className="text-sm font-bold mb-2 text-text-primary">Confirm Password</Text>
                   <PasswordInput
                     placeholder="Re-enter new password"
                     control={passwordControl}

@@ -6,37 +6,71 @@
  * - Footer: Likes, comments; tap card → post detail
  */
 
-import React, { useState } from "react";
-import { View, Text, Image, TouchableOpacity, Pressable, Share, Dimensions } from "react-native";
-import { Link } from "expo-router";
-import { Heart, MessageCircle, Send } from "lucide-react-native";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { View, Text, TouchableOpacity, Pressable, Share } from "react-native";
+import { Link, useRouter } from "expo-router";
+import { MoreHorizontal } from "lucide-react-native";
 import type { FeedPost } from "../types/feed";
 import { likePost } from "../services/sections/post";
 import { useToast } from "./ToastProvider";
 import Avatar from "./Avatar";
-import SkeletonImage from "./SkeletonImage";
-import { useTheme } from "./themeProvider";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const CARD_PADDING = 16;
-const MEDIA_MAX_HEIGHT = 320;
+import { PostMediaGrid, mediaTypeOf, type MediaItem } from "./postMedia";
+import { useGamificationLookup } from "../hooks/useGamificationLookup";
+import TierBadge from "./gamification/TierBadge";
+import PostActionBar from "./PostActionBar";
+import { useTokens } from "../theme/useTokens";
+import { tierColor } from "../theme/tierColors";
+import { parseServerDate } from "../utils/datetime";
 
 interface Props {
   post: FeedPost;
   onLike?: (postId: string) => Promise<void>;
+  /** Opens the save / share / report / block sheet. Omit to hide the "…". */
+  onOpenActions?: (post: FeedPost) => void;
+  saved?: boolean;
+  onToggleSaved?: (post: FeedPost) => Promise<void> | void;
 }
 
-export default function FeedPostCard({ post, onLike }: Props) {
+function compactAge(value: string) {
+  const parsed = parseServerDate(value);
+  if (!parsed) return "";
+  const timestamp = parsed.getTime();
+  const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+  if (seconds < 60) return "now";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d`;
+  return `${Math.floor(seconds / 604800)}w`;
+}
+
+function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Props) {
+  const router = useRouter();
   const [likeCount, setLikeCount] = useState(post.likes_count);
   const [likedByMe, setLikedByMe] = useState(post.liked_by_me ?? false);
   const [isLiking, setIsLiking] = useState(false);
   const { show } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
+  const { profile: authorGamification } = useGamificationLookup(post.user?.id);
 
-  const mediaUrl = post.media?.[0]?.url;
+  // A refresh re-serves the same post id with server-side counts. Without this
+  // the card would keep showing the counts captured when it first mounted.
+  useEffect(() => {
+    setLikeCount(post.likes_count);
+    setLikedByMe(post.liked_by_me ?? false);
+  }, [post.id, post.likes_count, post.liked_by_me]);
 
-  const handleShare = async () => {
+  const mediaItems: MediaItem[] = useMemo(
+    () =>
+      (post.media ?? [])
+        .filter((m) => !!m?.url)
+        .map((m) => ({
+          uri: m.url,
+          type: mediaTypeOf(m),
+        })),
+    [post.media]
+  );
+
+  const handleShare = useCallback(async () => {
     try {
       await Share.share({
         message: `Check out this post on Markt`,
@@ -46,9 +80,25 @@ export default function FeedPostCard({ post, onLike }: Props) {
     } catch {
       // User cancelled or share failed
     }
-  };
+  }, [post.id]);
 
-  const handleLike = async () => {
+  // Comments live on the detail screen. This used to be a Pressable with no
+  // onPress, which registers a touch responder and swallowed the tap instead
+  // of letting the parent Link navigate — the button was dead.
+  const handleOpenComments = useCallback(() => {
+    router.push(`/postDetails/${post.id}`);
+  }, [router, post.id]);
+
+  const handleOpenActions = useCallback(() => {
+    onOpenActions?.(post);
+  }, [onOpenActions, post]);
+
+  const handleOpenAuthor = useCallback(() => {
+    if (!post.user?.id) return;
+    router.push(`/profile/${post.user.id}`);
+  }, [router, post.user?.id]);
+
+  const handleLike = useCallback(async () => {
     if (isLiking) return;
     setIsLiking(true);
     const prevLiked = likedByMe;
@@ -72,107 +122,135 @@ export default function FeedPostCard({ post, onLike }: Props) {
     } finally {
       setIsLiking(false);
     }
-  };
+  }, [isLiking, likedByMe, likeCount, onLike, post.id, show]);
 
   return (
     <Link href={`/postDetails/${post.id}`} asChild>
-      <TouchableOpacity activeOpacity={0.9} className="mb-8 px-6">
-        <View className={`rounded border overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-          {/* Header: avatar, username, niche */}
-          <View className="flex-row items-center p-5">
+      <TouchableOpacity activeOpacity={0.9}>
+        <View className="flex-row px-4 py-3 border-b bg-surface-raised border-border">
+          <Pressable
+            onPress={handleOpenAuthor}
+            disabled={!post.user?.id}
+            className="mr-3 self-start"
+            accessibilityRole="link"
+            accessibilityLabel={`View ${post.user?.username ?? "author"}'s profile`}
+          >
             <Avatar
               uri={post.user?.profile_picture}
               name={post.user?.username}
-              size={48}
-              className="mr-4"
+              size={42}
             />
-            <View className="flex-1">
-              <Text
-                className={`font-geist font-bold text-sm tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
-                numberOfLines={1}
+          </Pressable>
+
+          <View className="flex-1 min-w-0">
+            <View className="flex-row items-center min-h-[22px]">
+              <Pressable
+                onPress={handleOpenAuthor}
+                disabled={!post.user?.id}
+                className="flex-row items-center flex-shrink gap-1.5"
+                accessibilityRole="link"
+                accessibilityLabel={`View ${post.user?.username ?? "author"}'s profile`}
               >
-                {post.user?.username ?? "Unknown"}
-              </Text>
-              {post.niche && (
                 <Text
-                  className={`font-geist font-bold text-[10px] uppercase tracking-widest mt-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                  className="font-bold text-[15px] flex-shrink text-text-primary"
                   numberOfLines={1}
                 >
-                  {post.niche.name}
+                  {post.user?.username ?? "Unknown"}
                 </Text>
-              )}
-            </View>
-            <TouchableOpacity className="h-8 w-8 items-center justify-center">
-               <View className={`h-1 w-1 rounded mb-1 ${isDark ? "bg-[#46464e]" : "bg-surface-dim"}`} />
-               <View className={`h-1 w-1 rounded mb-1 ${isDark ? "bg-[#46464e]" : "bg-surface-dim"}`} />
-               <View className={`h-1 w-1 rounded ${isDark ? "bg-[#46464e]" : "bg-surface-dim"}`} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Body: caption */}
-          {post.caption ? (
-            <View className="px-5 pb-5">
+                {authorGamification && (
+                  <TierBadge
+                    tier={authorGamification.tier.key}
+                    stars={authorGamification.tier.stars}
+                    colorHex={tierColor(authorGamification.tier?.key, t)}
+                    size="sm"
+                  />
+                )}
+              </Pressable>
               <Text
-                className={`font-inter text-[15px] leading-6 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
-                numberOfLines={4}
+                className="text-[13px] flex-shrink text-text-secondary"
+                numberOfLines={1}
               >
-                {post.caption}
+                {post.niche ? ` · ${post.niche.name}` : ""}{` · ${compactAge(post.created_at)}`}
               </Text>
+            {onOpenActions ? (
+              <Pressable
+                onPress={handleOpenActions}
+                hitSlop={10}
+                className="ml-auto w-8 h-8 -mr-1 -my-1 items-center justify-center"
+                accessibilityRole="button"
+                accessibilityLabel="More options for this post"
+              >
+                <MoreHorizontal size={20} color={t.textSecondary} />
+              </Pressable>
+            ) : null}
             </View>
+
+          {post.caption ? (
+            <Text
+              className="mb-2 text-[15px] leading-[21px] text-text-primary"
+              numberOfLines={6}
+            >
+              {post.caption}
+            </Text>
           ) : null}
 
-          {/* Media */}
-          {mediaUrl && (
+          {/* Media — grid of up to 5 images/videos, tap opens fullscreen */}
+          {mediaItems.length > 0 && (
+            // mt-2 only when there's no caption: the caption's own mb-2 is what
+            // separated the header from the media, so an image-only post had
+            // its first image jammed against the author's name.
             <View
-              className={`w-full ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
-              style={{ aspectRatio: 1, maxHeight: MEDIA_MAX_HEIGHT }}
+              className={`mb-1 overflow-hidden ${post.caption ? "" : "mt-2"}`}
+              style={{ borderRadius: 12 }}
             >
-              <SkeletonImage
-                source={{ uri: mediaUrl }}
-                containerClassName="w-full h-full"
-                resizeMode="cover"
-                accessibilityLabel="Post media"
-              />
+              <PostMediaGrid media={mediaItems} />
             </View>
           )}
 
-          {/* Footer: engagement */}
-          <View className="flex-row items-center justify-between px-5 h-16">
-            <View className="flex-row items-center gap-6">
-              <TouchableOpacity
-                onPress={handleLike}
-                disabled={isLiking}
-                className="flex-row items-center gap-2"
-                accessibilityRole="button"
-                accessibilityLabel={`${likeCount} likes`}
-              >
-                <Heart size={20} strokeWidth={1} color={likedByMe ? "#E94C2A" : (isDark ? "#c6c5cf" : "#71717A")} fill={likedByMe ? "#E94C2A" : "transparent"} />
-                <Text className={`font-geist font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{likeCount}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                className="flex-row items-center gap-2"
-                accessibilityRole="button"
-                accessibilityLabel={`${post.comments_count} comments`}
-              >
-                <MessageCircle size={20} strokeWidth={1} color={isDark ? "#f0f1f2" : "#000000"} />
-                <Text className={`font-geist font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                  {post.comments_count}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              onPress={handleShare}
-              className="h-10 w-10 items-center justify-center"
-              accessibilityRole="button"
-              accessibilityLabel="Share post"
-            >
-              <Send size={20} strokeWidth={1} color={isDark ? "#f0f1f2" : "#000000"} />
-            </TouchableOpacity>
+          <PostActionBar
+            likeCount={likeCount}
+            commentCount={post.comments_count}
+            views={post.views_count ?? post.view_count ?? post.views}
+            liked={likedByMe}
+            saved={saved ?? post.is_saved ?? false}
+            disabled={isLiking}
+            onLike={handleLike}
+            onComment={handleOpenComments}
+            onSave={() => onToggleSaved?.(post)}
+            onShare={handleShare}
+          />
           </View>
         </View>
       </TouchableOpacity>
     </Link>
   );
 }
+
+// Feed rows re-render whenever the screen above them does (tab switch, shop
+// strip collapse). Comparing on the fields the card actually reads keeps that
+// to the rows whose data really changed.
+export default React.memo(FeedPostCard, (prev, next) => {
+  const a = prev.post;
+  const b = next.post;
+  return (
+    a.id === b.id &&
+    a.likes_count === b.likes_count &&
+    a.comments_count === b.comments_count &&
+    a.liked_by_me === b.liked_by_me &&
+    a.views_count === b.views_count &&
+    a.view_count === b.view_count &&
+    a.views === b.views &&
+    a.is_saved === b.is_saved &&
+    a.caption === b.caption &&
+    a.created_at === b.created_at &&
+    a.user?.username === b.user?.username &&
+    a.user?.profile_picture === b.user?.profile_picture &&
+    a.niche?.id === b.niche?.id &&
+    a.niche?.name === b.niche?.name &&
+    a.media === b.media &&
+    prev.onLike === next.onLike &&
+    prev.onOpenActions === next.onOpenActions &&
+    prev.saved === next.saved &&
+    prev.onToggleSaved === next.onToggleSaved
+  );
+});

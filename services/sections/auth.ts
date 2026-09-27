@@ -1,7 +1,11 @@
-import { RegisterRequest, LoginRequest, AuthUser, ApiResponse, UserSwitchResponse, RoleCreationResult } from "../../models/auth";
+import { RegisterRequest, LoginRequest, AuthUser, ApiResponse, UserSwitchResponse, RoleCreationResult, CreateBuyerRequest, CreateSellerRequest } from "../../models/auth";
 import { CommonBuyerResponseData, CommonSellerResponseData } from "../../models/user";
 import { BASE_URL, request } from "../api";
+import { appendLocalFile } from "../../utils/formDataFile";
+import { prepareImageForUpload } from "../../utils/imagePrep";
 import { setAuthToken, extractTokenFromResponse, setUserSession, clearUserSession } from "../authStorage";
+import { getStoredPushToken } from "../notificationState";
+import { unregisterPushToken } from "./push";
 
 
 /**
@@ -59,6 +63,13 @@ export async function loginUser(data: LoginRequest): Promise<AuthUser> {
  */
 export async function logoutUser(): Promise<void> {
   try {
+    // Stop remote push to this device (while still authenticated).
+    try {
+      const token = await getStoredPushToken();
+      if (token) await unregisterPushToken(token);
+    } catch {
+      /* non-fatal */
+    }
     await request<void>(`${BASE_URL}/users/logout`, { method: "POST" });
   } finally {
     await setAuthToken(null);
@@ -87,12 +98,33 @@ export async function sendVerificationEmail(email: string): Promise<void> {
  * @param code The verification code sent to the email
  * @returns 
  */
-export async function verifyEmail(email: string, code: string): Promise<string> {
-  const res = await request<{message: string}>(`${BASE_URL}/users/email-verification/verify`, {
+/**
+ * Verifies an address — and signs the account in.
+ *
+ * This is where signing up actually completes. Register creates the account
+ * but hands back nothing to act with, so proving you own the address is what
+ * buys access rather than a step the client is trusted to honour. The
+ * response is therefore the same shape login returns, token included.
+ */
+export async function verifyEmail(email: string, code: string): Promise<AuthUser> {
+  const res = await request<any>(`${BASE_URL}/users/email-verification/verify`, {
     method: 'POST',
-    body: JSON.stringify({ email, verification_code:code }),
+    body: JSON.stringify({ email, verification_code: code }),
   });
-  return res.message;
+  const token = extractTokenFromResponse(res);
+  if (token) await setAuthToken(token);
+  const user = (res?.user ?? res?.data ?? res) as AuthUser;
+  if (user?.email) {
+    await setUserSession(
+      {
+        email: user.email,
+        account_type: user.current_role ?? user.account_type,
+        user_id: user.id,
+      },
+      (user.current_role ?? user.account_type) as "buyer" | "seller"
+    );
+  }
+  return user;
 }
 
 /**
@@ -137,11 +169,16 @@ export async function checkUsername(username: string): Promise<{ available: bool
 /** Upload profile picture. Call after registration. */
 export async function uploadProfilePicture(uri: string, fileName = "profile.jpg"): Promise<{ url?: string; profile_picture?: string }> {
   const formData = new FormData();
-  formData.append("file", {
-    uri,
-    name: fileName,
-    type: "image/jpeg",
-  } as any);
+  // Downscale/re-encode to satisfy backend dimension/format limits, then
+  // append as a File (Blob) — classic `{uri, name, type}` parts throw
+  // "Unsupported FormDataPart implementation" under Expo's fetch.
+  const prepped = await prepareImageForUpload({ uri });
+  appendLocalFile(
+    formData,
+    "file",
+    prepped.uri,
+    prepped.uri === uri ? fileName : undefined,
+  );
 
   const res = await request<any>(`${BASE_URL}/users/profile/picture`, {
     method: "POST",
@@ -167,7 +204,7 @@ export async function switchUserRole(): Promise<UserSwitchResponse> {
  * @param data Buyer creation data (reuses RegisterRequest shape)
  * @returns Created/updated authenticated user object
  */
-export async function createBuyer(data: RegisterRequest['buyer_data']): Promise<RoleCreationResult> {
+export async function createBuyer(data: CreateBuyerRequest): Promise<RoleCreationResult> {
   const res = await request<RoleCreationResult>(`${BASE_URL}/users/create-buyer`, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -180,7 +217,7 @@ export async function createBuyer(data: RegisterRequest['buyer_data']): Promise<
  * @param data Seller creation data (reuses RegisterRequest shape)
  * @returns Created/updated authenticated user object
  */
-export async function createSeller(data: RegisterRequest['seller_data']): Promise<RoleCreationResult> {
+export async function createSeller(data: CreateSellerRequest): Promise<RoleCreationResult> {
   const res = await request<RoleCreationResult>(`${BASE_URL}/users/create-seller`, {
     method: 'POST',
     body: JSON.stringify(data),

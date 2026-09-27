@@ -1,3 +1,5 @@
+import type { OnboardingState } from './profile';
+
 import { AddressData, CommonBuyerResponseData, CommonSellerResponseData } from "./user";
 
 // types.ts
@@ -21,6 +23,28 @@ export interface RegisterRequest {
     buyername: string;
   };
   address?: AddressData;
+}
+
+/** What POST /users/create-buyer takes.
+ *
+ * Its own type rather than a reuse of RegisterRequest["buyer_data"]:
+ * registration and "add this role to an account that already exists" are
+ * different contracts, and the create endpoint's own schema
+ * (BuyerCreateSchema) asks only for the name. The delivery address is
+ * collected later, on its own screen, so borrowing the registration shape
+ * described a call this endpoint never wanted. */
+export interface CreateBuyerRequest {
+  buyername: string;
+  shipping_address?: Record<string, string>;
+}
+
+/** What POST /users/create-seller takes (SellerCreateSchema). Policies are
+ *  set from the dashboard afterwards, not during signup. */
+export interface CreateSellerRequest {
+  shop_name: string;
+  description: string;
+  category_ids: number[];
+  policies?: Record<string, string>;
 }
 
 export interface LoginRequest {
@@ -52,6 +76,14 @@ export interface AuthUser {
   created_at: string;
   updated_at: string;
   account_type: AccountType;
+
+  /**
+   * Where this account stands in signup.
+   *
+   * Present on the register and verify responses, which is what lets the
+   * verification screen route without a second round trip.
+   */
+  onboarding?: OnboardingState;
 }
 
 export interface UserSwitchResponse {

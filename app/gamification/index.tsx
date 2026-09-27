@@ -1,0 +1,343 @@
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  ActivityIndicator,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { ArrowLeft, ChevronRight } from "lucide-react-native";
+
+import { useTheme } from "../../components/themeProvider";
+import { useTokens, tokensFor } from "../../theme/useTokens";
+import { useUser } from "../../hooks/userContextProvider";
+import { useGamificationContext } from "../../hooks/gamificationContext";
+import { getPointsHistory, getLeaderboard } from "../../services/sections/gamification";
+import TierBadge from "../../components/gamification/TierBadge";
+import TierProgressBar from "../../components/gamification/TierProgressBar";
+import BadgeGrid from "../../components/gamification/BadgeGrid";
+import LeaderboardRow from "../../components/gamification/LeaderboardRow";
+import { reasonLabel } from "../../utils/gamification";
+import type { PointsHistoryItem, LeaderboardRow as LBRow } from "../../types/gamification";
+import CountUp from "../../components/gamification/CountUp";
+import StreakCard from "../../components/gamification/StreakCard";
+import { tierColor } from "../../theme/tierColors";
+import { useBackTo } from "../../utils/goBack";
+
+export default function GamificationScreen() {
+  const router = useRouter();
+  const goBack = useBackTo("/(tabs)/profile");
+  const { resolvedTheme } = useTheme();
+  const { user } = useUser();
+  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
+
+  const { profile: data, badges, loading, error, refresh, refreshBadges } = useGamificationContext();
+
+  const [recent, setRecent] = useState<PointsHistoryItem[]>([]);
+  const [preview, setPreview] = useState<LBRow[]>([]);
+
+  const loadExtras = useCallback(async () => {
+    try {
+      const [hist, lb] = await Promise.all([
+        getPointsHistory(null, 5),
+        getLeaderboard({ scope: "global", period: "weekly", limit: 3 }),
+      ]);
+      setRecent(hist.items);
+      setPreview(lb.items);
+    } catch {
+      // Non-fatal; the hero/badges still render.
+    }
+  }, []);
+
+  useEffect(() => {
+    loadExtras();
+  }, [loadExtras]);
+
+  const onRefresh = useCallback(() => {
+    refresh();
+    refreshBadges();
+    loadExtras();
+  }, [refresh, refreshBadges, loadExtras]);
+
+  // Realtime points/badge/tier updates are handled globally by
+  // GamificationProvider (toast + celebratory modals); this screen just
+  // re-reads the shared, already-live profile/badges data.
+
+  return (
+    <SafeAreaView
+      className="flex-1 bg-surface-page"
+      edges={["top", "bottom"]}
+    >
+      <View
+        className={`flex-row items-center px-4 py-3 border-b ${
+          "border-border"
+        }`}
+      >
+        <TouchableOpacity onPress={goBack} className="flex-row items-center">
+          <ArrowLeft size={20} color={t.textPrimary} />
+        </TouchableOpacity>
+        <Text
+          className={`text-lg font-bold ml-2 ${
+            "text-text-primary"
+          }`}
+        >
+          Your Progress
+        </Text>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 40 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={onRefresh}
+            tintColor={t.textPrimary}
+          />
+        }
+      >
+        {error && !data ? (
+          <View className="items-center py-16 px-6">
+            <Text
+              className={`text-sm text-center ${
+                "text-text-secondary"
+              }`}
+            >
+              {error}
+            </Text>
+            <TouchableOpacity
+              onPress={onRefresh}
+              className="mt-3 px-5 py-2 bg-primary-fill rounded"
+            >
+              <Text className="text-white font-bold text-sm">Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : !data ? (
+          <View className="items-center py-16">
+            <ActivityIndicator color={t.textPrimary} />
+          </View>
+        ) : (
+          <>
+            {/* Hero */}
+            <View className="px-6 pt-6">
+              <View
+                className={`rounded border p-6 ${
+                  "bg-surface-raised border-border"
+                }`}
+              >
+                <TierBadge
+                  tier={data.tier.key}
+                  stars={data.tier.stars}
+                  name={data.tier.name}
+                  colorHex={tierColor(data.tier?.key, t)}
+                  size="lg"
+                  showName
+                />
+                {/* Counts to the new total rather than swapping to it. Points
+                    are the most frequent reward in the app and were the least
+                    felt: the number simply differed between renders. */}
+                <CountUp
+                  value={data.lifetime_points}
+                  hapticOnChange
+                  className="font-bold text-[40px] mt-4 text-text-primary"
+                />
+                <Text
+                  className={`text-xs -mt-1 mb-4 ${
+                    "text-text-secondary"
+                  }`}
+                >
+                  lifetime points
+                </Text>
+                <TierProgressBar
+                  progress={data.tier.progress_to_next}
+                  pointsToNext={data.tier.points_to_next_tier}
+                  nextTierName={null}
+                  colorHex={tierColor(data.tier?.key, t)}
+                />
+              </View>
+            </View>
+
+            {/* Streak. Rendered only when the server sends it, so an older
+                deployment simply shows nothing rather than a zero that looks
+                like a lost streak. */}
+            {data.streak ? (
+              <View className="px-6 pt-4">
+                <StreakCard streak={data.streak} />
+              </View>
+            ) : null}
+
+            {/* Quick stats */}
+            <View className="flex-row gap-3 px-6 pt-4">
+              <StatTile
+                label="This week"
+                value={data.weekly_points.toLocaleString()}
+                isDark={isDark}
+              />
+              <StatTile
+                label="Badges"
+                value={`${data.badges_earned}/${data.badges_total}`}
+                isDark={isDark}
+              />
+              <StatTile
+                label="Rank"
+                value={data.weekly_rank ? `#${data.weekly_rank.rank}` : "—"}
+                isDark={isDark}
+              />
+            </View>
+
+            {/* Recent activity */}
+            <SectionHeader
+              title="Recent activity"
+              actionLabel="See all"
+              onAction={() => router.push("/gamification/points-history")}
+              isDark={isDark}
+            />
+            <View className="px-6">
+              {recent.length === 0 ? (
+                <Text
+                  className={`text-sm ${
+                    "text-text-secondary"
+                  }`}
+                >
+                  No activity yet — earn points by buying, selling and posting.
+                </Text>
+              ) : (
+                recent.map((r) => (
+                  <View
+                    key={r.id}
+                    className={`flex-row items-center justify-between py-3 border-b ${
+                      "border-border"
+                    }`}
+                  >
+                    <Text
+                      className={`text-sm ${
+                        "text-text-primary"
+                      }`}
+                    >
+                      {reasonLabel(r.reason)}
+                    </Text>
+                    <Text
+                      className={`font-bold text-sm ${
+                        r.delta >= 0 ? "text-success" : "text-danger-text"
+                      }`}
+                    >
+                      {r.delta >= 0 ? "+" : ""}
+                      {r.delta}
+                    </Text>
+                  </View>
+                ))
+              )}
+            </View>
+
+            {/* Badges */}
+            <SectionHeader title="Badges" isDark={isDark} />
+            <View className="px-6">
+              <BadgeGrid
+                badges={badges}
+                onBadgePress={(b) => router.push(`/gamification/badge/${b.slug}`)}
+              />
+            </View>
+
+            {/* Leaderboard preview */}
+            <SectionHeader
+              title="Leaderboard"
+              actionLabel="Open"
+              onAction={() => router.push("/gamification/leaderboard")}
+              isDark={isDark}
+            />
+            <View
+              className={`mx-6 rounded border overflow-hidden ${
+                "bg-surface-raised border-border"
+              }`}
+            >
+              {preview.length === 0 ? (
+                <Text
+                  className={`text-sm p-4 ${
+                    "text-text-secondary"
+                  }`}
+                >
+                  Leaderboard is warming up.
+                </Text>
+              ) : (
+                preview.map((row, index) => (
+                  <LeaderboardRow
+                    key={row.user_id}
+                    row={row}
+                    index={index}
+                    isCurrentUser={row.user_id === user?.user_id}
+                  />
+                ))
+              )}
+            </View>
+          </>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function StatTile({
+  label,
+  value,
+  isDark,
+}: {
+  label: string;
+  value: string;
+  isDark: boolean;
+}) {
+  return (
+    <View
+      className={`flex-1 rounded border p-4 ${
+        "bg-surface-raised border-border"
+      }`}
+    >
+      <Text
+        className={`text-[10px] font-bold uppercase tracking-wider ${
+          "text-text-secondary"
+        }`}
+      >
+        {label}
+      </Text>
+      <Text
+        className={`text-lg font-bold mt-1 ${
+          "text-text-primary"
+        }`}
+      >
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function SectionHeader({
+  title,
+  actionLabel,
+  onAction,
+  isDark,
+}: {
+  title: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  isDark: boolean;
+}) {
+  return (
+    <View className="flex-row items-center justify-between px-6 pt-8 pb-3">
+      <Text
+        className={`text-xl font-bold ${
+          "text-text-primary"
+        }`}
+      >
+        {title}
+      </Text>
+      {actionLabel && onAction && (
+        <TouchableOpacity onPress={onAction} className="flex-row items-center">
+          <Text className="text-primary font-bold text-sm">{actionLabel}</Text>
+          <ChevronRight size={16} color={tokensFor(isDark).primaryText} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}

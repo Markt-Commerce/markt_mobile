@@ -5,7 +5,15 @@
 
 import React, { useEffect } from "react";
 import { View, Text, TouchableOpacity, Keyboard } from "react-native";
-import { Camera, Image as ImageIcon, ShoppingBag, FileText, Percent } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  Camera,
+  Image as ImageIcon,
+  ShoppingBag,
+  FileText,
+  Percent,
+} from "lucide-react-native";
+import { useTokens } from "../theme/useTokens";
 
 type Props = {
   visible: boolean;
@@ -16,6 +24,8 @@ type Props = {
   onProducts?: () => void;
   onRequests?: () => void;
   onDiscounts?: () => void;
+  /** Sellers only: open the form that makes a new offer. */
+  onCreateDiscount?: () => void;
   role?: "buyer" | "seller";
 };
 
@@ -31,26 +41,32 @@ const OptionCard = ({
   onPress: () => void;
   subtitle?: string;
   disabled?: boolean;
-}) => (
-  <TouchableOpacity
-    onPress={onPress}
-    disabled={disabled}
-    activeOpacity={0.7}
-    className={`flex-1 min-w-[100px] max-w-[110px] rounded bg-white border border-border p-4 items-center ${disabled ? "opacity-50" : ""}`}
-  >
-    <View className="w-14 h-14 rounded bg-surface items-center justify-center mb-3">
-      <Icon size={28} color="#000000" />
-    </View>
-    <Text className="text-black font-geist font-semibold text-sm" numberOfLines={1}>
-      {label}
-    </Text>
-    {subtitle && (
-      <Text className="text-tertiary text-[11px] mt-0.5" numberOfLines={1}>
-        {subtitle}
+}) => {
+  const t = useTokens();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={subtitle ? `${label}, ${subtitle}` : label}
+      accessibilityState={{ disabled }}
+      className={`flex-1 items-center py-2 ${disabled ? "opacity-50" : ""}`}
+    >
+      <View className="w-12 h-12 rounded-full items-center justify-center mb-2 bg-surface-sunken">
+        <Icon size={22} color={t.textPrimary} />
+      </View>
+      <Text
+        className="font-semibold text-[13px] text-text-primary"
+        numberOfLines={1}
+      >
+        {label}
       </Text>
-    )}
-  </TouchableOpacity>
-);
+    </TouchableOpacity>
+  );
+};
 
 export default function ChatAttachmentSheet({
   visible,
@@ -61,8 +77,10 @@ export default function ChatAttachmentSheet({
   onProducts,
   onRequests,
   onDiscounts,
+  onCreateDiscount,
   role = "buyer",
 }: Props) {
+  const insets = useSafeAreaInsets();
   useEffect(() => {
     if (visible) Keyboard.dismiss();
   }, [visible]);
@@ -91,84 +109,89 @@ export default function ChatAttachmentSheet({
         onPress={onClose}
         activeOpacity={1}
       />
-      <View className="absolute bottom-0 left-0 right-0 bg-white rounded-t shadow-level-2 overflow-hidden">
-        <View className="w-10 h-1 rounded bg-border self-center mt-3 mb-2" />
-        <Text className="text-black font-geist font-bold text-lg px-5 mb-4">Attach</Text>
+      <View
+        className="absolute bottom-0 left-0 right-0 rounded-t shadow-level-2 overflow-hidden bg-surface-raised"
+        // The sheet is pinned to the bottom of an edge-to-edge window, so
+        // without this its last row of buttons sits under the navigation
+        // bar.
+        style={{ paddingBottom: insets.bottom }}
+      >
+        <View
+          className="w-10 h-1 rounded self-center mt-3 mb-2 bg-border-strong"
+        />
+        <Text
+          className="font-bold text-lg px-5 mb-4 text-text-primary"
+        >
+          Attach
+        </Text>
 
-        <View className="px-5 pb-6">
-          <Text className="text-tertiary text-xs font-geist font-bold uppercase tracking-wider mb-3">Media</Text>
-          <View className="flex-row flex-wrap gap-3">
+        {/* One row, not a stacked grid of section-headed cards. There are
+            four choices; giving each a 135px card and its own heading made
+            the sheet nearly half the screen to say very little. */}
+        <View className="flex-row px-3 pb-4">
+          <OptionCard
+            icon={Camera}
+            label="Camera"
+            onPress={() => handleOption(onCamera)}
+            disabled={busy}
+          />
+          <OptionCard
+            icon={ImageIcon}
+            label="Photos"
+            onPress={() => handleOption(onPhotos)}
+            disabled={busy}
+          />
+          {role === "seller" && onProducts ? (
             <OptionCard
-              icon={Camera}
-              label="Camera"
-              onPress={() => handleOption(onCamera)}
-              subtitle="Take photo"
+              icon={ShoppingBag}
+              label="Product"
+              onPress={() => handleOption(onProducts)}
               disabled={busy}
             />
+          ) : null}
+          {role === "buyer" && onRequests ? (
             <OptionCard
-              icon={ImageIcon}
-              label="Photos"
-              onPress={() => handleOption(onPhotos)}
-              subtitle="From gallery"
+              icon={FileText}
+              label="Request"
+              onPress={() => handleOption(onRequests)}
               disabled={busy}
             />
-          </View>
-
-          {(role === "seller" && onProducts) || (role === "buyer" && onRequests) ? (
-            <>
-              <Text className="text-tertiary text-xs font-geist font-bold uppercase tracking-wider mt-5 mb-3">
-                {role === "seller" ? "Share" : "More"}
-              </Text>
-              <View className="flex-row flex-wrap gap-3">
-                {role === "seller" && onProducts && (
-                  <OptionCard
-                    icon={ShoppingBag}
-                    label="Products"
-                    onPress={() => handleOption(onProducts)}
-                    subtitle="Share listing"
-                    disabled={busy}
-                  />
-                )}
-                {role === "buyer" && onRequests && (
-                  <OptionCard
-                    icon={FileText}
-                    label="Requests"
-                    onPress={() => handleOption(onRequests)}
-                    subtitle="Share request"
-                    disabled={busy}
-                  />
-                )}
-                {onDiscounts && (
-                  <OptionCard
-                    icon={Percent}
-                    label="Discounts"
-                    onPress={() => handleOption(onDiscounts)}
-                    subtitle="View offers"
-                    disabled={busy}
-                  />
-                )}
-              </View>
-            </>
-          ) : (
-            onDiscounts && (
-              <>
-                <Text className="text-tertiary text-xs font-geist font-bold uppercase tracking-wider mt-5 mb-3">
-                  Offers
-                </Text>
-                <View className="flex-row flex-wrap gap-3">
-                  <OptionCard
-                    icon={Percent}
-                    label="Discounts"
-                    onPress={() => handleOption(onDiscounts)}
-                    subtitle="View offers"
-                    disabled={busy}
-                  />
-                </View>
-              </>
-            )
-          )}
+          ) : null}
+          {/* A seller can now make one, not just look at the ones that
+              exist. The endpoint was always there; nothing called it. */}
+          {role === "seller" && onCreateDiscount ? (
+            <OptionCard
+              icon={Percent}
+              label="Discount"
+              onPress={() => handleOption(onCreateDiscount)}
+              disabled={busy}
+            />
+          ) : onDiscounts ? (
+            <OptionCard
+              icon={Percent}
+              label="Offers"
+              onPress={() => handleOption(onDiscounts)}
+              disabled={busy}
+            />
+          ) : null}
         </View>
-        <View className="h-6 bg-surface" />
+
+        {/* A seller still needs to see what they have already offered, but it
+            is a second-order thing next to making one. */}
+        {role === "seller" && onCreateDiscount && onDiscounts ? (
+          <TouchableOpacity
+            onPress={() => handleOption(onDiscounts)}
+            disabled={busy}
+            accessibilityRole="button"
+            className="mx-5 mb-4 items-center rounded-xl border border-border py-3"
+          >
+            <Text className="text-[13px] font-semibold text-primary-text">
+              See offers in this chat
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
+        <View className="h-6 bg-surface-page" />
       </View>
     </View>
   );

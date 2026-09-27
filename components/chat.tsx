@@ -2,7 +2,8 @@
  * ChatScreen — 1:1 conversation
  */
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState, useLayoutEffect } from "react";
+import { emitBadgeChanged } from "../utils/badgeEvents";
 import {
   View,
   Text,
@@ -15,6 +16,7 @@ import {
   Keyboard,
   Platform,
   Alert,
+  StyleSheet,
 } from "react-native";
 import {
   ArrowLeft,
@@ -28,6 +30,7 @@ import {
   Rocket,
   Send,
   ShoppingCart,
+  Percent,
   Smile,
   SmilePlus,
   Star,
@@ -44,10 +47,11 @@ import {
   getReactions,
   addReaction,
   removeReaction,
-  sendProductMessageMock,
+  sendProductMessage,
   sendMessageREST,
   getRoomDiscounts,
   respondToDiscount,
+  createRoomDiscount,
 } from "../services/sections/chat";
 import { ChatMessage } from "../models/chat";
 import { addToCart } from "../services/sections/cart";
@@ -56,6 +60,8 @@ import { useToast } from "./ToastProvider";
 import ProductPicker from "./productPicker";
 import RequestPicker from "./requestPicker";
 import ChatAttachmentSheet from "./chatAttachmentSheet";
+import DiscountOfferSheet from "./chat/DiscountOfferSheet";
+import DiscountMessageCard from "./chat/DiscountMessageCard";
 import type { BuyerRequest } from "../models/feed";
 import { getBuyerRequests } from "../services/sections/feed";
 import { attemptMultipleUpload } from "../services/sections/media";
@@ -80,6 +86,19 @@ import {
 } from "../utils/chatAvatar";
 import { normalizeUri, resolveProductImageUri } from "../utils/imageUri";
 import { getUserProfile } from "../services/sections/profile";
+import { useTheme } from "./themeProvider";
+import { useTokens } from "../theme/useTokens";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useKeyboardOverlap } from "../hooks/useKeyboardOverlap";
+import { InlineVideo, MediaViewerModal } from "./postMedia";
+import {
+  formatDate as watDate,
+  formatTime as watTime,
+  isSameWatDay,
+  parseServerDate,
+} from "../utils/datetime";
+
+export type ChatScreenVariant = "screen" | "sheet";
 
 export type ChatProps = {
   route: {
@@ -89,9 +108,17 @@ export type ChatProps = {
     };
   };
   navigation: any;
+  /** `sheet` = embedded in QuickChatBottomSheet (no header, bottom-sheet keyboard) */
+  variant?: ChatScreenVariant;
+  onClose?: () => void;
+  /** Sheet mode: input bar rendered in parent BottomSheet footer (keyboard-safe) */
+  onSheetFooterReady?: (footer: React.ReactNode) => void;
 };
 
-const reactionIcons: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
+const reactionIcons: Record<
+  string,
+  React.ComponentType<{ size?: number; color?: string }>
+> = {
   THUMBS_UP: ThumbsUp,
   THUMBS_DOWN: ThumbsDown,
   HEART: Heart,
@@ -110,17 +137,621 @@ function getReactionIcon(type: string) {
   return reactionIcons[type] ?? Smile;
 }
 
-function formatTime(iso: string) {
-  const d = new Date(iso);
-  const now = new Date();
-  const isToday = d.toDateString() === now.toDateString();
-  if (isToday) return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  return d.toLocaleDateString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+/**
+ * Whether two messages belong to the same visual run.
+ *
+ * Same sender, same minute. A burst of five messages then renders as one block
+ * with a single avatar and a single timestamp, instead of five avatars and five
+ * timestamps stacked down the screen -- which is most of what made the thread
+ * feel sparse and repetitive.
+ */
+/** Reactions on a message, normalised. Pure -- reads only its argument --
+ *  so the memoised row can call it without depending on the screen. */
+function getReactionSummaries(
+  m: ChatMessage,
+): { reaction_type: string; count: number; has_reacted: boolean }[] {
+  const rx = m.message_data?.reactions;
+  if (Array.isArray(rx) && rx.length > 0)
+    return rx.filter((r) => r.count > 0);
+  const legacy = (m as any).hasReactedClient ?? false;
+  const count = m.message_data?.reactions_count ?? 0;
+  if (count > 0 || legacy)
+    return [
+      {
+        reaction_type: "THUMBS_UP",
+        count: count || (legacy ? 1 : 0),
+        has_reacted: legacy,
+      },
+    ];
+  return [];
 }
 
-export default function ChatScreen({ route }: ChatProps) {
+
+/** What a message row needs from the screen that owns it, bundled so the row
+ *  can be memoised against one stable object rather than a dozen props. */
+type RowContext = {
+  myId: string | undefined;
+  role: string | null | undefined;
+  textColor: string;
+  mutedColor: string;
+  isDark: boolean;
+  setReactionPickerFor: (id: string | null) => void;
+  /** Through a ref, so a new message does not hand every row new callbacks. */
+  handlers: React.MutableRefObject<any>;
+};
+
+/**
+ * One message in the thread.
+ *
+ * Memoised, and outside the screen component, because it was neither: a plain
+ * function declared in the body got a fresh identity on every render, so
+ * every mounted row re-rendered on every keystroke. VirtualizedList said so
+ * out loud ("large list that is slow to update") on any thread long enough to
+ * notice.
+ *
+ * Everything it needs arrives as props: primitives, the message object, and
+ * one `ctx` that does not change while typing. Handlers reach it through a
+ * ref, so adding a message does not give the row a new function to look at.
+ */
+const MessageRow = React.memo(function MessageRow({
+  item,
+  isMe,
+  avatar,
+  continuesPrev,
+  continuesNext,
+  isGroupEnd,
+  hasReactions,
+  pickerOpen,
+  discountStatus,
+  discountBusy,
+  ctx,
+}: {
+  item: ChatMessage;
+  isMe: boolean;
+  avatar: any;
+  continuesPrev: boolean;
+  continuesNext: boolean;
+  isGroupEnd: boolean;
+  hasReactions: boolean;
+  pickerOpen: boolean;
+  /** Live status of the offer in this message, if it is one. */
+  discountStatus: string | null;
+  discountBusy: boolean;
+  ctx: RowContext;
+}) {
+  const {
+    myId,
+    role,
+    textColor,
+    mutedColor,
+    isDark,
+    setReactionPickerFor,
+    handlers,
+  } = ctx;
+    // Bubbles were `rounded` -- a 4px radius, so nearly square. A proper radius
+    // with the adjoining corners tightened makes a run read as one connected
+    // block, and the tail corner squares off at the end of the run.
+    const bubbleShape = [
+      "rounded-2xl",
+      isMe
+        ? `${continuesPrev ? "rounded-tr-md" : ""} ${continuesNext ? "rounded-br-md" : "rounded-br-sm"}`
+        : `${continuesPrev ? "rounded-tl-md" : ""} ${continuesNext ? "rounded-bl-md" : "rounded-bl-sm"}`,
+    ].join(" ");
+
+    return (
+      <View
+        className={`flex-row px-3 ${continuesPrev ? "pt-0.5" : "pt-2.5"} ${
+          isGroupEnd ? "pb-0.5" : "pb-0"
+        } ${isMe ? "justify-end" : "justify-start"}`}
+      >
+        {!isMe &&
+          (isGroupEnd ? (
+            <View className="mr-2">
+              <Avatar
+                key={`peer-${item.id}-${avatar.uri ?? "init"}`}
+                uri={avatar.uri}
+                name={avatar.name}
+                size={30}
+              />
+            </View>
+          ) : (
+            // Keeps the bubbles in a run flush with the one that has the avatar.
+            <View className="mr-2" style={{ width: 30 }} />
+          ))}
+        <View className={`max-w-[86%] ${isMe ? "items-end" : "items-start"}`}>
+          {item.message_type === "text" &&
+            (() => {
+              const sharedRequest = item.message_data?.request as
+                | { title?: string; description?: string; budget?: number }
+                | undefined;
+              const requestId = item.message_data?.request_id as
+                | string
+                | undefined;
+              if (
+                requestId &&
+                (item.content?.includes("Sharing request") || sharedRequest)
+              ) {
+                return (
+                  <View
+                    className={`px-4 py-3 min-w-[200px] ${bubbleShape} ${isMe ? "bg-primary-fill" : "bg-surface-raised border border-border"}`}
+                  >
+                    <Text
+                      className={`text-xs font-medium uppercase tracking-wide ${isMe ? "text-white/80" : "text-text-secondary"}`}
+                    >
+                      Buyer request
+                    </Text>
+                    <Text
+                      className={`text-base font-semibold mt-1 ${isMe ? "text-white" : "text-text-primary"}`}
+                      numberOfLines={2}
+                    >
+                      {sharedRequest?.title ||
+                        item.content.replace(/^Sharing request:\s*/i, "")}
+                    </Text>
+                    {sharedRequest?.description ? (
+                      <Text
+                        className={`text-sm mt-1 ${isMe ? "text-white/90" : "text-text-secondary"}`}
+                        numberOfLines={3}
+                      >
+                        {sharedRequest.description}
+                      </Text>
+                    ) : null}
+                    {sharedRequest?.budget != null && (
+                      <Text
+                        className={`text-sm font-semibold mt-2 ${isMe ? "text-white" : "text-text-primary"}`}
+                      >
+                        Budget: ₦{Number(sharedRequest.budget).toLocaleString()}
+                      </Text>
+                    )}
+                  </View>
+                );
+              }
+              const productIdInContent = (item.content || "").match(
+                /PRD_[\w]+/,
+              )?.[0];
+              if (
+                productIdInContent &&
+                (item.content?.includes("Sharing product") ||
+                  /^PRD_[\w]+$/.test(item.content.trim()))
+              ) {
+                return (
+                  <ChatProductDisplayComponent
+                    productId={productIdInContent}
+                    embeddedProduct={null}
+                    showAddToCart={role === "buyer"}
+                    onAddToCart={handlers.current.handleAddProductToCart}
+                  />
+                );
+              }
+              return (
+                <View
+                  className={`px-4 py-2.5 ${bubbleShape} ${isMe ? "bg-primary-fill" : "bg-surface-raised border border-border"}`}
+                >
+                  <Text
+                    className={`text-base ${isMe ? "text-white" : "text-text-primary"}`}
+                  >
+                    {item.content}
+                  </Text>
+                </View>
+              );
+            })()}
+
+          {item.message_type === "image" &&
+            (() => {
+              const imageUri = normalizeUri(
+                item.message_data?.url ??
+                  item.message_data?.image_url ??
+                  item.content,
+              );
+              if (!imageUri) {
+                return (
+                  <View
+                    className="w-56 h-40 rounded items-center justify-center px-3 bg-media"
+                  >
+                    <Text
+                      className="text-sm text-center text-text-secondary"
+                    >
+                      Image unavailable
+                    </Text>
+                  </View>
+                );
+              }
+              return (
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPress={() => handlers.current.setViewerUri(imageUri)}
+                >
+                  <Image
+                    source={{ uri: imageUri }}
+                    className="w-56 h-40 rounded bg-media"
+                    resizeMode="cover"
+                  />
+                  {item.pending && (
+                    <Text className="text-text-muted text-xs mt-1">Sending…</Text>
+                  )}
+                </TouchableOpacity>
+              );
+            })()}
+
+          {item.message_type === "video" &&
+            (() => {
+              const videoUri = normalizeUri(
+                item.message_data?.url ??
+                  (item.message_data as any)?.video_url ??
+                  item.content,
+              );
+              if (!videoUri) {
+                return (
+                  <View
+                    className="w-56 h-40 rounded items-center justify-center px-3 bg-media"
+                  >
+                    <Text
+                      className="text-sm text-center text-text-secondary"
+                    >
+                      Video unavailable
+                    </Text>
+                  </View>
+                );
+              }
+              return (
+                <View>
+                  <View
+                    className="w-56 h-40 rounded overflow-hidden bg-media"
+                  >
+                    <InlineVideo
+                      uri={videoUri}
+                      style={{ width: "100%", height: "100%" }}
+                      controls
+                    />
+                  </View>
+                  {item.pending && (
+                    <Text className="text-text-muted text-xs mt-1">Sending…</Text>
+                  )}
+                </View>
+              );
+            })()}
+
+          {item.message_type === "product" &&
+            (() => {
+              const productId = item.message_data?.product_id
+                ? String(item.message_data.product_id)
+                : (item.content || "").match(/PRD_[\w]+/)?.[0];
+              const embeddedProduct = item.message_data?.product;
+              const caption = productMessageCaption(item.content, productId);
+              if (!productId && !embeddedProduct?.id) {
+                return (
+                  <View
+                    className="rounded border px-4 py-3 bg-surface-sunken border-border"
+                  >
+                    <Text
+                      className="text-sm text-text-secondary"
+                    >
+                      Product no longer available
+                    </Text>
+                  </View>
+                );
+              }
+              return (
+                <View className="gap-2">
+                  {caption ? (
+                    <View
+                      className={`px-4 py-2.5 ${bubbleShape} ${isMe ? "bg-primary-fill" : "bg-surface-raised border border-border"}`}
+                    >
+                      <Text
+                        className={`text-base ${isMe ? "text-white" : "text-text-primary"}`}
+                      >
+                        {caption}
+                      </Text>
+                    </View>
+                  ) : null}
+                  <ChatProductDisplayComponent
+                    productId={productId}
+                    embeddedProduct={embeddedProduct}
+                    showAddToCart={role === "buyer"}
+                    onAddToCart={handlers.current.handleAddProductToCart}
+                  />
+                </View>
+              );
+            })()}
+
+          {item.message_type === "discount" && (
+            <DiscountMessageCard
+              data={(item.message_data ?? {}) as any}
+              // Older messages put the seller's note only in the body text.
+              fallbackNote={discountNoteFromContent(item.content)}
+              status={discountStatus}
+              role={role ?? undefined}
+              busy={discountBusy}
+              onRespond={handlers.current.handleRespondToDiscount}
+            />
+          )}
+
+          {item.message_type === "offer" && (
+            <View
+              className="rounded overflow-hidden border min-w-[200px] bg-surface-raised border-border"
+            >
+              <View
+                className="px-4 py-3 bg-media"
+              >
+                <Text
+                  className="text-xs font-medium uppercase tracking-wide text-text-secondary"
+                >
+                  Price offer
+                </Text>
+                <Text
+                  className="text-lg font-bold mt-0.5 text-text-primary"
+                >
+                  ₦
+                  {Number(
+                    (item as any).offer?.price ??
+                      (item as any).offer?.offer_amount ??
+                      item.content ??
+                      0,
+                  ).toLocaleString()}
+                </Text>
+                {(item as any).offer?.message && (
+                  <Text
+                    className="text-sm mt-1 text-text-secondary"
+                    numberOfLines={2}
+                  >
+                    {(item as any).offer.message}
+                  </Text>
+                )}
+              </View>
+              {role === "buyer" &&
+                (item as any).offer?.status === "pending" &&
+                (item as any).offer?.id && (
+                  <View className="flex-row p-2 gap-2">
+                    <TouchableOpacity
+                      onPress={() =>
+                        handlers.current.handleRespondToOffer(
+                          Number((item as any).offer.id),
+                          "accept",
+                        )
+                      }
+                      className="flex-1 py-2.5 rounded bg-primary-fill items-center"
+                    >
+                      <Text className="text-white font-semibold text-sm">
+                        Accept
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() =>
+                        handlers.current.handleRespondToOffer(
+                          Number((item as any).offer.id),
+                          "reject",
+                        )
+                      }
+                      className="flex-1 py-2.5 rounded border items-center bg-surface-sunken border-border"
+                    >
+                      <Text
+                        className="font-semibold text-sm text-text-primary"
+                      >
+                        Decline
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              {(item as any).offer?.status &&
+                (item as any).offer?.status !== "pending" && (
+                  <View className="px-4 py-2">
+                    <Text
+                      className="text-xs capitalize text-text-secondary"
+                    >
+                      {(item as any).offer.status}
+                    </Text>
+                  </View>
+                )}
+            </View>
+          )}
+
+          <View
+            className={`flex-row items-center gap-2 flex-wrap ${
+              isGroupEnd || hasReactions ? "mt-1" : ""
+            }`}
+          >
+            {/* One timestamp per run, not one per message. A burst of five
+                messages used to stack five identical times down the screen. */}
+            {isGroupEnd ? (
+              <Text className="text-text-muted text-[11px]">
+                {formatTime(item.created_at)}
+              </Text>
+            ) : null}
+            {!isNaN(Number(item.id)) && Number(item.id) > 0 && (
+              <>
+                {getReactionSummaries(item).map((r) => (
+                  <TouchableOpacity
+                    key={r.reaction_type}
+                    onPress={() => handlers.current.handleReactionTap(item, r)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    className={`flex-row items-center gap-0.5 px-1.5 py-0.5 rounded border ${
+                      r.has_reacted
+                        ? isDark
+                          ? "bg-dark-elevated border-dark-border-strong"
+                          : "bg-surface-sunken border-border"
+                        : isDark
+                          ? "bg-dark-surface border-transparent"
+                          : "bg-white border-transparent"
+                    }`}
+                  >
+                    {(() => {
+                      const ReactionIcon = getReactionIcon(r.reaction_type);
+                      return (
+                        <ReactionIcon
+                          size={12}
+                          color={r.has_reacted ? textColor : mutedColor}
+                        />
+                      );
+                    })()}
+                    {(r.count > 1 || r.has_reacted) && (
+                      <Text
+                        className={`text-[11px] ${r.has_reacted ? `text-text-primary font-semibold` : "text-text-secondary"}`}
+                      >
+                        {r.count}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                  onPress={() =>
+                    setReactionPickerFor(
+                      pickerOpen
+                        ? null
+                        : String(item.id),
+                    )
+                  }
+                  onLongPress={() => setReactionPickerFor(String(item.id))}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  className="p-1"
+                >
+                  <SmilePlus size={14} color={mutedColor} />
+                </TouchableOpacity>
+                {/* Offer a discount on *this* product. Anchored to the
+                    message because that is where the intent is: a seller
+                    saying "15% off" under a jersey means the jersey, and an
+                    offer made from the attach sheet has no way to know which
+                    product was being discussed. Checkout scopes it to that
+                    product too, so the two agree. */}
+                {role === "seller" && productIdOf(item) ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      handlers.current.setOfferFor({
+                        productId: productIdOf(item)!,
+                        productName: productNameOf(item),
+                      });
+                      handlers.current.setOfferDiscountVisible(true);
+                    }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      productNameOf(item)
+                        ? `Offer a discount on ${productNameOf(item)}`
+                        : "Offer a discount on this product"
+                    }
+                    className="p-1"
+                  >
+                    <Percent size={14} color={mutedColor} />
+                  </TouchableOpacity>
+                ) : null}
+                {pickerOpen && (
+                  <View className="flex-row gap-1 mt-0.5">
+                    {COMMON_REACTIONS.map((type) => {
+                      const active = getReactionSummaries(item).some(
+                        (r) => r.reaction_type === type && r.has_reacted,
+                      );
+                      return (
+                        <TouchableOpacity
+                          key={type}
+                          onPress={() => handlers.current.handlePickerReaction(item, type)}
+                          className={`px-2 py-1 rounded border ${active ? ("bg-surface-sunken border-border") : "bg-surface-raised border-border"}`}
+                        >
+                          {(() => {
+                            const PickerIcon = getReactionIcon(type);
+                            return (
+                              <PickerIcon
+                                size={16}
+                                color={active ? textColor : mutedColor}
+                              />
+                            );
+                          })()}
+                        </TouchableOpacity>
+                      );
+                    })}
+                    <TouchableOpacity
+                      onPress={() => setReactionPickerFor(null)}
+                      className="px-2 py-1 rounded bg-media"
+                    >
+                      <X size={14} color={mutedColor} />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </>
+            )}
+          </View>
+          {item.pending && (
+            <Text className="text-text-muted text-[10px] mt-0.5">Pending…</Text>
+          )}
+        </View>
+        {/* No avatar on your own messages. This is a 1:1 thread -- alignment
+            and colour already say who sent it -- and the avatar cost 40px of
+            width on every outgoing line. Neither WhatsApp nor Instagram shows
+            one here. */}
+      </View>
+    );
+});
+
+function isSameGroup(a?: ChatMessage, b?: ChatMessage) {
+  if (!a || !b) return false;
+  if (String(a.sender_id) !== String(b.sender_id)) return false;
+  const ta = parseServerDate(a.created_at);
+  const tb = parseServerDate(b.created_at);
+  if (!ta || !tb) return false;
+  // Same minute, same sender — the whole grouping rule. Compared as instants
+  // rather than as local fields, so it no longer depends on the device zone.
+  return Math.floor(ta.getTime() / 60_000) === Math.floor(tb.getTime() / 60_000);
+}
+
+function formatTime(iso: string) {
+  // Today gets a bare clock time; anything older carries its date, and both
+  // read in Lagos time whatever zone the phone is in.
+  return isSameWatDay(iso, new Date())
+    ? watTime(iso)
+    : `${watDate(iso)}, ${watTime(iso)}`;
+}
+
+/** The seller's note out of a discount message body.
+ *
+ * The server appends it after a blank line, under the generated sentence.
+ * Newer messages also carry it in message_data; this is for the ones already
+ * sent, so an old offer does not lose the only human part of it. */
+function discountNoteFromContent(content?: string | null): string | null {
+  const parts = (content ?? "").split("\n\n").map((p) => p.trim()).filter(Boolean);
+  // First block is the generated headline; anything with a clock is the
+  // expiry line the server adds last.
+  const note = parts.slice(1).find((p) => !p.startsWith("⏰"));
+  return note || null;
+}
+
+/** The product a message is about, if it is about one.
+ *
+ * Product messages arrive in three shapes -- `message_data.product_id`, an
+ * embedded `message_data.product`, or a bare PRD_ id in the content -- so the
+ * "offer a discount on this" action reads all three rather than only the
+ * tidiest one. Returns null for anything that is not a product message. */
+function productIdOf(message: any): string | null {
+  if (message?.message_data?.product_id) return String(message.message_data.product_id);
+  if (message?.message_data?.product?.id) return String(message.message_data.product.id);
+  const inContent = (message?.content || "").match(/PRD_[\w]+/)?.[0];
+  if (inContent && (message?.message_type === "product" || /^PRD_[\w]+$/.test((message.content || "").trim()) || (message.content || "").includes("Sharing product"))) {
+    return inContent;
+  }
+  return null;
+}
+
+/** Its name, when the message carried one. Only used for labelling. */
+function productNameOf(message: any): string | null {
+  return message?.message_data?.product?.name ?? null;
+}
+
+/** User-facing text above a product card (excludes bare product ids / share labels). */
+function productMessageCaption(content: string | undefined, productId?: string): string | null {
+  const text = (content ?? "").trim();
+  if (!text) return null;
+  if (text === productId) return null;
+  if (/^PRD_[\w]+$/.test(text)) return null;
+  if (text === "Sharing product") return null;
+  return text;
+}
+
+export default function ChatScreen({
+  route,
+  variant = "screen",
+  onClose,
+  onSheetFooterReady,
+}: ChatProps) {
+  const embedInSheet = variant === "sheet";
   const { user, role } = useUser();
   const { roomId, otherUser } = route.params;
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -129,9 +760,19 @@ export default function ChatScreen({ route }: ChatProps) {
   const [page, setPage] = useState(1);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  // Ref guard, not state — onScroll fires far more often than onEndReached,
+  // so multiple calls can see loadingOlder still false before the state update
+  // flushes, letting two of them fetch the same page and prepend duplicate
+  // ids (causing the FlatList "same key" error).
+  const loadingOlderRef = useRef(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const router = useRouter();
   const { show } = useToast();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
+  const textColor = t.textPrimary;
+  const mutedColor = t.textSecondary;
 
   const [attachmentVisible, setAttachmentVisible] = useState(false);
   const [productLoading, setProductLoading] = useState(false);
@@ -140,13 +781,35 @@ export default function ChatScreen({ route }: ChatProps) {
   const [requestVisible, setRequestVisible] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
   const [requestList, setRequestList] = useState<BuyerRequest[]>([]);
-  const [reactionPickerFor, setReactionPickerFor] = useState<string | null>(null);
+  const [reactionPickerFor, setReactionPickerFor] = useState<string | null>(
+    null,
+  );
   const [myProfile, setMyProfile] = useState<ChatOtherUser | undefined>();
+  /** Fullscreen image viewer for tapped chat images */
+  const [viewerUri, setViewerUri] = useState<string | null>(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  // How much the keyboard actually covers. Measured rather than inferred --
+  // see useKeyboardOverlap for why the window's own resizing cannot be
+  // trusted on Android.
+  const keyboardOverlap = useKeyboardOverlap(!embedInSheet);
   const didInitialScrollRef = useRef(false);
   const pendingScrollToBottomRef = useRef(false);
 
   const myId = user?.user_id?.toString() ?? "";
   const PER_PAGE = 30;
+  const hasValidRoomId = Number.isFinite(roomId) && roomId > 0;
+
+  useEffect(() => {
+    if (embedInSheet) return;
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [embedInSheet]);
 
   useEffect(() => {
     let cancelled = false;
@@ -167,20 +830,54 @@ export default function ChatScreen({ route }: ChatProps) {
 
   const avatarCtx = React.useMemo(
     () => ({ myId, otherUser, myProfile }),
-    [myId, otherUser, myProfile]
+    [myId, otherUser, myProfile],
   );
 
   /** Display order: oldest first (chronological). API may return desc; we sort by created_at asc. */
+  // Enriched messages are cached by id against the object they came from.
+  //
+  // Without this the map built a new object for every message every time the
+  // list recomputed, so each row got a prop it had never seen and the memo on
+  // MessageRow could never bail out -- one new message re-rendered the entire
+  // thread. Reusing the previous object whenever the source has not changed
+  // is what lets the memo actually hold.
+  const enrichedRef = React.useRef(
+    new Map<string | number, { source: ChatMessage; value: ChatMessage }>(),
+  );
   const sortedMessages = React.useMemo(() => {
-    return [...messages]
-      .map((m) => enrichChatMessage(m, avatarCtx))
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    const cache = enrichedRef.current;
+    const live = new Set<string | number>();
+    const enriched = messages.map((m) => {
+      const key = m.id;
+      live.add(key);
+      const hit = cache.get(key);
+      if (hit && hit.source === m) return hit.value;
+      const value = enrichChatMessage(m, avatarCtx);
+      cache.set(key, { source: m, value });
+      return value;
+    });
+    // Messages that have gone (a failed send rolled back, an older page
+    // dropped) should not keep their entry alive for the life of the screen.
+    for (const key of cache.keys()) {
+      if (!live.has(key)) cache.delete(key);
+    }
+    return enriched.sort(
+      (a, b) =>
+        (parseServerDate(a.created_at)?.getTime() ?? 0) -
+        (parseServerDate(b.created_at)?.getTime() ?? 0),
+    );
   }, [messages, avatarCtx]);
 
+  // A new avatar context means every message renders differently, so the
+  // cached copies are stale by definition.
+  React.useEffect(() => {
+    enrichedRef.current.clear();
+  }, [avatarCtx]);
+
   const loadInitial = async () => {
+    if (!hasValidRoomId) return;
     setLoading(true);
     try {
-      if (!roomId || roomId === 0) return;
       const res = await getRoomMessages(roomId, 1, PER_PAGE);
       const list = res.messages ?? [];
       const reactionMap = await fetchReactionsForMessages(list);
@@ -195,14 +892,19 @@ export default function ChatScreen({ route }: ChatProps) {
       setHasMore(list.length < total);
       await markRoomRead(roomId);
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not load messages." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not load messages.",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const loadOlder = async () => {
-    if (loadingOlder || !hasMore || !roomId) return;
+    if (loadingOlderRef.current || !hasMore || !roomId) return;
+    loadingOlderRef.current = true;
     setLoadingOlder(true);
     try {
       const res = await getRoomMessages(roomId, page, PER_PAGE);
@@ -214,26 +916,39 @@ export default function ChatScreen({ route }: ChatProps) {
           const msgId = Number(m.id);
           if (!isNaN(msgId) && msgId > 0) chatSocket.joinMessage(msgId, myId);
         });
-        setMessages((prev) => [...enriched, ...prev]);
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          const uniqueOlder = enriched.filter((m) => !existingIds.has(m.id));
+          return [...uniqueOlder, ...prev];
+        });
         setPage((p) => p + 1);
       }
       const total = res.pagination?.total ?? 0;
       setHasMore(list.length === PER_PAGE && page * PER_PAGE < total);
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not load older messages." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not load older messages.",
+      });
     } finally {
       setLoadingOlder(false);
+      loadingOlderRef.current = false;
     }
   };
 
   useEffect(() => {
-    if (!roomId || roomId <= 0) {
-      setLoading(false);
+    if (!hasValidRoomId) {
+      setLoading(true);
       setMessages([]);
       return;
     }
+    setMessages([]);
+    setPage(1);
+    setHasMore(true);
+    setLoading(true);
     loadInitial();
-  }, [roomId]);
+  }, [roomId, hasValidRoomId]);
 
   const scrollToBottom = useCallback((animated = false) => {
     requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated }));
@@ -245,7 +960,8 @@ export default function ChatScreen({ route }: ChatProps) {
   }, [roomId]);
 
   useEffect(() => {
-    if (loading || sortedMessages.length === 0 || didInitialScrollRef.current) return;
+    if (loading || sortedMessages.length === 0 || didInitialScrollRef.current)
+      return;
     didInitialScrollRef.current = true;
     pendingScrollToBottomRef.current = true;
     scrollToBottom(false);
@@ -263,7 +979,9 @@ export default function ChatScreen({ route }: ChatProps) {
   const updateMessageReactions = useCallback(
     (
       messageId: number | string,
-      updater: (reactions: import("../models/chat").MessageReactionSummary[]) => import("../models/chat").MessageReactionSummary[]
+      updater: (
+        reactions: import("../models/chat").MessageReactionSummary[],
+      ) => import("../models/chat").MessageReactionSummary[],
     ) => {
       setMessages((prev) =>
         prev.map((m) => {
@@ -273,26 +991,31 @@ export default function ChatScreen({ route }: ChatProps) {
             ...m,
             message_data: { ...(m.message_data ?? {}), reactions: updater(rx) },
           };
-        })
+        }),
       );
     },
-    []
+    [],
   );
 
-  const refreshMessageReactions = useCallback(async (messageId: number, targetId: number | string) => {
-    try {
-      const reactions = normalizeReactionSummaries(await getReactions(messageId));
-      setMessages((prev) =>
-        prev.map((m) =>
-          String(m.id) === String(targetId)
-            ? { ...m, message_data: { ...(m.message_data ?? {}), reactions } }
-            : m
-        )
-      );
-    } catch {
-      /* keep optimistic state */
-    }
-  }, []);
+  const refreshMessageReactions = useCallback(
+    async (messageId: number, targetId: number | string) => {
+      try {
+        const reactions = normalizeReactionSummaries(
+          await getReactions(messageId),
+        );
+        setMessages((prev) =>
+          prev.map((m) =>
+            String(m.id) === String(targetId)
+              ? { ...m, message_data: { ...(m.message_data ?? {}), reactions } }
+              : m,
+          ),
+        );
+      } catch {
+        /* keep optimistic state */
+      }
+    },
+    [],
+  );
 
   const syncMessageReactions = useCallback(
     async (msg: ChatMessage) => {
@@ -301,13 +1024,20 @@ export default function ChatScreen({ route }: ChatProps) {
       chatSocket.joinMessage(msgId, myId);
       await refreshMessageReactions(msgId, msg.id);
     },
-    [myId, refreshMessageReactions]
+    [myId, refreshMessageReactions],
   );
 
   useEffect(() => {
     if (!roomId || roomId <= 0) return;
 
-    chatSocket.connect();
+    // connect() is async (it reads the auth token before opening the socket), so join
+    // the room only once the socket exists — otherwise the emit is dropped, not buffered.
+    let cancelled = false;
+    (async () => {
+      await chatSocket.connect();
+      if (!cancelled) chatSocket.joinRoom(roomId, myId);
+    })();
+
     const offMsg = chatSocket.onMessage(onSocketMessage);
     const offTyping = chatSocket.onTyping(onTypingUpdate);
     chatSocket.onStatus(() => {});
@@ -315,13 +1045,13 @@ export default function ChatScreen({ route }: ChatProps) {
     const offReactionAdded = chatSocket.onReactionAdded((data) => {
       const isMine = data.user_id === myId || String(data.user_id) === myId;
       updateMessageReactions(data.message_id, (rx) =>
-        applyReactionAdded(rx, data.reaction_type, isMine)
+        applyReactionAdded(rx, data.reaction_type, isMine),
       );
     });
     const offReactionRemoved = chatSocket.onReactionRemoved((data) => {
       const isMine = data.user_id === myId || String(data.user_id) === myId;
       updateMessageReactions(data.message_id, (rx) =>
-        applyReactionRemoved(rx, data.reaction_type, isMine)
+        applyReactionRemoved(rx, data.reaction_type, isMine),
       );
     });
     const offReactionStats = chatSocket.onReactionStats((data) => {
@@ -332,33 +1062,48 @@ export default function ChatScreen({ route }: ChatProps) {
             ...m,
             message_data: {
               ...(m.message_data ?? {}),
-              reactions: applyReactionStats(m.message_data?.reactions, data.reactions),
+              reactions: applyReactionStats(
+                m.message_data?.reactions,
+                data.reactions,
+              ),
             },
           };
-        })
+        }),
       );
     });
 
-    chatSocket.joinRoom(roomId, myId);
-
     return () => {
+      cancelled = true;
       offMsg();
       offTyping();
       offReactionAdded();
       offReactionRemoved();
       offReactionStats();
       chatSocket.leaveRoom(roomId, myId);
+      // Opening the room is what clears its unread count server-side, so the
+      // Chat tab badge is stale from the moment this screen mounted. Nudge
+      // it on the way out rather than leaving a count for messages that have
+      // now been read.
+      emitBadgeChanged();
     };
   }, [roomId, myId, updateMessageReactions]);
 
   function onSocketMessage(msg: ChatMessage) {
     if (msg.room_id !== roomId) return;
     setMessages((prev) => {
-      if (prev.some((m) => m.id === msg.id || (m.client_id && m.client_id === (msg as any).client_id))) {
+      if (
+        prev.some(
+          (m) =>
+            m.id === msg.id ||
+            (m.client_id && m.client_id === (msg as any).client_id),
+        )
+      ) {
         return prev.map((m) =>
-          m.client_id && (msg as any).client_id && m.client_id === (msg as any).client_id
+          m.client_id &&
+          (msg as any).client_id &&
+          m.client_id === (msg as any).client_id
             ? { ...msg, pending: false, client_id: undefined }
-            : m
+            : m,
         );
       }
       return [...prev, msg];
@@ -368,12 +1113,27 @@ export default function ChatScreen({ route }: ChatProps) {
     setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
   }
 
-  const handleRespondToOffer = async (offerId: number, response: "accept" | "reject") => {
+  const handleRespondToOffer = async (
+    offerId: number,
+    response: "accept" | "reject",
+  ) => {
     try {
-      await chatSocket.respondToOffer({ offer_id: offerId, response, user_id: myId });
-      show({ variant: "success", title: "Offer", message: response === "accept" ? "Offer accepted." : "Offer declined." });
+      await chatSocket.respondToOffer({
+        offer_id: offerId,
+        response,
+        user_id: myId,
+      });
+      show({
+        variant: "success",
+        title: "Offer",
+        message: response === "accept" ? "Offer accepted." : "Offer declined.",
+      });
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not respond to offer." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not respond to offer.",
+      });
     }
   };
 
@@ -405,7 +1165,11 @@ export default function ChatScreen({ route }: ChatProps) {
       setMessages((prev) => [...prev, temp]);
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not send message." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not send message.",
+      });
     } finally {
       setSending(false);
     }
@@ -416,11 +1180,17 @@ export default function ChatScreen({ route }: ChatProps) {
     try {
       const perms = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perms.granted) {
-        Alert.alert("Permission required", "We need permission to access your photos.");
+        Alert.alert(
+          "Permission required",
+          "We need permission to access your photos.",
+        );
         return;
       }
       const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: kind === "image" ? ImagePicker.MediaTypeOptions.Images : ImagePicker.MediaTypeOptions.Videos,
+        mediaTypes:
+          kind === "image"
+            ? ["images"]
+            : ["videos"],
         quality: 0.8,
       });
       if (res.canceled) return;
@@ -428,7 +1198,7 @@ export default function ChatScreen({ route }: ChatProps) {
       setSending(true);
       const uri = res.assets?.[0]?.uri;
       const uploadResult = await attemptMultipleUpload(
-        res.assets!.map((a) => ({ id: a?.assetId || "", uri: a?.uri || "" }))
+        res.assets!.map((a) => ({ id: a?.assetId || "", uri: a?.uri || "" })),
       );
       for (const result of uploadResult) {
         const isImage = kind === "image";
@@ -436,7 +1206,7 @@ export default function ChatScreen({ route }: ChatProps) {
           roomId,
           myId,
           result.media?.original_url || result.urls?.["original"] || uri!,
-          { localUri: uri }
+          { localUri: uri },
         );
         const temp: ChatMessage = {
           id: `c_${Date.now()}`,
@@ -451,10 +1221,18 @@ export default function ChatScreen({ route }: ChatProps) {
         };
         setMessages((prev) => [...prev, temp]);
       }
-      show({ variant: "success", title: "Sent", message: kind === "image" ? "Photo sent." : "Video sent." });
+      show({
+        variant: "success",
+        title: "Sent",
+        message: kind === "image" ? "Photo sent." : "Video sent.",
+      });
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not send media." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not send media.",
+      });
     } finally {
       setSending(false);
     }
@@ -480,7 +1258,11 @@ export default function ChatScreen({ route }: ChatProps) {
           const fallback = await getSellerProducts(Number(user?.user_id) || 0);
           setProductList(fallback);
         } catch {
-          show({ variant: "error", title: "Error", message: "Could not load products." });
+          show({
+            variant: "error",
+            title: "Error",
+            message: "Could not load products.",
+          });
         }
       } finally {
         setProductLoading(false);
@@ -499,17 +1281,30 @@ export default function ChatScreen({ route }: ChatProps) {
     try {
       const perms = await ImagePicker.requestCameraPermissionsAsync();
       if (!perms.granted) {
-        Alert.alert("Permission required", "We need camera access to take photos.");
+        Alert.alert(
+          "Permission required",
+          "We need camera access to take photos.",
+        );
         return;
       }
-      const res = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+      const res = await ImagePicker.launchCameraAsync({
+        mediaTypes: ["images"],
+        quality: 0.8,
+      });
       if (res.canceled) return;
 
       setSending(true);
       const uri = res.assets?.[0]?.uri;
-      const uploadResult = await attemptMultipleUpload(res.assets!.map((a) => ({ id: a?.assetId || "", uri: a?.uri || "" })));
+      const uploadResult = await attemptMultipleUpload(
+        res.assets!.map((a) => ({ id: a?.assetId || "", uri: a?.uri || "" })),
+      );
       for (const result of uploadResult) {
-        await chatSocket.sendImage(roomId, myId, result.media?.original_url || result.urls?.["original"] || uri!, { localUri: uri });
+        await chatSocket.sendImage(
+          roomId,
+          myId,
+          result.media?.original_url || result.urls?.["original"] || uri!,
+          { localUri: uri },
+        );
         const temp: ChatMessage = {
           id: `c_${Date.now()}`,
           room_id: roomId,
@@ -526,7 +1321,11 @@ export default function ChatScreen({ route }: ChatProps) {
       show({ variant: "success", title: "Sent", message: "Photo sent." });
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not send photo." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not send photo.",
+      });
     } finally {
       setSending(false);
     }
@@ -541,10 +1340,14 @@ export default function ChatScreen({ route }: ChatProps) {
       setRequestLoading(true);
       try {
         const all = await getBuyerRequests(1, 50);
-        const mine = all.filter((r) => String(r.buyer?.id) === myId);
+        const mine = all.filter((r) => String(r.user?.id) === myId);
         setRequestList(mine);
       } catch {
-        show({ variant: "error", title: "Error", message: "Could not load your requests." });
+        show({
+          variant: "error",
+          title: "Error",
+          message: "Could not load your requests.",
+        });
       } finally {
         setRequestLoading(false);
       }
@@ -572,18 +1375,55 @@ export default function ChatScreen({ route }: ChatProps) {
       });
       setMessages((prev) => [...prev, msg]);
       setRequestVisible(false);
-      show({ variant: "success", title: "Sent", message: "Request shared in chat." });
+      show({
+        variant: "success",
+        title: "Sent",
+        message: "Request shared in chat.",
+      });
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not share request." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not share request.",
+      });
     } finally {
       setSending(false);
     }
   }
 
   const [discountVisible, setDiscountVisible] = useState(false);
+  const [offerDiscountVisible, setOfferDiscountVisible] = useState(false);
+  // Which product the offer is about, when it was started from a product
+  // message. Null means shop-wide, which is what the attach sheet makes.
+  const [offerFor, setOfferFor] = useState<{
+    productId: string;
+    productName?: string | null;
+  } | null>(null);
   const [discounts, setDiscounts] = useState<any[]>([]);
   const [discountLoading, setDiscountLoading] = useState(false);
+  const [respondingToDiscount, setRespondingToDiscount] = useState<number | null>(
+    null,
+  );
+
+  // Loaded with the conversation, not only when the attach sheet is opened:
+  // the offer cards in the thread read their live state from this, and an
+  // accepted offer that still showed an Accept button would be worse than
+  // showing nothing.
+  useEffect(() => {
+    if (!roomId) return;
+    let alive = true;
+    getRoomDiscounts(roomId)
+      .then((list) => {
+        if (alive) setDiscounts(Array.isArray(list) ? list : []);
+      })
+      .catch(() => {
+        // The card falls back to the status it was sent with.
+      });
+    return () => {
+      alive = false;
+    };
+  }, [roomId]);
 
   async function handleDiscounts() {
     if (sending) return;
@@ -594,19 +1434,74 @@ export default function ChatScreen({ route }: ChatProps) {
       setDiscounts(Array.isArray(list) ? list : []);
     } catch {
       setDiscounts([]);
-      show({ variant: "error", title: "Error", message: "Could not load discounts." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not load discounts.",
+      });
     } finally {
       setDiscountLoading(false);
     }
   }
 
-  async function handleRespondToDiscount(discountId: number, response: "accepted" | "rejected") {
+  async function handleCreateDiscount(offer: {
+    discount_type: "percentage" | "fixed_amount";
+    discount_value: number;
+    expires_at: string;
+    discount_message?: string;
+  }) {
+    await createRoomDiscount(roomId, {
+      ...offer,
+      // Only when the offer was started from a product message. Absent means
+      // it covers the whole shop, which is what the server assumes too.
+      ...(offerFor ? { product_id: offerFor.productId } : {}),
+    });
+    show({
+      variant: "success",
+      title: "Offer sent",
+      message: "They can use it at checkout while it lasts.",
+    });
+    // Refresh the list so the seller sees what they just made if they look.
+    try {
+      const list = await getRoomDiscounts(roomId);
+      setDiscounts(Array.isArray(list) ? list : []);
+    } catch {
+      // The offer is sent; a stale list is not worth an error.
+    }
+  }
+
+  async function handleRespondToDiscount(
+    discountId: number,
+    response: "accepted" | "rejected",
+  ) {
+    if (respondingToDiscount != null) return;
+    setRespondingToDiscount(discountId);
     try {
       await respondToDiscount(discountId, { response });
-      setDiscounts((prev) => (Array.isArray(prev) ? prev : []).filter((d) => d.id !== discountId));
-      show({ variant: "success", title: "Discount", message: response === "accepted" ? "Discount accepted." : "Discount declined." });
+      // Marked, not removed. The card in the conversation reads its state
+      // from this list; dropping the row sent it back to looking unanswered,
+      // Accept button and all.
+      setDiscounts((prev) =>
+        (Array.isArray(prev) ? prev : []).map((d) =>
+          Number(d?.id) === Number(discountId) ? { ...d, status: response } : d,
+        ),
+      );
+      show({
+        variant: "success",
+        title: "Discount",
+        message:
+          response === "accepted"
+            ? "Saved. Use it at checkout."
+            : "Discount declined.",
+      });
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not respond to discount." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not respond to discount.",
+      });
+    } finally {
+      setRespondingToDiscount(null);
     }
   }
 
@@ -614,49 +1509,31 @@ export default function ChatScreen({ route }: ChatProps) {
     if (sending) return;
     setSending(true);
     try {
-      const selected = productList.find((p) => p.id === productId);
-      const imageUrl = resolveProductImageUri(selected);
-      const mock = await sendProductMessageMock(roomId, myId, productId);
-      setMessages((prev) => [
-        ...prev,
-        {
-          ...mock,
-          pending: false,
-          message_data: {
-            product_id: productId,
-            product: selected
-              ? {
-                  id: selected.id,
-                  name: selected.name,
-                  price: selected.price,
-                  image_url: imageUrl ?? undefined,
-                }
-              : { product_id: productId },
-          },
-        },
-      ]);
-      await chatSocket.sendProduct(roomId, myId, productId, "Sharing product");
+      const msg = await sendProductMessage(roomId, productId, "Sharing product");
+      setMessages((prev) => [...prev, { ...msg, pending: false }]);
       setProductVisible(false);
-      show({ variant: "success", title: "Sent", message: "Product shared in chat." });
+      show({
+        variant: "success",
+        title: "Sent",
+        message: "Product shared in chat.",
+      });
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not share product." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not share product.",
+      });
     } finally {
       setSending(false);
     }
   }
 
   /** Get reaction summaries for display; fallback to legacy reactions_count/hasReactedClient for THUMBS_UP */
-  function getReactionSummaries(m: ChatMessage): { reaction_type: string; count: number; has_reacted: boolean }[] {
-    const rx = m.message_data?.reactions;
-    if (Array.isArray(rx) && rx.length > 0) return rx.filter((r) => r.count > 0);
-    const legacy = (m as any).hasReactedClient ?? false;
-    const count = m.message_data?.reactions_count ?? 0;
-    if (count > 0 || legacy) return [{ reaction_type: "THUMBS_UP", count: count || (legacy ? 1 : 0), has_reacted: legacy }];
-    return [];
-  }
-
-  async function handleAddReaction(message: ChatMessage, reactionType: ReactionType) {
+  async function handleAddReaction(
+    message: ChatMessage,
+    reactionType: ReactionType,
+  ) {
     const msgId = Number(message.id);
     if (isNaN(msgId) || msgId <= 0) return;
     const rx = message.message_data?.reactions ?? [];
@@ -664,48 +1541,65 @@ export default function ChatScreen({ route }: ChatProps) {
     if (existing?.has_reacted) return;
     setReactionPickerFor(null);
     updateMessageReactions(message.id, (current) =>
-      applyReactionAdded(current, reactionType, true)
+      applyReactionAdded(current, reactionType, true),
     );
     try {
       await addReaction(msgId, reactionType);
       await refreshMessageReactions(msgId, message.id);
     } catch (err) {
       updateMessageReactions(message.id, (current) =>
-        applyReactionRemoved(current, reactionType, true)
+        applyReactionRemoved(current, reactionType, true),
       );
       const status = (err as Error & { status?: number }).status;
       show({
         variant: "error",
         title: "Reaction",
-        message: status === 400 ? "Invalid reaction." : "Could not add reaction.",
+        message:
+          status === 400 ? "Invalid reaction." : "Could not add reaction.",
       });
     }
   }
 
-  async function handleRemoveReaction(message: ChatMessage, reactionType: ReactionType) {
+  async function handleRemoveReaction(
+    message: ChatMessage,
+    reactionType: ReactionType,
+  ) {
     const msgId = Number(message.id);
     if (isNaN(msgId) || msgId <= 0) return;
     setReactionPickerFor(null);
     updateMessageReactions(message.id, (current) =>
-      applyReactionRemoved(current, reactionType, true)
+      applyReactionRemoved(current, reactionType, true),
     );
     try {
       await removeReaction(msgId, reactionType);
       await refreshMessageReactions(msgId, message.id);
     } catch {
       await refreshMessageReactions(msgId, message.id);
-      show({ variant: "error", title: "Error", message: "Could not remove reaction." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not remove reaction.",
+      });
     }
   }
 
-  function handlePickerReaction(message: ChatMessage, reactionType: ReactionType) {
-    const existing = getReactionSummaries(message).find((r) => r.reaction_type === reactionType);
+  function handlePickerReaction(
+    message: ChatMessage,
+    reactionType: ReactionType,
+  ) {
+    const existing = getReactionSummaries(message).find(
+      (r) => r.reaction_type === reactionType,
+    );
     if (existing?.has_reacted) handleRemoveReaction(message, reactionType);
     else handleAddReaction(message, reactionType);
   }
 
-  function handleReactionTap(message: ChatMessage, r: { reaction_type: string; count: number; has_reacted: boolean }) {
-    if (r.has_reacted) handleRemoveReaction(message, r.reaction_type as ReactionType);
+  function handleReactionTap(
+    message: ChatMessage,
+    r: { reaction_type: string; count: number; has_reacted: boolean },
+  ) {
+    if (r.has_reacted)
+      handleRemoveReaction(message, r.reaction_type as ReactionType);
     else handleAddReaction(message, r.reaction_type as ReactionType);
   }
 
@@ -713,330 +1607,273 @@ export default function ChatScreen({ route }: ChatProps) {
     if (!productId) return;
     try {
       await addToCart({ product_id: productId, variant_id: 0, quantity: 1 });
-      show({ variant: "success", title: "Success", message: "Product added to cart." });
+      show({
+        variant: "success",
+        title: "Success",
+        message: "Product added to cart.",
+      });
     } catch {
-      show({ variant: "error", title: "Error", message: "Could not add to cart." });
+      show({
+        variant: "error",
+        title: "Error",
+        message: "Could not add to cart.",
+      });
     }
   }
 
-  function renderMessage({ item }: { item: ChatMessage }) {
-    const isMe = item.sender_id === myId || String(item.sender_id) === myId;
-    const avatar = getMessageAvatarProps(item, isMe, avatarCtx);
+  // Handlers reach the rows through a ref rather than through props.
+  //
+  // They are plain functions in this component, so each render makes new ones.
+  // Passed directly they would change rowContext on every keystroke and undo
+  // the memoisation entirely -- the rows would re-render for a reason that has
+  // nothing to do with them. The ref's identity never changes; what it points
+  // at is refreshed on each render, so a row always calls the current one.
+  const handlersRef = React.useRef<any>({});
+  handlersRef.current = {
+    handleAddProductToCart,
+    handleRespondToOffer,
+    handleRespondToDiscount,
+    handleReactionTap,
+    handlePickerReaction,
+    setViewerUri,
+    loadOlder,
+    setOfferFor,
+    setOfferDiscountVisible,
+  };
 
-    return (
-      <View className={`flex-row px-4 py-1.5 ${isMe ? "justify-end" : "justify-start"}`}>
-        {!isMe && (
-          <View className="mr-2 mt-1">
-            <Avatar
-              key={`peer-${item.id}-${avatar.uri ?? "init"}`}
-              uri={avatar.uri}
-              name={avatar.name}
-              size={32}
-            />
+  const rowContext = React.useMemo<RowContext>(
+    () => ({
+      myId,
+      role,
+      textColor,
+      mutedColor,
+      isDark,
+      setReactionPickerFor,
+      handlers: handlersRef,
+    }),
+    [myId, role, textColor, mutedColor, isDark],
+  );
+
+  const renderMessage = React.useCallback(
+    ({ item, index }: { item: ChatMessage; index: number }) => {
+      const isMe = item.sender_id === myId || String(item.sender_id) === myId;
+      // Runs of messages from one person in the same minute render as a single
+      // block: the avatar sits beside the last bubble (so it lines up with
+      // where the run ends, as Messenger and Instagram do) and only that
+      // bubble carries a timestamp. Everything above it gets a spacer of the
+      // same width so the bubbles stay on one edge.
+      const prev = sortedMessages[index - 1];
+      const next = sortedMessages[index + 1];
+      const continuesNext = isSameGroup(item, next);
+      return (
+        <MessageRow
+          item={item}
+          isMe={isMe}
+          avatar={getMessageAvatarProps(item, isMe, avatarCtx)}
+          continuesPrev={isSameGroup(prev, item)}
+          continuesNext={continuesNext}
+          isGroupEnd={!continuesNext}
+          // Reactions still need the gap above them even mid-run.
+          hasReactions={getReactionSummaries(item).length > 0}
+          pickerOpen={reactionPickerFor === String(item.id)}
+          discountStatus={
+            item.message_type === "discount"
+              ? (discounts.find(
+                  (d) => Number(d?.id) === Number(item.message_data?.discount_id),
+                )?.status ?? null)
+              : null
+          }
+          discountBusy={
+            respondingToDiscount === Number(item.message_data?.discount_id)
+          }
+          ctx={rowContext}
+        />
+      );
+    },
+    [
+      myId,
+      sortedMessages,
+      avatarCtx,
+      reactionPickerFor,
+      discounts,
+      respondingToDiscount,
+      rowContext,
+    ],
+  );
+
+
+  // Plain FlatList and TextInput in both modes now.
+  //
+  // The sheet variant used BottomSheetFlatList and BottomSheetTextInput,
+  // which call useBottomSheetInternal and therefore require a @gorhom
+  // BottomSheet ancestor. The quick chat stopped being one -- it is a
+  // full-screen Modal, because a 90% sheet could not get its input clear of
+  // the keyboard -- so those components threw "'useBottomSheetInternal'
+  // cannot be used out of the BottomSheet!" the moment the list rendered.
+  //
+  // Nothing else renders this in a BottomSheet, so there is no mode left that
+  // needs them. `embedInSheet` still means what it always meant: no header of
+  // its own, and the input bar handed to the parent.
+  const ListComponent = FlatList;
+  const InputComponent = TextInput;
+  // Sheet mode: the footer sits flush with the screen bottom (bottomInset=0 in
+  // QuickChatBottomSheet), so the safe-area gap is padded inside the bar itself.
+  const inputBottomPad = embedInSheet || !keyboardVisible
+    ? Math.max(insets.bottom, 8)
+    : 8;
+  // Android only, and only as a full screen. KeyboardAvoidingView's "height"
+  // behaviour relies on the window shrinking when the IME opens, and under
+  // edge-to-edge it does not -- so the bar stayed where it was and the
+  // keyboard sat on top of it. iOS is unaffected: "padding" works there, and
+  // doubling up would lift the bar twice.
+  const androidKeyboardLift =
+    Platform.OS === "android" && !embedInSheet ? keyboardOverlap : 0;
+  // Sheet mode: the BottomSheetFooter overlays the list, so the list needs
+  // bottom padding equal to the measured footer height to keep the newest
+  // message visible just above the input bar.
+  const [sheetFooterHeight, setSheetFooterHeight] = useState(64);
+
+  // Stable, so passing it does not itself invalidate the list each render.
+  const handleListScroll = React.useCallback(
+    ({ nativeEvent }: { nativeEvent: { contentOffset: { y: number } } }) => {
+      // loadOlder already refuses when it is mid-flight or there is nothing
+      // older, so this depends on nothing and never changes identity.
+      if (nativeEvent.contentOffset.y < 80) handlersRef.current.loadOlder?.();
+    },
+    [],
+  );
+
+  const messageList = loading ? (
+    <View style={[styles.sheetListWrap, styles.sheetLoading]}>
+      <ActivityIndicator size="large" color={textColor} />
+    </View>
+  ) : (
+    <ListComponent
+      ref={listRef as never}
+      style={embedInSheet ? styles.sheetList : undefined}
+      data={sortedMessages}
+      keyExtractor={(it) => String(it.id)}
+      renderItem={renderMessage}
+      onContentSizeChange={handleContentSizeChange}
+      contentContainerStyle={
+        sortedMessages.length === 0
+          ? [
+              styles.emptyListContent,
+              embedInSheet && { paddingBottom: sheetFooterHeight },
+            ]
+          : {
+              paddingTop: 12,
+              paddingBottom: embedInSheet ? sheetFooterHeight + 12 : 8,
+            }
+      }
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
+      // Windowing, which this list had none of: every message ever loaded
+      // stayed mounted, so a long thread re-rendered hundreds of rows for one
+      // keystroke. A chat is read from the bottom, so a small initial batch is
+      // enough and the rest arrives as you scroll up.
+      initialNumToRender={15}
+      maxToRenderPerBatch={10}
+      updateCellsBatchingPeriod={50}
+      windowSize={11}
+      // Not on iOS: it has a long history of blanking cells in inverted or
+      // fast-scrolling lists, and a message that is not there is worse than
+      // one that costs a little to keep.
+      removeClippedSubviews={Platform.OS === "android"}
+      onScroll={handleListScroll}
+      scrollEventThrottle={400}
+      ListHeaderComponent={
+        hasMore && loadingOlder ? (
+          <View className="py-3 items-center">
+            <ActivityIndicator size="small" color={textColor} />
           </View>
-        )}
-        <View className={`max-w-[80%] ${isMe ? "items-end" : "items-start"}`}>
-          {item.message_type === "text" && (() => {
-            const sharedRequest = item.message_data?.request as { title?: string; description?: string; budget?: number } | undefined;
-            const requestId = item.message_data?.request_id as string | undefined;
-            if (requestId && (item.content?.includes("Sharing request") || sharedRequest)) {
-              return (
-                <View className={`px-4 py-3 rounded min-w-[200px] ${isMe ? "rounded-br bg-primary" : "rounded-bl bg-white border border-border"}`}>
-                  <Text className={`text-xs font-medium uppercase tracking-wide ${isMe ? "text-white/80" : "text-tertiary"}`}>
-                    Buyer request
-                  </Text>
-                  <Text className={`text-base font-semibold mt-1 ${isMe ? "text-white" : "text-black"}`} numberOfLines={2}>
-                    {sharedRequest?.title || item.content.replace(/^Sharing request:\s*/i, "")}
-                  </Text>
-                  {sharedRequest?.description ? (
-                    <Text className={`text-sm mt-1 ${isMe ? "text-white/90" : "text-tertiary"}`} numberOfLines={3}>
-                      {sharedRequest.description}
-                    </Text>
-                  ) : null}
-                  {sharedRequest?.budget != null && (
-                    <Text className={`text-sm font-semibold mt-2 ${isMe ? "text-white" : "text-black"}`}>
-                      Budget: ₦{Number(sharedRequest.budget).toLocaleString()}
-                    </Text>
-                  )}
-                </View>
-              );
-            }
-            const productIdInContent = (item.content || "").match(/PRD_[\w]+/)?.[0];
-            if (productIdInContent && (item.content?.includes("Sharing product") || /^PRD_[\w]+$/.test(item.content.trim()))) {
-              return (
-                <ChatProductDisplayComponent
-                  productId={productIdInContent}
-                  embeddedProduct={null}
-                  showAddToCart={role === "buyer"}
-                  onAddToCart={handleAddProductToCart}
-                />
-              );
-            }
-            return (
-              <View
-                className={`px-4 py-3 rounded ${isMe ? "rounded-br bg-primary" : "rounded-bl bg-white border border-border"}`}
-              >
-                <Text className={`text-base ${isMe ? "text-white" : "text-black"}`}>{item.content}</Text>
-              </View>
-            );
-          })()}
-
-          {item.message_type === "image" && (() => {
-            const imageUri = normalizeUri(
-              item.message_data?.url ??
-                item.message_data?.image_url ??
-                item.content
-            );
-            if (!imageUri) {
-              return (
-                <View className="w-56 h-40 rounded bg-surface items-center justify-center px-3">
-                  <Text className="text-tertiary text-sm text-center">Image unavailable</Text>
-                </View>
-              );
-            }
-            return (
-            <TouchableOpacity activeOpacity={0.9}>
-              <Image
-                source={{ uri: imageUri }}
-                className="w-56 h-40 rounded bg-surface"
-                resizeMode="cover"
-              />
-              {item.pending && (
-                <Text className="text-tertiary text-xs mt-1">Sending…</Text>
-              )}
-            </TouchableOpacity>
-            );
-          })()}
-
-          {item.message_type === "video" && (
-            <View className="w-56 h-40 rounded bg-primary items-center justify-center">
-              <Text className="text-white">Video</Text>
-            </View>
-          )}
-
-          {item.message_type === "product" && (() => {
-            const productId = item.message_data?.product_id ? String(item.message_data.product_id) : (item.content || "").match(/PRD_[\w]+/)?.[0];
-            const embeddedProduct = item.message_data?.product;
-            if (!productId && !embeddedProduct?.id) {
-              return (
-                <View className="rounded border border-border bg-surface px-4 py-3">
-                  <Text className="text-tertiary text-sm">Product no longer available</Text>
-                </View>
-              );
-            }
-            return (
-              <ChatProductDisplayComponent
-                productId={productId}
-                embeddedProduct={embeddedProduct}
-                showAddToCart={role === "buyer"}
-                onAddToCart={handleAddProductToCart}
-              />
-            );
-          })()}
-
-          {item.message_type === "offer" && (
-            <View className="rounded overflow-hidden border border-border bg-white min-w-[200px]">
-              <View className="px-4 py-3 bg-surface">
-                <Text className="text-tertiary text-xs font-medium uppercase tracking-wide">Price offer</Text>
-                <Text className="text-black text-lg font-bold mt-0.5">
-                  ₦{Number((item as any).offer?.price ?? (item as any).offer?.offer_amount ?? item.content ?? 0).toLocaleString()}
-                </Text>
-                {(item as any).offer?.message && (
-                  <Text className="text-tertiary text-sm mt-1" numberOfLines={2}>{(item as any).offer.message}</Text>
-                )}
-              </View>
-              {role === "buyer" && (item as any).offer?.status === "pending" && (item as any).offer?.id && (
-                <View className="flex-row p-2 gap-2">
-                  <TouchableOpacity
-                    onPress={() => handleRespondToOffer(Number((item as any).offer.id), "accept")}
-                    className="flex-1 py-2.5 rounded bg-primary items-center"
-                  >
-                    <Text className="text-white font-semibold text-sm">Accept</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => handleRespondToOffer(Number((item as any).offer.id), "reject")}
-                    className="flex-1 py-2.5 rounded bg-surface border border-border items-center"
-                  >
-                    <Text className="text-black font-semibold text-sm">Decline</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-              {(item as any).offer?.status && (item as any).offer?.status !== "pending" && (
-                <View className="px-4 py-2">
-                  <Text className="text-tertiary text-xs capitalize">{(item as any).offer.status}</Text>
-                </View>
-              )}
-            </View>
-          )}
-
-          <View className="flex-row items-center mt-1.5 gap-2 flex-wrap">
-            <Text className="text-tertiary text-[11px]">{formatTime(item.created_at)}</Text>
-            {!isNaN(Number(item.id)) && Number(item.id) > 0 && (
-              <>
-                {getReactionSummaries(item).map((r) => (
-                  <TouchableOpacity
-                    key={r.reaction_type}
-                    onPress={() => handleReactionTap(item, r)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    className={`flex-row items-center gap-0.5 px-1.5 py-0.5 rounded border ${
-                      r.has_reacted ? "bg-surface border-border" : "bg-white border-transparent"
-                    }`}
-                  >
-                    {(() => {
-                      const ReactionIcon = getReactionIcon(r.reaction_type);
-                      return <ReactionIcon size={12} color={r.has_reacted ? "#000000" : "#71717A"} />;
-                    })()}
-                    {(r.count > 1 || r.has_reacted) && (
-                      <Text className={`text-[11px] ${r.has_reacted ? "text-black font-semibold" : "text-tertiary"}`}>
-                        {r.count}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                ))}
-                <TouchableOpacity
-                  onPress={() => setReactionPickerFor(reactionPickerFor === String(item.id) ? null : String(item.id))}
-                  onLongPress={() => setReactionPickerFor(String(item.id))}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  className="p-1"
-                >
-                  <SmilePlus size={14} color="#71717A" />
-                </TouchableOpacity>
-                {reactionPickerFor === String(item.id) && (
-                  <View className="flex-row gap-1 mt-0.5">
-                    {COMMON_REACTIONS.map((type) => {
-                      const active = getReactionSummaries(item).some(
-                        (r) => r.reaction_type === type && r.has_reacted
-                      );
-                      return (
-                      <TouchableOpacity
-                        key={type}
-                        onPress={() => handlePickerReaction(item, type)}
-                        className={`px-2 py-1 rounded border ${active ? "bg-surface border-border" : "bg-white border-border"}`}
-                      >
-                        {(() => {
-                          const PickerIcon = getReactionIcon(type);
-                          return <PickerIcon size={16} color={active ? "#000000" : "#71717A"} />;
-                        })()}
-                      </TouchableOpacity>
-                      );
-                    })}
-                    <TouchableOpacity
-                      onPress={() => setReactionPickerFor(null)}
-                      className="px-2 py-1 rounded bg-surface"
-                    >
-                      <X size={14} color="#71717A" />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </>
-            )}
-          </View>
-          {item.pending && (
-            <Text className="text-tertiary text-[10px] mt-0.5">Pending…</Text>
-          )}
+        ) : null
+      }
+      ListEmptyComponent={
+        !loading && sortedMessages.length === 0 ? (
+        <View className="items-center justify-center px-6 py-10">
+          <Text
+            className="text-base font-semibold text-center text-text-primary"
+          >
+            Start a conversation…
+          </Text>
+          <Text
+            className="text-sm mt-2 text-center text-text-secondary"
+          >
+            Say hello or ask a question about this product.
+          </Text>
         </View>
-        {isMe && (
-          <View className="ml-2 mt-1">
-            <Avatar
-              key={`me-${item.id}-${avatar.uri ?? "init"}`}
-              uri={avatar.uri}
-              name={avatar.name ?? user?.email}
-              size={32}
-            />
-          </View>
-        )}
-      </View>
-    );
-  }
+        ) : null
+      }
+    />
+  );
 
-  if (loading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-bg-elevated">
-        <ActivityIndicator size="large" color="#000000" />
+  const typingIndicator = typingUser ? (
+    <View className="px-4 py-2 flex-row items-center">
+      <View
+        className="flex-row gap-1 px-3 py-2 rounded border self-start bg-surface-sunken border-border"
+      >
+        <View className="w-2 h-2 rounded bg-text-secondary opacity-60" />
+        <View className="w-2 h-2 rounded bg-text-secondary opacity-80" />
+        <View className="w-2 h-2 rounded bg-text-secondary" />
       </View>
-    );
-  }
+      <Text
+        className="text-sm ml-2 text-text-secondary"
+      >
+        {typingUser} is typing
+      </Text>
+    </View>
+  ) : null;
 
-  return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-bg-elevated"
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={0}
+  const inputBar = (
+    <View
+      className="flex-row items-center px-4 py-2 border-t gap-2 min-h-[52px] bg-surface-raised border-border"
+      style={{ paddingBottom: inputBottomPad }}
     >
-      {/* Header */}
-      <View className="flex-row items-center px-4 py-3 bg-white border-b border-border">
-        <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <ArrowLeft size={24} color="#000000" />
-        </TouchableOpacity>
-        <Avatar uri={pickProfilePicture(otherUser)} name={otherUser?.username} size={40} />
-        <Text className="ml-3 text-black font-semibold text-base flex-1" numberOfLines={1}>
-          {otherUser?.username ?? "Chat"}
-        </Text>
-      </View>
-
-      <FlatList
-        ref={listRef}
-        data={sortedMessages}
-        keyExtractor={(it) => String(it.id)}
-        renderItem={renderMessage}
-        onContentSizeChange={handleContentSizeChange}
-        contentContainerStyle={{ paddingVertical: 12, paddingBottom: 8 }}
-        showsVerticalScrollIndicator={false}
-        onScroll={({ nativeEvent }) => {
-          const { contentOffset, contentSize, layoutMeasurement } = nativeEvent;
-          const padding = 80;
-          if (contentOffset.y < padding && hasMore && !loadingOlder) loadOlder();
-        }}
-        scrollEventThrottle={400}
-        ListHeaderComponent={
-          hasMore && (loadingOlder ? (
-            <View className="py-3 items-center">
-              <ActivityIndicator size="small" color="#000000" />
-            </View>
-          ) : null)
-        }
-      />
-
-      {typingUser && (
-        <View className="px-4 py-2 flex-row items-center">
-          <View className="flex-row gap-1 px-3 py-2 rounded bg-surface border border-border self-start">
-            <View className="w-2 h-2 rounded bg-text-secondary opacity-60" />
-            <View className="w-2 h-2 rounded bg-text-secondary opacity-80" />
-            <View className="w-2 h-2 rounded bg-text-secondary" />
-          </View>
-          <Text className="text-tertiary text-sm ml-2">{typingUser} is typing</Text>
-        </View>
-      )}
-
-      {/* Input bar — send button aligned with input; keyboard dismissed when opening attachment sheet */}
-      <View className="flex-row items-center px-4 py-2 pb-2 bg-white border-t border-border gap-2 min-h-[52px]">
-        <View className="flex-1 flex-row items-center bg-surface rounded pl-4 pr-1 py-1.5 h-11">
-          <TextInput
-            value={input}
-            onChangeText={(t) => {
-              setInput(t);
-              chatSocket.typingStart(roomId, myId);
-            }}
-            placeholder="Type a message…"
-            placeholderTextColor="#71717A"
-            className="flex-1 text-black text-base min-h-[24px] max-h-[80px]"
-            multiline
-            maxLength={1000}
-            textAlignVertical="center"
-          />
-          <TouchableOpacity onPress={openAttachmentSheet} disabled={sending} className={`p-2 ${sending ? "opacity-50" : ""}`}>
-            <Plus size={22} color="#71717A" />
-          </TouchableOpacity>
-        </View>
+      <View
+        className="flex-1 flex-row items-center rounded-3xl pl-4 pr-1 py-1.5 bg-media"
+      >
+        <InputComponent
+          value={input}
+          onChangeText={(t) => {
+            setInput(t);
+            chatSocket.typingStart(roomId, myId);
+          }}
+          placeholder="Type a message…"
+          placeholderTextColor={mutedColor}
+          className="flex-1 text-base min-h-[24px] max-h-[80px] text-text-primary"
+          multiline
+          maxLength={1000}
+          textAlignVertical="center"
+        />
         <TouchableOpacity
-          onPress={handleSendText}
+          onPress={openAttachmentSheet}
           disabled={sending}
-          className="w-11 h-11 rounded bg-primary items-center justify-center"
+          className={`p-2 ${sending ? "opacity-50" : ""}`}
         >
-          <Send size={20} color="white" />
+          <Plus size={22} color={mutedColor} />
         </TouchableOpacity>
       </View>
+      <TouchableOpacity
+        onPress={handleSendText}
+        disabled={sending}
+        className="w-11 h-11 rounded-full bg-primary-fill items-center justify-center"
+        accessibilityRole="button"
+        accessibilityLabel="Send message"
+      >
+        <Send size={20} color="white" />
+      </TouchableOpacity>
+    </View>
+  );
 
+  const overlays = (
+    <>
+      <MediaViewerModal
+        visible={viewerUri !== null}
+        items={viewerUri ? [{ uri: viewerUri, type: "image" }] : []}
+        onClose={() => setViewerUri(null)}
+      />
       <ChatAttachmentSheet
         visible={attachmentVisible}
         busy={sending}
@@ -1046,43 +1883,95 @@ export default function ChatScreen({ route }: ChatProps) {
         onProducts={role === "seller" ? openProductPicker : undefined}
         onRequests={role === "buyer" ? openRequestPicker : undefined}
         onDiscounts={handleDiscounts}
+        onCreateDiscount={
+          role === "seller" ? () => setOfferDiscountVisible(true) : undefined
+        }
         role={role === "buyer" || role === "seller" ? role : "buyer"}
+      />
+      <DiscountOfferSheet
+        visible={offerDiscountVisible}
+        onClose={() => {
+          setOfferDiscountVisible(false);
+          setOfferFor(null);
+        }}
+        onSubmit={handleCreateDiscount}
+        productName={offerFor?.productName ?? null}
       />
       {discountVisible && (
         <View className="absolute inset-0 z-[1000] bg-black/40 justify-end">
-          <TouchableOpacity style={{ flex: 1 }} onPress={() => setDiscountVisible(false)} activeOpacity={1} />
-          <View className="bg-white rounded-t max-h-[50%] px-4 pt-4 pb-10">
+          <TouchableOpacity
+            style={{ flex: 1 }}
+            onPress={() => setDiscountVisible(false)}
+            activeOpacity={1}
+          />
+          <View
+            className="rounded-t max-h-[50%] px-4 pt-4 pb-10 bg-surface-raised"
+          >
             <View className="flex-row justify-between mb-4">
-              <Text className="text-black font-semibold text-base">Active discounts</Text>
+              <Text
+                className="font-semibold text-base text-text-primary"
+              >
+                Active discounts
+              </Text>
               <TouchableOpacity onPress={() => setDiscountVisible(false)}>
-                <Text className="text-black font-semibold">Done</Text>
+                <Text
+                  className="font-semibold text-text-primary"
+                >
+                  Done
+                </Text>
               </TouchableOpacity>
             </View>
             {discountLoading ? (
-              <ActivityIndicator size="small" color="#000000" />
+              <ActivityIndicator size="small" color={textColor} />
             ) : (Array.isArray(discounts) ? discounts : []).length === 0 ? (
-              <Text className="text-tertiary text-sm">No active discounts for this chat.</Text>
+              <Text
+                className="text-sm text-text-secondary"
+              >
+                No active discounts for this chat.
+              </Text>
             ) : (
               (Array.isArray(discounts) ? discounts : []).map((d) => (
-                <View key={d.id} className="bg-surface rounded p-3 mb-2">
-                  <Text className="text-black font-medium text-sm">{d.discount_message ?? d.discount_type ?? "Discount"}</Text>
-                  <Text className="text-black font-semibold text-sm mt-1">₦{Number(d.discount_value ?? 0).toLocaleString()}</Text>
-                  {role === "buyer" && (d.status === "pending" || !d.status) && (
-                    <View className="flex-row gap-2 mt-2">
-                      <TouchableOpacity
-                        onPress={() => handleRespondToDiscount(d.id, "accepted")}
-                        className="flex-1 py-2 rounded bg-primary items-center"
-                      >
-                        <Text className="text-white font-semibold text-sm">Accept</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => handleRespondToDiscount(d.id, "rejected")}
-                        className="flex-1 py-2 rounded bg-surface border border-border items-center"
-                      >
-                        <Text className="text-black font-semibold text-sm">Decline</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
+                <View
+                  key={d.id}
+                  className="rounded p-3 mb-2 bg-media"
+                >
+                  <Text
+                    className="font-medium text-sm text-text-primary"
+                  >
+                    {d.discount_message ?? d.discount_type ?? "Discount"}
+                  </Text>
+                  <Text
+                    className="font-semibold text-sm mt-1 text-text-primary"
+                  >
+                    ₦{Number(d.discount_value ?? 0).toLocaleString()}
+                  </Text>
+                  {role === "buyer" &&
+                    (d.status === "pending" || !d.status) && (
+                      <View className="flex-row gap-2 mt-2">
+                        <TouchableOpacity
+                          onPress={() =>
+                            handleRespondToDiscount(d.id, "accepted")
+                          }
+                          className="flex-1 py-2 rounded bg-primary-fill items-center"
+                        >
+                          <Text className="text-white font-semibold text-sm">
+                            Accept
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() =>
+                            handleRespondToDiscount(d.id, "rejected")
+                          }
+                          className="flex-1 py-2 rounded border items-center bg-surface-sunken border-border"
+                        >
+                          <Text
+                            className="font-semibold text-sm text-text-primary"
+                          >
+                            Decline
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
                 </View>
               ))
             )}
@@ -1106,6 +1995,117 @@ export default function ChatScreen({ route }: ChatProps) {
         onClose={() => setRequestVisible(false)}
         onSelect={sendRequest}
       />
+    </>
+  );
+
+  useLayoutEffect(() => {
+    if (!embedInSheet || !onSheetFooterReady) return;
+    if (loading) {
+      onSheetFooterReady(null);
+      return;
+    }
+    onSheetFooterReady(
+      <View
+        onLayout={(e) => setSheetFooterHeight(e.nativeEvent.layout.height)}
+      >
+        {typingIndicator}
+        {inputBar}
+      </View>,
+    );
+    return () => onSheetFooterReady(null);
+  }, [
+    embedInSheet,
+    onSheetFooterReady,
+    loading,
+    typingUser,
+    input,
+    sending,
+    attachmentVisible,
+    isDark,
+    mutedColor,
+    textColor,
+    inputBottomPad,
+  ]);
+
+  if (embedInSheet) {
+    return (
+      <View style={styles.sheetBody}>
+        <View style={styles.sheetListWrap}>{messageList}</View>
+        {overlays}
+      </View>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View
+        className="flex-1 items-center justify-center bg-surface-page"
+      >
+        <ActivityIndicator size="large" color={textColor} />
+      </View>
+    );
+  }
+
+  return (
+    <KeyboardAvoidingView
+      className="flex-1 bg-surface-page"
+      // Android gets no behaviour at all -- the measured lift below does the
+      // work, and "height" actively fought it by resizing a window that
+      // edge-to-edge had already stopped resizing.
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={0}
+    >
+      {/* Header */}
+      <View
+        className="flex-row items-center px-4 py-3 border-b bg-surface-raised border-border"
+      >
+        <TouchableOpacity
+          onPress={() => (onClose ? onClose() : router.back())}
+          className="mr-3 p-1"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <ArrowLeft size={24} color={textColor} />
+        </TouchableOpacity>
+        <Avatar
+          uri={pickProfilePicture(otherUser)}
+          name={otherUser?.username}
+          size={40}
+        />
+        <Text
+          className="ml-3 font-semibold text-base flex-1 text-text-primary"
+          numberOfLines={1}
+        >
+          {otherUser?.username ?? "Chat"}
+        </Text>
+      </View>
+
+      {messageList}
+      {typingIndicator}
+      <View style={{ paddingBottom: androidKeyboardLift }}>{inputBar}</View>
+      {overlays}
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  sheetBody: {
+    flex: 1,
+    minHeight: 0,
+  },
+  sheetListWrap: {
+    flex: 1,
+    minHeight: 0,
+  },
+  sheetList: {
+    flex: 1,
+  },
+  sheetLoading: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyListContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingVertical: 12,
+  },
+});

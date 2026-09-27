@@ -3,21 +3,60 @@ import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'expo-router';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, Dimensions, Animated, Easing, FlatList, RefreshControl } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { Search, ArrowBigDown as CaretDown, AlertTriangle, MoreVertical } from 'lucide-react-native';
+import { Search, ChevronDown, AlertTriangle, ChevronRight, Pencil, Trash2, Plus, ShoppingBag, MessageCircle, FileText, Users, CheckCircle2, EyeOff } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSellerAnalyticsOverview, getSellerAnalyticsTimeseries } from '../../services/sections/analytics';
-import { getMyProducts } from '../../services/sections/product';
+import { getMyProducts, getMyProductsPage } from '../../services/sections/product';
 import { getSellerOrders, updateSellerOrderItem } from '../../services/sections/orders';
+/** Both dashboard lists page at the same size, so the control reads the same. */
+const LIST_PAGE_SIZE = 10;
+import { friendlyErrorMessage } from '../../utils/errorMessages';
+import { confirmDestructive } from "../../utils/confirm";
+import { formatStatus, statusTone } from '../../utils/formatStatus';
+
+/** Tone -> [light, dark] classes, matching the order list. */
+
 import { deleteProduct } from '../../services/sections/product';
 import { SellerAnalyticsOverview, SellerAnalyticsTimeseries } from '../../models/analytics';
 import { ProductResponse } from '../../models/products';
 import { OrderItem, SellerOrderItem } from '../../models/orders';
+import logger from '../../utils/logger';
+import Pager from '../../components/Pager';
+import SearchField from '../../components/SearchField';
 import { useToast } from '../../components/ToastProvider';
 import ProductFormBottomSheet from '../../components/productCreateBottomSheet';
+import { type InputSheetHandle } from '../../components/InputSheet';
 import CreateNicheBottomSheet from '../../components/nicheCreateBottomSheet';
 import BottomSheet from '@gorhom/bottom-sheet';
 import StartCards from '../../components/startCards';
 import { useTheme } from '../../components/themeProvider';
+import { useTokens } from '../../theme/useTokens';
+import { TONE_BG, TONE_TEXT } from "../../theme/tone";
+import InventoryEditSheet from "../../components/InventoryEditSheet";
+import { formatPrice } from "../../utils/money";
+import { formatDate as watDate, formatMonthShort as watMonthShort } from "../../utils/datetime";
+
+// The line between 'fine' and 'running out'. Shared by the Low filter and
+// the per-row chip so the two can never disagree.
+const LOW_STOCK_THRESHOLD = 5;
+
+/**
+ * The statuses a product can actually have, and what to call them.
+ *
+ * The menu used to offer "active" and "inactive". `inactive` is not one of
+ * the five values the server knows, so picking it could never have matched a
+ * product — the list just went empty and looked like an empty inventory.
+ */
+const PRODUCT_STATUSES = [
+  { value: "active", label: "Active" },
+  { value: "draft", label: "Draft" },
+  { value: "out_of_stock", label: "Out of stock" },
+  { value: "archived", label: "Archived" },
+] as const;
+
+type StatusValue = (typeof PRODUCT_STATUSES)[number]["value"];
+const isStatusFilter = (v: string): v is StatusValue =>
+  PRODUCT_STATUSES.some((s) => s.value === v);
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -26,24 +65,56 @@ export default function SellerDashboard() {
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   //chart width
   const chartWidth = Math.min(screenWidth - 32, 800);
 
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   const [analyticsTimeseries, setAnalyticsTimeseries] = useState<SellerAnalyticsTimeseries | null>(null);
   const [analyticsOverview, setAnalyticsOverview] = useState<SellerAnalyticsOverview | null>(null);
   const [sellerRecentOrders, setSellerRecentOrders] = useState<SellerOrderItem[]>([]);
   const [sellerInventory, setSellerInventory] = useState<ProductResponse[]>([]);
 
+  /**
+   * Which of the two lists is showing, and where each one is in its pages.
+   *
+   * Both endpoints have always been paginated and the dashboard never used
+   * it: orders asked for page 1 of 5 and threw the pagination object away,
+   * inventory asked for 50 and hoped that covered it. A seller with 60
+   * products simply could not see the last ten.
+   */
+  /**
+   * The screen's top-level view.
+   *
+   * Orders and inventory used to be the last section of a long page: past the
+   * stats, the getting-started cards, the quick actions, the sales chart and
+   * the low-stock alerts. A seller opening this screen to see what sold, or
+   * to add a product, scrolled past everything else to reach it every time.
+   *
+   * Three flat tabs rather than an Overview/Activity pair with the old
+   * orders-vs-inventory pills nested inside: tabs under tabs make you read
+   * two rows to work out where you are, and there are only three places to
+   * go.
+   */
+  const [tab, setTab] = useState<"overview" | "orders" | "products">("overview");
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [ordersPages, setOrdersPages] = useState(1);
+  const [invPage, setInvPage] = useState(1);
+  const [invPages, setInvPages] = useState(1);
+  const [pageLoading, setPageLoading] = useState(false);
+
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [windowDays, setWindowDays] = useState<7 | 30 | 90>(30);
-  const [exportMenuVisible, setExportMenuVisible] = useState(false);
+  // Inventory filter: 'all' | 'low' (below LOW_STOCK_THRESHOLD) | product status. 'Status' chip
+  // opens a small menu to pick active/inactive.
+  const [invFilter, setInvFilter] = useState<'all' | 'low' | StatusValue>('all');
+  const [statusMenuVisible, setStatusMenuVisible] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
   // Bottom sheet ref for product creation
-  const productFormRef = useRef<BottomSheet>(null);
+  const productFormRef = useRef<InputSheetHandle>(null);
 
   const nicheFormRef = useRef<BottomSheet>(null);
 
@@ -70,14 +141,16 @@ export default function SellerDashboard() {
           end_date: toDate,
           metric: "sales"
         });
-        const ordersData = await getSellerOrders(1, 5);
-        const productsData = await getMyProducts(1, 50);
+        const ordersData = await getSellerOrders(1, LIST_PAGE_SIZE);
+        const productsData = await getMyProductsPage(1, LIST_PAGE_SIZE);
         if (!mounted) return;
         setAnalyticsOverview(analyticsOverviewData);
         setAnalyticsTimeseries(analyticsTimeseriesData);
         setSellerRecentOrders(ordersData.items || []);
-        setSellerInventory(productsData || []);
-        setFilteredInventory(productsData || []);
+        setOrdersPages(ordersData.pagination?.total_pages ?? 1);
+        setSellerInventory(productsData.items || []);
+        setFilteredInventory(productsData.items || []);
+        setInvPages(productsData.pagination?.total_pages ?? 1);
       } catch (err) {
         if (!mounted) return;
         setError('There was an issue retrieving your seller dashboard information.');
@@ -109,14 +182,18 @@ export default function SellerDashboard() {
           end_date: toDate,
           metric: "sales"
         }),
-        getSellerOrders(1, 5),
-        getMyProducts(1, 50),
+        getSellerOrders(1, LIST_PAGE_SIZE),
+        getMyProductsPage(1, LIST_PAGE_SIZE),
       ]);
       setAnalyticsOverview(analyticsOverviewData);
       setAnalyticsTimeseries(analyticsTimeseriesData);
       setSellerRecentOrders(ordersData.items || []);
-      setSellerInventory(productsData || []);
-      setFilteredInventory(productsData || []);
+      setOrdersPages(ordersData.pagination?.total_pages ?? 1);
+      setOrdersPage(1);
+      setSellerInventory(productsData.items || []);
+      setFilteredInventory(productsData.items || []);
+      setInvPages(productsData.pagination?.total_pages ?? 1);
+      setInvPage(1);
     } catch (err) {
       setError('Failed to refresh');
       show({ variant: 'error', title: 'Refresh failed', message: 'Could not refresh dashboard data.' });
@@ -125,24 +202,44 @@ export default function SellerDashboard() {
     }
   }, [show, windowDays]);
 
-  // Debounce search filter
+  // Debounce search + apply the active inventory filter (status / low stock).
+  /**
+   * Inventory filters, asked of the server.
+   *
+   * This used to filter `sellerInventory` in place, which only ever held one
+   * page — so searching looked at ten products and reported nothing found
+   * with complete confidence. Debounced because it is a keystroke away from
+   * a request.
+   */
   useEffect(() => {
-    const t = setTimeout(() => {
-      if (!searchText) {
-        setFilteredInventory(sellerInventory);
-        return;
-      }
-      const q = searchText.trim().toLowerCase();
-      setFilteredInventory(
-        sellerInventory.filter((p: any) =>
-          (p.name || '').toLowerCase().includes(q) ||
-          (p.sku || '').toLowerCase().includes(q) ||
-          String(p.id || '').toLowerCase().includes(q)
-        )
-      );
+    const handle = setTimeout(() => {
+      let cancelled = false;
+      (async () => {
+        try {
+          const data = await getMyProductsPage(1, LIST_PAGE_SIZE, {
+            search: searchText,
+            status:
+              invFilter === "all" || invFilter === "low" ? undefined : invFilter,
+            low_stock: invFilter === "low",
+          });
+          if (cancelled) return;
+          setSellerInventory(data.items || []);
+          setFilteredInventory(data.items || []);
+          setInvPages(data.pagination?.total_pages ?? 1);
+          setInvPage(1);
+        } catch (e) {
+          // Leave what is on screen. An empty list here would read as "you
+          // have no products matching that", which is a different claim.
+          logger.warn("dashboard: inventory filter failed", e);
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
     }, 300);
-    return () => clearTimeout(t);
-  }, [searchText, sellerInventory]);
+    return () => clearTimeout(handle);
+  }, [searchText, invFilter]);
+
 
   // Currency: NGN (Nigerian Naira) — SELLER_DASHBOARD improvement §1
   const formatCurrency = useCallback((n?: number) => {
@@ -154,15 +251,10 @@ export default function SellerDashboard() {
     }
   }, []);
 
-  const formatDate = useCallback((iso?: string) => {
-    if (!iso) return '';
-    try {
-      const d = new Date(iso);
-      return d.toLocaleDateString();
-    } catch {
-      return iso;
-    }
-  }, []);
+  const formatDate = useCallback(
+    (iso?: string) => watDate(iso, { withYear: true }) || (iso ?? ''),
+    []
+  );
 
   // Stable pulsing accent (memoized)
   const LeftAccentPulse = useMemo(() => {
@@ -190,7 +282,7 @@ export default function SellerDashboard() {
         return () => loop.stop();
       }, [opacity]);
 
-      const pulseColor = isDark ? "#f0f1f2" : "#000000";
+      const pulseColor = t.textPrimary;
 
       return (
         <View style={{ width: 4, backgroundColor: pulseColor, position: 'relative' }}>
@@ -215,19 +307,81 @@ export default function SellerDashboard() {
   const chartColor = (opacity = 1) => isDark ? `rgba(240,241,242,${opacity})` : `rgba(0,0,0,${opacity})`;
   const chartLabelColor = (opacity = 1) => isDark ? `rgba(198,197,207,${opacity})` : `rgba(113,113,122,${opacity})`;
 
-  // Handlers (now wired)
-  const handleExport = () => {
-    setExportMenuVisible(false);
-    show({ variant: 'info', title: 'Export report', message: 'Export started (not implemented).' });
-  };
+  /**
+   * Move one of the lists to another page.
+   *
+   * Replaces rather than appends: this is a dashboard, and the seller is
+   * paging through a list to find something, not scrolling a feed. "Page 3
+   * of 7" answers "where am I" in a way an infinite scroll never does.
+   */
+  const goToPage = React.useCallback(
+    async (which: "orders" | "inventory", page: number) => {
+      if (pageLoading || page < 1) return;
+      setPageLoading(true);
+      try {
+        if (which === "orders") {
+          const data = await getSellerOrders(page, LIST_PAGE_SIZE);
+          setSellerRecentOrders(data.items || []);
+          setOrdersPages(data.pagination?.total_pages ?? 1);
+          setOrdersPage(page);
+        } else {
+          const data = await getMyProductsPage(page, LIST_PAGE_SIZE);
+          // Both: the list renders filteredInventory, so writing only
+          // sellerInventory turned the page in state and nowhere else.
+          setSellerInventory(data.items || []);
+          setFilteredInventory(data.items || []);
+          setInvPages(data.pagination?.total_pages ?? 1);
+          setInvPage(page);
+        }
+      } catch (e) {
+        // Keep the page the seller is on rather than blanking the list —
+        // a failed "next" should look like nothing happened, not like the
+        // inventory vanished.
+        logger.warn("dashboard: could not load page", e);
+        show({
+          variant: "error",
+          title: "Couldn't load that page",
+          message: "Check your connection and try again.",
+        });
+      } finally {
+        setPageLoading(false);
+      }
+    },
+    [pageLoading, show]
+  );
 
   const pendingOrderCount = sellerRecentOrders.filter((o) => o.status === 'pending').length;
   const periodLabel = windowDays === 7 ? 'Last 7 days' : windowDays === 30 ? 'Last 30 days' : 'Last 90 days';
+
+  // Trend %: period-over-period change from the last two timeseries buckets.
+  // null when there isn't enough data — so we don't show a fabricated number.
+  const trendPct = useMemo(() => {
+    const s = analyticsTimeseries?.series ?? [];
+    if (s.length < 2) return null;
+    const prev = s[s.length - 2]?.value ?? 0;
+    const last = s[s.length - 1]?.value ?? 0;
+    if (prev === 0) return last > 0 ? 100 : null;
+    return ((last - prev) / prev) * 100;
+  }, [analyticsTimeseries]);
   const handleCreateProduct = () => {
     productFormRef.current?.expand?.();
   };
 
-  const handleDeleteProduct = async (productId: string | number) => {
+  const handleDeleteProduct = (productId: string | number, name?: string) => {
+    // A trash icon in a list, one tap from gone. Deleting a listing takes its
+    // reviews, its view count and its place in anyone's saved items with it,
+    // and there is no undo.
+    confirmDestructive({
+      title: name ? `Delete ${name}?` : "Delete this product?",
+      message:
+        "Its reviews and views go too, and anyone who saved it will lose it. " +
+        "Hide it instead if you just want it off the shop for now.",
+      confirmLabel: "Delete",
+      onConfirm: () => deleteProduct_(productId),
+    });
+  };
+
+  const deleteProduct_ = async (productId: string | number) => {
     try {
       await deleteProduct(String(productId));
       setSellerInventory(prev => prev.filter(p => String(p.id) !== String(productId)));
@@ -244,7 +398,9 @@ export default function SellerDashboard() {
       setSellerRecentOrders(prev => prev.map(it => it.id === item.id ? { ...it, status: 'processing' } : it));
       show({ variant: 'success', title: 'Order accepted', message: 'Order item marked as processing.' });
     } catch (err) {
-      show({ variant: 'error', title: 'Accept failed', message: 'Could not accept order.' });
+      // Surface what the server said -- on an illegal transition it names both
+      // states, which is more use than "Could not accept order."
+      show({ variant: 'error', title: 'Accept failed', message: friendlyErrorMessage(err, 'Could not accept order.') });
     }
   };
 
@@ -254,7 +410,9 @@ export default function SellerDashboard() {
       setSellerRecentOrders(prev => prev.map(it => it.id === item.id ? { ...it, status: 'cancelled' } : it));
       show({ variant: 'success', title: 'Order declined', message: 'Order item cancelled.' });
     } catch (err) {
-      show({ variant: 'error', title: 'Decline failed', message: 'Could not decline order.' });
+      // Surface what the server said -- on an illegal transition it names both
+      // states, which is more use than "Could not decline order."
+      show({ variant: 'error', title: 'Decline failed', message: friendlyErrorMessage(err, 'Could not decline order.') });
     }
   };
 
@@ -264,213 +422,335 @@ export default function SellerDashboard() {
       setSellerRecentOrders(prev => prev.map(it => it.id === item.id ? { ...it, status: newStatus } : it));
       show({ variant: 'success', title: 'Status updated', message: `Order item set to ${newStatus}.` });
     } catch (err) {
-      show({ variant: 'error', title: 'Update failed', message: 'Could not update order status.' });
+      show({ variant: 'error', title: 'Update failed', message: friendlyErrorMessage(err, 'Could not update order status.') });
     }
   };
 
   // Render helpers
   const renderOrderItem = ({ item }: { item: SellerOrderItem }) => (
-    <View className={`px-4 py-4 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+    <TouchableOpacity
+      onPress={() => router.push(`/sellerOrder/${item.id}` as any)}
+      activeOpacity={0.6}
+      accessibilityRole="button"
+      accessibilityLabel={`${item.product?.name ?? "Order"}, ${formatStatus(item.status)}. Open to manage.`}
+      className="px-4 py-4 border-b bg-surface-raised border-border"
+    >
       <View className="flex-row justify-between items-start">
         <View style={{ flex: 1 }}>
-          <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.product?.name}</Text>
-          <Text className={`font-inter text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{formatCurrency(item.price)}</Text>
-          <Text className={`font-inter text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Order #: {item.order.order_number ?? item.order_id}</Text>
+          <Text className="font-bold text-base text-text-primary">{item.product?.name}</Text>
+          <Text className="text-xs mt-1 text-text-secondary">{formatCurrency(item.price)}</Text>
+          <Text className="text-xs text-text-secondary">Order #: {item.order.order_number ?? item.order_id}</Text>
           <View className="flex-row items-center mt-3">
             <Image
-              source={{ uri: item.order?.buyer?.profile_picture ?? item.order?.buyer?.profile_picture_url }}
-              className={`w-6 h-6 rounded ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
+              source={{ uri: item.order?.buyer?.profile_picture ?? item.order?.buyer?.profile_picture_url ?? undefined }}
+              className="w-6 h-6 rounded-full bg-surface-sunken"
             />
-            <Text className={`font-inter text-xs ml-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.order?.buyer?.buyername ?? item.order?.buyer?.username ?? "Buyer"}</Text>
+            <Text className="text-xs ml-2 text-text-primary">{item.order?.buyer?.buyername ?? item.order?.buyer?.username ?? "Buyer"}</Text>
           </View>
         </View>
 
-        <View className="items-end ml-3">
-          {item.status === 'pending' ? (
-            <>
-              <TouchableOpacity onPress={() => handleAcceptOrder(item)} className="bg-primary rounded px-4 py-2 mb-2">
-                <Text className="text-white font-geist font-bold text-xs">Accept</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeclineOrder(item)} className={`rounded px-4 py-2 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-                <Text className={`font-geist font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Decline</Text>
-              </TouchableOpacity>
-            </>
-          ) : item.status === 'processing' ? (
-            <>
-              <TouchableOpacity onPress={() => handleUpdateOrderStatus(item, 'shipped')} className="bg-primary rounded px-4 py-2 mb-2">
-                <Text className="text-white font-geist font-bold text-xs">Mark Shipped</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeclineOrder(item)} className={`rounded px-4 py-2 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-                <Text className={`font-geist font-bold text-xs ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Cancel</Text>
-              </TouchableOpacity>
-            </>
-          ) : item.status === 'shipped' ? (
-            <TouchableOpacity onPress={() => handleUpdateOrderStatus(item, 'delivered')} className="bg-primary rounded px-4 py-2">
-              <Text className="text-white font-geist font-bold text-xs">Mark Delivered</Text>
-            </TouchableOpacity>
-          ) : (
-            <Text className={`font-geist font-bold text-sm capitalize ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{item.status}</Text>
-          )}
+        {/* Status, not inline actions. Accept/Decline lived here as buttons,
+            which meant a seller could decline — and therefore refund a buyer —
+            with one tap and no confirmation, and the same order offered
+            different actions depending on which screen you found it on.
+            Actions now live on the seller order screen, reached by tapping the
+            row, so there is one place a seller acts on an order. "Mark
+            Delivered" is gone entirely: delivery is confirmed by the buyer or
+            the rider through the POD flow, and the server refuses it here. */}
+        <View className="items-end ml-3 justify-center">
+          <View className={`px-2.5 py-1 rounded-full ${TONE_BG[statusTone(item.status)]}`}>
+            <Text className={`text-[12px] font-semibold ${TONE_TEXT[statusTone(item.status)]}`}>
+              {formatStatus(item.status)}
+            </Text>
+          </View>
+          <ChevronRight size={18} color={t.textMuted} strokeWidth={2} />
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
-  const renderProductItem = ({ item }: { item: any }) => (
-    <View className={`flex-row items-center justify-between px-4 py-4 border-b ${isDark ? "border-[#46464e]" : "border-border"}`}>
-      <View className="flex-1 pr-3">
-        <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>{item.name}</Text>
-        <Text className={`font-inter text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Status: {item.status}</Text>
-        <Text className={`font-inter text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Price: {formatCurrency(item.price)}, Stock: {item.stock}</Text>
-      </View>
+  // A row the width of the screen was carrying "Status: active" and
+  // "Price: X, Stock: Y" as label:value prose, with no product image and one
+  // action. Inventory is scanned, so the things a seller scans for -- is it
+  // live, is it running out, what does it cost -- are now chips and a
+  // thumbnail, and the row itself opens the editor.
+  const renderProductItem = ({ item }: { item: any }) => {
+    const stock = Number(item.stock ?? 0);
+    const isLive = (item.status ?? 'active') === 'active';
+    const out = stock <= 0;
+    const low = !out && stock < LOW_STOCK_THRESHOLD;
+    const thumb = item.images?.[0]?.media?.original_url;
 
+    return (
       <TouchableOpacity
-        accessibilityLabel={`delete-${item.id || item.name}`}
-        onPress={() => handleDeleteProduct(item.id)}
-        className={`rounded px-4 h-9 items-center justify-center border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
+        activeOpacity={0.7}
+        onPress={() => setEditingProduct(item)}
+        accessibilityRole="button"
+        accessibilityLabel={`Edit ${item.name}. ${formatPrice(item.price)}, ${stock} in stock, ${isLive ? 'listed' : 'hidden'}.`}
+        className="flex-row items-center gap-3 py-3"
       >
-        <Text className="text-error font-geist font-bold text-xs">Delete</Text>
+        {thumb ? (
+          <Image source={{ uri: thumb }} className="w-14 h-14 rounded-xl bg-media" />
+        ) : (
+          <View className="w-14 h-14 rounded-xl bg-media" />
+        )}
+
+        <View className="flex-1 min-w-0">
+          {/* State first. A seller scanning this list is looking for what is
+              wrong -- hidden, or out of stock -- not reading names. */}
+          <View className="flex-row items-center gap-1.5">
+            {isLive ? (
+              <CheckCircle2 size={13} color={t.successText} />
+            ) : (
+              <EyeOff size={13} color={t.textMuted} />
+            )}
+            <Text
+              className={`text-[12px] font-semibold ${isLive ? "text-success-text" : "text-text-muted"}`}
+            >
+              {isLive ? "Active" : "Hidden"}
+            </Text>
+            {out || low ? (
+              <>
+                <Text className="text-[12px] text-text-muted">·</Text>
+                <Text
+                  className={`text-[12px] font-semibold ${out ? "text-danger-text" : "text-warning-text"}`}
+                >
+                  {out ? "Out of stock" : "Low stock"}
+                </Text>
+              </>
+            ) : null}
+          </View>
+
+          <Text
+            className="mt-0.5 text-[15px] font-semibold text-text-primary"
+            numberOfLines={1}
+          >
+            {item.name}
+          </Text>
+
+          {/* Price and stock on one line, the way a spec sheet reads, rather
+              than each in its own pill -- the pills were three bordered
+              shapes inside a bordered row inside a bordered card. */}
+          <Text className="mt-0.5 text-[13px] text-text-secondary" numberOfLines={1}>
+            <Text className="font-bold text-text-primary">{formatPrice(item.price)}</Text>
+            {`  ·  ${stock} ${stock === 1 ? "stock" : "stocks"}`}
+          </Text>
+        </View>
+
+        <View className="flex-row items-center gap-1">
+          <View className="w-9 h-9 items-center justify-center" accessibilityElementsHidden>
+            <Pencil size={17} color={t.textSecondary} />
+          </View>
+          <TouchableOpacity
+            accessibilityLabel={`delete-${item.id || item.name}`}
+            accessibilityRole="button"
+            onPress={() => handleDeleteProduct(item.id, item.name)}
+            hitSlop={8}
+            className="w-9 h-9 items-center justify-center"
+          >
+            <Trash2 size={17} color={t.dangerText} />
+          </TouchableOpacity>
+        </View>
       </TouchableOpacity>
-    </View>
-  );
+    );
+  };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
+      {/* Outside the ScrollView on purpose: a tab bar that scrolls away is a
+          tab bar you have to scroll back up to use, which is the problem it
+          was added to solve. */}
+      <View className="flex-row gap-2 px-6 pt-3 pb-3 bg-surface-page">
+        {([
+          { key: "overview", label: "Overview" },
+          { key: "orders", label: "Orders" },
+          { key: "products", label: "Products" },
+        ] as const).map(({ key, label }) => {
+          const active = tab === key;
+          return (
+            <TouchableOpacity
+              key={key}
+              onPress={() => { setTab(key); setStatusMenuVisible(false); }}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              className={`flex-1 h-10 items-center justify-center rounded-xl ${
+                active ? "bg-text-primary" : "bg-surface-sunken"
+              }`}
+            >
+              <Text
+                className={`text-[14px] font-semibold ${
+                  // Inverted fill, so the label is the page colour. "on
+                  // primary" is white in both themes and vanished against the
+                  // near-white dark-mode fill.
+                  active ? "text-surface-page" : "text-text-secondary"
+                }`}
+              >
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
       <ScrollView
-        className={isDark ? "bg-[#1a1c1d]" : "bg-white"}
+        className={"bg-surface-page"}
         contentContainerStyle={{ paddingBottom: 60 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "#f0f1f2" : "#000000"} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.textPrimary} />}
       >
+        {tab === "overview" ? (
+          <>
         {/* Time selector (7d / 30d / 90d) + Export menu */}
         <View className="flex-row items-center justify-between px-6 py-4">
-          <View className={`flex-row rounded p-1 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
+          <View className="flex-row rounded p-1 border bg-surface-sunken border-border">
             {([7, 30, 90] as const).map((d) => (
               <TouchableOpacity
                 key={d}
-                onPress={() => { setWindowDays(d); setExportMenuVisible(false); }}
-                className={`px-5 py-2 rounded ${windowDays === d ? "bg-primary shadow-sm" : ""}`}
+                onPress={() => { setWindowDays(d); setStatusMenuVisible(false); }}
+                className={`px-5 py-2 rounded ${windowDays === d ? "bg-primary-fill shadow-sm" : "shadow-none"}`}
                 accessibilityLabel={`${d} days`}
                 accessibilityState={{ selected: windowDays === d }}
               >
-                <Text className={`text-xs font-geist font-bold ${windowDays === d ? "text-white" : isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+                <Text className={`text-xs font-bold ${windowDays === d ? "text-white" : "text-text-secondary"}`}>
                   {d}d
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
-          <TouchableOpacity
-            onPress={() => setExportMenuVisible(!exportMenuVisible)}
-            className="p-2 -mr-2"
-            accessibilityLabel="More options"
-          >
-            <MoreVertical size={22} color={isDark ? "#f0f1f2" : "#000000"} />
-          </TouchableOpacity>
         </View>
-        {exportMenuVisible && (
-          <TouchableOpacity
-            onPress={handleExport}
-            className={`mx-6 mb-4 py-4 px-5 rounded border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}
-          >
-            <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Export report</Text>
-          </TouchableOpacity>
-        )}
 
         {/* Period label */}
-        <Text className={`font-inter text-xs px-6 -mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{periodLabel}</Text>
+        <Text className="text-xs px-6 -mt-1 text-text-secondary">{periodLabel}</Text>
 
-        {/* Metrics cards — Revenue first, visual hierarchy, empty states */}
-        <View className="flex-row flex-wrap gap-4 p-6">
-          <View className={`min-w-[160px] flex-1 rounded p-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`} style={{ borderLeftWidth: 4, borderLeftColor: isDark ? '#f0f1f2' : '#000000' }}>
-            <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Revenue</Text>
-            <Text className={`text-2xl font-geist font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-              {formatCurrency(analyticsOverview?.revenue_30d)}
+        {/* Revenue leads on its own, then the supporting numbers in a row.
+            This was four equal bordered boxes with p-6 inside each, and a stray
+            4px black bar down the left of one of them — so nothing led, and the
+            accent read as a rendering artefact rather than emphasis. */}
+        <View className="px-5 pt-4">
+          <Text className="text-[11px] font-bold uppercase tracking-[1.5px] text-text-muted">
+            Revenue
+          </Text>
+          <Text className="text-[34px] font-bold mt-1 text-text-primary">
+            {formatCurrency(analyticsOverview?.revenue_30d)}
+          </Text>
+          <View className="flex-row items-center mt-1">
+            <Text className="text-[13px] text-text-muted">
+              {periodLabel}
             </Text>
-            {(analyticsOverview?.revenue_30d ?? 0) === 0 && (
-              <Text className={`font-inter text-[10px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No sales yet. Share your products to get started.</Text>
-            )}
+            {trendPct !== null && (analyticsOverview?.revenue_30d ?? 0) > 0 ? (
+              <Text
+                className={`text-[13px] font-semibold ml-2 ${trendPct >= 0 ? "text-success" : "text-danger-text"}`}
+              >
+                {trendPct >= 0 ? "+" : ""}
+                {trendPct.toFixed(0)}%
+              </Text>
+            ) : null}
           </View>
-          <View className={`min-w-[158px] flex-1 rounded p-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Orders</Text>
-            <Text className={`text-2xl font-geist font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{analyticsOverview?.orders_30d ?? 0}</Text>
-            {(analyticsOverview?.orders_30d ?? 0) === 0 && (
-              <Text className={`font-inter text-[10px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No orders yet.</Text>
-            )}
-          </View>
-          <View className={`min-w-[158px] flex-1 rounded p-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Product Views</Text>
-            <Text className={`text-2xl font-geist font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{analyticsOverview?.views_30d ?? 0}</Text>
-            {(analyticsOverview?.views_30d ?? 0) === 0 && (
-              <Text className={`font-inter text-[10px] mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No product views yet.</Text>
-            )}
-          </View>
-          <View className={`min-w-[158px] flex-1 rounded p-6 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`text-[10px] font-geist font-bold uppercase tracking-wider ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Conversion Rate</Text>
-            <Text className={`text-2xl font-geist font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{(analyticsOverview?.conversion_30d ?? 0)}%</Text>
-          </View>
+          {(analyticsOverview?.revenue_30d ?? 0) === 0 ? (
+            <Text className="text-[13px] mt-1.5 text-text-muted">
+              No sales yet — share a product to get started.
+            </Text>
+          ) : null}
+        </View>
+
+        <View
+          className="flex-row mx-5 mt-5 rounded-2xl bg-surface-sunken"
+        >
+          {[
+            { label: "Orders", value: String(analyticsOverview?.orders_30d ?? 0) },
+            { label: "Views", value: String(analyticsOverview?.views_30d ?? 0) },
+            { label: "Conversion", value: `${analyticsOverview?.conversion_30d ?? 0}%` },
+          ].map((stat, i) => (
+            <View
+              key={stat.label}
+              className={`flex-1 py-4 items-center ${i > 0 ? "border-l" : ""} ${
+                "border-border-strong"
+              }`}
+            >
+              <Text className="text-[20px] font-bold text-text-primary">
+                {stat.value}
+              </Text>
+              <Text className="text-[12px] mt-0.5 text-text-muted">
+                {stat.label}
+              </Text>
+            </View>
+          ))}
         </View>
 
         {/* Start cards (onboarding) — SELLER_DASHBOARD_API_AND_MOBILE_GUIDE §2.4 */}
         <StartCards title="Getting started" />
 
-        {/* Primary CTA — Create Product */}
-        <View className="px-6 py-4">
-          <TouchableOpacity
-            accessibilityLabel="create-product-btn"
-            onPress={handleCreateProduct}
-            className="rounded h-12 items-center justify-center bg-primary"
-          >
-            <Text className="text-white font-geist font-bold text-base">Create Product</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => nicheFormRef.current?.expand()}
-            className={`mt-3 rounded h-12 items-center justify-center border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}
-          >
-            <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Create Community</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Quick actions — with badges */}
-        <View className="flex-row flex-wrap gap-4 px-6 py-4">
-          <TouchableOpacity
-            accessibilityLabel="orders-quicknav"
-            onPress={() => router.push("/(tabs)/sellerOrders")}
-            className={`flex-row items-center rounded h-12 px-6 ${pendingOrderCount > 0 ? "bg-primary border border-primary" : (isDark ? "border-[#46464e] bg-[#2f3132]" : "border border-border bg-white")}`}
-          >
-            <Text className={`font-geist font-bold text-sm ${pendingOrderCount > 0 ? "text-white" : (isDark ? "text-[#f0f1f2]" : "text-black")}`}>Orders</Text>
-            {pendingOrderCount > 0 && (
-              <View className={`ml-2 min-w-[20px] h-5 rounded items-center justify-center px-1.5 ${isDark ? "bg-[#1a1c1d]" : "bg-primary"}`}>
-                <Text className={`${isDark ? "text-primary" : "text-white"} text-[10px] font-bold`}>{pendingOrderCount}</Text>
+        {/* Quick actions — equal tiles, so they read as one control */}
+        <View className="flex-row gap-3 px-6 pb-5">
+          {[
+            {
+              key: "orders",
+              // "All orders", not "Orders": the tab a row above this shows the
+              // recent few, and this goes to the whole list with its search
+              // and filters.
+              label: "All orders",
+              Icon: ShoppingBag,
+              badge: pendingOrderCount,
+              onPress: () => router.push("/(tabs)/orders"),
+            },
+            {
+              key: "chats",
+              label: "Chats",
+              Icon: MessageCircle,
+              badge: 0,
+              onPress: () => router.push("/(tabs)/messages"),
+            },
+            {
+              key: "requests",
+              label: "Requests",
+              Icon: FileText,
+              badge: 0,
+              onPress: () => router.push("/(tabs)/requests"),
+            },
+            {
+              key: "community",
+              label: "Community",
+              Icon: Users,
+              badge: 0,
+              onPress: () => nicheFormRef.current?.expand(),
+            },
+          ].map(({ key, label, Icon, badge, onPress }) => (
+            <TouchableOpacity
+              key={key}
+              onPress={onPress}
+              accessibilityRole="button"
+              accessibilityLabel={badge > 0 ? `${label}, ${badge} pending` : label}
+              className="flex-1 items-center gap-1.5 rounded-2xl border border-border bg-surface-raised px-1 py-3.5"
+            >
+              <View className="relative">
+                <Icon size={20} color={t.textPrimary} strokeWidth={1.9} />
+                {badge > 0 ? (
+                  // Sits on the icon rather than after the label: a count
+                  // beside the text pushed the tiles to different widths.
+                  <View className="absolute -right-2.5 -top-1.5 min-w-[18px] h-[18px] items-center justify-center rounded-full px-1 bg-primary-fill">
+                    <Text className="text-[10px] font-bold text-text-on-primary">
+                      {badge > 9 ? "9+" : badge}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push("/(tabs)/messages")}
-            className={`rounded h-12 px-6 items-center justify-center border ${isDark ? "border-[#46464e] bg-[#2f3132]" : "border border-border bg-white"}`}
-          >
-            <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Chats</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push("/(tabs)/requests")}
-            className={`rounded h-12 px-6 items-center justify-center border ${isDark ? "border-[#46464e] bg-[#2f3132]" : "border border-border bg-white"}`}
-          >
-            <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Requests</Text>
-          </TouchableOpacity>
+              <Text className="text-[12px] font-semibold text-text-secondary" numberOfLines={1}>
+                {label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* Sales trends card */}
         <View className="px-6 py-6">
-          <View className={`rounded border p-6 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-            <Text className={`font-geist font-bold text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Sales Trends</Text>
-            <Text className={`text-[32px] font-geist font-bold mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{formatCurrency(analyticsOverview?.revenue_30d ?? 0)}</Text>
-            <View className="flex-row gap-2 items-center mt-2">
-              <Text className={`font-inter text-sm ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Last 30 Days</Text>
-              <Text className="text-success font-inter text-sm font-bold">+15%</Text>
-            </View>
+          <View className="rounded border p-6 bg-surface-raised border-border">
+            {/* The figure and trend now lead the screen; repeating them here
+                just made the same number appear twice. */}
+            <Text className="font-bold text-base text-text-primary">Sales trends</Text>
             <View className="py-6">
               <LineChart
                 data={(analyticsTimeseries && analyticsTimeseries.series && analyticsTimeseries.series.length > 0) ? {
                   labels: analyticsTimeseries.series.map(d => {
-                    try { return months[new Date(d.bucket_start).getMonth()]; } catch { return ''; }
+                    return watMonthShort(d.bucket_start);
                   }),
                   datasets: [{ data: analyticsTimeseries.series.map(d => d.value || 0), strokeWidth: 3 }]
                 } : {
@@ -480,8 +760,8 @@ export default function SellerDashboard() {
                 width={chartWidth - 48}
                 height={160}
                 chartConfig={{
-                  backgroundGradientFrom: isDark ? '#1a1c1d' : '#ffffff',
-                  backgroundGradientTo: isDark ? '#1a1c1d' : '#ffffff',
+                  backgroundGradientFrom: t.surfaceRaised,
+                  backgroundGradientTo: t.surfaceRaised,
                   color: (opacity = 1) => `rgba(233, 76, 42, ${opacity})`,
                   labelColor: (opacity = 1) => chartLabelColor(opacity),
                   decimalPlaces: 0,
@@ -497,38 +777,32 @@ export default function SellerDashboard() {
           </View>
         </View>
 
-        {/* Recent Orders card */}
-        <View className="px-6 pt-4">
-          <Text className={`text-xl font-geist font-bold px-1 pb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Recent Orders</Text>
-          {loading && !sellerRecentOrders.length ? (
-            <Text className={`font-inter text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading recent orders...</Text>
-          ) : sellerRecentOrders.length === 0 ? (
-            <Text className={`font-inter text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No recent orders</Text>
-          ) : (
-            <View className={`rounded border overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-              <FlatList
-                data={sellerRecentOrders}
-                keyExtractor={(it) => String(it.id)}
-                renderItem={renderOrderItem}
-                scrollEnabled={false}
-              />
-            </View>
-          )}
-          {error ? <Text className="text-error font-inter text-sm mt-3 px-1">{error}</Text> : null}
-        </View>
+        {/* Low stock */}
+        <View className="px-5 pt-8">
+          <Text className="text-[17px] font-bold pb-3 text-text-primary">Stock</Text>
 
-        {/* Low Stock Alerts (pulsing red-accent) */}
-        <View className="px-6 pt-10">
-          <Text className={`text-xl font-geist font-bold px-1 pb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Low Stock Alerts</Text>
-
-          <View className={`rounded border overflow-hidden ${isDark ? "bg-[#2f3132] border-[#ba1a1a]" : "bg-error-bg border-error"}`}>
+          {/* The container only turns red when something is actually wrong.
+              "No low stock items" is good news, and it was being rendered as a
+              red-bordered pink alert box — the one state that should reassure
+              looked like the one state that shouldn't. */}
+          <View
+            className={`rounded-xl overflow-hidden ${
+              sellerInventory.filter((item) => (item.stock ?? 0) < 5).length === 0
+                ? "bg-surface-sunken"
+                : isDark
+                  ? "bg-surface-sunken border border-danger"
+                  : "bg-danger-muted border border-danger"
+            }`}
+          >
             {sellerInventory.filter((item) => (item.stock ?? 0) < 5).length === 0 ? (
-              <Text className={`font-inter text-sm px-6 py-5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No low stock items</Text>
+              <Text className="text-[14px] px-4 py-4 text-text-muted">
+                Everything's in stock.
+              </Text>
             ) : (
               sellerInventory.filter((item) => (item.stock ?? 0) < 5).map((a, idx, arr) => (
                 <View
                   key={a.id ?? a.name ?? idx}
-                  className={`flex-row items-stretch ${idx < arr.length - 1 ? (isDark ? 'border-b border-[#ba1a1a]/20' : 'border-b border-error/20') : ''}`}
+                  className={`flex-row items-stretch ${idx < arr.length - 1 ? (isDark ? 'border-b border-danger/20' : 'border-b border-danger/20') : ''}`}
                 >
                   {/* Left accent bar  */}
                   <LeftAccentPulse />
@@ -537,26 +811,26 @@ export default function SellerDashboard() {
                   <View className="flex-1 flex-row items-center justify-between px-6 py-5">
                     <View className="flex-1 pr-4">
                       <View className="flex-row items-center gap-2">
-                        <AlertTriangle size={16} color="#ba1a1a" />
-                        <Text className="text-error font-geist font-bold text-xs uppercase tracking-wider">Low stock</Text>
+                        <AlertTriangle size={16} color={t.dangerText} />
+                        <Text className="text-danger-text font-bold text-xs uppercase tracking-wider">Low stock</Text>
                       </View>
 
-                      <Text className={`font-geist font-bold text-base mt-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{a.name}</Text>
-                      <Text className={`font-inter text-xs mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Last Updated: {formatDate(a.created_at)}</Text>
-                      <Text className={`font-inter text-xs ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Stock Left: {a.stock}</Text>
+                      <Text className="font-bold text-base mt-2 text-text-primary">{a.name}</Text>
+                      <Text className="text-xs mt-1 text-text-secondary">Last Updated: {formatDate(a.created_at)}</Text>
+                      <Text className="text-xs text-text-secondary">Stock Left: {a.stock}</Text>
 
                       {/* Visual urgency bar*/}
-                      <View className={`mt-3 h-1.5 rounded overflow-hidden ${isDark ? "bg-[#1a1c1d]" : "bg-error/10"}`}>
+                      <View className={`mt-3 h-1.5 rounded overflow-hidden ${isDark ? "bg-surface-raised" : "bg-danger/10"}`}>
                         <View
                           style={{ width: `${Math.min(Number(a.stock ?? 0), 20) * 5}%` }}
-                          className="h-1.5 bg-error"
+                          className="h-1.5 bg-danger"
                         />
                       </View>
                     </View>
 
                     {/* Badge */}
-                    <View className={`rounded px-3 py-1 border ${isDark ? "bg-[#1a1c1d] border-[#ba1a1a]" : "bg-white border-error"}`}>
-                      <Text className="text-error font-geist font-bold text-[10px] uppercase tracking-wider">Action needed</Text>
+                    <View className="rounded px-3 py-1 border bg-surface-raised border-danger">
+                      <Text className="text-danger-text font-bold text-[10px] uppercase tracking-wider">Action needed</Text>
                     </View>
                   </View>
                 </View>
@@ -565,69 +839,190 @@ export default function SellerDashboard() {
           </View>
         </View>
 
-        {/* Inventory search + filters */}
-        <View className="px-6 pt-10">
-          <Text className={`text-xl font-geist font-bold px-1 pb-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Inventory</Text>
-          <View className={`rounded border p-6 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-            <View className={`flex-row items-center rounded overflow-hidden border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-              <View className="w-12 items-center justify-center">
-                <Search size={20} color={isDark ? "#c6c5cf" : "#71717A"} />
-              </View>
-              <TextInput
-                placeholder="Search products"
-                className={`flex-1 h-12 px-3 font-inter text-base ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
-                placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
-                value={searchText}
-                onChangeText={setSearchText}
-                accessibilityLabel="inventory-search"
+          </>
+        ) : null}
+
+        {/* Orders and inventory. Reached by the tabs above rather than by
+            scrolling to the bottom of the overview. */}
+        {tab !== "overview" ? (
+        <View className="px-6 pt-6">
+          {/* Adding a product sits above the list of products, so a seller
+              can see what is already there while they add to it -- and does
+              not have to leave to find the button. */}
+          {tab === "products" ? (
+            <TouchableOpacity
+              accessibilityLabel="create-product-btn"
+              accessibilityRole="button"
+              onPress={handleCreateProduct}
+              className="mb-4 h-[52px] flex-row items-center justify-center gap-2 rounded-xl bg-primary-fill"
+            >
+              <Plus size={18} color={t.textOnPrimary} strokeWidth={2.5} />
+              <Text className="text-[16px] font-bold text-text-on-primary">
+                Create product
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+          {tab === "orders" ? (
+            <>
+              {loading && !sellerRecentOrders.length ? (
+                <Text className="text-sm px-1 text-text-secondary">Loading recent orders…</Text>
+              ) : sellerRecentOrders.length === 0 ? (
+                <Text className="text-sm px-1 text-text-secondary">No recent orders</Text>
+              ) : (
+                <View className="rounded-2xl border overflow-hidden bg-surface-raised border-border">
+                  <FlatList
+                    data={sellerRecentOrders}
+                    keyExtractor={(it) => String(it.id)}
+                    renderItem={renderOrderItem}
+                    scrollEnabled={false}
+                  />
+                </View>
+              )}
+              <Pager
+                page={ordersPage}
+                pages={ordersPages}
+                busy={pageLoading}
+                onChange={(n: number) => goToPage("orders", n)}
               />
-            </View>
+              {/* This tab is the recent few; the Orders screen is the whole
+                  list, with search, status filters and the actions that move
+                  an item along. */}
+              <TouchableOpacity
+                onPress={() => router.push("/(tabs)/orders")}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  pendingOrderCount > 0
+                    ? `See all orders, ${pendingOrderCount} pending`
+                    : "See all orders"
+                }
+                className="mt-2 h-11 flex-row items-center justify-center gap-1"
+              >
+                <Text className="text-[14px] font-semibold text-primary-text">
+                  See all orders
+                </Text>
+                <ChevronRight size={16} color={t.primaryText} />
+              </TouchableOpacity>
+              {error ? <Text className="text-danger-text text-sm mt-3 px-1">{error}</Text> : null}
+            </>
+          ) : (
+            <>
+          <View>
+            <SearchField
+              value={searchText}
+              onChangeText={setSearchText}
+              placeholder="Search products"
+            />
 
             <View className="flex-row gap-3 mt-4">
-              <TouchableOpacity className={`h-10 items-center justify-center rounded pl-5 pr-4 flex-row gap-2 border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-                <Text className={`font-geist font-bold text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Status</Text>
-                <CaretDown size={16} color={isDark ? "#f0f1f2" : "#000000"} />
+              <View>
+                <TouchableOpacity
+                  onPress={() => setStatusMenuVisible((v) => !v)}
+                  className={`h-10 items-center justify-center rounded pl-5 pr-4 flex-row gap-2 border ${isStatusFilter(invFilter) ? "bg-primary-fill border-primary" : ("bg-surface-sunken border-border")}`}
+                >
+                  <Text className={`font-bold text-sm capitalize ${isStatusFilter(invFilter) ? "text-white" : ("text-text-primary")}`}>
+                    {isStatusFilter(invFilter)
+                      ? PRODUCT_STATUSES.find((x) => x.value === invFilter)?.label
+                      : 'Status'}
+                  </Text>
+                  <ChevronDown size={18} color={isStatusFilter(invFilter) ? t.textOnPrimary : (t.textPrimary)} />
+                </TouchableOpacity>
+                {statusMenuVisible && (
+                  <View className="absolute top-11 left-0 z-10 rounded border overflow-hidden min-w-[130px] bg-surface-raised border-border">
+                    {PRODUCT_STATUSES.map(({ value, label }) => (
+                      <TouchableOpacity
+                        key={value}
+                        onPress={() => { setInvFilter(value); setStatusMenuVisible(false); }}
+                        className="px-4 py-3"
+                      >
+                        <Text className="font-bold text-sm text-text-primary">{label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+              <TouchableOpacity
+                onPress={() => { setInvFilter('all'); setStatusMenuVisible(false); }}
+                className={`h-10 items-center justify-center rounded px-5 border ${invFilter === 'all' ? "bg-primary-fill border-primary" : ("bg-surface-sunken border-border")}`}
+              >
+                <Text className={`font-bold text-sm ${invFilter === 'all' ? "text-white" : ("text-text-primary")}`}>All</Text>
               </TouchableOpacity>
-              <TouchableOpacity className="h-10 items-center justify-center rounded bg-primary px-5">
-                <Text className="text-white font-geist font-bold text-sm">All</Text>
-              </TouchableOpacity>
-              <TouchableOpacity className={`h-10 items-center justify-center rounded px-5 border ${isDark ? "bg-[#ba1a1a]/10 border-[#ba1a1a]" : "bg-error-bg border-error"}`}>
-                <Text className="text-error font-geist font-bold text-sm">Low</Text>
+              <TouchableOpacity
+                onPress={() => { setInvFilter(invFilter === 'low' ? 'all' : 'low'); setStatusMenuVisible(false); }}
+                className={`h-10 items-center justify-center rounded px-5 border ${invFilter === 'low' ? "bg-danger border-danger" : ("bg-danger-muted border-danger")}`}
+              >
+                <Text className={`font-bold text-sm ${invFilter === 'low' ? "text-white" : "text-danger-text"}`}>Low</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </View>
 
-        {/* Inventory list card */}
-        <View className="px-6 pt-4">
+          <View className="pt-4" />
           {loading && !filteredInventory.length ? (
-            <Text className={`font-inter text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>Loading inventory...</Text>
+            <Text className="text-sm px-1 text-text-secondary">Loading inventory...</Text>
           ) : filteredInventory.length === 0 ? (
-            <Text className={`font-inter text-sm px-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>No products in inventory</Text>
+            <Text className="text-sm px-1 text-text-secondary">No products in inventory</Text>
           ) : (
-            <View className={`rounded border overflow-hidden ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-              <FlatList
-                data={filteredInventory}
-                keyExtractor={(it) => String(it.id ?? it.name)}
-                renderItem={renderProductItem}
-                scrollEnabled={false}
+            <FlatList
+              data={filteredInventory}
+              keyExtractor={(it) => String(it.id ?? it.name)}
+              renderItem={renderProductItem}
+              scrollEnabled={false}
+              // Rows run edge to edge with the hairline inset to start under
+              // the text, the list language the settings screens already
+              // speak. The card around them was a bordered box inside a
+              // bordered screen, and it cost width on every row.
+              ItemSeparatorComponent={() => (
+                <View className="h-px ml-[68px] bg-border" />
+              )}
+            />
+          )}
+              <Pager
+                page={invPage}
+                pages={invPages}
+                busy={pageLoading}
+                onChange={(n: number) => goToPage("inventory", n)}
               />
-            </View>
+            </>
           )}
         </View>
+        ) : null}
 
-        {/* Pager dots */}
-        <View className="flex-row w-full items-center justify-center gap-3 py-10">
-          <View className="h-2 w-2 rounded bg-primary" />
-          <View className={`h-2 w-2 rounded ${isDark ? "bg-[#46464e]" : "bg-border"}`} />
-          <View className={`h-2 w-2 rounded ${isDark ? "bg-[#46464e]" : "bg-border"}`} />
-        </View>
-
-        <View className="h-4" />
+        <View className="h-8" />
       </ScrollView>
 
-      <ProductFormBottomSheet ref={productFormRef} />
-      <CreateNicheBottomSheet ref={nicheFormRef} />
+      <ProductFormBottomSheet
+        ref={productFormRef}
+        // This screen has no refetch-on-focus -- only pull-to-refresh -- so
+        // without this a seller creates a product and the inventory list
+        // below still shows the world as it was.
+        onCreated={(product) => {
+          onRefresh();
+          // Straight to what they just made, the way saving an edit already
+          // shows the changed row. Creating something and being left on the
+          // same screen reads as if it did not work.
+          if (product?.id) router.push(`/productDetails/${product.id}` as any);
+        }}
+      />
+      {/* onRefresh, like the product sheet above: a community you just made
+          should be on the dashboard that offered to make it. */}
+      <CreateNicheBottomSheet ref={nicheFormRef} onCreated={onRefresh} />
+      <InventoryEditSheet
+        product={editingProduct}
+        visible={editingProduct != null}
+        onClose={() => setEditingProduct(null)}
+        onSaved={(updated) => {
+          // Patch in place rather than refetching the whole dashboard: the
+          // seller is looking at this row and expects it to change now.
+          //
+          // Both copies. The list renders filteredInventory, so patching only
+          // sellerInventory left the row on screen showing the old price
+          // until something refetched -- which is the bug this comment used
+          // to describe the fix for.
+          const patch = (prev: any[]) =>
+            prev.map((p) => (p.id === updated.id ? { ...p, ...updated } : p));
+          setSellerInventory(patch);
+          setFilteredInventory(patch);
+        }}
+      />
     </SafeAreaView>
   );
 }

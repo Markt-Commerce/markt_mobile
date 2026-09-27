@@ -1,39 +1,77 @@
-import React, { useEffect, useState, useCallback } from "react";
-import {View,Text,ScrollView,FlatList,ActivityIndicator,TouchableOpacity,TextInput,Image, KeyboardAvoidingView, Dimensions, Share} from "react-native";
-import {  ArrowLeft,  Heart,  MessageCircle,  Send,  Image as ImageIcon, X, SendHorizonal} from "lucide-react-native";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import {View,Text,ScrollView,FlatList,ActivityIndicator,TouchableOpacity,TextInput,Image, KeyboardAvoidingView, Share, Keyboard, Platform} from "react-native";
+import { ArrowLeft, SendHorizonal } from "lucide-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useBackTo } from "../../utils/goBack";
 import { commentOnPost, getPostById, getPostComments, likePost } from "../../services/sections/post";
 import { CommentItem, CommentResponse, PostDetails } from "../../models/post";
 import { useToast } from "../../components/ToastProvider";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { parseDate } from "../../utils/parseDate";
 import { useUser } from "../../hooks/userContextProvider";
+import { patchFeedPost } from "../../hooks/useFeed";
 import { getUserProfile } from "../../services/sections/profile";
 import Avatar from "../../components/Avatar";
 import type { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";
+import { useTokens } from "../../theme/useTokens";
+import CartFab from "../../components/CartFab";
+import { getProductById } from "../../services/sections/product";
+import { addToCart } from "../../services/sections/cart";
+import type { ProductDetail } from "../../models/products";
+import { formatNaira } from "../../utils/formatCurrency";
+import { resolveProductImageUri } from "../../utils/imageUri";
+import logger from "../../utils/logger";
+import { PostMediaGrid, mediaTypeOf, type MediaItem } from "../../components/postMedia";
+import PostActionBar from "../../components/PostActionBar";
+import { saveItem, unsaveItem } from "../../services/sections/saved";
+import { parseServerDate } from "../../utils/datetime";
 
 
+
+/**
+ * Same rule as the chat thread: comments from one person within the same minute
+ * form a run, and only the first carries an avatar and a name. Someone posting
+ * three quick thoughts used to stack three avatars and three identical times.
+ */
+function sameCommentGroup(a?: CommentItem, b?: CommentItem) {
+  if (!a || !b) return false;
+  if (String(a.user?.id ?? "") !== String(b.user?.id ?? "")) return false;
+  if (!a.user?.id) return false;
+  const ta = parseServerDate(a.created_at);
+  const tb = parseServerDate(b.created_at);
+  if (!ta || !tb) return false;
+  return (
+    Math.floor(ta.getTime() / 60_000) === Math.floor(tb.getTime() / 60_000)
+  );
+}
 
 // Helper component for comment rendering
-const SingleCommentComponent = React.memo(({ comment, isDark }: { comment: CommentItem, isDark: boolean }) => {
+const SingleCommentComponent = React.memo(({ comment, isDark, grouped = false }: { comment: CommentItem, isDark: boolean, grouped?: boolean }) => {
   return (
-    <View className="flex w-full flex-row items-start justify-start gap-3 p-4">
-      <Avatar
-        uri={comment.user?.profile_picture_url}
-        name={comment.user?.username}
-        size={40}
-      />
+    <View className={`flex w-full flex-row items-start justify-start gap-3 px-4 ${grouped ? "pt-0.5 pb-1" : "pt-3 pb-1"}`}>
+      {grouped ? (
+        // Keeps the text aligned under the run's first comment.
+        <View style={{ width: 40 }} />
+      ) : (
+        <Avatar
+          uri={comment.user?.profile_picture_url}
+          name={comment.user?.username}
+          size={40}
+        />
+      )}
       <View className="flex h-full flex-1 flex-col items-start justify-start">
-        <View className="flex w-full flex-row items-start justify-start gap-x-3">
-          <Text className={`text-sm font-bold leading-normal tracking-[0.015em] ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-            {comment.user.username}
-          </Text>
-          <Text className={`text-sm font-normal leading-normal ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-            {parseDate(comment.created_at)}
-          </Text>
-        </View>
-        <Text className={`text-sm font-normal leading-normal ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+        {grouped ? null : (
+          <View className="flex w-full flex-row items-start justify-start gap-x-3">
+            <Text className="text-sm font-bold leading-normal tracking-[0.015em] text-text-primary">
+              {comment.user.username}
+            </Text>
+            <Text className="text-sm font-normal leading-normal text-text-secondary">
+              {parseDate(comment.created_at)}
+            </Text>
+          </View>
+        )}
+        <Text className="text-sm font-normal leading-normal text-text-primary">
           {comment.content}
         </Text>
       </View>
@@ -47,19 +85,42 @@ export default function PostDetailsScreen() {
   const [likeCount, setLikeCount] = useState(0);
   const [likedByMe, setLikedByMe] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [newComment, setNewComment] = useState<string>("");
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true); // Control for infinite scroll
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const loadingCommentsRef = useRef(false);
+  const postingCommentRef = useRef(false);
+  const [postingComment, setPostingComment] = useState(false);
+  const commentInputRef = useRef<TextInput>(null);
   const router = useRouter();
+  // Back, or the list this belongs under when there is no history --
+  // after paying, and on a notification that opened the app cold.
+  const goBack = useBackTo("/(tabs)");
   const { id } = useLocalSearchParams<{ id: string }>();
   const { show } = useToast();
   const { user } = useUser();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [sponsoredProduct, setSponsoredProduct] = useState<ProductDetail | null>(null);
+  const [addingToCart, setAddingToCart] = useState(false);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const t = useTokens();
+  const insets = useSafeAreaInsets();
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSubscription = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSubscription = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const FetchPost = async (id: string) => {
     try {
@@ -67,6 +128,7 @@ export default function PostDetailsScreen() {
       setPost(res);
       setLikeCount(res.like_count ?? 0);
       setLikedByMe(res.liked_by_me ?? false);
+      setSaved(res.is_saved ?? false);
     } catch (error) {
       show({
         variant: "error",
@@ -76,7 +138,7 @@ export default function PostDetailsScreen() {
     }
   };
 
-  const handleLike = async () => {
+  const handleLike = React.useCallback(async () => {
     if (isLiking || !post) return;
     setIsLiking(true);
     const prevLiked = likedByMe;
@@ -85,6 +147,10 @@ export default function PostDetailsScreen() {
     setLikeCount((c) => (likedByMe ? Math.max(0, c - 1) : c + 1));
     try {
       await likePost(post.id);
+      patchFeedPost(String(post.id), () => ({
+        liked_by_me: !prevLiked,
+        likes_count: prevLiked ? Math.max(0, prevCount - 1) : prevCount + 1,
+      }));
     } catch {
       setLikedByMe(prevLiked);
       setLikeCount(prevCount);
@@ -92,9 +158,9 @@ export default function PostDetailsScreen() {
     } finally {
       setIsLiking(false);
     }
-  };
+  }, [isLiking, post, likedByMe, likeCount, show]);
 
-  const handleShare = async () => {
+  const handleShare = React.useCallback(async () => {
     try {
       await Share.share({
         message: "Check out this post on Markt",
@@ -104,11 +170,66 @@ export default function PostDetailsScreen() {
     } catch {
       // User cancelled
     }
-  };
+  }, [post?.id]);
+
+  const handleSave = React.useCallback(async () => {
+    if (!post) return;
+    const previous = saved;
+    setSaved(!previous);
+    try {
+      if (previous) await unsaveItem("post", post.id);
+      else await saveItem("post", post.id);
+    } catch {
+      setSaved(previous);
+      show({ variant: "error", title: "Could not update saved posts", message: "Please try again." });
+    }
+  }, [post, saved, show]);
 
   useEffect(() => {
     if (id) FetchPost(id);
   }, [id]);
+
+  // Resolve the attached ("sponsored") product — the post only carries product_id(s).
+  useEffect(() => {
+    const productId = post?.products?.[0]?.product_id;
+    if (!productId) {
+      setSponsoredProduct(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const detail = await getProductById(productId);
+        if (!cancelled) setSponsoredProduct(detail);
+      } catch (err) {
+        if (!cancelled) logger.error("Failed to load sponsored product:", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [post?.products]);
+
+  const handleAddSponsoredToCart = React.useCallback(async () => {
+    if (!sponsoredProduct || addingToCart) return;
+    setAddingToCart(true);
+    try {
+      await addToCart({ product_id: sponsoredProduct.id, variant_id: 0, quantity: 1 });
+      show({
+        variant: "success",
+        title: "Added to cart",
+        message: `${sponsoredProduct.name} has been added to your cart.`,
+      });
+    } catch {
+      show({
+        variant: "error",
+        title: "Could not add to cart",
+        message: "Please sign in as a buyer and try again.",
+      });
+    } finally {
+      setAddingToCart(false);
+    }
+  }, [sponsoredProduct, addingToCart, show]);
 
   useEffect(() => {
     getUserProfile()
@@ -117,22 +238,43 @@ export default function PostDetailsScreen() {
   }, []);
 
   const createComment = async (comment: string, parentId?: number) => {
+    // The button had no busy state, so it could be tapped repeatedly and each
+    // tap posted another comment. Ref, not state: two taps can land before a
+    // state update flushes.
+    if (postingCommentRef.current) return;
+    const trimmed = comment.trim();
+    if (!trimmed) return;
+
+    postingCommentRef.current = true;
+    setPostingComment(true);
     try {
-      if (comment == "") return;
-      const newComment = await commentOnPost(id, comment, parentId);
+      const newComment = await commentOnPost(id, trimmed, parentId);
       setComments((prev) => [newComment, ...prev]);
       setNewComment("");
+      // The feed shows a comment count and does not refetch on focus, so
+      // without this the buyer goes back to the number they saw before they
+      // typed -- which reads as though the comment did not save.
+      patchFeedPost(String(id), (item) => ({
+        comments_count: (item.comments_count ?? 0) + 1,
+      }));
     } catch (error) {
       show({
         variant: "error",
         title: "Error adding comment",
         message: "There was an issue adding your comment.",
       });
+    } finally {
+      postingCommentRef.current = false;
+      setPostingComment(false);
     }
   };
 
   const loadComments = useCallback(async () => {
-    if (loading || !hasMore) return;
+    // Ref guard, not state — onEndReached can fire more than once before a
+    // state update flushes, letting two calls fetch the same page and append
+    // duplicate ids (causing the FlatList "same key" error).
+    if (loadingCommentsRef.current || !hasMore) return;
+    loadingCommentsRef.current = true;
 
     setLoading(true);
     try {
@@ -140,8 +282,11 @@ export default function PostDetailsScreen() {
       const totalPages = commentResponse.pagination.total_pages;
       const newComments = commentResponse.items;
 
-      // Add comments first
-      setComments((prev) => [...prev, ...newComments]);
+      setComments((prev) => {
+        const merged = [...prev, ...newComments];
+        const seen = new Set<number>();
+        return merged.filter((c) => (seen.has(c.id) ? false : (seen.add(c.id), true)));
+      });
 
       // Increment page
       const nextPage = page + 1;
@@ -160,8 +305,10 @@ export default function PostDetailsScreen() {
         message: "There was an issue retrieving the post comments.",
       });
       setLoading(false);
+    } finally {
+      loadingCommentsRef.current = false;
     }
-  }, [id, page, loading, hasMore, show]);
+  }, [id, page, hasMore, show]);
 
   useEffect(() => {
     // Initial load of comments
@@ -173,251 +320,280 @@ export default function PostDetailsScreen() {
   const myAvatarUri = profile?.profile_picture_url || profile?.profile_picture || undefined;
   const myDisplayName = profile?.username || user?.email;
 
+  // Memoised, and above the `!post` guard with everything else that uses a
+  // hook. A new array each render would invalidate the header memo below on
+  // every keystroke, which is the thing that memo exists to prevent.
+  const postMedia: MediaItem[] = React.useMemo(
+    () =>
+      (post?.social_media ?? [])
+        .filter((sm) => !!sm?.media?.original_url)
+        .map((sm) => ({
+          uri: sm.media.original_url,
+          type: mediaTypeOf({
+            media_type: (sm.media as any)?.media_type,
+            mime_type: (sm.media as any)?.mime_type,
+            url: sm.media.original_url,
+          }),
+        })),
+    [post?.social_media],
+  );
+
+  // Header, post content, and sponsored ad are rendered in the ListHeaderComponent.
+  //
+  // A memoised *element*, not a function. Passing a function meant a new
+  // identity on every render, and to React a new function is a different
+  // component type -- so the whole header was unmounted and mounted again on
+  // every keystroke in the comment box. That remount is what made the post
+  // blink while you typed: the image started loading from scratch each time.
+  //
+  // newComment is deliberately not a dependency. What you are typing does not
+  // change the post above it.
+  const listHeader = React.useMemo(
+    () =>
+      !post ? null : (
+    <View>
+      {/* Header Bar */}
+      <View className="flex items-center p-4 pb-2 flex-row bg-surface-raised">
+        <TouchableOpacity
+          className="flex size-12 shrink-0 items-center justify-center"
+          onPress={() => goBack()}
+        >
+          <ArrowLeft size={24} color={t.textPrimary} />
+        </TouchableOpacity>
+        <Text className="text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12 text-text-primary">
+          Post
+        </Text>
+      </View>
+
+      {/* Tappable, as it is in the feed. The author here was static, so opening
+          a post was a dead end for finding the person who wrote it. */}
+      <TouchableOpacity
+        onPress={() => post.user?.id && router.push(`/profile/${post.user.id}`)}
+        disabled={!post.user?.id}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={`View ${post.user?.username ?? "author"}'s profile`}
+        className="flex flex-row gap-3 min-h-[64px] py-2 px-4 items-center bg-surface-raised"
+      >
+        <Avatar uri={post.user?.profile_picture_url} name={post.user?.username} size={48} />
+        <View className="flex flex-col justify-center">
+          <Text className="text-base font-bold leading-normal line-clamp-1 text-text-primary">
+            {post.user.username}
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      {/* Caption */}
+      <Text className="text-base font-normal leading-normal pb-3 pt-1 px-4 text-text-primary">
+        {post.caption}
+      </Text>
+
+      {/* Media — Instagram-style grid (max 5), tap any tile for fullscreen */}
+      {postMedia.length > 0 && (
+        <View className="flex w-full grow px-4 pb-3 bg-surface-raised">
+          <PostMediaGrid media={postMedia} />
+        </View>
+      )}
+
+
+      {/* Attached product — resolved from the post's product_id */}
+      {sponsoredProduct && (
+        <TouchableOpacity
+          className="p-4"
+          activeOpacity={0.8}
+          onPress={() => router.push(`/productDetails/${sponsoredProduct.id}`)}
+        >
+        <View className="flex items-stretch justify-between gap-4 rounded flex-row">
+          <View className="flex flex-[2_2_0px] flex-col gap-4">
+            <View className="flex flex-col gap-1">
+              <Text className="text-sm font-normal leading-normal text-text-secondary">
+                Featured product
+              </Text>
+              <Text
+                numberOfLines={2}
+                className="text-base font-bold leading-tight text-text-primary"
+              >
+                {sponsoredProduct.name}
+              </Text>
+              <Text className="text-sm font-normal leading-normal text-text-secondary">
+                {formatNaira(sponsoredProduct.price)}
+              </Text>
+            </View>
+            <TouchableOpacity
+              disabled={addingToCart}
+              className={`flex min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded h-8 px-4 flex-row-reverse w-fit ${addingToCart ? "opacity-60" : ""} bg-surface-sunken`}
+              onPress={handleAddSponsoredToCart}
+              accessibilityRole="button"
+              accessibilityLabel={`Add ${sponsoredProduct.name} to cart`}
+            >
+              {addingToCart ? (
+                <ActivityIndicator size="small" color={t.textPrimary} />
+              ) : (
+                <Text className="text-sm font-medium leading-normal truncate text-text-primary">
+                  Add to Cart
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+          {resolveProductImageUri(sponsoredProduct) ? (
+            <Image
+              source={{ uri: resolveProductImageUri(sponsoredProduct)! }}
+              className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded flex-1"
+            />
+          ) : (
+            <View className="flex-1 aspect-video rounded bg-surface-sunken" />
+          )}
+        </View>
+      </TouchableOpacity>
+      )}
+
+      <View className="mx-4 pt-2 border-t border-border-strong">
+        <Text className="text-sm mb-1 text-text-secondary">
+          {parseDate(post.created_at)}
+        </Text>
+        <PostActionBar
+          likeCount={likeCount}
+          commentCount={post.comment_count}
+          views={post.views_count ?? post.view_count ?? post.views}
+          liked={likedByMe}
+          saved={saved}
+          disabled={isLiking}
+          onLike={handleLike}
+          onComment={() => commentInputRef.current?.focus()}
+          onSave={handleSave}
+          onShare={handleShare}
+        />
+      </View>
+
+      {/* Comments Header */}
+      <Text className="text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4 text-text-primary">
+        Comments
+      </Text>
+    </View>
+    ),
+    [
+      post,
+      postMedia,
+      likeCount,
+      likedByMe,
+      isLiking,
+      saved,
+      sponsoredProduct,
+      addingToCart,
+      profile,
+      isDark,
+      t,
+      router,
+      handleLike,
+      handleSave,
+      handleShare,
+      handleAddSponsoredToCart,
+    ],
+  );
+
+  const renderCommentItem = React.useCallback(
+    ({ item, index }: { item: CommentItem; index: number }) => (
+      <SingleCommentComponent
+        comment={item}
+        isDark={isDark}
+        grouped={sameCommentGroup(comments[index - 1], item)}
+      />
+    ),
+    [isDark, comments],
+  );
+
+  // An element for the same reason as the header: a fresh function identity is
+  // a fresh component type, and remounting a spinner restarts its animation.
+  const listFooter = React.useMemo(
+    () =>
+      loading ? (
+        <View className="py-4">
+          <ActivityIndicator size="small" color={t.textMuted} />
+        </View>
+      ) : (
+        <View className="h-5" /> // Small spacer
+      ),
+    [loading, t.textMuted],
+  );
+
+
   if (!post) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top", "bottom"]}>
+      <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "bottom"]}>
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color={isDark ? "#f0f1f2" : "#000000"} />
+          <ActivityIndicator size="large" color={t.textPrimary} />
         </View>
       </SafeAreaView>
     );
   }
 
-  // Header, post content, and sponsored ad are rendered in the ListHeaderComponent
-  const renderListHeader = () => (
-    <View>
-      {/* Header Bar */}
-      <View className={`flex items-center p-4 pb-2 flex-row ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
-        <TouchableOpacity
-          className="flex size-12 shrink-0 items-center justify-center"
-          onPress={() => router.back()}
-        >
-          <ArrowLeft size={24} color={isDark ? "#f0f1f2" : "#000000"} />
-        </TouchableOpacity>
-        <Text className={`text-lg font-geist font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-          Post
-        </Text>
-      </View>
-
-      <View className={`flex flex-row gap-4 min-h-[72px] py-2 px-4 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
-        <Avatar uri={post.user?.profile_picture_url} name={post.user?.username} size={56} />
-        <View className="flex flex-col justify-center">
-          <Text className={`text-base font-medium leading-normal line-clamp-1 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-            {post.user.username}
-          </Text>
-          <Text className={`text-sm font-normal leading-normal line-clamp-2 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-            {parseDate(post.created_at)}
-          </Text>
-        </View>
-      </View>
-
-      {/* Caption */}
-      <Text className={`text-base font-normal leading-normal pb-3 pt-1 px-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-        {post.caption}
-      </Text>
-
-      {/* Main Image */}
-      {post.social_media.length > 0 && (
-        <View className={`flex w-full grow p-4 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
-          {post.social_media.length === 1 ? (
-            // Single image
-            <View className={`w-full gap-1 overflow-hidden aspect-[2/3] rounded flex md:gap-2 ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
-              <Image
-                source={{ uri: post.social_media[0].media.original_url }}
-                className="w-full bg-center bg-no-repeat bg-cover aspect-auto rounded flex-1"
-              />
-            </View>
-          ) : (
-            // Multiple images - Carousel
-            <View>
-              <FlatList
-                data={post.social_media}
-                keyExtractor={(_, idx) => idx.toString()}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onMomentumScrollEnd={(e) => {
-                  const idx = Math.round(e.nativeEvent.contentOffset.x / Dimensions.get("window").width);
-                  setCurrentImageIndex(idx);
-                }}
-                renderItem={({ item }) => (
-                  <View style={{ width: Dimensions.get("window").width - 32 }} className={`gap-1 overflow-hidden aspect-[2/3] rounded flex ${isDark ? "bg-[#2f3132]" : "bg-white"}`}>
-                    <Image
-                      source={{ uri: item.media.original_url }}
-                      className="w-full bg-center bg-no-repeat bg-cover aspect-auto rounded flex-1"
-                    />
-                    {/* Left arrow indicator */}
-                    {currentImageIndex > 0 && (
-                      <View className="absolute left-2 top-1/2 transform -translate-y-1/2">
-                        <Text className="text-white text-2xl opacity-70 font-bold">‹</Text>
-                      </View>
-                    )}
-                    {/* Right arrow indicator */}
-                    {currentImageIndex < post.social_media.length - 1 && (
-                      <View className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                        <Text className="text-white text-2xl opacity-70 font-bold">›</Text>
-                      </View>
-                    )}
-                  </View>
-                )}
-              />
-
-              {/* Dots indicator */}
-              <View className="flex-row justify-center gap-2 py-3">
-                {post.social_media.map((_, idx) => (
-                  <View
-                    key={idx}
-                    className={`h-2 rounded transition-all ${
-                      idx === currentImageIndex ? "bg-primary w-6" : (isDark ? "bg-[#46464e] w-2" : "bg-border w-2")
-                    }`}
-                  />
-                ))}
-              </View>
-            </View>
-          )}
-        </View>
-      )}
-      
-
-      {/* Sponsored Product: I will work on a way to get the product details later */}
-      {post.products?.length > 0 && (
-        <View className="p-4">
-        <View className="flex items-stretch justify-between gap-4 rounded flex-row">
-          <View className="flex flex-[2_2_0px] flex-col gap-4">
-            <View className="flex flex-col gap-1">
-              <Text className={`text-sm font-normal leading-normal ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                Sponsored
-              </Text>
-              <Text className={`text-base font-bold leading-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                Le name of ze product
-              </Text>
-              <Text className={`text-sm font-normal leading-normal ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                Le price of ze product
-              </Text>
-            </View>
-            <TouchableOpacity
-              className={`flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded h-8 px-4 flex-row-reverse w-fit ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}
-              onPress={() => console.log("Add to cart")}
-            >
-              <Text className={`text-sm font-medium leading-normal truncate ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                Add to Cart
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <Image
-            source={{ uri: "https://i.pravatar.cc/150?img=7" }}
-            className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded flex-1"
-          />
-        </View>
-      </View>
-      )}
-
-      {/* Social Actions — aligned with FeedPostCard: gap-6, min-h-[44px], orange heart when liked */}
-      <View className={`flex-row mt-3 pt-2 border-t px-4 gap-6 ${isDark ? "border-[#46464e]" : "border-border"}`}>
-        <TouchableOpacity
-          onPress={handleLike}
-          disabled={isLiking}
-          className="flex-row items-center gap-2 py-1 min-h-[44px]"
-          accessibilityRole="button"
-          accessibilityLabel={`${likeCount} likes`}
-        >
-          <Heart
-            size={18}
-            color={likedByMe ? "#E94C2A" : (isDark ? "#c6c5cf" : "#71717A")}
-            fill={likedByMe ? "#E94C2A" : "transparent"}
-          />
-          <Text className={`text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{likeCount}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          className="flex-row items-center gap-2 py-1 min-h-[44px]"
-          accessibilityRole="button"
-          accessibilityLabel={`${post.comment_count} comments`}
-        >
-          <MessageCircle size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
-          <Text className={`text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>{post.comment_count}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleShare}
-          className="flex-row items-center gap-2 py-1 min-h-[44px]"
-          accessibilityRole="button"
-          accessibilityLabel="Share post"
-        >
-          <Send size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
-          <Text className={`text-sm ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Share</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Comments Header */}
-      <Text className={`text-lg font-geist font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-        Comments
-      </Text>
-    </View>
-  );
-
-  const renderCommentItem = ({ item }: { item: CommentItem }) => (
-    <SingleCommentComponent comment={item} isDark={isDark} />
-  );
-
-  const renderListFooter = () => {
-    if (loading) {
-      return (
-        <View className="py-4">
-          <ActivityIndicator size="small" color="#71717A" />
-        </View>
-      );
-    }
-    return <View className="h-5" />; // Small spacer
-  };
-
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["top"]}>
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }}>
-        <View className="relative flex-1 flex-col justify-between" style={{ backgroundColor: isDark ? "#1a1c1d" : "white" }}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["top"]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={0}
+        className="flex-1 bg-surface-page"
+      >
+        <View className="relative flex-1 flex-col justify-between" style={{ backgroundColor: t.surfacePage }}>
           <FlatList
           data={comments}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderCommentItem}
-          ListHeaderComponent={renderListHeader}
-          ListFooterComponent={renderListFooter}
+          ListHeaderComponent={listHeader}
+          ListFooterComponent={listFooter}
           onEndReached={loadComments}
           onEndReachedThreshold={0.5}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
           // This is a common pattern to ensure the flatlist can scroll properly
           contentContainerStyle={{ flexGrow: 1 }}
         />
 
-          <SafeAreaView edges={["bottom"]}>
-            <View className={`px-4 py-3 border-t ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
+          <View style={{ paddingBottom: keyboardVisible ? 0 : insets.bottom }}>
+            <View className="px-4 py-2 border-t bg-surface-raised border-border">
               <View className="flex-row items-center gap-3">
                 <Avatar uri={myAvatarUri} name={myDisplayName} size={40} />
 
               {/* Input + Icons */}
-              <View className={`flex-1 flex-row items-center rounded px-3 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
+              <View className="flex-1 flex-row items-center rounded px-3 bg-surface-sunken">
                 {/* Text Input */}
                 <TextInput
+                  ref={commentInputRef}
                   placeholder="Add a comment..."
-                  placeholderTextColor={isDark ? "#c6c5cf" : "#A1A1AA"}
-                  className={`flex-1 text-base font-normal py-2 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
+                  placeholderTextColor={t.textSecondary}
+                  className="flex-1 text-base font-normal py-2 text-text-primary"
                   value={newComment}
                   onChangeText={setNewComment}
                   multiline
+                  maxLength={1000}
+                  textAlignVertical="center"
                 />
 
                 {/* Right-side Icons */}
                 <View className="flex-row items-center">
                   {/* Send button */}
                   <TouchableOpacity
-                    className="p-1.5"
+                    className={`p-1.5 ${postingComment || !newComment.trim() ? "opacity-40" : ""}`}
                     onPress={() => createComment(newComment)}
+                    disabled={postingComment || !newComment.trim()}
+                    accessibilityRole="button"
+                    accessibilityLabel="Post comment"
+                    accessibilityState={{ busy: postingComment, disabled: postingComment || !newComment.trim() }}
                   >
-                    <SendHorizonal size={20} color={isDark ? "#f0f1f2" : "#000000"} />
+                    {postingComment ? (
+                      <ActivityIndicator size="small" color={t.textPrimary} />
+                    ) : (
+                      <SendHorizonal size={20} color={t.textPrimary} />
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
               </View>
             </View>
-          </SafeAreaView>
+          </View>
         </View>
       </KeyboardAvoidingView>
+      <CartFab />
     </SafeAreaView>
   );
 }

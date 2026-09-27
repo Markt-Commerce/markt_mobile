@@ -25,11 +25,9 @@ export function highlightMentions(text: string): React.ReactNode[] {
         </Link>
       );
     } else {
-      return (
-        <Text key={index} style={{ color: "#000" }}>
-          {part}
-        </Text>
-      );
+      // No explicit color: nested Text inherits the parent's themed color
+      // (hardcoding one broke dark mode wherever captions render).
+      return <Text key={index}>{part}</Text>;
     }
   });
   

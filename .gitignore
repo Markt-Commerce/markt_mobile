@@ -2,7 +2,6 @@
 
 # dependencies
 node_modules/
-package-lock.json
 
 # Expo
 .expo/
@@ -32,7 +31,14 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
+!.env.example
 
 # typescript
 *.tsbuildinfo
+
+issues.md
+# Store listing screenshots — marketing assets, not app source.
+IPHONE/
+*:Zone.Identifier

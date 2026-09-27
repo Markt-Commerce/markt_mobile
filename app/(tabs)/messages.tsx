@@ -2,7 +2,8 @@
  * Messages — Chat room list (Instagram/Twitter-style)
  */
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useCallback, useState, useMemo } from "react";
+import SearchField from "../../components/SearchField";
 import {
   View,
   Text,
@@ -10,28 +11,18 @@ import {
   TouchableOpacity,
   RefreshControl,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { MessageCircle, Search } from "lucide-react-native";
 import { getRooms } from "../../services/sections/chat";
 import type { RoomListResponse } from "../../models/chat";
 import Avatar from "../../components/Avatar";
-import { useTheme } from "../../components/themeProvider";
-
-function formatTimeAgo(iso: string) {
-  const d = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-  if (diffMins < 1) return "Now";
-  if (diffMins < 60) return `${diffMins}m`;
-  if (diffHours < 24) return `${diffHours}h`;
-  if (diffDays < 7) return `${diffDays}d`;
-  return d.toLocaleDateString([], { month: "short", day: "numeric" });
-}
+import { useTokens } from "../../theme/useTokens";
+// develop extracted this into a shared util; the local copy here was
+// byte-identical, so take the shared one.
+import { formatTimeAgo } from "../../utils/formatTimeAgo";
 
 function lastMessagePreview(lastMessage: { content?: string; message_type?: string } | undefined): string {
   if (!lastMessage) return "No messages yet";
@@ -46,26 +37,40 @@ function lastMessagePreview(lastMessage: { content?: string; message_type?: stri
 
 export default function MessagesScreen() {
   const [data, setData] = useState<RoomListResponse | null>(null);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
 
-  const fetchRooms = async () => {
+  const fetchRooms = useCallback(async (opts?: { silent?: boolean }) => {
     try {
       const res = await getRooms(1, 20);
       setData(res);
     } catch {
-      setData({ rooms: [], pagination: undefined });
+      // A refresh that fails must not empty a list that is already on screen:
+      // silent passes keep what is there rather than blanking the tab.
+      if (!opts?.silent) setData({ rooms: [], pagination: undefined });
     } finally {
+      setLoading(false);
       setRefreshing(false);
     }
-  };
-
-  useEffect(() => {
-    fetchRooms();
   }, []);
+
+  // On focus, not on mount.
+  //
+  // This is a tab screen, so it mounts once and stays mounted for the whole
+  // session. Fetching in a mount effect meant the list was a snapshot from
+  // whenever the app started: send a message, come back, and the room still
+  // showed the previous last message, in the previous order, with the old
+  // unread count. Everything that changes a room happens on another screen.
+  //
+  // Silent, so returning to the tab does not replace the list with a spinner.
+  useFocusEffect(
+    useCallback(() => {
+      fetchRooms({ silent: true });
+    }, [fetchRooms])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -84,22 +89,22 @@ export default function MessagesScreen() {
   }, [data?.rooms, search]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? "#1a1c1d" : "white" }} edges={["left", "right", "bottom"]}>
-      <View className={`border-b px-6 pt-6 pb-4 ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-        <Text className={`text-2xl font-geist font-bold ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>Messages</Text>
-        <View className={`flex-row items-center rounded mt-4 px-4 py-3 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-          <Search size={18} color={isDark ? "#c6c5cf" : "#71717A"} />
-          <TextInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search conversations"
-            placeholderTextColor={isDark ? "#c6c5cf" : "#71717A"}
-            className={`flex-1 ml-3 font-inter text-base py-0 ${isDark ? "text-[#f0f1f2]" : "text-black"}`}
-          />
-        </View>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["left", "right", "bottom"]}>
+      <View className="border-b px-6 pt-6 pb-4 bg-surface-raised border-border">
+        <Text className="text-2xl font-bold text-text-primary">Messages</Text>
+        <SearchField
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search conversations"
+          className="mt-4"
+        />
       </View>
 
-      {rooms.length > 0 ? (
+      {loading ? (
+        <View className="flex-1 items-center justify-center bg-surface-raised">
+          <ActivityIndicator size="large" color={t.textPrimary} />
+        </View>
+      ) : rooms.length > 0 ? (
         <FlatList
           data={rooms}
           keyExtractor={(item) => String(item.id)}
@@ -122,7 +127,7 @@ export default function MessagesScreen() {
                   })
                 }
                 activeOpacity={0.7}
-                className={`flex-row items-center px-6 py-5 border-b ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}
+                className="flex-row items-center px-6 py-5 border-b bg-surface-raised border-border"
               >
                 <View className="relative">
                   <Avatar
@@ -133,34 +138,37 @@ export default function MessagesScreen() {
                   />
                   {hasUnread && (
                     <View
-                      className={`absolute right-0 bottom-0 w-3.5 h-3.5 rounded bg-primary border-2 ${isDark ? "border-[#1a1c1d]" : "border-white"}`}
+                      className="absolute right-0 bottom-0 w-3.5 h-3.5 rounded bg-primary-fill border-2 border-surface-page"
                     />
                   )}
                 </View>
                 <View className="flex-1 ml-4 min-w-0">
                   <View className="flex-row items-center justify-between mb-0.5">
                     <Text
-                      className={`font-geist font-bold text-base ${isDark ? (hasUnread ? "text-[#f0f1f2]" : "text-[#f0f1f2]") : (hasUnread ? "text-black" : "text-black")}`}
+                      // Both hasUnread branches were already identical on
+                      // develop; the name is always bold and unread is carried
+                      // by the timestamp, preview and badge below.
+                      className="font-bold text-base text-text-primary"
                       numberOfLines={1}
                     >
                       {item.other_user?.username ?? "Unknown"}
                     </Text>
                     <Text
-                      className={`text-xs font-inter ${hasUnread ? (isDark ? "text-[#f0f1f2] font-bold" : "text-black font-bold") : (isDark ? "text-[#c6c5cf]" : "text-tertiary")}`}
+                      className={`text-xs ${hasUnread ? ("text-text-primary font-bold") : ("text-text-secondary")}`}
                     >
                       {formatTimeAgo(item.last_message_at)}
                     </Text>
                   </View>
                   {item.product && (
                     <Text
-                      className={`text-xs font-inter mb-0.5 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}
+                      className="text-xs mb-0.5 text-text-secondary"
                       numberOfLines={1}
                     >
                       Re: {item.product.name}
                     </Text>
                   )}
                   <Text
-                    className={`text-sm font-inter ${hasUnread ? (isDark ? "text-[#f0f1f2] font-medium" : "text-black font-medium") : (isDark ? "text-[#c6c5cf]" : "text-tertiary")}`}
+                    className={`text-sm ${hasUnread ? ("text-text-primary font-medium") : ("text-text-secondary")}`}
                     numberOfLines={1}
                   >
                     {preview}
@@ -174,19 +182,19 @@ export default function MessagesScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={isDark ? "#f0f1f2" : "#000000"}
+              tintColor={t.textPrimary}
             />
           }
         />
       ) : (
-        <View className={`flex-1 items-center justify-center px-8 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`}>
-          <View className={`w-24 h-24 rounded items-center justify-center mb-6 ${isDark ? "bg-[#2f3132]" : "bg-surface"}`}>
-            <MessageCircle size={36} color={isDark ? "#f0f1f2" : "#000000"} />
+        <View className="flex-1 items-center justify-center px-8 bg-surface-raised">
+          <View className="mb-5">
+            <MessageCircle size={44} color={t.textMuted} strokeWidth={1.5} />
           </View>
-          <Text className={`text-xl font-geist font-bold text-center ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
+          <Text className="text-xl font-bold text-center text-text-primary">
             {search.trim() ? "No matches" : "No messages yet"}
           </Text>
-          <Text className={`font-inter text-base text-center mt-2 leading-6 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
+          <Text className="text-base text-center mt-2 leading-6 text-text-secondary">
             {search.trim()
               ? "Try a different name or product"
               : 'Tap "Chat" on a product or "Message" on a request to start.'}

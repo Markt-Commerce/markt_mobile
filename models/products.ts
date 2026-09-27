@@ -109,8 +109,28 @@ export interface Product {
     shop_slug: string;
     profile_picture_url: string;
     average_rating: number;
+    /** How many ratings average_rating is built from. Only populated since
+     *  markt_python #93 -- nothing wrote the column before that, so older
+     *  payloads omit it rather than reporting a real zero. */
+    total_raters?: number;
+    total_rating?: number;
     total_products: number;
     verification_status: string;
+    /** Where the shop is, so the app can ask whether we deliver from there
+     *  before letting someone fill a basket they could never check out. Null
+     *  when the seller has not pinned their shop. */
+    shop_latitude?: number | null;
+    shop_longitude?: number | null;
+    /** Where the shop is, in words. The coordinate is the authority on where
+     *  it actually is; this is what a person reads. Null until the seller
+     *  sets it. */
+    shop_address?: ShopAddress | null;
+  }
+
+  export interface ShopAddress {
+    formatted: string | null;
+    city: string | null;
+    state: string | null;
   }
 
   interface SellerUser{
@@ -126,14 +146,38 @@ export interface PlaceholderProduct {
   image?: string;
 }
   
+  /**
+   * Partial update — anything omitted is left as-is. Mirrors
+   * ProductUpdateSchema in app/products/schemas.py.
+   *
+   * This previously described an endpoint that does not exist: `price` as a
+   * string, plus discount_price, category_id, in_stock and `images: File[]`,
+   * none of which the backend accepts. Nothing referenced it, because nothing
+   * called the update endpoint at all.
+   */
   export interface UpdateProductRequest {
     name?: string;
     description?: string;
-    price?: string;
-    discount_price?: string;
-    category_id?: number;
-    in_stock?: boolean;
-    images?: File[]; // optional, may be re-uploaded
+    price?: number;
+    compare_at_price?: number;
+    cost_per_item?: number;
+    stock?: number;
+    sku?: string;
+    barcode?: string;
+    weight?: number;
+    status?: string;
+    category_ids?: number[];
+    tag_ids?: number[];
+    /** The product's photos, as media ids, in the order they should show.
+     *
+     * The server has always accepted this; it was missing here, which is a
+     * large part of why nothing in the app could add a photo to a listing
+     * after it was created.
+     *
+     * Replaces the whole set. Leave it out to keep the photos as they are --
+     * sending an empty array removes them all, so a screen that only changes
+     * the price must not send it. */
+    media_ids?: number[];
   }
 
   // /models/product.ts
@@ -192,6 +236,10 @@ export interface SellerSummary {
   id?: number;
   shop_slug?: string;
   total_products?: number;
+  /** Where the shop is, so the app can ask whether we deliver from there
+   * before letting someone fill a basket they could never check out. */
+  shop_latitude?: number | null;
+  shop_longitude?: number | null;
 }
 
 export interface ProductResponse {

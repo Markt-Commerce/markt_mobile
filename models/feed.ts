@@ -12,7 +12,7 @@ export interface MediaVariant {
     url: string;
     id: number;
   }
-  
+
   export interface Media {
     original_url: string;
     social_post_url: string;
@@ -43,11 +43,16 @@ export interface MediaVariant {
     caption: string;
     exif_data: Record<string, string>;
   }
-  
+
   export interface Seller {
     id: number;
     profile_picture_url: string;
     average_rating: number;
+    /** Number of ratings behind average_rating. Populated since
+     *  markt_python #93 -- nothing wrote it before, so treat older
+     *  payloads as absent rather than zero. */
+    total_raters?: number;
+    total_rating?: number;
     verification_status: string;
     total_products: number;
     shop_slug: string;
@@ -88,6 +93,10 @@ export interface MediaVariant {
     like_count: number;
     /** true if current user liked this post — use for orange filled heart (API_CONTRACT_FEED_AND_FOLLOW) */
     liked_by_me?: boolean;
+    views_count?: number;
+    view_count?: number;
+    views?: number;
+    is_saved?: boolean;
     status: string;
     categories: string;
     seller?: Seller;
@@ -112,12 +121,19 @@ export interface BuyerRequest {
     title: string;
     description: string;
     budget: number;
-    deadline: string;
+    status: "OPEN" | "CLOSED" | "EXPIRED" | string;
+    expires_at: string;
     created_at: string;
-    buyer: {
+    updated_at?: string;
+    upvotes?: number;
+    views?: number;
+    images?: any[];
+    categories?: any[];
+    user_id?: string;
+    user: {
       id: string;
       username: string;
-      profile_picture_url: string;
+      profile_picture_url: string | null;
     };
   }
   
@@ -126,4 +142,3 @@ export interface BuyerRequest {
     | { type: "post"; data: Post }
     | { type: "request"; data: BuyerRequest }
     | {type: "niche_discover"; data: any[]};
-  

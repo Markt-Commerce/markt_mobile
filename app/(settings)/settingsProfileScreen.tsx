@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
   ArrowRight,
   Bell,
+  Bookmark,
   Globe,
   HelpCircle,
   Info,
@@ -13,93 +14,41 @@ import {
   LogOut,
   Palette,
   ShieldCheck,
+  ShieldOff,
+  Trash2,
+  Trophy,
   UserCog,
+  Undo2,
+  Wallet,
 } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
 import Avatar from "../../components/Avatar";
 import { useUser } from "../../hooks/userContextProvider";
 import { useTheme } from "../../components/themeProvider";
-import { getUserProfile } from "../../services/sections/profile";
+import {
+  SettingsSection,
+  SettingsRow,
+  SettingsSwitchRow,
+} from "../../components/SettingsList";
 import { logoutUser } from "../../services/sections/auth";
 import { useToast } from "../../components/ToastProvider";
 import { navigateToGuestHome } from "../../utils/authNavigation";
-import type { UserProfile } from "../../models/profile";
+import { useGamificationContext } from "../../hooks/gamificationContext";
+import { updateGamificationPreferences } from "../../services/sections/gamification";
+import { useTokens } from "../../theme/useTokens";
 
 const LANGUAGE_KEY = "app_lang_v1";
 
-function SettingsSection({
-  title,
-  children,
-  dark = false,
-}: {
-  title: string;
-  children: React.ReactNode;
-  dark?: boolean;
-}) {
-  return (
-    <View className="px-6 mt-8">
-      <Text className={`font-geist font-bold text-[11px] tracking-[2px] uppercase mb-3 ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-        {title}
-      </Text>
-      <View className={`rounded overflow-hidden border ${dark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-        {children}
-      </View>
-    </View>
-  );
-}
-
-function SettingsRow({
-  icon: Icon,
-  title,
-  subtitle,
-  value,
-  onPress,
-  last = false,
-  dark = false,
-}: {
-  icon: React.ElementType;
-  title: string;
-  subtitle: string;
-  value?: string;
-  onPress: () => void;
-  last?: boolean;
-  dark?: boolean;
-}) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.8}
-      className={`flex-row items-center justify-between px-4 py-4 ${last ? "" : dark ? "border-b border-[#46464e]" : "border-b border-border"}`}
-    >
-      <View className="flex-row items-center gap-3 flex-1 pr-3">
-        <View className={`w-10 h-10 rounded items-center justify-center ${dark ? "bg-[#2f3132]" : "bg-surface"}`}>
-          <Icon size={18} color={dark ? "#f0f1f2" : "#000000"} strokeWidth={1.7} />
-        </View>
-        <View className="flex-1">
-          <Text className={`font-geist font-bold text-[15px] ${dark ? "text-[#f0f1f2]" : "text-black"}`}>{title}</Text>
-          <Text className={`font-inter text-[13px] mt-1 ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}>{subtitle}</Text>
-        </View>
-      </View>
-      <View className="flex-row items-center gap-2">
-        {value ? (
-          <Text className={`font-geist font-bold text-[11px] tracking-widest uppercase ${dark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-            {value}
-          </Text>
-        ) : null}
-        <ArrowRight size={18} color={dark ? "#c6c5cf" : "#71717A"} strokeWidth={1.7} />
-      </View>
-    </TouchableOpacity>
-  );
-}
-
 export default function SettingsProfileScreen() {
   const router = useRouter();
-  const { user, role, setUser } = useUser();
+  const { user, role, setUser, profile } = useUser();
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const t = useTokens();
   const { show } = useToast();
   const [language, setLanguage] = useState("EN");
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const { profile: gamification, refresh: refreshGamification } = useGamificationContext();
+  const [leaderboardOptOut, setLeaderboardOptOut] = useState(false);
+  const [leaderboardUpdating, setLeaderboardUpdating] = useState(false);
 
   const displayName =
     role === "buyer"
@@ -107,13 +56,33 @@ export default function SettingsProfileScreen() {
       : profile?.seller_account?.shop_name ?? profile?.username ?? "Shop";
 
   useEffect(() => {
-    getUserProfile().then(setProfile).catch(() => setProfile(null));
     AsyncStorage.getItem(LANGUAGE_KEY)
       .then((stored) => {
         if (stored) setLanguage(stored.toUpperCase());
       })
       .catch(() => { });
   }, []);
+
+  useEffect(() => {
+    if (gamification) setLeaderboardOptOut(gamification.opt_out_leaderboard);
+  }, [gamification]);
+
+  const handleLeaderboardToggle = async (showOnLeaderboard: boolean) => {
+    if (leaderboardUpdating) return;
+    const nextOptOut = !showOnLeaderboard;
+    const prev = leaderboardOptOut;
+    setLeaderboardOptOut(nextOptOut);
+    setLeaderboardUpdating(true);
+    try {
+      await updateGamificationPreferences({ opt_out_leaderboard: nextOptOut });
+      refreshGamification();
+    } catch {
+      setLeaderboardOptOut(prev);
+      show({ variant: "error", title: "Error", message: "Could not update leaderboard preference." });
+    } finally {
+      setLeaderboardUpdating(false);
+    }
+  };
 
   const handleThemeToggle = async () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
@@ -148,142 +117,170 @@ export default function SettingsProfileScreen() {
   };
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? "bg-[#1a1c1d]" : "bg-white"}`} edges={["top", "left", "right", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "left", "right", "bottom"]}>
       <ScrollView
-        className={isDark ? "flex-1 bg-[#1a1c1d]" : "flex-1 bg-white"}
+        className={"flex-1 bg-surface-page"}
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
         <ScreenHeader title="Settings" onBack={() => router.back()} />
 
-        <View className="px-6 pt-6">
-          <View className={`rounded px-5 py-5 border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-surface border-border"}`}>
-            <View className="flex-row items-center gap-4">
-              <Avatar
-                uri={profile?.profile_picture_url}
-                name={displayName}
-                size={64}
-                className="rounded"
-              />
-              <View className="flex-1">
-                <Text className={`font-geist font-bold text-[24px] tracking-tight ${isDark ? "text-[#f0f1f2]" : "text-black"}`} numberOfLines={1}>
-                  {displayName}
-                </Text>
-                <Text className={`font-inter text-sm mt-1 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`} numberOfLines={1}>
-                  @{profile?.username ?? user?.email ?? "user"}
-                </Text>
-                <Text className={`font-geist font-bold text-[10px] tracking-[2px] uppercase mt-3 ${isDark ? "text-[#c6c5cf]" : "text-tertiary"}`}>
-                  {role} control center
-                </Text>
-              </View>
-            </View>
+        {/* Centered identity, no card. This was a bordered box holding three
+            more bordered chips -- four outlines stacked in one header. The
+            tinted band does the separating, so nothing needs an outline. */}
+        <View className="items-center px-6 pt-4 pb-6 bg-surface-raised">
+          <Avatar
+            uri={profile?.profile_picture_url}
+            name={displayName}
+            size={88}
+            className="rounded-full"
+          />
+          <Text
+            className="font-bold text-[22px] tracking-tight mt-3 text-text-primary"
+            numberOfLines={1}
+          >
+            {displayName}
+          </Text>
+          <Text
+            className="text-[14px] mt-0.5 text-text-muted"
+            numberOfLines={1}
+          >
+            @{profile?.username ?? user?.email ?? "user"}
+          </Text>
 
-            <View className="flex-row flex-wrap gap-2 mt-4">
-              <View className={`px-3 py-2 rounded border ${isDark ? "bg-[#1a1c1d] border-[#46464e]" : "bg-white border-border"}`}>
-                <Text className={`font-geist font-bold text-[10px] tracking-[2px] uppercase ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                  {theme}
-                </Text>
-              </View>
-              <View className={`px-3 py-2 rounded border ${isDark ? "bg-[#2f3132] border-[#46464e]" : "bg-surface border-border"}`}>
-                <Text className={`font-geist font-bold text-[10px] tracking-[2px] uppercase ${isDark ? "text-[#f0f1f2]" : "text-black"}`}>
-                  {language}
-                </Text>
-              </View>
-              <View className="px-3 py-2 rounded bg-primary">
-                <Text className="font-geist font-bold text-[10px] tracking-[2px] uppercase text-white">
-                  {role}
-                </Text>
-              </View>
+          {/* Tint only. The role is the one that matters, so it keeps the
+              brand colour and the other two sit back. */}
+          <View className="flex-row flex-wrap justify-center gap-2 mt-4">
+            <View className="px-3 py-1.5 rounded-full bg-primary-fill">
+              <Text className="font-bold text-[11px] uppercase tracking-wider text-white">
+                {role}
+              </Text>
+            </View>
+            <View className="px-3 py-1.5 rounded-full bg-surface-sunken">
+              <Text className="font-bold text-[11px] uppercase tracking-wider text-text-secondary">
+                {theme}
+              </Text>
+            </View>
+            <View className="px-3 py-1.5 rounded-full bg-surface-sunken">
+              <Text className="font-bold text-[11px] uppercase tracking-wider text-text-secondary">
+                {language}
+              </Text>
             </View>
           </View>
         </View>
 
-        <SettingsSection title="Account Controls" dark={isDark}>
+        <SettingsSection title="Account Controls">
           <SettingsRow
             icon={UserCog}
             title="Account Information"
-            subtitle="Edit your phone number, role details, and profile image."
             onPress={() => router.push("/(settings)/accountInfoScreen")}
-            dark={isDark}
           />
           <SettingsRow
             icon={Lock}
             title="Password & Security"
-            subtitle="Update credentials and protect access to your account."
             onPress={() => router.push("/(settings)/changePasswordScreen")}
-            dark={isDark}
+          />
+          <SettingsRow
+            icon={Wallet}
+            title="Wallet"
+            onPress={() => router.push("/wallet" as any)}
+          />
+          <SettingsRow
+            icon={Undo2}
+            title="Refunds"
+            subtitle="Where money owed back lands"
+            onPress={() => router.push("/(settings)/refundPreferenceScreen" as any)}
+          />
+          <SettingsRow
+            icon={Bookmark}
+            title="Saved"
+            onPress={() => router.push("/saved" as any)}
+          />
+          <SettingsRow
+            icon={ShieldOff}
+            title="Blocked accounts"
+            onPress={() => router.push("/(settings)/blockedAccountsScreen" as any)}
           />
           <SettingsRow
             icon={Bell}
             title="Notifications"
-            subtitle="Choose which alerts reach you across email, push, and SMS."
             onPress={() => router.push("/(settings)/notificationScreen")}
             last
-            dark={isDark}
           />
         </SettingsSection>
 
-        <SettingsSection title="Preferences" dark={isDark}>
+        <SettingsSection title="Preferences">
           <SettingsRow
             icon={Palette}
             title="Appearance"
-            subtitle="Switch the interface between light and dark presentation."
             value={resolvedTheme.toUpperCase()}
             onPress={handleThemeToggle}
-            dark={isDark}
           />
           <SettingsRow
             icon={Globe}
             title="Language"
-            subtitle="Set your preferred language for the app experience."
             value={language}
             onPress={handleLanguageToggle}
+          />
+          <SettingsSwitchRow
+            icon={Trophy}
+            title="Show on leaderboard"
+            subtitle="Let other users see your rank and username on the gamification leaderboard."
+            value={!leaderboardOptOut}
+            onValueChange={handleLeaderboardToggle}
+            disabled={leaderboardUpdating}
             last
-            dark={isDark}
           />
         </SettingsSection>
 
-        <SettingsSection title="Support & Legal" dark={isDark}>
+        <SettingsSection title="Support & Legal">
           <SettingsRow
             icon={HelpCircle}
             title="Help Center"
-            subtitle="Find guidance for orders, accounts, and marketplace flows."
             onPress={() => router.push("/support/help" as any)}
-            dark={isDark}
           />
           <SettingsRow
             icon={ShieldCheck}
             title="Privacy Policy"
-            subtitle="Review how your data is handled across Markt."
             onPress={() => router.push("/support/privacy" as any)}
-            dark={isDark}
           />
           <SettingsRow
             icon={Lock}
             title="Terms of Use"
-            subtitle="Understand your rights and responsibilities on Markt."
             onPress={() => router.push("/support/terms" as any)}
-            dark={isDark}
           />
           <SettingsRow
             icon={Info}
             title="About Markt"
-            subtitle="Read product, policy, and platform information."
             onPress={() => router.push("/support/about" as any)}
             last
-            dark={isDark}
           />
         </SettingsSection>
 
-        <View className="px-6 pt-10">
+        {/* Apple App Store 5.1.1(v): account deletion has to be reachable from
+            inside the app, not only from a website. */}
+        <SettingsSection title="Danger Zone">
+          <SettingsRow
+            icon={Trash2}
+            destructive
+            title="Delete account"
+            subtitle="Permanently delete your account and personal data."
+            onPress={() => router.push("/(settings)/deleteAccountScreen" as any)}
+            last
+          />
+        </SettingsSection>
+
+        <View className="px-4 pt-8">
           <TouchableOpacity
             onPress={handleLogout}
-            activeOpacity={0.85}
-            className="h-14 rounded bg-primary items-center justify-center flex-row gap-2"
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Sign out"
+            className="h-13 py-3.5 rounded-xl items-center justify-center flex-row gap-2 bg-surface-sunken"
           >
-            <LogOut size={18} color="#FFFFFF" strokeWidth={1.8} />
-            <Text className="text-white font-geist font-bold text-xs tracking-[2px] uppercase">
-              Sign Out
+            <LogOut size={18} color={t.textPrimary} strokeWidth={1.9} />
+            <Text className="font-semibold text-[15px] text-text-primary">
+              Sign out
             </Text>
           </TouchableOpacity>
         </View>

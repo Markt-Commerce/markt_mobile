@@ -57,6 +57,12 @@ export async function getFollowingFeed(params: FeedQueryParams = {}): Promise<Fe
   return request<FeedResponse>(`${FEED_BASE}/following?${query}`, { method: "GET" });
 }
 
+/** Posts from every active niche the current user has joined. */
+export async function getJoinedNichesFeed(params: FeedQueryParams = {}): Promise<FeedResponse> {
+  const query = buildQuery(params);
+  return request<FeedResponse>(`${FEED_BASE}/niches?${query}`, { method: "GET" });
+}
+
 /**
  * Niche — content limited to a single niche/community.
  */

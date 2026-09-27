@@ -2,8 +2,10 @@ import * as React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Dimensions, FlatList, Modal, Pressable, StatusBar, Text, View, StyleSheet } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { Plus, X } from "lucide-react-native";
+import { Plus, Play, X } from "lucide-react-native";
 import { Image } from "expo-image";
+import { InlineVideo } from "./postMedia";
+import logger from "../utils/logger";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -13,6 +15,10 @@ export type PickedImage = {
   fileName?: string | null;
   width?: number;
   height?: number;
+  /** "video" when picked from the library as a video; defaults to image */
+  mediaType?: "image" | "video";
+  /** Exact mime type reported by the picker (used for upload) */
+  mimeType?: string | null;
 };
 
 export type InstagramGridProps = {
@@ -27,6 +33,15 @@ export type InstagramGridProps = {
   enableRemoveOnLongPress?: boolean;
   emptyLabel?: string;
   previewEnabled?: boolean;
+  /** Also allow picking videos from the library (posts support video) */
+  allowVideos?: boolean;
+  /** Offer the camera alongside the library.
+   *
+   * On by default: half of what people post is a thing in front of them
+   * right now, and making them leave, shoot, come back and find the photo
+   * is how a post does not get made. Off for anything that can only mean an
+   * existing file. */
+  allowCamera?: boolean;
 };
 
 export default function InstagramGrid({
@@ -41,6 +56,8 @@ export default function InstagramGrid({
   enableRemoveOnLongPress = true,
   emptyLabel = "No posts yet",
   previewEnabled = true,
+  allowVideos = false,
+  allowCamera = true,
 }: InstagramGridProps) {
   const [internalImages, setInternalImages] = useState<PickedImage[]>(value ?? []);
   const [viewerVisible, setViewerVisible] = useState(false);
@@ -74,6 +91,68 @@ export default function InstagramGrid({
     return true;
   }, []);
 
+  /** Add what a picker handed back, respecting the cap. */
+  const addAssets = useCallback(
+    (assets: any[] | undefined) => {
+      const picked =
+        assets?.map((a) => ({
+          id: `${a.assetId || a.fileName || a.uri}-${a.width || 0}x${a.height || 0}`,
+          uri: a.uri,
+          fileName: (a as any).fileName ?? null,
+          width: a.width,
+          height: a.height,
+          mediaType: (a.type === "video" ? "video" : "image") as "image" | "video",
+          mimeType: (a as any).mimeType ?? null,
+        })) ?? [];
+      setImages([...images, ...picked].slice(0, max ?? Number.MAX_SAFE_INTEGER));
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [images, max]
+  );
+
+  const handleCamera = useCallback(async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Camera access needed", "Allow camera access to take a photo.");
+      return;
+    }
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ["images"],
+        quality: 0.9,
+      });
+      if (result.canceled) return;
+      addAssets(result.assets);
+    } catch (e: any) {
+      logger.warn("Camera capture failed", e);
+    }
+  }, [addAssets]);
+
+  /** What the add button does.
+   *
+   * With the camera available there are two answers, so ask -- but only
+   * then. A chooser with one option on it is a tap nobody asked for.
+   */
+  const handleAdd = useCallback(() => {
+    if (!canAddMore) {
+      Alert.alert(
+        "Limit reached",
+        `You can add up to ${max} image${max && max > 1 ? "s" : ""}.`
+      );
+      return;
+    }
+    if (!allowCamera) {
+      handlePick();
+      return;
+    }
+    Alert.alert("Add a photo", undefined, [
+      { text: "Take a photo", onPress: () => handleCamera() },
+      { text: "Choose from library", onPress: () => handlePick() },
+      { text: "Cancel", style: "cancel" },
+    ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allowCamera, canAddMore, max, handleCamera]);
+
   const handlePick = useCallback(async () => {
     if (!canAddMore) {
       Alert.alert("Limit reached", `You can only add up to ${max} image${max && max > 1 ? "s" : ""}.`);
@@ -85,7 +164,9 @@ export default function InstagramGrid({
     try {
       const remaining = max ? Math.max(0, max - images.length) : undefined;
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: allowVideos
+          ? ["images", "videos"]
+          : ["images"],
         allowsMultipleSelection: true,
         selectionLimit: remaining,
         quality: 0.9,
@@ -99,12 +180,14 @@ export default function InstagramGrid({
         fileName: (a as any).fileName ?? null,
         width: a.width,
         height: a.height,
+        mediaType: (a.type === "video" ? "video" : "image") as "image" | "video",
+        mimeType: (a as any).mimeType ?? null,
       })) ?? [];
 
       const next = [...images, ...picked].slice(0, max ?? Number.MAX_SAFE_INTEGER);
       setImages(next);
     } catch (e: any) {
-      console.warn("Image picking failed", e);
+      logger.warn("Image picking failed", e);
       Alert.alert("Oops", "Something went wrong while picking images.");
     }
   }, [askPermissionIfNeeded, canAddMore, images, max, setImages]);
@@ -131,7 +214,7 @@ export default function InstagramGrid({
       const sizeStyle = { aspectRatio: 1 } as const;
 
       if (item.kind === "placeholder") {
-        return <View className="bg-surface-dim border border-dashed border-border rounded flex-1" style={[sizeStyle, marginStyle]} />;
+        return <View className="bg-surface-sunken border border-dashed border-border rounded flex-1" style={[sizeStyle, marginStyle]} />;
       }
 
       const { img } = item as { kind: "image"; id: string; img: PickedImage };
@@ -148,8 +231,21 @@ export default function InstagramGrid({
       };
 
         return (
-          <Pressable onPress={onPress} onLongPress={onLongPress} android_ripple={{ color: "#00000022" }} className="relative bg-surface rounded overflow-hidden flex-1" style={[sizeStyle, marginStyle]}>
-            <Image source={{ uri: img.uri }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
+          <Pressable onPress={onPress} onLongPress={onLongPress} android_ripple={{ color: "#00000022" }} className="relative bg-surface-sunken rounded overflow-hidden flex-1" style={[sizeStyle, marginStyle]}>
+            {img.mediaType === "video" ? (
+              <>
+                <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                  <InlineVideo uri={img.uri} style={StyleSheet.absoluteFill} controls={false} />
+                </View>
+                <View style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center" }]} pointerEvents="none">
+                  <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(0,0,0,0.55)", alignItems: "center", justifyContent: "center", paddingLeft: 2 }}>
+                    <Play size={16} color="#ffffff" fill="#ffffff" />
+                  </View>
+                </View>
+              </>
+            ) : (
+              <Image source={{ uri: img.uri }} style={StyleSheet.absoluteFill} contentFit="cover" />
+            )}
           </Pressable>
         );
     },
@@ -166,7 +262,7 @@ export default function InstagramGrid({
 
   return (
     <View className="w-full">
-      {images.length === 0 && !!emptyLabel && <Text className="text-center text-tertiary mb-2">{emptyLabel}</Text>}
+      {images.length === 0 && !!emptyLabel && <Text className="text-center text-text-muted mb-2">{emptyLabel}</Text>}
 
       <View className="w-full" style={{ padding: gap / 2 }}>
         <FlatList
@@ -183,7 +279,7 @@ export default function InstagramGrid({
       </View>
 
       {showFloatingAdd && (
-        <Pressable onPress={handlePick} android_ripple={{ color: "#ffffff55" }} className="absolute right-4 bottom-4 w-14 h-14 rounded items-center justify-center bg-primary">
+        <Pressable onPress={handleAdd} android_ripple={{ color: "#ffffff55" }} className="absolute right-4 bottom-4 w-14 h-14 rounded items-center justify-center bg-primary-fill">
           <Plus size={24} color="#ffffff" />
         </Pressable>
       )}
@@ -206,7 +302,11 @@ export default function InstagramGrid({
             }}
             renderItem={({ item }) => (
               <View style={{ width: SCREEN_WIDTH, height: "100%", backgroundColor: "#000" }}>
-                <Image source={{ uri: item.uri }} className="w-full h-full" contentFit="contain" />
+                {item.mediaType === "video" ? (
+                  <InlineVideo uri={item.uri} style={{ width: "100%", height: "100%" }} muted={false} controls contentFit="contain" />
+                ) : (
+                  <Image source={{ uri: item.uri }} className="w-full h-full" contentFit="contain" />
+                )}
               </View>
             )}
           />

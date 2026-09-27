@@ -1,0 +1,144 @@
+import React, { useMemo } from "react";
+import { View, Text, Image, TouchableOpacity, ActivityIndicator } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { ArrowLeft, Award, Lock, CheckCircle2 } from "lucide-react-native";
+
+import { useTokens } from "../../../theme/useTokens";
+import { useUser } from "../../../hooks/userContextProvider";
+import { useBadges } from "../../../hooks/useBadges";
+import { formatDate } from "../../../utils/datetime";
+import { useBackTo } from "../../../utils/goBack";
+
+export default function BadgeDetailScreen() {
+  const router = useRouter();
+  const goBack = useBackTo("/gamification");
+  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { user } = useUser();
+  const t = useTokens();
+
+  const { badges, loading } = useBadges(user?.user_id);
+  const badge = useMemo(
+    () => badges.find((b) => b.slug === slug),
+    [badges, slug]
+  );
+
+  const awardedDate = badge?.awarded_at
+    ? formatDate(badge.awarded_at, { withYear: true })
+    : null;
+
+  return (
+    <SafeAreaView
+      className="flex-1 bg-surface-page"
+      edges={["top", "bottom"]}
+    >
+      <View
+        className={`flex-row items-center px-4 py-3 border-b ${
+          "border-border"
+        }`}
+      >
+        <TouchableOpacity onPress={goBack}>
+          <ArrowLeft size={20} color={t.textPrimary} />
+        </TouchableOpacity>
+        <Text
+          className={`text-lg font-bold ml-2 ${
+            "text-text-primary"
+          }`}
+        >
+          Badge
+        </Text>
+      </View>
+
+      {loading && !badge ? (
+        <View className="items-center py-16">
+          <ActivityIndicator color={t.textPrimary} />
+        </View>
+      ) : !badge ? (
+        <Text
+          className={`text-center text-sm py-16 ${
+            "text-text-secondary"
+          }`}
+        >
+          Badge not found.
+        </Text>
+      ) : (
+        <View className="items-center px-8 pt-10">
+          <View
+            className={`w-28 h-28 rounded-full items-center justify-center ${
+              "bg-surface-sunken"
+            }`}
+            style={{ opacity: badge.earned ? 1 : 0.55 }}
+          >
+            {badge.icon_url ? (
+              <Image
+                source={{ uri: badge.icon_url }}
+                style={{ width: 80, height: 80, borderRadius: 40 }}
+              />
+            ) : badge.earned ? (
+              <Award size={52} color={t.textPrimary} />
+            ) : (
+              <Lock size={44} color={t.textSecondary} />
+            )}
+          </View>
+
+          <Text
+            className={`font-bold text-2xl mt-6 text-center ${
+              "text-text-primary"
+            }`}
+          >
+            {badge.name}
+          </Text>
+
+          {badge.earned ? (
+            <View className="flex-row items-center mt-2">
+              <CheckCircle2 size={16} color={t.successText} />
+              <Text className="text-success font-bold text-sm ml-1">
+                Earned{awardedDate ? ` · ${awardedDate}` : ""}
+              </Text>
+            </View>
+          ) : (
+            <Text
+              className={`font-bold text-sm mt-2 ${
+                "text-text-secondary"
+              }`}
+            >
+              Locked
+            </Text>
+          )}
+
+          {!!badge.description && (
+            <Text
+              className={`text-base text-center mt-4 leading-6 ${
+                "text-text-secondary"
+              }`}
+            >
+              {badge.description}
+            </Text>
+          )}
+
+          {!badge.earned && badge.progress > 0 && (
+            <View className="w-full mt-8">
+              <Text
+                className={`font-bold text-xs mb-2 ${
+                  "text-text-secondary"
+                }`}
+              >
+                {Math.round(badge.progress * 100)}% there
+              </Text>
+              <View
+                className={`h-2 rounded overflow-hidden ${
+                  "bg-surface-sunken"
+                }`}
+              >
+                <View
+                  className="h-2 rounded bg-primary"
+                  style={{ width: `${Math.min(100, badge.progress * 100)}%` }}
+                />
+              </View>
+            </View>
+          )}
+        </View>
+      )}
+    </SafeAreaView>
+  );
+}

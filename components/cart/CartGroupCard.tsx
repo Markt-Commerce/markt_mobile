@@ -1,0 +1,222 @@
+import React from "react";
+import { View, Text, TouchableOpacity, Image, ActivityIndicator } from "react-native";
+import { ChevronDown, ChevronUp, Store, Truck } from "lucide-react-native";
+import { useTokens } from "../../theme/useTokens";
+import { serviceFeeFor } from "../../models/cart";
+import type { CartGroup } from "../../models/cart";
+
+const money = (n: number) => {
+  try {
+    return Intl.NumberFormat(undefined, {
+      style: "currency", currency: "NGN", maximumFractionDigits: 2,
+    }).format(n || 0);
+  } catch {
+    return `₦${(n || 0).toFixed(2)}`;
+  }
+};
+
+interface Props {
+  group: CartGroup;
+  /** Where this order is going, already chosen. */
+  deliveringTo?: string | null;
+  /** The fee for this group once quoted, in naira. */
+  deliveryFee?: number | null;
+  /** Set when this group cannot be delivered to the chosen address. */
+  blockedReason?: string | null;
+  /** This card is the one being checked out. */
+  busy?: boolean;
+  /** Another card is being checked out. Not busy -- just unavailable while
+   * one is in flight, and worth distinguishing so only the card the buyer
+   * actually tapped says "Working…". */
+  disabled?: boolean;
+  onCheckout: () => void;
+  onClear: () => void;
+  onChangeAddress: () => void;
+  children?: React.ReactNode;
+  /** The "share this delivery" control for *this* shop.
+   *
+   * Each card becomes its own order with its own delivery, its own fee and
+   * its own ceiling, so sharing is a per-order decision. A single toggle for
+   * the whole basket had to pick one group's fee to quote and was wrong for
+   * every other one. */
+  batchOption?: React.ReactNode;
+  /** The chat offer from *this* shop, if the buyer holds one.
+   *
+   * Per card for the same reason the batch toggle is: an offer belongs to
+   * one seller, and each card is its own order. */
+  discountOption?: React.ReactNode;
+  /** What the applied offer takes off this order, in naira. */
+  discountAmount?: number | null;
+}
+
+/**
+ * One shop's card in the basket.
+ *
+ * A delivery quote prices one pickup to one dropoff, so a basket spanning two
+ * shops is two orders — and showing it as one list let a buyer build a cart
+ * that could never be paid for. Each card checks out on its own.
+ */
+export default function CartGroupCard({
+  group, deliveringTo, deliveryFee, blockedReason, busy, disabled,
+  onCheckout, onClear, onChangeAddress, children, batchOption,
+  discountOption, discountAmount,
+}: Props) {
+  const t = useTokens();
+  const [open, setOpen] = React.useState(false);
+  const blocked = !!blockedReason;
+  // What is actually being paid for goods, which is what the fee is charged
+  // on -- a seller's discount is not partly taken back as a percentage.
+  const goodsTotal = Math.max(0, group.subtotal - (discountAmount ?? 0));
+  const serviceFee = serviceFeeFor(goodsTotal);
+
+  return (
+    <View className="mb-4 rounded-2xl border border-border bg-surface-raised p-4">
+      <View className="flex-row items-center">
+        {group.banner_url ? (
+          <Image
+            source={{ uri: group.banner_url }}
+            className="h-10 w-10 rounded-full"
+            accessibilityIgnoresInvertColors
+          />
+        ) : (
+          <View className="h-10 w-10 items-center justify-center rounded-full bg-surface-sunken">
+            <Store size={18} color={t.textSecondary} />
+          </View>
+        )}
+        <View className="ml-3 flex-1">
+          <Text className="text-[16px] font-bold text-text-primary" numberOfLines={1}>
+            {group.shop_name || "This shop"}
+          </Text>
+          <Text className="mt-0.5 text-[13px] text-text-secondary">
+            {group.item_count} item{group.item_count === 1 ? "" : "s"} · {money(group.subtotal)}
+          </Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => setOpen((v) => !v)}
+          accessibilityRole="button"
+          accessibilityLabel={open ? "Hide items" : "View selection"}
+          className="flex-row items-center gap-1 pl-2"
+        >
+          <Text className="text-[13px] font-bold text-primary-text">
+            {open ? "Hide" : "View selection"}
+          </Text>
+          {open ? <ChevronUp size={16} color={t.primaryText} /> : <ChevronDown size={16} color={t.primaryText} />}
+        </TouchableOpacity>
+      </View>
+
+      {open ? <View className="mt-3 border-t border-border pt-3">{children}</View> : null}
+
+      <View className="mt-4 border-t border-border pt-3">
+        <TouchableOpacity
+          onPress={onChangeAddress}
+          accessibilityRole="button"
+          accessibilityLabel="Change delivery address"
+          className="flex-row items-start gap-2"
+        >
+          <Truck size={16} color={t.textSecondary} />
+          <Text className="flex-1 text-[13px] leading-5 text-text-secondary">
+            {deliveringTo ? (
+              <>Delivering to <Text className="text-text-primary">{deliveringTo}</Text></>
+            ) : (
+              <Text className="text-primary-text">Choose a delivery address</Text>
+            )}
+          </Text>
+        </TouchableOpacity>
+
+        {blocked ? (
+          <View className="mt-3 rounded-xl border border-warning bg-surface-sunken p-3">
+            <Text className="text-[13px] leading-5 text-text-secondary">{blockedReason}</Text>
+          </View>
+        ) : deliveryFee != null ? (
+          <View className="mt-2 flex-row justify-between">
+            <Text className="text-[13px] text-text-secondary">Delivery</Text>
+            <Text className="text-[13px] text-text-primary">{money(deliveryFee)}</Text>
+          </View>
+        ) : null}
+
+        {/* Shown only once it is actually coming off, so the buyer can see
+            the reduction land rather than trust that tapping worked. */}
+        {!blocked && discountAmount ? (
+          <View className="mt-2 flex-row justify-between">
+            <Text className="text-[13px] text-text-secondary">Discount</Text>
+            <Text className="text-[13px] font-semibold text-primary-text">
+              -{money(discountAmount)}
+            </Text>
+          </View>
+        ) : null}
+
+        {!blocked && (deliveryFee != null || discountAmount) ? (
+          <>
+            {/* Itemised rather than folded into the total: a fee the buyer
+                only discovers by doing the arithmetic is a fee they feel
+                they were not told about. */}
+            <View className="mt-2 flex-row justify-between">
+              <Text className="text-[13px] text-text-secondary">Service fee</Text>
+              <Text className="text-[13px] text-text-primary">
+                {money(serviceFee)}
+              </Text>
+            </View>
+            <View className="mt-2 flex-row justify-between border-t border-border pt-2">
+              <Text className="text-[14px] font-bold text-text-primary">Total</Text>
+              <Text className="text-[14px] font-bold text-text-primary">
+                {money(
+                  Math.max(0, goodsTotal + (deliveryFee ?? 0) + serviceFee)
+                )}
+              </Text>
+            </View>
+          </>
+        ) : null}
+      </View>
+
+      {/* Above the share-a-trip toggle: the offer changes what is owed, the
+          toggle changes how it travels. */}
+      {!blocked ? discountOption : null}
+
+      {/* Only where a delivery is actually possible: offering to share a
+          trip that cannot happen is noise. */}
+      {!blocked && deliveryFee != null ? batchOption : null}
+
+      <TouchableOpacity
+        onPress={onCheckout}
+        disabled={busy || disabled || blocked || !deliveringTo}
+        accessibilityRole="button"
+        accessibilityState={{ busy, disabled: disabled || blocked || !deliveringTo }}
+        className={`mt-4 h-12 flex-row items-center justify-center gap-2 rounded-xl ${
+          busy || disabled || blocked || !deliveringTo
+            ? "bg-surface-sunken"
+            : "bg-primary-fill"
+        }`}
+      >
+        {busy ? <ActivityIndicator size="small" color={t.textSecondary} /> : null}
+        <Text
+          className={`text-[15px] font-bold ${
+            busy || disabled || blocked || !deliveringTo
+              ? "text-text-muted"
+              : "text-text-on-primary"
+          }`}
+        >
+          {busy
+            ? "Working…"
+            : blocked
+              ? "Can't deliver here"
+              : "Checkout"}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={onClear}
+        disabled={busy || disabled}
+        accessibilityRole="button"
+        className="mt-2 h-10 items-center justify-center"
+      >
+        <Text
+          className={`text-[14px] font-semibold ${
+            busy || disabled ? "text-text-muted" : "text-primary-text"
+          }`}
+        >
+          Clear selection
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
