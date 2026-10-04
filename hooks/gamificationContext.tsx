@@ -28,8 +28,8 @@ import {
   markAchievementsSeen,
 } from "../services/sections/gamification";
 import * as haptics from "../utils/haptics";
-import type { GamMe, UserBadge } from "../types/gamification";
-import { afterFeedLoads } from "../utils/startupGate";
+import type { GamMe, UserBadge, UnseenAchievements } from "../types/gamification";
+import { useStartupSeed } from "./useStartupSeed";
 
 /** Survives an app kill between earning the points and reaching the app. */
 const PENDING_POINTS_KEY = "markt_pending_points_v1";
@@ -136,10 +136,12 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [inOnboarding, user?.user_id, pendingPoints, celebrate, holdPoints]);
 
-  const drainUnseen = useCallback(async () => {
+  // `prefetched`: the same answer, already in hand from the start-up payload
+  // (GET /users/bootstrap), so the first drain on open costs no request.
+  const drainUnseen = useCallback(async (prefetched?: UnseenAchievements) => {
     if (!user?.user_id) return;
     try {
-      const unseen = await getUnseenAchievements();
+      const unseen = prefetched ?? (await getUnseenAchievements());
 
       for (const badge of unseen.badges ?? []) {
         celebrate({
@@ -194,22 +196,19 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user?.user_id, celebrate]);
 
-  // On mount, and whenever the app comes back to the foreground -- which is
-  // exactly when a celebration earned while it was away should land.
+  // On open, and whenever the app comes back to the foreground -- which is
+  // exactly when a celebration earned while it was away should land. The
+  // open-time answer rides in the start-up payload; foregrounding asks.
+  useStartupSeed(
+    (startup) => startup.unseen_achievements,
+    (unseen) => void drainUnseen(unseen),
+    drainUnseen
+  );
   useEffect(() => {
-    let cancelled = false;
-    // Not on the critical path: wait until the feed has loaded (see
-    // utils/startupGate) so this does not compete with it on a cold start.
-    afterFeedLoads().then(() => {
-      if (!cancelled) drainUnseen();
-    });
     const sub = AppState.addEventListener("change", (state) => {
       if (state === "active") drainUnseen();
     });
-    return () => {
-      cancelled = true;
-      sub.remove();
-    };
+    return () => sub.remove();
   }, [drainUnseen]);
 
   useGamificationSocket({

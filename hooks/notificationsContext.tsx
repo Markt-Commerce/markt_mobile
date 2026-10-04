@@ -18,7 +18,7 @@ import React, {
 import { getUnreadNotificationCount } from "../services/sections/notifications";
 import { onNotificationsChanged } from "../utils/notificationEvents";
 import { useUser } from "./userContextProvider";
-import { afterFeedLoads } from "../utils/startupGate";
+import { useStartupSeed } from "./useStartupSeed";
 
 export interface NotificationsContextType {
   /** Unread notification count for the bell badge. 0 when signed out. */
@@ -55,17 +55,13 @@ export const NotificationsProvider = ({ children }: { children: ReactNode }) => 
     setUnreadCount((current) => Math.max(0, current + delta));
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    // Not on the critical path: wait until the feed has loaded (see
-    // utils/startupGate) so this does not compete with it on a cold start.
-    afterFeedLoads().then(() => {
-      if (!cancelled) refreshUnread();
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshUnread]);
+  // The first count arrives with the start-up payload (GET /users/bootstrap);
+  // this only asks its own endpoint when that had nothing to give.
+  useStartupSeed(
+    (data) => data.unread_notifications,
+    setUnreadCount,
+    refreshUnread
+  );
 
   // Marking read (screen) and a foreground push arrival (NotificationsBootstrap)
   // both emit here, so neither has to know the badge exists.
