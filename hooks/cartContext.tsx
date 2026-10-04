@@ -25,6 +25,7 @@ import { getCartSummary } from "../services/sections/cart";
 import { getSellerPendingCount } from "../services/sections/orders";
 import { onBadgeChanged } from "../utils/badgeEvents";
 import { useUser } from "./userContextProvider";
+import { afterFeedLoads } from "../utils/startupGate";
 
 export interface CartContextType {
   /**
@@ -74,7 +75,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    refreshCart();
+    let cancelled = false;
+    // Not on the critical path: wait until the feed has loaded (see
+    // utils/startupGate) so this does not compete with it on a cold start.
+    afterFeedLoads().then(() => {
+      if (!cancelled) refreshCart();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [refreshCart]);
 
   // Every cart mutation goes through services/sections/cart.ts, which emits

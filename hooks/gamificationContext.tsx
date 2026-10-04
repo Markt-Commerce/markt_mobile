@@ -29,6 +29,7 @@ import {
 } from "../services/sections/gamification";
 import * as haptics from "../utils/haptics";
 import type { GamMe, UserBadge } from "../types/gamification";
+import { afterFeedLoads } from "../utils/startupGate";
 
 /** Survives an app kill between earning the points and reaching the app. */
 const PENDING_POINTS_KEY = "markt_pending_points_v1";
@@ -196,11 +197,19 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
   // On mount, and whenever the app comes back to the foreground -- which is
   // exactly when a celebration earned while it was away should land.
   useEffect(() => {
-    drainUnseen();
+    let cancelled = false;
+    // Not on the critical path: wait until the feed has loaded (see
+    // utils/startupGate) so this does not compete with it on a cold start.
+    afterFeedLoads().then(() => {
+      if (!cancelled) drainUnseen();
+    });
     const sub = AppState.addEventListener("change", (state) => {
       if (state === "active") drainUnseen();
     });
-    return () => sub.remove();
+    return () => {
+      cancelled = true;
+      sub.remove();
+    };
   }, [drainUnseen]);
 
   useGamificationSocket({

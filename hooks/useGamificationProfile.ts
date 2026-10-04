@@ -3,6 +3,7 @@ import { getMyGamification } from "../services/sections/gamification";
 import { useUser } from "./userContextProvider";
 import type { GamMe } from "../types/gamification";
 import { friendlyErrorMessage } from "../utils/errorMessages";
+import { afterFeedLoads } from "../utils/startupGate";
 
 /**
  * Current user's gamification stats (GET /gamification/me).
@@ -36,7 +37,15 @@ export function useGamificationProfile() {
       setError(null);
       return;
     }
-    refresh();
+    let cancelled = false;
+    // Not on the critical path: wait until the feed has loaded (see
+    // utils/startupGate) so this does not compete with it on a cold start.
+    afterFeedLoads().then(() => {
+      if (!cancelled) refresh();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [loggedIn, refresh]);
 
   const bump = useCallback((delta: number) => {

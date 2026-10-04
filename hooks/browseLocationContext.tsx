@@ -15,6 +15,7 @@ import {
   type BrowseLocation,
 } from "../services/sections/location";
 import { logger } from "../utils/logger";
+import { afterFeedLoads } from "../utils/startupGate";
 
 /**
  * The browse location, app-wide.
@@ -70,6 +71,10 @@ export function BrowseLocationProvider({ children }: { children: ReactNode }) {
         // Then reconcile with the server, which is authoritative for a
         // signed-in user who set their location on another device.
         try {
+          // The cached value above already drives the header; this check can
+          // wait for the feed (utils/startupGate) rather than compete with it.
+          await afterFeedLoads();
+          if (!alive) return;
           const remote = await getBrowseLocation(gid);
           if (alive && remote?.latitude != null) {
             setLocal(remote);

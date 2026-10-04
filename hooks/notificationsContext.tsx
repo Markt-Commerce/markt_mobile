@@ -18,6 +18,7 @@ import React, {
 import { getUnreadNotificationCount } from "../services/sections/notifications";
 import { onNotificationsChanged } from "../utils/notificationEvents";
 import { useUser } from "./userContextProvider";
+import { afterFeedLoads } from "../utils/startupGate";
 
 export interface NotificationsContextType {
   /** Unread notification count for the bell badge. 0 when signed out. */
@@ -55,7 +56,15 @@ export const NotificationsProvider = ({ children }: { children: ReactNode }) => 
   }, []);
 
   useEffect(() => {
-    refreshUnread();
+    let cancelled = false;
+    // Not on the critical path: wait until the feed has loaded (see
+    // utils/startupGate) so this does not compete with it on a cold start.
+    afterFeedLoads().then(() => {
+      if (!cancelled) refreshUnread();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [refreshUnread]);
 
   // Marking read (screen) and a foreground push arrival (NotificationsBootstrap)

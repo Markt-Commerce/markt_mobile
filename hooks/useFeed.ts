@@ -9,6 +9,7 @@ import {
   getNicheFeed,
 } from "../services/sections/feedApi";
 import { friendlyErrorMessage } from "../utils/errorMessages";
+import { markFeedLoaded } from "../utils/startupGate";
 
 // 10 keeps first paint light and makes infinite scroll engage while the
 // platform's content volume is still small.
@@ -138,7 +139,7 @@ export function useFeed(tab: keyof typeof MAIN_TABS | string) {
   );
 
   const load = useCallback(
-    async (opts: { silent?: boolean } = {}) => {
+    async (opts: { silent?: boolean; force?: boolean } = {}) => {
       if (inFlightRef.current) return;
       inFlightRef.current = true;
       const seq = ++requestSeqRef.current;
@@ -153,7 +154,15 @@ export function useFeed(tab: keyof typeof MAIN_TABS | string) {
       setError(null);
 
       try {
-        const res = await fetchPage(1, true);
+        // force_refresh only when the user asked for fresh content. Sending it
+        // on every load -- including the first one on app open -- made the
+        // server skip its cached feed (Redis, 30 min) and rebuild the whole
+        // personalized feed each time, which is why the feed was the last
+        // thing on screen to load. Counts and likes are re-read on every
+        // request either way; only which items appear can be up to the
+        // cache's age old, and pull-to-refresh and creating something still
+        // force a rebuild.
+        const res = await fetchPage(1, opts.force === true);
         if (seq !== requestSeqRef.current || forTab !== tabRef.current) return;
         commit(deduplicateById(res.items), 1, res.pagination.has_next);
       } catch (e) {
@@ -169,13 +178,17 @@ export function useFeed(tab: keyof typeof MAIN_TABS | string) {
           setRefreshing(false);
         }
         inFlightRef.current = false;
+        // Success or failure, the feed has had its turn; the requests that
+        // were holding back for it can go now.
+        markFeedLoaded();
       }
     },
     [fetchPage, commit]
   );
 
-  /** Pull-to-refresh: always hits the network and shows the refresh control. */
-  const refresh = useCallback(() => load(), [load]);
+  /** Pull-to-refresh: always hits the network, bypasses the server's cached
+   *  feed, and shows the refresh control. */
+  const refresh = useCallback(() => load({ force: true }), [load]);
 
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current || inFlightRef.current || !hasNextRef.current) return;
@@ -237,12 +250,16 @@ export function useFeed(tab: keyof typeof MAIN_TABS | string) {
     if (!entry) {
       setInitialLoading(true);
       load();
-    } else if (Date.now() - entry.fetchedAt > STALE_AFTER_MS) {
+      return;
+    }
+
+    // Already on screen from the cache: nothing for the deferred startup
+    // requests to wait for.
+    markFeedLoaded();
+    setInitialLoading(false);
+    if (Date.now() - entry.fetchedAt > STALE_AFTER_MS) {
       // Cached content shows immediately; the refetch happens underneath it.
-      setInitialLoading(false);
       load({ silent: true });
-    } else {
-      setInitialLoading(false);
     }
   }, [tab, load]);
 

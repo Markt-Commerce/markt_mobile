@@ -34,12 +34,12 @@ import { useFeed } from "../../hooks/useFeed";
 import ContentActionsSheet, { type ContentActionsTarget } from "../../components/ContentActionsSheet";
 import { isFeedPost, isFeedProduct } from "../../types/feed";
 import { getMyNiches } from "../../services/sections/niches";
-import { getUserProfile } from "../../services/sections/profile";
 import type { Niches } from "../../models/niches";
 import type { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import { saveItem, unsaveItem } from "../../services/sections/saved";
+import { afterFeedLoads } from "../../utils/startupGate";
 
 // Early launch: only the main feed is live. Discover/Trending/Following are
 // hidden until their backend pipelines are ready — restore entries here to bring
@@ -71,7 +71,6 @@ export default function FeedScreen() {
   const router = useRouter();
   const [selectedTab, setSelectedTab] = useState<TabId>("for_you");
   const [myNiches, setMyNiches] = useState<Niches[]>([]);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loadedStartCards, setLoadedStartCards] = useState(false);
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
@@ -79,9 +78,13 @@ export default function FeedScreen() {
   const t = useTokens();
   const tokens = t; // `t` is shadowed by the tab .map((t) => …) below
 
-  // This screen keeps its own `profile` copy (fetched on focus, above), so the
-  // context setter is aliased rather than destructured over it.
-  const { role, user, setRole, setProfile: setContextProfile } = useUser();
+  // The profile comes from the context, which already fetches it once per
+  // sign-in. This screen used to fetch its own copy on focus as well, so a
+  // cold start asked for /users/profile twice at the same moment, both
+  // competing with the feed for a connection. Creating or switching a role
+  // updates the context copy, which is all this screen reads (is_buyer /
+  // is_seller).
+  const { role, user, setRole, profile, setProfile: setContextProfile } = useUser();
   const feedTab = selectedTab;
   const {
     items,
@@ -286,7 +289,6 @@ export default function FeedScreen() {
       const applyRole = (current: UserProfile | null) =>
         current ? { ...current, current_role: newRole } : current;
       setContextProfile(applyRole);
-      setProfile(applyRole);
       if (res.user?.email) {
         await setUserSession(
           { email: res.user.email, account_type: newRole, user_id: res.user.id },
@@ -323,16 +325,17 @@ export default function FeedScreen() {
   }, []);
 
   // Home is the tab users bounce back to constantly. Refetching the niche
-  // chips and profile on literally every focus meant two requests per return
-  // trip for data that changes rarely; a short TTL keeps them fresh without
-  // the churn. fetchMyNiches is still called directly after creating a niche.
+  // chips on literally every focus was a request per return trip for data
+  // that changes rarely; a short TTL keeps them fresh without the churn.
+  // fetchMyNiches is still called directly after creating a niche.
   const sideDataFetchedAt = useRef(0);
   useFocusEffect(
     useCallback(() => {
       if (Date.now() - sideDataFetchedAt.current < SIDE_DATA_TTL_MS) return;
       sideDataFetchedAt.current = Date.now();
-      fetchMyNiches();
-      getUserProfile().then(setProfile).catch(() => setProfile(null));
+      // Chips, not content: on a cold start they wait for the feed's own
+      // request (utils/startupGate). Later focuses go straight through.
+      afterFeedLoads().then(fetchMyNiches);
     }, [fetchMyNiches])
   );
 
