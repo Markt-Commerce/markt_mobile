@@ -7,9 +7,9 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { View, Text, TouchableOpacity, Pressable, Share } from "react-native";
+import { View, Text, TouchableOpacity, Pressable, Share, Image } from "react-native";
 import { Link, useRouter } from "expo-router";
-import { MoreHorizontal } from "lucide-react-native";
+import { MoreHorizontal, ChevronRight } from "lucide-react-native";
 import type { FeedPost } from "../types/feed";
 import { likePost } from "../services/sections/post";
 import { useToast } from "./ToastProvider";
@@ -21,6 +21,8 @@ import PostActionBar from "./PostActionBar";
 import { useTokens } from "../theme/useTokens";
 import { tierColor } from "../theme/tierColors";
 import { parseServerDate } from "../utils/datetime";
+import { formatNaira } from "../utils/formatCurrency";
+import { normalizeUri } from "../utils/imageUri";
 
 interface Props {
   post: FeedPost;
@@ -92,6 +94,21 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
   const handleOpenActions = useCallback(() => {
     onOpenActions?.(post);
   }, [onOpenActions, post]);
+
+  // Tagged products arrive with the feed page itself (no request per tag).
+  // The chip shows the first one that still exists; the rest are counted and
+  // listed on the post's own screen.
+  const liveTags = useMemo(
+    () => (post.products ?? []).filter((tag) => !!tag.product),
+    [post.products]
+  );
+  const taggedProduct = liveTags[0]?.product ?? null;
+  const moreTagCount = Math.max(0, liveTags.length - 1);
+
+  const handleOpenTaggedProduct = useCallback(() => {
+    if (!taggedProduct) return;
+    router.push(`/productDetails/${taggedProduct.id}`);
+  }, [router, taggedProduct]);
 
   const handleOpenAuthor = useCallback(() => {
     if (!post.user?.id) return;
@@ -207,6 +224,45 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
             </View>
           )}
 
+          {taggedProduct ? (
+            // Its own Pressable, so a tap here opens the product instead of
+            // falling through to the card's Link (which opens the post).
+            <Pressable
+              onPress={handleOpenTaggedProduct}
+              className="mt-1 mb-1 flex-row items-center gap-3 rounded-lg border px-2.5 py-2 bg-surface-sunken border-border active:opacity-80"
+              accessibilityRole="link"
+              accessibilityLabel={
+                taggedProduct.is_available === false
+                  ? `Tagged product ${taggedProduct.name}, currently unavailable`
+                  : `Tagged product ${taggedProduct.name}, ${formatNaira(taggedProduct.price)}`
+              }
+            >
+              {normalizeUri(taggedProduct.image_url) ? (
+                <Image
+                  source={{ uri: normalizeUri(taggedProduct.image_url)! }}
+                  className="w-10 h-10 rounded bg-surface-raised"
+                />
+              ) : (
+                <View className="w-10 h-10 rounded bg-surface-raised" />
+              )}
+              <View className="flex-1 min-w-0">
+                <Text
+                  className="text-[14px] font-semibold text-text-primary"
+                  numberOfLines={1}
+                >
+                  {taggedProduct.name}
+                </Text>
+                <Text className="text-[13px] text-text-secondary" numberOfLines={1}>
+                  {taggedProduct.is_available === false
+                    ? "Currently unavailable"
+                    : formatNaira(taggedProduct.price)}
+                  {moreTagCount > 0 ? ` · +${moreTagCount} more` : ""}
+                </Text>
+              </View>
+              <ChevronRight size={18} color={t.textSecondary} />
+            </Pressable>
+          ) : null}
+
           <PostActionBar
             likeCount={likeCount}
             commentCount={post.comments_count}
@@ -248,6 +304,7 @@ export default React.memo(FeedPostCard, (prev, next) => {
     a.niche?.id === b.niche?.id &&
     a.niche?.name === b.niche?.name &&
     a.media === b.media &&
+    a.products === b.products &&
     prev.onLike === next.onLike &&
     prev.onOpenActions === next.onOpenActions &&
     prev.saved === next.saved &&

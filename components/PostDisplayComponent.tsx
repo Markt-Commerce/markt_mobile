@@ -59,6 +59,9 @@ export default function PostDisplayComponent({
     is_saved: post.is_saved,
     created_at: post.created_at,
     niche: null,
+    // These lists (markets, a niche, search) come from the post endpoints,
+    // which carry the same tagged-product entries as the feed.
+    products: post.products,
   }), [post]);
 
   const toggleSaved = async () => {

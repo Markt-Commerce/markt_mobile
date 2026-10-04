@@ -4,7 +4,7 @@ import { ArrowLeft, SendHorizonal } from "lucide-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useBackTo } from "../../utils/goBack";
 import { commentOnPost, getPostById, getPostComments, likePost } from "../../services/sections/post";
-import { CommentItem, CommentResponse, PostDetails } from "../../models/post";
+import { CommentItem, CommentResponse, PostDetails, type TaggedProduct } from "../../models/post";
 import { useToast } from "../../components/ToastProvider";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { parseDate } from "../../utils/parseDate";
@@ -104,8 +104,9 @@ export default function PostDetailsScreen() {
   const { show } = useToast();
   const { user } = useUser();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [sponsoredProduct, setSponsoredProduct] = useState<ProductDetail | null>(null);
-  const [addingToCart, setAddingToCart] = useState(false);
+  const [taggedProducts, setTaggedProducts] = useState<TaggedProduct[]>([]);
+  // Which card's "Add to cart" is in flight, so only that one shows busy.
+  const [addingId, setAddingId] = useState<string | null>(null);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const t = useTokens();
@@ -193,36 +194,61 @@ export default function PostDetailsScreen() {
     if (id) FetchPost(id);
   }, [id]);
 
-  // Resolve the attached ("sponsored") product — the post only carries product_id(s).
+  // Every tagged product, in the order they were tagged. The post carries
+  // each card itself (name, price, image, availability), so opening a post
+  // costs no request per tag. A deleted product comes back as a null card and
+  // is left out. The fetch below only runs against a server too old to send
+  // cards, and keeps whichever products still load.
   useEffect(() => {
-    const productId = post?.products?.[0]?.product_id;
-    if (!productId) {
-      setSponsoredProduct(null);
+    const tags = post?.products ?? [];
+    if (tags.length === 0) {
+      setTaggedProducts([]);
+      return;
+    }
+    if (tags.every((tag) => tag.product !== undefined)) {
+      setTaggedProducts(
+        tags.map((tag) => tag.product).filter((p): p is TaggedProduct => !!p)
+      );
       return;
     }
     let cancelled = false;
     (async () => {
-      try {
-        const detail = await getProductById(productId);
-        if (!cancelled) setSponsoredProduct(detail);
-      } catch (err) {
-        if (!cancelled) logger.error("Failed to load sponsored product:", err);
-      }
+      // Each request settles on its own, so one missing product does not
+      // hide the others.
+      const details = await Promise.all(
+        tags.map((tag) =>
+          getProductById(tag.product_id).catch((err): ProductDetail | null => {
+            logger.error("Failed to load tagged product:", err);
+            return null;
+          })
+        )
+      );
+      if (cancelled) return;
+      setTaggedProducts(
+        details
+          .filter((detail): detail is ProductDetail => !!detail)
+          .map((detail) => ({
+            id: detail.id,
+            name: detail.name,
+            price: detail.price,
+            image_url: resolveProductImageUri(detail),
+          }))
+      );
     })();
     return () => {
       cancelled = true;
     };
   }, [post?.products]);
 
-  const handleAddSponsoredToCart = React.useCallback(async () => {
-    if (!sponsoredProduct || addingToCart) return;
-    setAddingToCart(true);
+  const handleAddTaggedToCart = React.useCallback(async (product: TaggedProduct) => {
+    if (addingId) return;
+    setAddingId(product.id);
     try {
-      await addToCart({ product_id: sponsoredProduct.id, variant_id: 0, quantity: 1 });
+      await addToCart({ product_id: product.id, variant_id: 0, quantity: 1 });
       show({
         variant: "success",
         title: "Added to cart",
-        message: `${sponsoredProduct.name} has been added to your cart.`,
+        message: `${product.name} has been added to your cart.`,
       });
     } catch {
       show({
@@ -231,9 +257,9 @@ export default function PostDetailsScreen() {
         message: "Please sign in as a buyer and try again.",
       });
     } finally {
-      setAddingToCart(false);
+      setAddingId(null);
     }
-  }, [sponsoredProduct, addingToCart, show]);
+  }, [addingId, show]);
 
   useEffect(() => {
     getUserProfile()
@@ -400,55 +426,73 @@ export default function PostDetailsScreen() {
       )}
 
 
-      {/* Attached product — resolved from the post's product_id */}
-      {sponsoredProduct && (
-        <TouchableOpacity
-          className="p-4"
-          activeOpacity={0.8}
-          onPress={() => router.push(`/productDetails/${sponsoredProduct.id}`)}
-        >
-        <View className="flex items-stretch justify-between gap-4 rounded flex-row">
-          <View className="flex flex-[2_2_0px] flex-col gap-4">
-            <View className="flex flex-col gap-1">
-              <Text className="text-sm font-normal leading-normal text-text-secondary">
-                Featured product
-              </Text>
-              <Text
-                numberOfLines={2}
-                className="text-base font-bold leading-tight text-text-primary"
+      {/* Tagged products, one card each, in tagging order */}
+      {taggedProducts.length > 0 && (
+        <View className="px-4 pt-4 gap-4">
+          <Text className="text-sm font-normal leading-normal text-text-secondary">
+            {taggedProducts.length === 1
+              ? "Featured product"
+              : `Featured products (${taggedProducts.length})`}
+          </Text>
+          {taggedProducts.map((product) => {
+            const adding = addingId === product.id;
+            const imageUri = resolveProductImageUri(product);
+            return (
+              <TouchableOpacity
+                key={product.id}
+                activeOpacity={0.8}
+                onPress={() => router.push(`/productDetails/${product.id}`)}
               >
-                {sponsoredProduct.name}
-              </Text>
-              <Text className="text-sm font-normal leading-normal text-text-secondary">
-                {formatNaira(sponsoredProduct.price)}
-              </Text>
-            </View>
-            <TouchableOpacity
-              disabled={addingToCart}
-              className={`flex min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded h-8 px-4 flex-row-reverse w-fit ${addingToCart ? "opacity-60" : ""} bg-surface-sunken`}
-              onPress={handleAddSponsoredToCart}
-              accessibilityRole="button"
-              accessibilityLabel={`Add ${sponsoredProduct.name} to cart`}
-            >
-              {addingToCart ? (
-                <ActivityIndicator size="small" color={t.textPrimary} />
-              ) : (
-                <Text className="text-sm font-medium leading-normal truncate text-text-primary">
-                  Add to Cart
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-          {resolveProductImageUri(sponsoredProduct) ? (
-            <Image
-              source={{ uri: resolveProductImageUri(sponsoredProduct)! }}
-              className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded flex-1"
-            />
-          ) : (
-            <View className="flex-1 aspect-video rounded bg-surface-sunken" />
-          )}
+                <View className="flex items-stretch justify-between gap-4 rounded flex-row">
+                  <View className="flex flex-[2_2_0px] flex-col gap-4">
+                    <View className="flex flex-col gap-1">
+                      <Text
+                        numberOfLines={2}
+                        className="text-base font-bold leading-tight text-text-primary"
+                      >
+                        {product.name}
+                      </Text>
+                      <Text className="text-sm font-normal leading-normal text-text-secondary">
+                        {formatNaira(product.price)}
+                      </Text>
+                    </View>
+                    {/* A tag can outlive its stock; the card says so instead
+                        of offering a cart button that would only fail. */}
+                    {product.is_available === false ? (
+                      <Text className="text-sm font-medium leading-normal text-text-muted">
+                        Currently unavailable
+                      </Text>
+                    ) : (
+                      <TouchableOpacity
+                        disabled={!!addingId}
+                        className={`flex min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded h-8 px-4 flex-row-reverse w-fit ${adding ? "opacity-60" : ""} bg-surface-sunken`}
+                        onPress={() => handleAddTaggedToCart(product)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Add ${product.name} to cart`}
+                      >
+                        {adding ? (
+                          <ActivityIndicator size="small" color={t.textPrimary} />
+                        ) : (
+                          <Text className="text-sm font-medium leading-normal truncate text-text-primary">
+                            Add to Cart
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  {imageUri ? (
+                    <Image
+                      source={{ uri: imageUri }}
+                      className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded flex-1"
+                    />
+                  ) : (
+                    <View className="flex-1 aspect-video rounded bg-surface-sunken" />
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </View>
-      </TouchableOpacity>
       )}
 
       <View className="mx-4 pt-2 border-t border-border-strong">
@@ -482,8 +526,8 @@ export default function PostDetailsScreen() {
       likedByMe,
       isLiking,
       saved,
-      sponsoredProduct,
-      addingToCart,
+      taggedProducts,
+      addingId,
       profile,
       isDark,
       t,
@@ -491,7 +535,7 @@ export default function PostDetailsScreen() {
       handleLike,
       handleSave,
       handleShare,
-      handleAddSponsoredToCart,
+      handleAddTaggedToCart,
     ],
   );
 
