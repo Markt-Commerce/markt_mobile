@@ -14,7 +14,6 @@ import React, { useCallback, useMemo, useRef, useState, useEffect } from "react"
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   ActivityIndicator,
   ScrollView,
@@ -22,6 +21,7 @@ import {
 } from "react-native";
 import BottomSheet, {
   BottomSheetBackdrop,
+  BottomSheetTextInput,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import {
@@ -33,6 +33,7 @@ import {
   Send,
   UserMinus,
 } from "lucide-react-native";
+import { cssInterop } from "nativewind";
 import { useTokens } from "../theme/useTokens";
 import { useToast } from "./ToastProvider";
 import {
@@ -45,6 +46,11 @@ import {
 import { saveItem, unsaveItem, type SavedType } from "../services/sections/saved";
 import { friendlyErrorMessage } from "../utils/errorMessages";
 import { confirmDestructive } from "../utils/confirm";
+
+// NativeWind only maps className -> style on components it knows about, and
+// the sheet's input is a third-party wrapper, so without this its styling is
+// silently dropped.
+cssInterop(BottomSheetTextInput, { className: "style" });
 
 type Step = "actions" | "reasons" | "details" | "done";
 
@@ -299,6 +305,16 @@ export default function ContentActionsSheet({
       backdropComponent={renderBackdrop}
       backgroundStyle={{ backgroundColor: t.surfaceRaised }}
       handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
+      // The report's "Anything to add?" step is the only text field here, and
+      // a plain TextInput is invisible to the sheet's keyboard tracking, so
+      // the box and the Send button sat under the keyboard. The sheet lifts
+      // itself instead: that step is at 68%, so there is room to move, which
+      // is what InputSheet's comment says this library lacks at 90%.
+      // adjustResize because Android is edge-to-edge and no longer resizes
+      // the window for the IME on its own.
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
     >
       <BottomSheetView className="flex-1">
         {step === "actions" && (
@@ -388,7 +404,7 @@ export default function ContentActionsSheet({
               onBack={() => setStep("reasons")}
             />
             <View className="px-5 pt-4">
-              <TextInput
+              <BottomSheetTextInput
                 value={details}
                 onChangeText={setDetails}
                 multiline

@@ -26,6 +26,7 @@ import { ArrowDownLeft, ArrowLeft, ArrowUpRight, Plus, Wallet } from "lucide-rea
 import { SettingsSection } from "../../components/SettingsList";
 import { useTheme } from "../../components/themeProvider";
 import { useTokens, tokensFor } from "../../theme/useTokens";
+import { useAndroidKeyboardPadding } from "../../hooks/useKeyboardOverlap";
 import { useToast } from "../../components/ToastProvider";
 import { formatNaira } from "../../utils/formatCurrency";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
@@ -113,6 +114,9 @@ export default function WalletScreen() {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const t = useTokens();
+  // The fund/withdraw sheets' KeyboardAvoidingViews only act on iOS; this is
+  // Android's share. A Modal is its own window with no SafeAreaView around it.
+  const androidKeyboardPad = useAndroidKeyboardPadding(false);
 
   const [balance, setBalance] = useState<number | null>(null);
   const [currency, setCurrency] = useState("NGN");
@@ -433,7 +437,7 @@ export default function WalletScreen() {
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           className="flex-1 justify-end"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          style={{ backgroundColor: "rgba(0,0,0,0.5)", paddingBottom: androidKeyboardPad }}
         >
           <View className="rounded-t-2xl p-6 bg-surface-raised">
             <Text className="text-lg font-bold mb-1 text-text-primary">
@@ -493,7 +497,7 @@ export default function WalletScreen() {
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           className="flex-1 justify-end"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          style={{ backgroundColor: "rgba(0,0,0,0.5)", paddingBottom: androidKeyboardPad }}
         >
           <View className="rounded-t-2xl p-6 bg-surface-raised">
             <Text className="text-lg font-bold mb-1 text-text-primary">

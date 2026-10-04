@@ -1,12 +1,13 @@
 // screens/ChangePasswordScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import { useRouter } from 'expo-router';
 import { usePasswordResetConfirm } from '../../hooks/useAuth';
 import { friendlyErrorMessage } from '../../utils/errorMessages';
 import { useTokens } from "../../theme/useTokens";
+import { useKeyboardOverlap, keyboardScrollPadding } from "../../hooks/useKeyboardOverlap";
 
 export default function ChangePasswordScreen() {
   const [email, setEmail] = useState('');
@@ -15,6 +16,11 @@ export default function ChangePasswordScreen() {
   const reset = usePasswordResetConfirm();
   const nav = useRouter();
   const t = useTokens();
+  const insets = useSafeAreaInsets();
+  // KeyboardAvoidingView only lifts on iOS; under Android edge-to-edge the
+  // window no longer resizes for the keyboard, so the scroll padding has to
+  // make room for the password field and the button itself.
+  const keyboardOverlap = useKeyboardOverlap();
 
   const onSubmit = async () => {
     try {
@@ -37,7 +43,18 @@ export default function ChangePasswordScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface-page">
-      <ScrollView className={"bg-surface-page"} contentContainerStyle={{ paddingBottom: 32 }}>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+      <ScrollView
+        className={"bg-surface-page"}
+        contentContainerStyle={{
+          paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 32),
+        }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+      >
         <ScreenHeader title="Change Password" onBack={() => nav.back()} />
         <View className="px-6 pt-6">
           <Text className="text-sm leading-6 text-text-secondary">
@@ -89,6 +106,7 @@ export default function ChangePasswordScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

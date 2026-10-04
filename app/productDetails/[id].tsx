@@ -1,6 +1,6 @@
 // app/product/[id].tsx
-import React, { useEffect, useState, useRef } from "react";
-import { View, Text, Image, ActivityIndicator, TouchableOpacity, ImageBackground, Pressable, FlatList, Dimensions } from "react-native";
+import React, { useCallback, useEffect, useState, useRef } from "react";
+import { View, Text, Image, ActivityIndicator, TouchableOpacity, ImageBackground, Pressable, FlatList, Dimensions, KeyboardAvoidingView, Platform, TextInput } from "react-native";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useBackTo } from "../../utils/goBack";
 import { getProductById, trackProductView } from "../../services/sections/product";
@@ -19,6 +19,7 @@ import { isOwnProductListing } from "../../utils/chatGuards";
 import { normalizeUri, resolveMediaUri } from "../../utils/imageUri";
 import Avatar from "../../components/Avatar";
 import { useTokens } from "../../theme/useTokens";
+import { useKeyboardOverlap, useAndroidKeyboardPadding } from "../../hooks/useKeyboardOverlap";
 import CartFab from "../../components/CartFab";
 import { StarRating } from "../../components/StarRating";
 import ProductReviews from "../../components/ProductReviews";
@@ -59,6 +60,36 @@ export default function ProductDetails() {
   const fetchingSimilarRef = useRef(false);
   const { show } = useToast();
   const t = useTokens();
+
+  // The review box lives inside this list's header, partway down a long
+  // page, so it opened under the keyboard with nothing to bring it back.
+  // KeyboardAvoidingView shrinks the list on iOS and the padding makes room
+  // on Android, but neither scrolls, so the box is scrolled clear here once
+  // the keyboard's height is known.
+  const listRef = useRef<FlatList<Product>>(null);
+  const scrollYRef = useRef(0);
+  const reviewInputRef = useRef<TextInput | null>(null);
+  const keyboardOverlap = useKeyboardOverlap();
+  const androidKeyboardPad = useAndroidKeyboardPadding();
+
+  const revealReviewInput = useCallback(() => {
+    const input = reviewInputRef.current;
+    if (!input || keyboardOverlap <= 0) return;
+    const keyboardTop = Dimensions.get("window").height - keyboardOverlap;
+    input.measureInWindow((_x, y, _w, height) => {
+      const hidden = y + height + 16 - keyboardTop;
+      if (hidden > 0) {
+        listRef.current?.scrollToOffset({
+          offset: scrollYRef.current + hidden,
+          animated: true,
+        });
+      }
+    });
+  }, [keyboardOverlap]);
+
+  useEffect(() => {
+    revealReviewInput();
+  }, [revealReviewInput]);
 
   const toggleDetail = (key: string) => {
     setOpenDetails((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -225,7 +256,12 @@ const addProductToCart = async (product:ProductDetail)=>{
 
   return (
   <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "left", "right", "bottom"]}>
+    <KeyboardAvoidingView
+      className="flex-1"
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
     <FlatList
+      ref={listRef}
       data={similarProducts}
       keyExtractor={(item) => item.id.toString()}
       ListHeaderComponent={
@@ -456,6 +492,12 @@ const addProductToCart = async (product:ProductDetail)=>{
           <ProductReviews
             productId={String(id)}
             onChanged={() => fetchProduct(String(id))}
+            onComposerFocusChange={(input) => {
+              reviewInputRef.current = input;
+              // Already open (moving back into the box): no height change is
+              // coming to trigger the effect, so check now.
+              if (input) revealReviewInput();
+            }}
           />
 
           <View className="flex-row justify-end pb-10 pt-6">
@@ -536,7 +578,15 @@ const addProductToCart = async (product:ProductDetail)=>{
 }
       numColumns={2}
       columnWrapperStyle={{ justifyContent: "space-between", paddingHorizontal: 4 }}
-      contentContainerStyle={{ paddingBottom: 20 }}
+      contentContainerStyle={{ paddingBottom: 20 + androidKeyboardPad }}
+      onScroll={(e) => {
+        scrollYRef.current = e.nativeEvent.contentOffset.y;
+      }}
+      scrollEventThrottle={16}
+      // "handled" so the first tap on Submit sends the review instead of only
+      // dismissing the keyboard.
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
       onEndReached={getOtherProducts}
       onEndReachedThreshold={0.5}
       ListFooterComponent={
@@ -557,6 +607,7 @@ const addProductToCart = async (product:ProductDetail)=>{
         ) : null
       }
     />
+    </KeyboardAvoidingView>
 
     {/* The way back to the basket from a screen with no tab bar, and the
         acknowledgement that the thing you just added went somewhere. */}

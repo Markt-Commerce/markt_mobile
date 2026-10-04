@@ -17,6 +17,7 @@ import { OTPInput } from "../../components/inputs";
 import { useToast } from "../../components/ToastProvider"; // <-- toast
 import Button from "../../components/button";
 import { useTokens } from "../../theme/useTokens";
+import { useAndroidKeyboardPadding } from "../../hooks/useKeyboardOverlap";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import BackButton from "../../components/BackButton";
 
@@ -37,6 +38,8 @@ const EmailVerification = () => {
   const { role, setUser, setRole } = useUser();
   const { show } = useToast(); // <-- toast API
   const t = useTokens();
+  // The KeyboardAvoidingView below only acts on iOS; this is Android's share.
+  const androidKeyboardPad = useAndroidKeyboardPadding();
   const iconColor = t.textPrimary;
 
   // Two ways in, and they differ in one thing only: whether a code is
@@ -174,6 +177,7 @@ const EmailVerification = () => {
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
+        style={{ paddingBottom: androidKeyboardPad }}
       >
         <View className="flex-1 bg-surface-raised">
           {/* Header */}

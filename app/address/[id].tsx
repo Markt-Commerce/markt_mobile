@@ -1,8 +1,9 @@
 import React from "react";
 import {
   View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert,
+  KeyboardAvoidingView, Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Trash2, MapPin } from "lucide-react-native";
 import { useTokens } from "../../theme/useTokens";
@@ -14,6 +15,7 @@ import { BUILDING_TYPES, type BuildingType, type SavedAddress } from "../../mode
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import MapPinPicker from "../../components/address/MapPinPicker";
 import { useAddressLookup } from "../../hooks/useAddressLookup";
+import { useKeyboardOverlap, keyboardScrollPadding } from "../../hooks/useKeyboardOverlap";
 import logger from "../../utils/logger";
 import BackButton from "../../components/BackButton";
 
@@ -29,6 +31,11 @@ import BackButton from "../../components/BackButton";
 export default function AddressInformation() {
   const router = useRouter();
   const t = useTokens();
+  const insets = useSafeAreaInsets();
+  // The fields sit below the map, so most of them are under the keyboard
+  // once it opens. KeyboardAvoidingView covers iOS; Android is edge-to-edge
+  // and no longer resizes for the keyboard, so the padding makes room there.
+  const keyboardOverlap = useKeyboardOverlap();
   const { show } = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
   const addressId = Number(id);
@@ -159,7 +166,17 @@ export default function AddressInformation() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+        contentContainerStyle={{
+          paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 40),
+        }}
+      >
         {/* Where it is. A map preview belongs here and is deliberately absent
             until there is a Maps API key — a blank grey rectangle reads as a
             broken feature rather than a missing key. */}
@@ -275,6 +292,7 @@ export default function AddressInformation() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

@@ -15,6 +15,7 @@ import Avatar from "../../components/Avatar";
 import type { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
+import { useAndroidKeyboardPadding } from "../../hooks/useKeyboardOverlap";
 import CartFab from "../../components/CartFab";
 import { getProductById } from "../../services/sections/product";
 import { addToCart } from "../../services/sections/cart";
@@ -109,6 +110,9 @@ export default function PostDetailsScreen() {
   const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const insets = useSafeAreaInsets();
+  // The KeyboardAvoidingView only acts on iOS; this lifts the composer on
+  // Android. The SafeAreaView pads the top edge only, so nothing to subtract.
+  const androidKeyboardPad = useAndroidKeyboardPadding(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   useEffect(() => {
@@ -549,7 +553,7 @@ export default function PostDetailsScreen() {
           contentContainerStyle={{ flexGrow: 1 }}
         />
 
-          <View style={{ paddingBottom: keyboardVisible ? 0 : insets.bottom }}>
+          <View style={{ paddingBottom: keyboardVisible ? androidKeyboardPad : insets.bottom }}>
             <View className="px-4 py-2 border-t bg-surface-raised border-border">
               <View className="flex-row items-center gap-3">
                 <Avatar uri={myAvatarUri} name={myDisplayName} size={40} />

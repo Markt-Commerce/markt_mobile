@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import StepDots from "../../components/auth/StepDots";
 import { useTokens } from "../../theme/useTokens";
+import { useAndroidKeyboardPadding } from "../../hooks/useKeyboardOverlap";
 import { useUser } from "../../hooks/userContextProvider";
 
 /**
@@ -20,6 +21,8 @@ import { useUser } from "../../hooks/userContextProvider";
 export default function YourName() {
   const router = useRouter();
   const t = useTokens();
+  // The KeyboardAvoidingView below only acts on iOS; this is Android's share.
+  const androidKeyboardPad = useAndroidKeyboardPadding();
   const { profile } = useUser();
 
   const [name, setName] = useState(profile?.username ?? "");
@@ -46,6 +49,7 @@ export default function YourName() {
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ paddingBottom: androidKeyboardPad }}
       >
         <View className="flex-1 px-6 pt-6">
           <StepDots total={2} current={1} className="mb-10" />

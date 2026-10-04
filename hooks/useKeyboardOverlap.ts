@@ -90,3 +90,25 @@ export function keyboardScrollPadding(
     Platform.OS === "ios" ? Math.max(0, overlap - safeAreaBottom) : overlap;
   return usable + restingPadding;
 }
+
+/**
+ * Bottom padding that gives Android the keyboard room iOS already gets.
+ *
+ * For screens whose `KeyboardAvoidingView` is `padding` on iOS and
+ * `undefined` on Android. That pairing assumed Android would resize the
+ * window for the keyboard, which stopped being true under edge-to-edge, so
+ * on Android those forms sat under the keyboard. This is zero on iOS, where
+ * the KAV is already doing the job, and zero on Android while the keyboard
+ * is closed, so neither resting layout changes.
+ *
+ * `bottomInsetApplied`: pass true (the default) when the screen sits inside a
+ * SafeAreaView that already pads the bottom edge. The overlap counts the
+ * navigation bar, and counting it twice leaves a gap above the keyboard.
+ */
+export function useAndroidKeyboardPadding(bottomInsetApplied = true): number {
+  const insets = useSafeAreaInsets();
+  const isAndroid = Platform.OS === "android";
+  const overlap = useKeyboardOverlap(isAndroid);
+  if (!isAndroid || overlap <= 0) return 0;
+  return Math.max(0, overlap - (bottomInsetApplied ? insets.bottom : 0));
+}
