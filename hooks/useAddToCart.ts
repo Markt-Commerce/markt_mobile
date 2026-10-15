@@ -2,6 +2,8 @@ import { useCallback, useState } from "react";
 import { addToCart } from "../services/sections/cart";
 import { useToast } from "../components/ToastProvider";
 import { friendlyErrorMessage } from "../utils/errorMessages";
+import { promptSignUp } from "../utils/authNavigation";
+import { useUser } from "./userContextProvider";
 
 /**
  * Adding a product to the cart from a tile.
@@ -14,10 +16,16 @@ import { friendlyErrorMessage } from "../utils/errorMessages";
  */
 export function useAddToCart() {
   const { show } = useToast();
+  const { user } = useUser();
   const [addingId, setAddingId] = useState<string | null>(null);
 
   const add = useCallback(
     async (product: { id: string; name?: string }) => {
+      // Browse-first guests see the same tiles; a cart needs an account.
+      if (!user) {
+        promptSignUp();
+        return;
+      }
       if (addingId) return;
       setAddingId(product.id);
       try {
@@ -37,7 +45,7 @@ export function useAddToCart() {
         setAddingId(null);
       }
     },
-    [addingId, show]
+    [addingId, show, user]
   );
 
   return { add, addingId };

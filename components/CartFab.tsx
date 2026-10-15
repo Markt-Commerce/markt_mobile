@@ -23,11 +23,14 @@ export default function CartFab({ bottomOffset = 0 }: { bottomOffset?: number })
   const router = useRouter();
   const t = useTokens();
   const insets = useSafeAreaInsets();
-  const { role } = useUser();
+  const { user, role } = useUser();
   const [count, setCount] = React.useState(0);
+  // `role` defaults to "buyer" even when signed out, so it alone does not
+  // mean there is a cart to ask about.
+  const isBuyer = !!user && role === "buyer";
 
   const refresh = React.useCallback(async () => {
-    if (role !== "buyer") return;
+    if (!isBuyer) return;
     try {
       const summary = await getCartSummary();
       setCount(summary?.item_count ?? 0);
@@ -35,7 +38,7 @@ export default function CartFab({ bottomOffset = 0 }: { bottomOffset?: number })
       // A shortcut is not worth an error. Staying hidden is the safe failure.
       setCount(0);
     }
-  }, [role]);
+  }, [isBuyer]);
 
   React.useEffect(() => {
     refresh();
@@ -44,7 +47,7 @@ export default function CartFab({ bottomOffset = 0 }: { bottomOffset?: number })
     return onBadgeChanged(refresh);
   }, [refresh]);
 
-  if (role !== "buyer" || count <= 0) return null;
+  if (!isBuyer || count <= 0) return null;
 
   return (
     <TouchableOpacity

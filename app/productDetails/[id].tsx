@@ -25,6 +25,7 @@ import { StarRating } from "../../components/StarRating";
 import ProductReviews from "../../components/ProductReviews";
 import { runMessageSellerFlow } from "../../utils/messageSellerFlow";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
+import { promptSignUp } from "../../utils/authNavigation";
 import { MediaViewerModal } from "../../components/postMedia";
 
 export default function ProductDetails() {
@@ -112,6 +113,9 @@ export default function ProductDetails() {
       setPage((p) => p + 1);
     }
     catch (err) {
+      // Similar products are extra. If the endpoint wants an account, a guest
+      // should just not see the strip, not an error about it.
+      if (!user) return;
       show({
         variant: "error",
         title: "Error loading products",
@@ -138,6 +142,11 @@ export default function ProductDetails() {
 }
 
 const addProductToCart = async (product:ProductDetail)=>{
+  // Reachable from "Browse first" without an account.
+  if (!user) {
+    promptSignUp();
+    return;
+  }
   // Stop a basket that can never be checked out. Browsing stays open --
   // Markt is not only a delivery app, and hiding out-of-area shops would gut
   // the social half -- but the cart action is where the dead end begins.
