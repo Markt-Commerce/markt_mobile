@@ -132,7 +132,7 @@ export default function TermsOfUseScreen() {
 
           <Section title="12. CONTACT US" last>
             <Body>
-              In order to resolve a complaint regarding the Services or to receive further information regarding use of the Services, please contact us at marktcommerce2020@gmail.com.
+              In order to resolve a complaint regarding the Services or to receive further information regarding use of the Services, please contact us at support@marktcommerce.com.
             </Body>
           </Section>
         </View>
