@@ -32,6 +32,8 @@ interface Props {
   onOpenActions?: (post: FeedPost) => void;
   saved?: boolean;
   onToggleSaved?: (post: FeedPost) => Promise<void> | void;
+  /** Guests on "Browse first" can look but not like, comment, save or share. */
+  readOnly?: boolean;
 }
 
 function compactAge(value: string) {
@@ -46,7 +48,7 @@ function compactAge(value: string) {
   return `${Math.floor(seconds / 604800)}w`;
 }
 
-function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Props) {
+function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved, readOnly = false }: Props) {
   const router = useRouter();
   const [likeCount, setLikeCount] = useState(post.likes_count);
   const [likedByMe, setLikedByMe] = useState(post.liked_by_me ?? false);
@@ -264,18 +266,20 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
             </Pressable>
           ) : null}
 
-          <PostActionBar
-            likeCount={likeCount}
-            commentCount={post.comments_count}
-            views={post.views_count ?? post.view_count ?? post.views}
-            liked={likedByMe}
-            saved={saved ?? post.is_saved ?? false}
-            disabled={isLiking}
-            onLike={handleLike}
-            onComment={handleOpenComments}
-            onSave={() => onToggleSaved?.(post)}
-            onShare={handleShare}
-          />
+          {readOnly ? null : (
+            <PostActionBar
+              likeCount={likeCount}
+              commentCount={post.comments_count}
+              views={post.views_count ?? post.view_count ?? post.views}
+              liked={likedByMe}
+              saved={saved ?? post.is_saved ?? false}
+              disabled={isLiking}
+              onLike={handleLike}
+              onComment={handleOpenComments}
+              onSave={() => onToggleSaved?.(post)}
+              onShare={handleShare}
+            />
+          )}
           </View>
         </View>
       </TouchableOpacity>

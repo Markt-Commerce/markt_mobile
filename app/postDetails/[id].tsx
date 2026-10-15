@@ -30,6 +30,7 @@ import PostActionBar from "../../components/PostActionBar";
 import { saveItem, unsaveItem } from "../../services/sections/saved";
 import { parseServerDate } from "../../utils/datetime";
 import { maskObjectionable } from "../../utils/contentFilter";
+import { promptSignUp } from "../../utils/authNavigation";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 
 
@@ -256,6 +257,10 @@ export default function PostDetailsScreen() {
   }, [post?.products]);
 
   const handleAddTaggedToCart = React.useCallback(async (product: TaggedProduct) => {
+    if (!user) {
+      promptSignUp();
+      return;
+    }
     if (addingId) return;
     setAddingId(product.id);
     try {
@@ -274,7 +279,7 @@ export default function PostDetailsScreen() {
     } finally {
       setAddingId(null);
     }
-  }, [addingId, show]);
+  }, [addingId, show, user]);
 
   useEffect(() => {
     getUserProfile()
@@ -410,7 +415,7 @@ export default function PostDetailsScreen() {
         </Text>
         {/* Report and block (App Store Guideline 1.2). An empty box of the
             same size on your own post keeps the title centred. */}
-        {isOwnPost ? (
+        {isOwnPost || !user ? (
           <View className="size-12" />
         ) : (
           <TouchableOpacity
@@ -536,18 +541,21 @@ export default function PostDetailsScreen() {
         <Text className="text-sm mb-1 text-text-secondary">
           {parseDate(post.created_at)}
         </Text>
-        <PostActionBar
-          likeCount={likeCount}
-          commentCount={post.comment_count}
-          views={post.views_count ?? post.view_count ?? post.views}
-          liked={likedByMe}
-          saved={saved}
-          disabled={isLiking}
-          onLike={handleLike}
-          onComment={() => commentInputRef.current?.focus()}
-          onSave={handleSave}
-          onShare={handleShare}
-        />
+        {/* View-only for guests: no like, comment, save or share. */}
+        {user ? (
+          <PostActionBar
+            likeCount={likeCount}
+            commentCount={post.comment_count}
+            views={post.views_count ?? post.view_count ?? post.views}
+            liked={likedByMe}
+            saved={saved}
+            disabled={isLiking}
+            onLike={handleLike}
+            onComment={() => commentInputRef.current?.focus()}
+            onSave={handleSave}
+            onShare={handleShare}
+          />
+        ) : null}
       </View>
 
       {/* Comments Header */}
@@ -570,6 +578,7 @@ export default function PostDetailsScreen() {
       t,
       router,
       isOwnPost,
+      user,
       handleLike,
       handleSave,
       handleShare,
@@ -590,6 +599,7 @@ export default function PostDetailsScreen() {
 
   const openCommentActions = React.useCallback(
     (comment: CommentItem) => {
+      if (!user) return;
       const isOwn = !!user?.user_id && comment.user?.id === user.user_id;
       if (isOwn) return;
       setActionsTarget({
@@ -662,6 +672,24 @@ export default function PostDetailsScreen() {
           contentContainerStyle={{ flexGrow: 1 }}
         />
 
+          {/* Guests from "Browse first" can read a post and its comments,
+              but joining the conversation needs an account. */}
+          {!user ? (
+            <View
+              className="px-4 pt-3 border-t bg-surface-raised border-border"
+              style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+            >
+              <TouchableOpacity
+                onPress={() => promptSignUp("Create a free account to comment, like and save posts.")}
+                accessibilityRole="button"
+                className="h-11 rounded items-center justify-center bg-surface-sunken"
+              >
+                <Text className="text-sm font-semibold text-text-secondary">
+                  Sign up to join the conversation
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
           <View style={{ paddingBottom: keyboardVisible ? androidKeyboardPad : insets.bottom }}>
             <View className="px-4 py-2 border-t bg-surface-raised border-border">
               <View className="flex-row items-center gap-3">
@@ -704,6 +732,7 @@ export default function PostDetailsScreen() {
               </View>
             </View>
           </View>
+          )}
         </View>
       </KeyboardAvoidingView>
       <CartFab />

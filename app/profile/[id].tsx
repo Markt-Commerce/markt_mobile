@@ -20,6 +20,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { Store, UserPlus, UserMinus, MoreHorizontal } from "lucide-react-native";
 import ContentActionsSheet, { type ContentActionsTarget } from "../../components/ContentActionsSheet";
+import { useUser } from "../../hooks/userContextProvider";
+import { promptSignUp } from "../../utils/authNavigation";
 import ScreenHeader from "../../components/ScreenHeader";
 import Avatar from "../../components/Avatar";
 import { useTheme } from "../../components/themeProvider";
@@ -64,6 +66,7 @@ export default function PublicProfileScreen() {
   const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const { show } = useToast();
+  const { user } = useUser();
 
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -103,6 +106,11 @@ export default function PublicProfileScreen() {
   );
 
   const handleFollowToggle = async () => {
+    // Reachable from "Browse first" posts without an account.
+    if (!user) {
+      promptSignUp("Create a free account to follow people and shops.");
+      return;
+    }
     if (!profile || followBusy) return;
     setFollowBusy(true);
     const prev = following;
