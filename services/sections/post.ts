@@ -2,11 +2,13 @@
 import { request, BASE_URL } from "../api";
 import { CommentCreatedResponse, CommentResponse, CreatePostRequest, PostDetails, PostResponse } from "../../models/post";
 import { ApiResponse } from "../../models/auth";
+import { assertCleanContent } from "../../utils/contentFilter";
 
 /**
  * Create a social post
  */
 export async function createPost(payload: CreatePostRequest): Promise<PostResponse> {
+  assertCleanContent(payload.caption, ...(payload.tags ?? []));
   const res = await request<ApiResponse<PostResponse>>(`${BASE_URL}/socials/posts`, {
     method: "POST",
     body: JSON.stringify(payload),
@@ -36,6 +38,7 @@ export async function getPostComments(postId:string, page: number):Promise<Comme
 }
 
 export async function commentOnPost(postId:string, comment: string, parentId?: number) : Promise<CommentCreatedResponse> {
+  assertCleanContent(comment);
   const payload: { content: string; parent_id?: number } = {
     content:comment,
   };

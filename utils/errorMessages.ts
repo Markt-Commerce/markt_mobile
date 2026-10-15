@@ -8,6 +8,7 @@
  * and never echoes the server's own words.
  */
 import logger from "./logger";
+import { ObjectionableContentError } from "./contentFilter";
 
 const STATUS_MESSAGES: Record<number, string> = {
   400: "Some of the information provided isn't valid. Please check it and try again.",
@@ -40,6 +41,9 @@ export function friendlyErrorMessage(
   fallback = "Something went wrong. Please try again.",
   overrides?: Record<number, string>,
 ): string {
+  // Our own words, written for the user: the content filter's refusal.
+  if (err instanceof ObjectionableContentError) return err.message;
+
   // Keep the real error visible to developers — never to users.
   logger.error("[error->user]", err);
 

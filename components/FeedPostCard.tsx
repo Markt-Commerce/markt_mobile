@@ -23,6 +23,7 @@ import { tierColor } from "../theme/tierColors";
 import { parseServerDate } from "../utils/datetime";
 import { formatNaira } from "../utils/formatCurrency";
 import { normalizeUri } from "../utils/imageUri";
+import { maskObjectionable } from "../utils/contentFilter";
 
 interface Props {
   post: FeedPost;
@@ -207,7 +208,7 @@ function FeedPostCard({ post, onLike, onOpenActions, saved, onToggleSaved }: Pro
               className="mb-2 text-[15px] leading-[21px] text-text-primary"
               numberOfLines={6}
             >
-              {post.caption}
+              {maskObjectionable(post.caption)}
             </Text>
           ) : null}
 

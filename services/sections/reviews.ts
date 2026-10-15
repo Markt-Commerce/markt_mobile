@@ -17,6 +17,7 @@
  */
 
 import { BASE_URL, request } from "../api";
+import { assertCleanContent } from "../../utils/contentFilter";
 
 export interface ReviewAuthor {
   id?: string;
@@ -80,6 +81,7 @@ export async function createProductReview(
   productId: string,
   payload: CreateReviewPayload
 ): Promise<ProductReview> {
+  assertCleanContent(payload.title, payload.content);
   return request<ProductReview>(`${BASE_URL}/products/${productId}/reviews`, {
     method: "POST",
     body: JSON.stringify(payload),
@@ -90,6 +92,7 @@ export async function updateProductReview(
   reviewId: number,
   payload: UpdateReviewPayload
 ): Promise<ProductReview> {
+  assertCleanContent(payload.title, payload.content);
   return request<ProductReview>(`${BASE_URL}/products/reviews/${reviewId}`, {
     method: "PATCH",
     body: JSON.stringify(payload),

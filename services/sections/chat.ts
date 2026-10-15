@@ -1,5 +1,6 @@
 // /services/chatApi.ts
 import { request, BASE_URL } from "../api";
+import { assertCleanContent } from "../../utils/contentFilter";
 import {
   ChatMessage,
   RoomListResponse,
@@ -60,6 +61,7 @@ export async function getRoomMessages(room_id: number, page = 1, per_page = 50):
  * Send message via REST. Server expects content, message_type, optional message_data.
  */
 export async function sendMessageREST(room_id: number, body: { content: string; message_type: string; message_data?: any }): Promise<ChatMessage> {
+  if (body.message_type === "text") assertCleanContent(body.content);
   const res = await request<ChatMessage | { data: ChatMessage }>(`${BASE_URL}/chats/rooms/${room_id}/messages`, {
     method: "POST",
     body: JSON.stringify(body),

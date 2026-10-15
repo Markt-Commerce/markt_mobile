@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import {View,Text,ScrollView,FlatList,ActivityIndicator,TouchableOpacity,TextInput,Image, KeyboardAvoidingView, Share, Keyboard, Platform} from "react-native";
-import { ArrowLeft, SendHorizonal } from "lucide-react-native";
+import { ArrowLeft, MoreHorizontal, SendHorizonal } from "lucide-react-native";
+import ContentActionsSheet, { type ContentActionsTarget } from "../../components/ContentActionsSheet";
+import { useModerationFilter } from "../../hooks/useModerationFilter";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useBackTo } from "../../utils/goBack";
 import { commentOnPost, getPostById, getPostComments, likePost } from "../../services/sections/post";
@@ -27,6 +29,8 @@ import { PostMediaGrid, mediaTypeOf, type MediaItem } from "../../components/pos
 import PostActionBar from "../../components/PostActionBar";
 import { saveItem, unsaveItem } from "../../services/sections/saved";
 import { parseServerDate } from "../../utils/datetime";
+import { maskObjectionable } from "../../utils/contentFilter";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
 
 
 
@@ -48,9 +52,17 @@ function sameCommentGroup(a?: CommentItem, b?: CommentItem) {
 }
 
 // Helper component for comment rendering
-const SingleCommentComponent = React.memo(({ comment, isDark, grouped = false }: { comment: CommentItem, isDark: boolean, grouped?: boolean }) => {
+const SingleCommentComponent = React.memo(({ comment, isDark, grouped = false, onLongPress }: { comment: CommentItem, isDark: boolean, grouped?: boolean, onLongPress?: (comment: CommentItem) => void }) => {
   return (
-    <View className={`flex w-full flex-row items-start justify-start gap-3 px-4 ${grouped ? "pt-0.5 pb-1" : "pt-3 pb-1"}`}>
+    // Long-press to report the comment or block its author (Guideline 1.2).
+    <TouchableOpacity
+      activeOpacity={0.7}
+      delayLongPress={350}
+      onLongPress={onLongPress ? () => onLongPress(comment) : undefined}
+      disabled={!onLongPress}
+      accessibilityHint={onLongPress ? "Long press to report or block" : undefined}
+      className={`flex w-full flex-row items-start justify-start gap-3 px-4 ${grouped ? "pt-0.5 pb-1" : "pt-3 pb-1"}`}
+    >
       {grouped ? (
         // Keeps the text aligned under the run's first comment.
         <View style={{ width: 40 }} />
@@ -73,10 +85,10 @@ const SingleCommentComponent = React.memo(({ comment, isDark, grouped = false }:
           </View>
         )}
         <Text className="text-sm font-normal leading-normal text-text-primary">
-          {comment.content}
+          {maskObjectionable(comment.content)}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 });
 
@@ -103,6 +115,9 @@ export default function PostDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { show } = useToast();
   const { user } = useUser();
+  const moderation = useModerationFilter();
+  const [actionsTarget, setActionsTarget] = useState<ContentActionsTarget | null>(null);
+  const isOwnPost = !!user?.user_id && post?.user?.id === user.user_id;
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [taggedProducts, setTaggedProducts] = useState<TaggedProduct[]>([]);
   // Which card's "Add to cart" is in flight, so only that one shows busy.
@@ -291,7 +306,7 @@ export default function PostDetailsScreen() {
       show({
         variant: "error",
         title: "Error adding comment",
-        message: "There was an issue adding your comment.",
+        message: friendlyErrorMessage(error, "There was an issue adding your comment."),
       });
     } finally {
       postingCommentRef.current = false;
@@ -390,9 +405,31 @@ export default function PostDetailsScreen() {
         >
           <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>
-        <Text className="text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12 text-text-primary">
+        <Text className="text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center text-text-primary">
           Post
         </Text>
+        {/* Report and block (App Store Guideline 1.2). An empty box of the
+            same size on your own post keeps the title centred. */}
+        {isOwnPost ? (
+          <View className="size-12" />
+        ) : (
+          <TouchableOpacity
+            className="flex size-12 shrink-0 items-center justify-center"
+            onPress={() =>
+              setActionsTarget({
+                type: "post",
+                id: post.id,
+                title: post.caption?.trim() ? post.caption.trim().slice(0, 60) : "This post",
+                authorId: post.user?.id,
+                authorName: post.user?.username,
+              })
+            }
+            accessibilityRole="button"
+            accessibilityLabel="More options"
+          >
+            <MoreHorizontal size={24} color={t.textPrimary} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Tappable, as it is in the feed. The author here was static, so opening
@@ -415,7 +452,7 @@ export default function PostDetailsScreen() {
 
       {/* Caption */}
       <Text className="text-base font-normal leading-normal pb-3 pt-1 px-4 text-text-primary">
-        {post.caption}
+        {maskObjectionable(post.caption)}
       </Text>
 
       {/* Media — Instagram-style grid (max 5), tap any tile for fullscreen */}
@@ -532,6 +569,7 @@ export default function PostDetailsScreen() {
       isDark,
       t,
       router,
+      isOwnPost,
       handleLike,
       handleSave,
       handleShare,
@@ -539,15 +577,42 @@ export default function PostDetailsScreen() {
     ],
   );
 
+  // A blocked person's comments go the moment the block lands, and a reported
+  // comment goes for the person who reported it.
+  const visibleComments = React.useMemo(
+    () =>
+      comments.filter(
+        (c) => !moderation.isBlocked(c.user?.id) && !moderation.isReported("comment", c.id)
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [comments, moderation.version],
+  );
+
+  const openCommentActions = React.useCallback(
+    (comment: CommentItem) => {
+      const isOwn = !!user?.user_id && comment.user?.id === user.user_id;
+      if (isOwn) return;
+      setActionsTarget({
+        type: "comment",
+        id: String(comment.id),
+        title: comment.content?.trim() ? comment.content.trim().slice(0, 60) : "This comment",
+        authorId: comment.user?.id,
+        authorName: comment.user?.username,
+      });
+    },
+    [user?.user_id],
+  );
+
   const renderCommentItem = React.useCallback(
     ({ item, index }: { item: CommentItem; index: number }) => (
       <SingleCommentComponent
         comment={item}
         isDark={isDark}
-        grouped={sameCommentGroup(comments[index - 1], item)}
+        grouped={sameCommentGroup(visibleComments[index - 1], item)}
+        onLongPress={openCommentActions}
       />
     ),
-    [isDark, comments],
+    [isDark, visibleComments, openCommentActions],
   );
 
   // An element for the same reason as the header: a fresh function identity is
@@ -584,7 +649,7 @@ export default function PostDetailsScreen() {
       >
         <View className="relative flex-1 flex-col justify-between" style={{ backgroundColor: t.surfacePage }}>
           <FlatList
-          data={comments}
+          data={visibleComments}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderCommentItem}
           ListHeaderComponent={listHeader}
@@ -642,6 +707,15 @@ export default function PostDetailsScreen() {
         </View>
       </KeyboardAvoidingView>
       <CartFab />
+      <ContentActionsSheet
+        target={actionsTarget}
+        onClose={() => setActionsTarget(null)}
+        onBlocked={(blockedId) => {
+          // Blocking the post's author leaves nothing here worth staying for;
+          // blocking a commenter just drops their comments.
+          if (blockedId === post.user?.id) goBack();
+        }}
+      />
     </SafeAreaView>
   );
 }

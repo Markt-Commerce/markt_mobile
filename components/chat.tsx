@@ -23,8 +23,10 @@ import {
   Check,
   DollarSign,
   Eye,
+  Flag,
   Flame,
   Hand,
+  MoreHorizontal,
   Heart,
   Plus,
   Rocket,
@@ -89,6 +91,9 @@ import { getUserProfile } from "../services/sections/profile";
 import { useTheme } from "./themeProvider";
 import { useTokens } from "../theme/useTokens";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ContentActionsSheet, { type ContentActionsTarget } from "./ContentActionsSheet";
+import { useModerationFilter } from "../hooks/useModerationFilter";
+import { containsObjectionable, maskObjectionable, OBJECTIONABLE_MESSAGE } from "../utils/contentFilter";
 import { useKeyboardOverlap } from "../hooks/useKeyboardOverlap";
 import { InlineVideo, MediaViewerModal } from "./postMedia";
 import {
@@ -329,7 +334,7 @@ const MessageRow = React.memo(function MessageRow({
                   <Text
                     className={`text-base ${isMe ? "text-white" : "text-text-primary"}`}
                   >
-                    {item.content}
+                    {maskObjectionable(item.content)}
                   </Text>
                 </View>
               );
@@ -439,7 +444,7 @@ const MessageRow = React.memo(function MessageRow({
                       <Text
                         className={`text-base ${isMe ? "text-white" : "text-text-primary"}`}
                       >
-                        {caption}
+                        {maskObjectionable(caption)}
                       </Text>
                     </View>
                   ) : null}
@@ -656,6 +661,20 @@ const MessageRow = React.memo(function MessageRow({
                         </TouchableOpacity>
                       );
                     })}
+                    {/* Report this message (App Store Guideline 1.2). */}
+                    {!isMe && handlers.current.openMessageActions ? (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setReactionPickerFor(null);
+                          handlers.current.openMessageActions(item);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Report message"
+                        className="px-2 py-1 rounded border bg-surface-raised border-border"
+                      >
+                        <Flag size={14} color={mutedColor} />
+                      </TouchableOpacity>
+                    ) : null}
                     <TouchableOpacity
                       onPress={() => setReactionPickerFor(null)}
                       className="px-2 py-1 rounded bg-media"
@@ -796,6 +815,16 @@ export default function ChatScreen({
   const pendingScrollToBottomRef = useRef(false);
 
   const myId = user?.user_id?.toString() ?? "";
+  const moderation = useModerationFilter();
+  const [actionsTarget, setActionsTarget] = useState<ContentActionsTarget | null>(null);
+  // The route only carries a name and picture, so the other person's id
+  // comes from their messages when it isn't passed in.
+  const otherUserId =
+    otherUser?.user_id ??
+    (() => {
+      const theirs = messages.find((m) => m.sender_id != null && String(m.sender_id) !== myId);
+      return theirs ? String(theirs.sender_id) : undefined;
+    })();
   const PER_PAGE = 30;
   const hasValidRoomId = Number.isFinite(roomId) && roomId > 0;
 
@@ -861,12 +890,16 @@ export default function ChatScreen({
     for (const key of cache.keys()) {
       if (!live.has(key)) cache.delete(key);
     }
-    return enriched.sort(
-      (a, b) =>
-        (parseServerDate(a.created_at)?.getTime() ?? 0) -
-        (parseServerDate(b.created_at)?.getTime() ?? 0),
-    );
-  }, [messages, avatarCtx]);
+    return enriched
+      // A message this person reported goes from their view of the thread.
+      .filter((m) => !moderation.isReported("chat_message", m.id))
+      .sort(
+        (a, b) =>
+          (parseServerDate(a.created_at)?.getTime() ?? 0) -
+          (parseServerDate(b.created_at)?.getTime() ?? 0),
+      );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, avatarCtx, moderation.version]);
 
   // A new avatar context means every message renders differently, so the
   // cached copies are stale by definition.
@@ -1147,6 +1180,11 @@ export default function ChatScreen({
   async function handleSendText() {
     if (!input.trim()) return;
     const content = input.trim();
+    // Checked before the input clears, so the text is still there to fix.
+    if (containsObjectionable(content)) {
+      show({ variant: "error", title: "Message not sent", message: OBJECTIONABLE_MESSAGE });
+      return;
+    }
     setInput("");
     setSending(true);
     try {
@@ -1639,6 +1677,18 @@ export default function ChatScreen({
     loadOlder,
     setOfferFor,
     setOfferDiscountVisible,
+    // Not in the embedded sheet: a report sheet stacked on a chat sheet has
+    // nowhere sensible to sit. The full chat screen is one tap away.
+    openMessageActions: embedInSheet
+      ? undefined
+      : (m: ChatMessage) =>
+          setActionsTarget({
+            type: "chat_message",
+            id: String(m.id),
+            title: m.content?.trim() ? m.content.trim().slice(0, 60) : "This message",
+            authorId: m.sender_id != null ? String(m.sender_id) : otherUserId,
+            authorName: otherUser?.username,
+          }),
   };
 
   const rowContext = React.useMemo<RowContext>(
@@ -2077,12 +2127,38 @@ export default function ChatScreen({
         >
           {otherUser?.username ?? "Chat"}
         </Text>
+        {/* Report and block (App Store Guideline 1.2). */}
+        {otherUserId ? (
+          <TouchableOpacity
+            onPress={() =>
+              setActionsTarget({
+                type: "user",
+                id: otherUserId,
+                title: otherUser?.username ?? "This person",
+                authorId: otherUserId,
+                authorName: otherUser?.username,
+              })
+            }
+            className="p-1 ml-2"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="More options"
+          >
+            <MoreHorizontal size={22} color={textColor} />
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       {messageList}
       {typingIndicator}
       <View style={{ paddingBottom: androidKeyboardLift }}>{inputBar}</View>
       {overlays}
+      <ContentActionsSheet
+        target={actionsTarget}
+        onClose={() => setActionsTarget(null)}
+        // A blocked person can no longer message you; the thread is done.
+        onBlocked={() => (onClose ? onClose() : router.back())}
+      />
     </KeyboardAvoidingView>
   );
 }

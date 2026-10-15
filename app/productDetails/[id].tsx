@@ -5,7 +5,8 @@ import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useBackTo } from "../../utils/goBack";
 import { getProductById, trackProductView } from "../../services/sections/product";
 import { ProductDetail } from "../../models/products";
-import { ArrowLeft, ShoppingBag, ArrowBigDown, MessageCircle, ShoppingCart, MapPin } from "lucide-react-native";
+import { ArrowLeft, ShoppingBag, ArrowBigDown, MessageCircle, ShoppingCart, MapPin, MoreHorizontal } from "lucide-react-native";
+import ContentActionsSheet, { type ContentActionsTarget } from "../../components/ContentActionsSheet";
 import { addToCart } from "../../services/sections/cart";
 import { useShopServiceable } from "../../hooks/useShopServiceable";
 import { getRecommendedProducts } from "../../services/sections/feed";
@@ -27,6 +28,7 @@ import { runMessageSellerFlow } from "../../utils/messageSellerFlow";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import { promptSignUp } from "../../utils/authNavigation";
 import { MediaViewerModal } from "../../components/postMedia";
+import { maskObjectionable } from "../../utils/contentFilter";
 
 export default function ProductDetails() {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -200,6 +202,9 @@ const addProductToCart = async (product:ProductDetail)=>{
     return () => clearTimeout(t);
   }, [id]);
 
+  // Declared before the early return so the hook order never changes.
+  const [actionsTarget, setActionsTarget] = useState<ContentActionsTarget | null>(null);
+
   if (!product) return <ActivityIndicator size="large" />;
 
   const sellerUserId = product.seller_user?.id ?? (product as any).seller?.user?.id;
@@ -282,9 +287,32 @@ const addProductToCart = async (product:ProductDetail)=>{
           <TouchableOpacity onPress={() => goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <ArrowLeft color={t.textPrimary} size={24} />
           </TouchableOpacity>
-          {role == "buyer" && <TouchableOpacity className="p-2" onPress={()=> router.navigate("/cart")}>
-            <ShoppingBag color={t.textPrimary} size={24} />
-          </TouchableOpacity>}
+          <View className="flex-row items-center">
+            {/* `role` defaults to buyer when signed out; a guest has no cart. */}
+            {!!user && role == "buyer" && <TouchableOpacity className="p-2" onPress={()=> router.navigate("/cart")}>
+              <ShoppingBag color={t.textPrimary} size={24} />
+            </TouchableOpacity>}
+            {/* Report and block (App Store Guideline 1.2). */}
+            {!isOwnProduct && (
+              <TouchableOpacity
+                className="p-2"
+                onPress={() =>
+                  setActionsTarget({
+                    type: "product",
+                    id: product.id,
+                    title: product.name,
+                    authorId: sellerUserId ? String(sellerUserId) : undefined,
+                    authorName: product.seller?.shop_name ?? product.seller_user?.username,
+                  })
+                }
+                accessibilityRole="button"
+                accessibilityLabel="More options"
+                hitSlop={8}
+              >
+                <MoreHorizontal color={t.textPrimary} size={24} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Image Carousel */}
@@ -394,7 +422,7 @@ const addProductToCart = async (product:ProductDetail)=>{
 
         {/* Product Info */}
         <View className="px-6">
-          <Text className="text-2xl font-bold text-text-primary">{product.name}</Text>
+          <Text className="text-2xl font-bold text-text-primary">{maskObjectionable(product.name)}</Text>
           <Text className="text-base mt-1 text-text-secondary">sold by {product.seller.shop_name}</Text>
           {/* Where the shop actually is. A buyer deciding whether to order
               from somewhere two streets away should not have to guess, and it
@@ -461,7 +489,7 @@ const addProductToCart = async (product:ProductDetail)=>{
             </Pressable>
             {openDetails.details && (
               <Text className="text-sm pb-5 leading-6 text-text-secondary">
-                {product.description}
+                {maskObjectionable(product.description)}
               </Text>
             )}
           </View>
@@ -621,6 +649,12 @@ const addProductToCart = async (product:ProductDetail)=>{
     {/* The way back to the basket from a screen with no tab bar, and the
         acknowledgement that the thing you just added went somewhere. */}
     <CartFab />
+    <ContentActionsSheet
+      target={actionsTarget}
+      onClose={() => setActionsTarget(null)}
+      // Nothing of theirs should still be on screen after blocking them.
+      onBlocked={() => goBack()}
+    />
   </SafeAreaView>
 );
 

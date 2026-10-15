@@ -40,6 +40,7 @@ import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import { saveItem, unsaveItem } from "../../services/sections/saved";
 import { afterFeedLoads } from "../../utils/startupGate";
+import { useModerationFilter } from "../../hooks/useModerationFilter";
 
 // Early launch: only the main feed is live. Discover/Trending/Following are
 // hidden until their backend pipelines are ready — restore entries here to bring
@@ -117,7 +118,7 @@ export default function FeedScreen() {
   const [actionsTarget, setActionsTarget] = useState<ContentActionsTarget | null>(null);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [savedOverrides, setSavedOverrides] = useState<Record<string, boolean>>({});
-  const [hiddenAuthorIds, setHiddenAuthorIds] = useState<Set<string>>(new Set());
+  const moderation = useModerationFilter();
 
   const openPostActions = useCallback((post: FeedPost) => {
     setActionsTarget({
@@ -181,11 +182,9 @@ export default function FeedScreen() {
     }
   }, [savedIds, savedOverrides, show]);
 
-  // The server filters blocked authors out of the next feed response; this
-  // removes them from what's already on screen so the block reads as instant.
-  const handleBlocked = useCallback((userId: string) => {
-    setHiddenAuthorIds((prev) => new Set(prev).add(userId));
-  }, []);
+  // The server filters blocked authors out of the next feed response; the
+  // shared moderation filter removes them from what's already on screen, from
+  // wherever the block happened, so it reads as instant.
 
   // Shop strip collapse on scroll: hide after a sustained scroll down, show only
   // after a sustained scroll back up. Distance is accumulated per-direction so a
@@ -468,14 +467,14 @@ export default function FeedScreen() {
   }, [loadMore]);
 
   const visibleItems = useMemo(() => {
-    if (hiddenAuthorIds.size === 0) return items;
     return items.filter((item) => {
-      const authorId = isFeedPost(item)
-        ? item.user?.id
-        : item.seller?.user?.id;
-      return !authorId || !hiddenAuthorIds.has(authorId);
+      const post = isFeedPost(item);
+      const authorId = post ? item.user?.id : item.seller?.user?.id;
+      if (moderation.isBlocked(authorId)) return false;
+      return !moderation.isReported(post ? "post" : "product", item.id);
     });
-  }, [items, hiddenAuthorIds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, moderation.version]);
 
   const renderItem = useCallback(
     ({ item }: { item: FeedItem }) => {
@@ -664,7 +663,6 @@ export default function FeedScreen() {
         )}
         onClose={() => setActionsTarget(null)}
         onSavedChange={handleSavedChange}
-        onBlocked={handleBlocked}
       />
 
       {/* FAB — bottom right, opens create menu */}
