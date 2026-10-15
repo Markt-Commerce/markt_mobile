@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowRight } from "lucide-react-native";
 import SocialAuthButtons from "../components/auth/SocialAuthButtons";
+import TermsNotice from "../components/auth/TermsNotice";
 import { useSocialAuth, useAppleAuthAvailable } from "../hooks/useSocialAuth";
 import { useTokens } from "../theme/useTokens";
 import { useUser } from "../hooks/userContextProvider";
@@ -125,6 +126,8 @@ export default function Welcome() {
               Continue with email
             </Text>
           </Pressable>
+
+          <TermsNotice className="mt-3" />
 
           {/* Value before friction: the catalogue is public, so this is a real
               door, not a preview. */}

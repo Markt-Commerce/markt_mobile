@@ -30,6 +30,7 @@ import { useTokens } from "../../theme/useTokens";
 import { useAndroidKeyboardPadding } from "../../hooks/useKeyboardOverlap";
 import * as haptics from "../../utils/haptics";
 import BackButton from "../../components/BackButton";
+import TermsNotice from "../../components/auth/TermsNotice";
 
 // --- Validation schema ---
 // No "confirm password". The field exists to catch a typo you cannot see —
@@ -251,6 +252,8 @@ export default function SignupScreen() {
                 loading={submitting}
                 variant="primary"
               />
+
+              <TermsNotice className="mt-3" />
 
               {/* Alt nav */}
               <TouchableOpacity 

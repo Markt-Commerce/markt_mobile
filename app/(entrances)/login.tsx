@@ -26,6 +26,7 @@ import { useTokens } from "../../theme/useTokens";
 import { useAndroidKeyboardPadding } from "../../hooks/useKeyboardOverlap";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import BackButton from "../../components/BackButton";
+import TermsNotice from "../../components/auth/TermsNotice";
 
 const schema = z.object({
   email: z.string().min(1, "Email is required"),
@@ -232,6 +233,8 @@ export default function LoginScreen() {
                 text="Sign in"
                 variant="conversion"
               />
+
+              <TermsNotice className="mt-3" />
 
               {/* Sign up */}
               <View className="mt-8 items-center">
