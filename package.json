@@ -12,7 +12,9 @@
     "theme:lint": "node theme/check-no-literals.mjs",
     "theme:css": "node theme/generate-css.mjs",
     "check": "npm run typecheck && npm run theme:contrast && npm run theme:lint && npm run theme:runtime",
-    "theme:runtime": "node theme/verify-runtime-vars.mjs"
+    "theme:runtime": "node theme/verify-runtime-vars.mjs",
+    "release:bump": "node scripts/release.mjs bump",
+    "release:announce": "node scripts/release.mjs announce"
   },
   "private": true,
   "dependencies": {

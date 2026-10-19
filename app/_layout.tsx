@@ -18,6 +18,7 @@ import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import PaymentDeepLinkHandler from "../components/PaymentDeepLinkHandler";
 import NotificationsBootstrap from "../components/NotificationsBootstrap";
+import UpdateGate from "../components/UpdateGate";
 import { navigateToOnboardingStep } from "../utils/authNavigation";
 import { GamificationProvider } from "../hooks/gamificationContext";
 import { CelebrationProvider } from "../hooks/useCelebration";
@@ -62,6 +63,9 @@ export default function RootLayout() {
                   </CartProvider>
                 </NotificationsProvider>
               </UserProvider>
+              {/* Outside UserProvider: an unsupported build is blocked whether
+                  or not anyone is signed in. */}
+              <UpdateGate />
             </GestureHandlerRootView>
           </ToastProvider>
         </ThemeProvider>
