@@ -1,0 +1,9 @@
+# iOS has no hardware back, and the app's back arrows carry no accessibility
+# label -- use the native edge swipe, which also reads naturally on camera.
+appId: com.marktcommerce.markt
+---
+- swipe:
+    start: 1%, 50%
+    end: 85%, 50%
+    duration: 400
+- waitForAnimationToEnd

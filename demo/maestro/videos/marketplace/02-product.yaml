@@ -1,0 +1,15 @@
+# Beat 2 -- "Real shops. Real prices." Open Ada's shirt from the top of the feed.
+appId: com.marktcommerce.markt
+---
+- tapOn:
+    text: "View adasankara's profile.*New Ankara drop.*"
+    point: "40%, 86%"
+- extendedWaitUntil:
+    visible: "Message Seller"
+    timeout: 15000
+- waitForAnimationToEnd
+- swipe:
+    start: 50%, 70%
+    end: 50%, 55%
+    duration: 1200
+- waitForAnimationToEnd

@@ -1,0 +1,6 @@
+appId: com.marktcommerce.markt
+---
+- runFlow:
+    file: ../../shared/login.yaml
+    env:
+      EMAIL: adaeze.okafor@example.com

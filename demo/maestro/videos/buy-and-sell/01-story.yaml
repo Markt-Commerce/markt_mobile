@@ -1,0 +1,35 @@
+# Buy & sell: Ada shops as a buyer, switches to her shop in a tap, and
+# accepts the order that just came in. One take; the edit cuts it.
+appId: com.marktcommerce.markt
+---
+- waitForAnimationToEnd
+- tapOn: "Open menu"
+- waitForAnimationToEnd
+- tapOn: "Switch to Seller"
+- extendedWaitUntil:
+    visible: ".*Seller mode.*"
+    timeout: 10000
+    optional: true
+- extendedWaitUntil:
+    notVisible: ".*Seller mode.*"
+    timeout: 10000
+    optional: true
+- tapOn:
+    text: "Orders.*"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Pending fulfilment requests"
+    timeout: 15000
+- waitForAnimationToEnd
+- tapOn: "Pending fulfilment requests"
+- extendedWaitUntil:
+    visible: "Accept"
+    timeout: 15000
+- waitForAnimationToEnd
+- tapOn: "Accept"
+- extendedWaitUntil:
+    visible: "Start preparing"
+    timeout: 15000
+- waitForAnimationToEnd
+- tapOn: "Start preparing"
+- waitForAnimationToEnd

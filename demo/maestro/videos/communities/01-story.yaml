@@ -1,0 +1,34 @@
+# Communities: find a community, join it, and its posts come with you.
+# One take (joining changes state); the edit cuts it into beats.
+appId: com.marktcommerce.markt
+---
+- waitForAnimationToEnd
+- tapOn: "Explore communities"
+- extendedWaitUntil:
+    visible: "Search communities"
+    timeout: 15000
+- tapOn: "Explore"
+- extendedWaitUntil:
+    visible: "UI Campus Style, .*members"
+    timeout: 15000
+- waitForAnimationToEnd
+- tapOn: "UI Campus Style, .*members"
+- extendedWaitUntil:
+    visible: "Join this community"
+    timeout: 15000
+- waitForAnimationToEnd
+- tapOn: "Join this community"
+- waitForAnimationToEnd
+- swipe:
+    start: 50%, 75%
+    end: 50%, 40%
+    duration: 1400
+- waitForAnimationToEnd
+- runFlow: ../../shared/go-back.yaml
+- runFlow: ../../shared/go-back.yaml
+- extendedWaitUntil:
+    visible: "UI Campus Style"
+    timeout: 15000
+- waitForAnimationToEnd
+- tapOn: "UI Campus Style"
+- waitForAnimationToEnd

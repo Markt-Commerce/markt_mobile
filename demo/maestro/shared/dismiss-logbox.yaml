@@ -1,0 +1,12 @@
+# Dev builds only: LogBox (the red/yellow console-error sheet) can sit on top of
+# the screen -- on the simulator "background tasks restricted" is always logged.
+# Opens the toast if collapsed, then dismisses entries until none remain.
+# A no-op on Release builds, which have no LogBox.
+appId: com.marktcommerce.markt
+---
+- repeat:
+    while:
+      visible: "Console Error"
+    times: 5
+    commands:
+      - tapOn: "Dismiss"

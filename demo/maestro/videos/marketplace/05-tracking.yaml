@@ -1,0 +1,16 @@
+# Beat 5 -- "Track it to your door." The showcase order, rider on the way.
+appId: com.marktcommerce.markt
+---
+- tapOn: ".*Power Bank.*"
+- extendedWaitUntil:
+    visible: "Order #.*"
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      text: "Track this order"
+    direction: DOWN
+- tapOn: "Track this order"
+- extendedWaitUntil:
+    visible: "Kunle Adebayo"
+    timeout: 15000
+- waitForAnimationToEnd
