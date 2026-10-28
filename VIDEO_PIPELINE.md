@@ -127,7 +127,9 @@ shared run needs neighbours who haven't travelled yet), and
 `02-settled.pre.sh` closes and settles the run so the refund exists.
 
 Raw takes: `demo/recordings/raw/<video>/`. Trimmed clips used by the video:
-`video/public/clips/<video>/`. Run a flow by hand with
+`video/public/clips/<video>/`. Neither is committed (they are large and
+regenerable): record them here, or copy them from the team's Google Drive,
+where the finished videos are kept too. Run a flow by hand with
 `cd demo/maestro/videos/<video> && maestro test <beat>.yaml`.
 `demo/maestro/smoke.yaml` checks that every marketplace screen loads.
 

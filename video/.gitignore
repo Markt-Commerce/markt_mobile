@@ -1,2 +1,5 @@
 node_modules/
 out/
+# Recorded clips: produced by demo/record.sh (and big). Not committed --
+# re-record, or get them from the team drive.
+public/clips/
