@@ -1,0 +1,10 @@
+# Beat 1 -- "Shops near you. One feed." Home at the top: University of Ibadan
+# in the header, the shop strip, then one slow scroll onto Ada's post.
+appId: com.marktcommerce.markt
+---
+- waitForAnimationToEnd
+- swipe:
+    start: 50%, 72%
+    end: 50%, 52%
+    duration: 1400
+- waitForAnimationToEnd

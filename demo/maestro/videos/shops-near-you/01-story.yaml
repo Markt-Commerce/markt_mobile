@@ -1,0 +1,42 @@
+# Shops near you: every shop around you, by distance; change the area and
+# the list follows; open a shop. One take; the edit cuts it into beats.
+appId: com.marktcommerce.markt
+---
+- waitForAnimationToEnd
+- tapOn: "Discover more shops"
+- extendedWaitUntil:
+    visible: "Tobi Gadgets, verified.*"
+    timeout: 15000
+- waitForAnimationToEnd
+- swipe:
+    start: 50%, 78%
+    end: 50%, 38%
+    duration: 1800
+- waitForAnimationToEnd
+- swipe:
+    start: 50%, 38%
+    end: 50%, 78%
+    duration: 900
+- waitForAnimationToEnd
+- tapOn: "Browsing near.*"
+- extendedWaitUntil:
+    visible: "Bodija, Ibadan"
+    timeout: 10000
+- tapOn: "Bodija, Ibadan"
+- extendedWaitUntil:
+    visible: "Browsing near Bodija.*"
+    timeout: 10000
+- extendedWaitUntil:
+    visible: "Ada.s Ankara House, verified.*"
+    timeout: 10000
+- waitForAnimationToEnd
+- tapOn: "Ada.s Ankara House, verified.*"
+- extendedWaitUntil:
+    visible: "Verified seller"
+    timeout: 15000
+- waitForAnimationToEnd
+- swipe:
+    start: 50%, 78%
+    end: 50%, 35%
+    duration: 1400
+- waitForAnimationToEnd

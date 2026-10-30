@@ -1,0 +1,3 @@
+appId: com.marktcommerce.markt
+---
+- runFlow: ../../shared/login.yaml

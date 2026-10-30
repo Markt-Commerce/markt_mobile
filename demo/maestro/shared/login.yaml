@@ -1,0 +1,57 @@
+# Fresh install state -> signed in on the home feed.
+# EMAIL defaults to the demo buyer; pass `env: {EMAIL: ...}` to sign in as
+# someone else (all demo accounts share the password).
+appId: com.marktcommerce.markt
+---
+- launchApp:
+    clearState: true
+    permissions:
+      all: deny
+- runFlow:
+    when:
+      true: ${DEV_CLIENT == "1"}
+    commands:
+      - openLink: com.marktcommerce.markt://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+- extendedWaitUntil:
+    visible: "Continue with email"
+    timeout: 60000
+# Dev builds only: the simulator's "background tasks restricted" console error
+# opens a LogBox toast over the screen. Release builds have no LogBox.
+- runFlow: dismiss-logbox.yaml
+- tapOn: "Sign in"
+- runFlow: dismiss-logbox.yaml
+- tapOn:
+    text: "Sign in"
+    optional: true
+- extendedWaitUntil:
+    visible: "Enter your email"
+    timeout: 15000
+- tapOn: "Enter your email"
+- inputText: '${typeof EMAIL !== "undefined" ? EMAIL : "temi@example.com"}'
+- tapOn: "Enter your password"
+- inputText: "MarktDemo#2026"
+- hideKeyboard
+- tapOn: "Sign in"
+# The browse location is fetched once at app start and, in some launches, not
+# again after sign-in, so the seeded "University of Ibadan" can lag a launch.
+# If the header still says "Set your location", relaunch once (session kept).
+- extendedWaitUntil:
+    visible: "Home, tab.*"
+    timeout: 30000
+- runFlow:
+    when:
+      notVisible: "Browsing near.*"
+    commands:
+      - launchApp:
+          stopApp: true
+      - runFlow:
+          when:
+            true: ${DEV_CLIENT == "1"}
+          commands:
+            - openLink: com.marktcommerce.markt://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+            - runFlow: dismiss-logbox.yaml
+- tapOn: "Home, tab.*"
+- extendedWaitUntil:
+    visible: "Browsing near.*"
+    timeout: 30000
+- waitForAnimationToEnd

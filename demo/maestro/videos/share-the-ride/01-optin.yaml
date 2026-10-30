@@ -1,0 +1,54 @@
+# Share the ride, take 1: Ofada rice from Mama Bisi, "Share this delivery"
+# on, pay. Two neighbours' shared orders are already heading the same way
+# (seed_demo_stories.ensure_batch_neighbours).
+appId: com.marktcommerce.markt
+---
+- waitForAnimationToEnd
+- tapOn: "View Mama Bisi Foodstuff"
+- extendedWaitUntil:
+    visible: "Verified seller"
+    timeout: 15000
+- swipe:
+    start: 50%, 80%
+    end: 50%, 30%
+    duration: 900
+- waitForAnimationToEnd
+- tapOn: ".*Ofada Rice, 5kg, Add Ofada.*"
+- extendedWaitUntil:
+    visible: "Add to Cart"
+    timeout: 15000
+- tapOn: "Add to Cart"
+- extendedWaitUntil:
+    notVisible: ".*added to cart.*"
+    timeout: 10000
+    optional: true
+# The header cart icon (unlabelled, fixed position).
+- tapOn:
+    point: "82%, 10%"
+- tapOn: "Change delivery address"
+- tapOn: "Hostel, Room B12.*"
+- extendedWaitUntil:
+    visible: "Share this delivery.*"
+    timeout: 15000
+- waitForAnimationToEnd
+- tapOn: "Share this delivery.*"
+- waitForAnimationToEnd
+- tapOn: "Checkout"
+- extendedWaitUntil:
+    visible: "Markt wallet.*"
+    timeout: 15000
+- tapOn: "Markt wallet.*"
+- tapOn: "Proceed"
+- extendedWaitUntil:
+    visible: "Payment successful"
+    timeout: 20000
+- waitForAnimationToEnd
+- tapOn: "View order"
+- extendedWaitUntil:
+    visible: "Order #.*"
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      text: ".*Shared delivery.*"
+    direction: DOWN
+- waitForAnimationToEnd

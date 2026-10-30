@@ -1,0 +1,10 @@
+appId: com.marktcommerce.markt
+---
+- runFlow: ../../shared/login.yaml
+- tapOn:
+    text: "Orders.*"
+    retryTapIfNoChange: true
+- tapOn: "Ongoing"
+- extendedWaitUntil:
+    visible: ".*Ofada Rice.*"
+    timeout: 15000
