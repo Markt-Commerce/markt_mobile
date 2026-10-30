@@ -13,6 +13,8 @@ import { Field, OptionPicker, SpecificationEditor, parseOptionalNumber, rowsToSp
 import { useBusiness } from "../../hooks/businessContext";
 import { useUser } from "../../hooks/userContextProvider";
 import { createBuyerRequest } from "../../services/sections/request";
+import { attemptMultipleUpload } from "../../services/sections/media";
+import InstagramGrid, { type PickedImage } from "../../components/imagePicker";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 
 /** DD/MM/YYYY (how people here write dates) → YYYY-MM-DD, or null. */
@@ -42,6 +44,7 @@ export default function NewProcurementScreen() {
   const [location, setLocation] = useState([business?.city, business?.state].filter(Boolean).join(", "));
   const [neededBy, setNeededBy] = useState("");
   const [budget, setBudget] = useState("");
+  const [photos, setPhotos] = useState<PickedImage[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,6 +61,9 @@ export default function NewProcurementScreen() {
 
     setSaving(true);
     try {
+      // Same path as the consumer request sheet: upload first, link by id.
+      const uploaded = photos.length ? await attemptMultipleUpload(photos) : [];
+      const mediaIds = uploaded.map((u) => u.media.id);
       const created = await createBuyerRequest({
         title: title.trim(),
         description: description.trim(),
@@ -67,6 +73,7 @@ export default function NewProcurementScreen() {
         specifications: rowsToSpecs(specs),
         delivery_location: location.trim() || null,
         required_delivery_date: date,
+        ...(mediaIds.length ? { media_ids: mediaIds } : {}),
       });
       router.replace(`/requestDetails/${created.id}`);
     } catch (e) {
@@ -105,6 +112,10 @@ export default function NewProcurementScreen() {
               <Field label="Quantity" value={quantity} onChangeText={setQuantity} keyboardType="decimal-pad" />
               <OptionPicker label="Unit" options={config.units} selected={unit} onToggle={(k) => setUnit((cur) => (cur[0] === k ? [] : [k]))} />
               <SpecificationEditor rows={specs} onChange={setSpecs} />
+              <Text className="mb-2 text-[13px] font-semibold text-text-secondary">Reference photos (optional)</Text>
+              <View className="mb-4">
+                <InstagramGrid value={photos} max={5} onChange={setPhotos} emptyPlaceholdersCount={3} emptyLabel="A sample, a label, the part you mean" />
+              </View>
               <Field label="Delivery location" value={location} onChangeText={setLocation} maxLength={255} />
               <Field label="Needed by (optional)" value={neededBy} onChangeText={setNeededBy} placeholder="DD/MM/YYYY" keyboardType="numbers-and-punctuation" />
               <Field label="Budget in ₦ (optional)" value={budget} onChangeText={setBudget} keyboardType="decimal-pad" hint="Leave blank to let suppliers quote." />

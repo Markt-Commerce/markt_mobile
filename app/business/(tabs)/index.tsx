@@ -89,7 +89,8 @@ export default function BusinessDashboard() {
             .then((r) => setIncoming(r.items.filter((x) => String(x.user_id) !== String(userId))))
             .catch(() => {})
         : null,
-      buys ? getBuyerOrders(1, 5).then(setOrders).catch(() => {}) : null,
+      // Business orders only: everyday shopping stays on the consumer side.
+      buys ? getBuyerOrders(1, 20, { isBusiness: true }).then(setOrders).catch(() => {}) : null,
     ]);
   }, [user?.id, sells, buys, procurementOn]);
 
@@ -174,7 +175,7 @@ export default function BusinessDashboard() {
         {sells && procurementOn ? (
           <Stat label="Incoming requests" value={String(incoming.length)} hint="Open requests from businesses" onPress={() => router.push("/business/procurement?tab=open")} />
         ) : null}
-        {buys ? <Stat label="Active orders" value={String(activeOrders)} onPress={() => router.push("/business/orders")} /> : null}
+        {buys ? <Stat label="Active business orders" value={String(activeOrders)} onPress={() => router.push("/business/orders")} /> : null}
       </View>
 
       <SectionTitle title="Quick actions" />

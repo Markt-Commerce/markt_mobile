@@ -8,6 +8,8 @@
  */
 
 import { request, BASE_URL } from "../api";
+import { appendLocalFile } from "../../utils/formDataFile";
+import { prepareImageForUpload } from "../../utils/imagePrep";
 import type {
   BusinessConfig,
   BusinessListing,
@@ -123,4 +125,49 @@ export async function listSubscriptionPlans(): Promise<SubscriptionPlan[]> {
 
 export async function getMySubscription(): Promise<MySubscription> {
   return request<MySubscription>(`${BASE_URL}/business/subscriptions/me`, { method: "GET" });
+}
+
+// --- Plan checkout (only while subscriptions are on) -------------------------
+
+export interface SubscriptionCheckout {
+  subscription_id: number;
+  status: string;
+  /** Paystack's hosted payment page; null for a free plan (already active). */
+  authorization_url: string | null;
+  reference: string;
+}
+
+export async function startSubscriptionCheckout(planId: number): Promise<SubscriptionCheckout> {
+  return request<SubscriptionCheckout>(`${BASE_URL}/business/subscriptions/checkout`, {
+    method: "POST",
+    body: JSON.stringify({ plan_id: planId, platform: "mobile" }),
+  });
+}
+
+/** Confirm a plan payment with Paystack, server-side. The client never decides money moved. */
+export async function verifySubscription(
+  subscriptionId: number
+): Promise<{ subscription_id: number; status: string; verified: boolean }> {
+  return request(`${BASE_URL}/business/subscriptions/${subscriptionId}/verify`, { method: "POST" });
+}
+
+// --- Logo and cover ------------------------------------------------------------
+// Uploaded files only (multipart field "file"), never URLs.
+
+export type BusinessImageKind = "logo" | "cover";
+
+export async function uploadBusinessImage(kind: BusinessImageKind, uri: string): Promise<MyBusiness> {
+  const prepared = await prepareImageForUpload({ uri });
+  const formData = new FormData();
+  appendLocalFile(formData, "file", prepared.uri);
+  return request<MyBusiness>(`${BASE_URL}/business/me/${kind}`, { method: "POST", body: formData });
+}
+
+export async function removeBusinessImage(kind: BusinessImageKind): Promise<MyBusiness> {
+  return request<MyBusiness>(`${BASE_URL}/business/me/${kind}`, { method: "DELETE" });
+}
+
+/** Ask the Markt team to verify the business (only while verification is on). */
+export async function requestBusinessVerification(): Promise<MyBusiness> {
+  return request<MyBusiness>(`${BASE_URL}/business/me/verification`, { method: "POST" });
 }

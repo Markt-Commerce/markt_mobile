@@ -4,10 +4,10 @@
  * to everyday Markt.
  */
 import React, { useCallback, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Image, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
-import { ArrowRightLeft, Building2, Crown, Package, PowerOff, Settings, ShoppingBag, Store } from "lucide-react-native";
+import { ArrowRightLeft, BadgeCheck, Building2, Crown, ImagePlus, Package, PowerOff, Settings, ShoppingBag, Store, Trash2 } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
 import { SettingsSection as Section, SettingsRow as Row } from "../../components/SettingsList";
 import { Badge, VerificationBadge } from "../../components/business/ui";
@@ -16,7 +16,15 @@ import { useUser } from "../../hooks/userContextProvider";
 import { useToast } from "../../components/ToastProvider";
 import { useTokens } from "../../theme/useTokens";
 import { confirmDestructive } from "../../utils/confirm";
-import { disableBusiness, getMySubscription } from "../../services/sections/business";
+import {
+  disableBusiness,
+  getMySubscription,
+  removeBusinessImage,
+  requestBusinessVerification,
+  uploadBusinessImage,
+  type BusinessImageKind,
+} from "../../services/sections/business";
+import { pickImage } from "../../services/imageSelection";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import type { MySubscription } from "../../models/business";
 
@@ -39,6 +47,54 @@ export default function BusinessAccountScreen() {
   const business = myBusiness?.profile;
   const isBuyer = !!profile?.is_buyer;
   const isSeller = !!profile?.is_seller;
+
+  const status = business?.verification_status;
+  const canRequestVerification =
+    config.features.verification_enabled && (status === "UNVERIFIED" || status === "REJECTED");
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const changeImage = async (kind: BusinessImageKind) => {
+    const uri = await pickImage();
+    if (!uri) return;
+    setBusy(kind);
+    try {
+      await uploadBusinessImage(kind, uri);
+      await refreshMyBusiness();
+      show({ variant: "success", title: kind === "logo" ? "Logo updated" : "Cover updated" });
+    } catch (e) {
+      show({ variant: "error", title: "Couldn't upload the image", message: friendlyErrorMessage(e) });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const removeImage = (kind: BusinessImageKind) =>
+    confirmDestructive({
+      title: kind === "logo" ? "Remove logo?" : "Remove cover image?",
+      message: "You can upload a new one any time.",
+      confirmLabel: "Remove",
+      onConfirm: async () => {
+        try {
+          await removeBusinessImage(kind);
+          await refreshMyBusiness();
+        } catch (e) {
+          show({ variant: "error", title: "Couldn't remove it", message: friendlyErrorMessage(e) });
+        }
+      },
+    });
+
+  const askForVerification = async () => {
+    setBusy("verify");
+    try {
+      await requestBusinessVerification();
+      await refreshMyBusiness();
+      show({ variant: "success", title: "Request sent", message: "The Markt team will review your business." });
+    } catch (e) {
+      show({ variant: "error", title: "Couldn't send the request", message: friendlyErrorMessage(e) });
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const switchToMarkt = async () => {
     await setMode("consumer");
@@ -67,9 +123,13 @@ export default function BusinessAccountScreen() {
       <ScreenHeader title="Business account" fallback="/business" />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         <View className="items-center px-6 pt-6 pb-6 bg-surface-raised">
-          <View className="w-16 h-16 rounded-2xl items-center justify-center bg-primary-muted">
-            <Building2 size={28} strokeWidth={2} color={t.primaryText} />
-          </View>
+          {business?.logo_url ? (
+            <Image source={{ uri: business.logo_url }} className="w-16 h-16 rounded-2xl bg-surface-sunken" />
+          ) : (
+            <View className="w-16 h-16 rounded-2xl items-center justify-center bg-primary-muted">
+              <Building2 size={28} strokeWidth={2} color={t.primaryText} />
+            </View>
+          )}
           <Text className="mt-3 text-[22px] font-bold tracking-tight text-text-primary text-center" numberOfLines={2}>
             {business?.name ?? "Your business"}
           </Text>
@@ -115,13 +175,44 @@ export default function BusinessAccountScreen() {
           <Row icon={Settings} title="Account settings" onPress={() => router.push("/(settings)/settingsProfileScreen")} last />
         </Section>
 
+        <Section title="Logo and cover">
+          <Row
+            icon={ImagePlus}
+            title={business?.logo_url ? "Change logo" : "Add a logo"}
+            value={busy === "logo" ? "Uploading…" : undefined}
+            onPress={() => busy === null && changeImage("logo")}
+          />
+          {business?.logo_url ? <Row icon={Trash2} title="Remove logo" destructive onPress={() => removeImage("logo")} /> : null}
+          <Row
+            icon={ImagePlus}
+            title={business?.cover_image_url ? "Change cover image" : "Add a cover image"}
+            value={busy === "cover" ? "Uploading…" : undefined}
+            onPress={() => busy === null && changeImage("cover")}
+            last={!business?.cover_image_url}
+          />
+          {business?.cover_image_url ? (
+            <Row icon={Trash2} title="Remove cover image" destructive onPress={() => removeImage("cover")} last />
+          ) : null}
+        </Section>
+
         <Section title="Verification">
           <View className="px-4 py-4">
             <Text className="text-[13px] leading-5 text-text-secondary">
-              Verification is a review by the Markt team and is separate from registration. To ask about it, contact
-              support from Help & Policies.
+              Verification is a review by the Markt team and is separate from registration.
+              {status === "PENDING" ? " Your request is with the team." : ""}
+              {status === "REJECTED" ? " Your last request wasn't approved — update your details and ask again." : ""}
             </Text>
           </View>
+          {/* Only while the backend has the review queue open. */}
+          {canRequestVerification ? (
+            <Row
+              icon={BadgeCheck}
+              title="Request verification"
+              value={busy === "verify" ? "Sending…" : undefined}
+              onPress={() => busy === null && askForVerification()}
+              last
+            />
+          ) : null}
         </Section>
 
         <Section title="Mode">

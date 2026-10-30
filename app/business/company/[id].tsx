@@ -3,7 +3,7 @@
  * the products they list for businesses.
  */
 import React, { useEffect, useRef, useState } from "react";
-import { Linking, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Image, Linking, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import BottomSheet from "@gorhom/bottom-sheet";
@@ -69,11 +69,18 @@ export default function BusinessCompanyScreen() {
     <SafeAreaView className="flex-1 bg-surface-page" edges={["top"]}>
       <ScreenHeader title="Business" fallback="/business/discover" />
       <ScrollView contentContainerStyle={{ paddingBottom: isMe ? 32 : 120 }}>
+        {business.cover_image_url ? (
+          <Image source={{ uri: business.cover_image_url }} className="w-full h-36 bg-surface-sunken" resizeMode="cover" />
+        ) : null}
         <View className="px-4 pt-5 pb-5 bg-surface-raised">
           <View className="flex-row items-center gap-3">
-            <View className="w-14 h-14 rounded-2xl items-center justify-center bg-primary-muted">
-              <Building2 size={26} color={t.primaryText} strokeWidth={2} />
-            </View>
+            {business.logo_url ? (
+              <Image source={{ uri: business.logo_url }} className="w-14 h-14 rounded-2xl bg-surface-sunken" />
+            ) : (
+              <View className="w-14 h-14 rounded-2xl items-center justify-center bg-primary-muted">
+                <Building2 size={26} color={t.primaryText} strokeWidth={2} />
+              </View>
+            )}
             <View className="flex-1">
               <Text className="text-[22px] font-bold tracking-tight text-text-primary">{business.name}</Text>
               <Text className="text-[13px] text-text-secondary" numberOfLines={2}>

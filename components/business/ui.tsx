@@ -250,7 +250,10 @@ export function SpecificationEditor({
             placeholder="e.g. Moisture"
             placeholderTextColor={t.textMuted}
             accessibilityLabel={`Specification ${i + 1} name`}
-            className="flex-1 h-12 rounded-xl px-3 text-[15px] text-text-primary bg-surface-sunken"
+            // minWidth 0: a text input has a built-in minimum width on web and
+            // won't shrink into a row without it.
+            style={{ flex: 1, minWidth: 0 }}
+            className="h-12 rounded-xl px-3 text-[15px] text-text-primary bg-surface-sunken"
           />
           <TextInput
             value={row.value}
@@ -258,7 +261,8 @@ export function SpecificationEditor({
             placeholder="e.g. 12% max"
             placeholderTextColor={t.textMuted}
             accessibilityLabel={`Specification ${i + 1} value`}
-            className="flex-[1.4] h-12 rounded-xl px-3 text-[15px] text-text-primary bg-surface-sunken"
+            style={{ flex: 1.4, minWidth: 0 }}
+            className="h-12 rounded-xl px-3 text-[15px] text-text-primary bg-surface-sunken"
           />
         </View>
       ))}
