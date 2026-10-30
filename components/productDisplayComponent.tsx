@@ -7,6 +7,7 @@ import { useTokens } from "../theme/useTokens";
 import { formatPrice } from "../utils/money";
 import { discountPercent } from "./Price";
 import { useUser } from "../hooks/userContextProvider";
+import { maskObjectionable } from "../utils/contentFilter";
 
 type Props = {
   products: Product[];
@@ -77,7 +78,7 @@ const ProductDisplayComponent: React.FC<Props> = ({
                       className="text-sm font-semibold text-text-primary"
                       numberOfLines={1}
                     >
-                      {product.name}
+                      {maskObjectionable(product.name)}
                     </Text>
                     {/* Buying actions, so only for someone who is buying.
                         A seller browsing their own catalogue was offered

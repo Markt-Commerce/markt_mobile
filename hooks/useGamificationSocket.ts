@@ -7,6 +7,7 @@ import type {
   TierChangedEvent,
   StreakAdvancedEvent,
 } from "../types/gamification";
+import { afterFeedLoads } from "../utils/startupGate";
 
 export interface GamificationSocketHandlers {
   onPoints?: (e: PointsAwardedEvent) => void;
@@ -29,13 +30,22 @@ export function useGamificationSocket(handlers: GamificationSocketHandlers) {
     const userId = user?.user_id;
     if (!userId) return;
 
-    gamificationSocket.connect(userId);
+    let cancelled = false;
+    // The socket's handshake is one more connection to the same host; it
+    // waits for the feed like the other startup extras (utils/startupGate).
+    // Listeners attach now, so nothing emitted after connect is missed.
+    afterFeedLoads().then(() => {
+      if (!cancelled) gamificationSocket.connect(userId);
+    });
     const offs = [
       gamificationSocket.onPoints((e) => ref.current.onPoints?.(e)),
       gamificationSocket.onBadge((e) => ref.current.onBadge?.(e)),
       gamificationSocket.onTier((e) => ref.current.onTier?.(e)),
       gamificationSocket.onStreak((e) => ref.current.onStreak?.(e)),
     ];
-    return () => offs.forEach((off) => off());
+    return () => {
+      cancelled = true;
+      offs.forEach((off) => off());
+    };
   }, [user?.user_id]);
 }

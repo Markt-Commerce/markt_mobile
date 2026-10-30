@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Trophy,
   MapPin,
+  Building2,
 } from "lucide-react-native";
 import BottomSheet from "@gorhom/bottom-sheet";
 import Avatar from "../../components/Avatar";
@@ -26,6 +27,7 @@ import {
 } from "../../components/SettingsList";
 import { useGamificationContext } from "../../hooks/gamificationContext";
 import GamificationStrip from "../../components/gamification/GamificationStrip";
+import { useBusiness, useEnterBusiness } from "../../hooks/businessContext";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -36,6 +38,8 @@ export default function ProfileScreen() {
   const [createMode, setCreateMode] = useState<"buyer" | "seller" | null>(null);
   const createRoleRef = useRef<BottomSheet | null>(null);
   const { profile: gamification, badges: gamificationBadges } = useGamificationContext();
+  const { config: businessConfig, myBusiness } = useBusiness();
+  const enterBusiness = useEnterBusiness();
 
   useEffect(() => {
     if (createMode) {
@@ -222,6 +226,25 @@ export default function ProfileScreen() {
             last
           />
         </Section>
+
+        {/* Only when the backend has business mode on — no empty band otherwise. */}
+        {businessConfig.features.enabled ? (
+          <Section title="Markt Business">
+            <Row
+              icon={Building2}
+              title="Markt Business"
+              subtitle={
+                myBusiness?.business_tag && myBusiness.profile
+                  ? `Switch to ${myBusiness.profile.name}`
+                  : "Buy and sell with other businesses"
+              }
+              onPress={() => {
+                void enterBusiness();
+              }}
+              last
+            />
+          </Section>
+        ) : null}
 
         <Section title="Account Navigation">
           <Row

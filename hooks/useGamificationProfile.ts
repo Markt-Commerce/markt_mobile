@@ -3,6 +3,7 @@ import { getMyGamification } from "../services/sections/gamification";
 import { useUser } from "./userContextProvider";
 import type { GamMe } from "../types/gamification";
 import { friendlyErrorMessage } from "../utils/errorMessages";
+import { useStartupSeed } from "./useStartupSeed";
 
 /**
  * Current user's gamification stats (GET /gamification/me).
@@ -34,10 +35,12 @@ export function useGamificationProfile() {
     if (!loggedIn) {
       setData(null);
       setError(null);
-      return;
     }
-    refresh();
-  }, [loggedIn, refresh]);
+  }, [loggedIn]);
+
+  // The first summary arrives with the start-up payload (GET
+  // /users/bootstrap); refresh() covers everything after that.
+  useStartupSeed((startup) => startup.gamification, setData, refresh);
 
   const bump = useCallback((delta: number) => {
     setData((prev) =>

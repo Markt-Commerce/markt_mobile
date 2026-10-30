@@ -11,6 +11,8 @@
 // ---------------------------------------------------------------------------
 
 /** Shared query params for all feed endpoints */
+import type { TaggedProduct } from "../models/post";
+
 export interface FeedQueryParams {
   page?: number;
   per_page?: number;
@@ -77,6 +79,12 @@ export interface FeedPost {
   created_at: string;
   score?: number;
   niche: FeedPostNiche | null;
+  /**
+   * Tagged products, the same entries the post detail endpoint sends: the id
+   * plus the card (null when the product was deleted). Absent from servers
+   * older than the change that added it.
+   */
+  products?: { product_id: string; product?: TaggedProduct | null }[];
 }
 
 // ---------------------------------------------------------------------------

@@ -40,9 +40,22 @@
     },
     "production": {
       "node": "24.15.0",
+      "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "133653295470-34aeeb89r7ck1e54csjn2uf5vemf4rk4.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "133653295470-rj05ptsdt858d765d0c6rtivemqcf06b.apps.googleusercontent.com"
+      }
+    }
+  },
+   "submit": {
+    "production": {
+      "android": {
+        "track": "internal"
+      },
+      "ios": {
+        "appleId": "marktcommerce2020@gmail.com",
+        "ascAppId": "6814305306",
+        "appleTeamId": "AU56ZMM56Y"
       }
     }
   }

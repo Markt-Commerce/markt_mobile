@@ -10,6 +10,7 @@ import CategoryAddition from "./categoryAddition";
 import { createNiche } from "../services/sections/niches";
 import { useToast } from "./ToastProvider";
 import { useTokens } from "../theme/useTokens";
+import { friendlyErrorMessage } from "../utils/errorMessages";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -90,7 +91,7 @@ const CreateNicheBottomSheet = forwardRef<InputSheetHandle | null, Props>(({ onC
       onCreated?.();
       close();
     } catch (err) {
-      show({ variant: "error", title: "Create failed", message: "Could not create community." });
+      show({ variant: "error", title: "Create failed", message: friendlyErrorMessage(err, "Could not create community.") });
     } finally {
       setSubmitting(false);
     }

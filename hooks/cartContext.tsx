@@ -25,6 +25,7 @@ import { getCartSummary } from "../services/sections/cart";
 import { getSellerPendingCount } from "../services/sections/orders";
 import { onBadgeChanged } from "../utils/badgeEvents";
 import { useUser } from "./userContextProvider";
+import { useStartupSeed } from "./useStartupSeed";
 
 export interface CartContextType {
   /**
@@ -73,9 +74,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setItemCount((current) => Math.max(0, current + delta));
   }, []);
 
-  useEffect(() => {
-    refreshCart();
-  }, [refreshCart]);
+  // The first count arrives with the start-up payload (GET /users/bootstrap),
+  // which sends the badge for the mode the account is in. A role switch
+  // changes refreshCart, and from then on the badge is fetched directly.
+  useStartupSeed(
+    (data) => (isBuyer ? data.cart_item_count : isSeller ? data.seller_needs_action : null),
+    setItemCount,
+    refreshCart
+  );
 
   // Every cart mutation goes through services/sections/cart.ts, which emits
   // here — so adding from the feed, a product page or a chat all move the

@@ -34,12 +34,14 @@ import { useFeed } from "../../hooks/useFeed";
 import ContentActionsSheet, { type ContentActionsTarget } from "../../components/ContentActionsSheet";
 import { isFeedPost, isFeedProduct } from "../../types/feed";
 import { getMyNiches } from "../../services/sections/niches";
-import { getUserProfile } from "../../services/sections/profile";
 import type { Niches } from "../../models/niches";
 import type { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
 import { saveItem, unsaveItem } from "../../services/sections/saved";
+import { afterFeedLoads } from "../../utils/startupGate";
+import { useModerationFilter } from "../../hooks/useModerationFilter";
+import { onNichesChanged } from "../../utils/nicheEvents";
 
 // Early launch: only the main feed is live. Discover/Trending/Following are
 // hidden until their backend pipelines are ready — restore entries here to bring
@@ -71,7 +73,6 @@ export default function FeedScreen() {
   const router = useRouter();
   const [selectedTab, setSelectedTab] = useState<TabId>("for_you");
   const [myNiches, setMyNiches] = useState<Niches[]>([]);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loadedStartCards, setLoadedStartCards] = useState(false);
   const { show } = useToast();
   const { resolvedTheme } = useTheme();
@@ -79,9 +80,13 @@ export default function FeedScreen() {
   const t = useTokens();
   const tokens = t; // `t` is shadowed by the tab .map((t) => …) below
 
-  // This screen keeps its own `profile` copy (fetched on focus, above), so the
-  // context setter is aliased rather than destructured over it.
-  const { role, user, setRole, setProfile: setContextProfile } = useUser();
+  // The profile comes from the context, which already fetches it once per
+  // sign-in. This screen used to fetch its own copy on focus as well, so a
+  // cold start asked for /users/profile twice at the same moment, both
+  // competing with the feed for a connection. Creating or switching a role
+  // updates the context copy, which is all this screen reads (is_buyer /
+  // is_seller).
+  const { role, user, setRole, profile, setProfile: setContextProfile } = useUser();
   const feedTab = selectedTab;
   const {
     items,
@@ -114,7 +119,7 @@ export default function FeedScreen() {
   const [actionsTarget, setActionsTarget] = useState<ContentActionsTarget | null>(null);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [savedOverrides, setSavedOverrides] = useState<Record<string, boolean>>({});
-  const [hiddenAuthorIds, setHiddenAuthorIds] = useState<Set<string>>(new Set());
+  const moderation = useModerationFilter();
 
   const openPostActions = useCallback((post: FeedPost) => {
     setActionsTarget({
@@ -178,11 +183,9 @@ export default function FeedScreen() {
     }
   }, [savedIds, savedOverrides, show]);
 
-  // The server filters blocked authors out of the next feed response; this
-  // removes them from what's already on screen so the block reads as instant.
-  const handleBlocked = useCallback((userId: string) => {
-    setHiddenAuthorIds((prev) => new Set(prev).add(userId));
-  }, []);
+  // The server filters blocked authors out of the next feed response; the
+  // shared moderation filter removes them from what's already on screen, from
+  // wherever the block happened, so it reads as instant.
 
   // Shop strip collapse on scroll: hide after a sustained scroll down, show only
   // after a sustained scroll back up. Distance is accumulated per-direction so a
@@ -286,7 +289,6 @@ export default function FeedScreen() {
       const applyRole = (current: UserProfile | null) =>
         current ? { ...current, current_role: newRole } : current;
       setContextProfile(applyRole);
-      setProfile(applyRole);
       if (res.user?.email) {
         await setUserSession(
           { email: res.user.email, account_type: newRole, user_id: res.user.id },
@@ -323,16 +325,26 @@ export default function FeedScreen() {
   }, []);
 
   // Home is the tab users bounce back to constantly. Refetching the niche
-  // chips and profile on literally every focus meant two requests per return
-  // trip for data that changes rarely; a short TTL keeps them fresh without
-  // the churn. fetchMyNiches is still called directly after creating a niche.
+  // chips on literally every focus was a request per return trip for data
+  // that changes rarely; a short TTL keeps them fresh without the churn.
+  // fetchMyNiches is still called directly after creating a niche, and the
+  // TTL is dropped when the user joins or leaves one (utils/nicheEvents).
   const sideDataFetchedAt = useRef(0);
+  // ...except right after a join or leave: then the next visit refetches.
+  useEffect(
+    () =>
+      onNichesChanged(() => {
+        sideDataFetchedAt.current = 0;
+      }),
+    []
+  );
   useFocusEffect(
     useCallback(() => {
       if (Date.now() - sideDataFetchedAt.current < SIDE_DATA_TTL_MS) return;
       sideDataFetchedAt.current = Date.now();
-      fetchMyNiches();
-      getUserProfile().then(setProfile).catch(() => setProfile(null));
+      // Chips, not content: on a cold start they wait for the feed's own
+      // request (utils/startupGate). Later focuses go straight through.
+      afterFeedLoads().then(fetchMyNiches);
     }, [fetchMyNiches])
   );
 
@@ -465,14 +477,14 @@ export default function FeedScreen() {
   }, [loadMore]);
 
   const visibleItems = useMemo(() => {
-    if (hiddenAuthorIds.size === 0) return items;
     return items.filter((item) => {
-      const authorId = isFeedPost(item)
-        ? item.user?.id
-        : item.seller?.user?.id;
-      return !authorId || !hiddenAuthorIds.has(authorId);
+      const post = isFeedPost(item);
+      const authorId = post ? item.user?.id : item.seller?.user?.id;
+      if (moderation.isBlocked(authorId)) return false;
+      return !moderation.isReported(post ? "post" : "product", item.id);
     });
-  }, [items, hiddenAuthorIds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, moderation.version]);
 
   const renderItem = useCallback(
     ({ item }: { item: FeedItem }) => {
@@ -661,7 +673,6 @@ export default function FeedScreen() {
         )}
         onClose={() => setActionsTarget(null)}
         onSavedChange={handleSavedChange}
-        onBlocked={handleBlocked}
       />
 
       {/* FAB — bottom right, opens create menu */}

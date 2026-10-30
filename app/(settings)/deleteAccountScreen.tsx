@@ -15,8 +15,10 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { AlertTriangle, Trash2 } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
@@ -30,6 +32,7 @@ import {
   type AccountDeletionBlocker,
 } from "../../services/sections/account";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
+import { useKeyboardOverlap, keyboardScrollPadding } from "../../hooks/useKeyboardOverlap";
 
 const CONFIRM_WORD = "DELETE";
 
@@ -50,6 +53,11 @@ export default function DeleteAccountScreen() {
   const t = useTokens();
   const { show } = useToast();
   const { setUser } = useUser();
+  const insets = useSafeAreaInsets();
+  // Both fields sit at the very end of a long page, under the keyboard.
+  // KeyboardAvoidingView covers iOS; Android is edge-to-edge and no longer
+  // resizes for the keyboard, so the scroll padding makes the room there.
+  const keyboardOverlap = useKeyboardOverlap();
 
   const [checking, setChecking] = useState(true);
   const [blockers, setBlockers] = useState<AccountDeletionBlocker[]>([]);
@@ -120,10 +128,17 @@ export default function DeleteAccountScreen() {
       edges={["top", "left", "right", "bottom"]}
     >
       <ScreenHeader title="Delete account" onBack={() => router.back()} />
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 48 }}
+        contentContainerStyle={{
+          paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 48),
+        }}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
       >
         <View className="px-6 pt-6">
           <View className="flex-row items-start gap-3 mb-6">
@@ -244,6 +259,7 @@ export default function DeleteAccountScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

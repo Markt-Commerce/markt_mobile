@@ -103,6 +103,9 @@ export interface CreatePostRequest {
   status: "draft" | "active" | "archived";
   products: {
     product_id: string;
+    /** The card, sent alongside the id; null if the product was deleted.
+     *  Absent from servers older than the change that added it. */
+    product?: TaggedProduct | null;
   }[];
   caption: string;
   like_count: number;
@@ -168,3 +171,14 @@ export interface CommentCreatedResponse {
   created_at: string;
   user: User;
 }
+
+/** A tagged product as a post carries it: enough to render the card. */
+export type TaggedProduct = {
+  id: string;
+  name: string;
+  price: number;
+  image_url?: string | null;
+  shop_name?: string | null;
+  /** False when it is sold out or no longer active. */
+  is_available?: boolean;
+};

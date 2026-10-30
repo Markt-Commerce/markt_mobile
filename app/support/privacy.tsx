@@ -80,7 +80,7 @@ export default function PrivacyPolicyScreen() {
               6. CONTACT US
             </Text>
             <Text className="text-sm leading-6 text-text-secondary">
-              If you have questions or comments about this notice, you may email us at marktcommerce2020@gmail.com.
+              If you have questions or comments about this notice, you may email us at support@marktcommerce.com.
             </Text>
           </View>
         </View>

@@ -168,7 +168,12 @@ export async function request<T = any>(path: string, opts: RequestInit = {}): Pr
     // Unless this *was* the sign-in. A rejected password is an answer to a
     // question the user just asked, and the screen that asked it is the
     // right place to say so.
-    if (res.status === 401 && !isCredentialCheck(url)) {
+    //
+    // And only if there was a session to lose. A guest browsing the public
+    // catalogue sends no token, so a 401 there means "this needs an account",
+    // not "your session ended" -- treating it as expiry bounced "Browse first"
+    // straight back to the sign-in screen (App Review 2.1(a), Oct 2026).
+    if (res.status === 401 && token && !isCredentialCheck(url)) {
       await setAuthToken(null);
       await clearUserSession();
       onUnauthorized?.();

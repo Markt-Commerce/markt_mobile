@@ -5,9 +5,9 @@
  * Tabs: Home | Search | Requests | Orders | Messages
  * Profile: hidden (reached via drawer)
  */
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Platform, View } from "react-native";
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Home, Search, FileText, ShoppingBag, MessageCircle } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,12 +18,30 @@ import { useUser } from "../../hooks/userContextProvider";
 import { useCart } from "../../hooks/cartContext";
 import { useUnreadChats } from "../../hooks/useUnreadChats";
 import { useTokens } from "../../theme/useTokens";
+import { useBusiness } from "../../hooks/businessContext";
 
 const TAB_BAR_CONTENT_HEIGHT = 52;
+
+/**
+ * Reopen where the user left off: someone who was in Markt Business last time
+ * starts there again. Once per launch, and only after the stored mode has
+ * actually been read — redirecting on the default would bounce everyone.
+ */
+function useResumeBusinessMode() {
+  const router = useRouter();
+  const { mode, modeRestored, config } = useBusiness();
+  const done = useRef(false);
+  useEffect(() => {
+    if (done.current || !modeRestored) return;
+    done.current = true;
+    if (mode === "business" && config.features.enabled) router.replace("/business");
+  }, [modeRestored, mode, config.features.enabled]);
+}
 const TAB_BAR_PADDING_TOP = 6;
 const TAB_BAR_PADDING_BOTTOM = 2;
 
 function TabsWithDrawer() {
+  useResumeBusinessMode();
   const { isOpen, closeDrawer } = useDrawer();
   const { profile } = useUser();
   const role = profile?.current_role;

@@ -22,6 +22,7 @@ import { notificationsEnabled } from "../services/notificationSupport";
 import { resolveNotificationRoute } from "../utils/notificationDeepLink";
 import { emitNotificationsChanged } from "../utils/notificationEvents";
 import logger from "../utils/logger";
+import { afterFeedLoads } from "../utils/startupGate";
 
 export default function NotificationsBootstrap() {
   const { user } = useUser();
@@ -126,6 +127,9 @@ export default function NotificationsBootstrap() {
           "../services/notifications"
         );
         const { registerPushToken } = await import("../services/sections/push");
+        // Registering the token is bookkeeping, not something the user is
+        // waiting on; let the feed have the connection first.
+        await afterFeedLoads();
         const token = await registerForPushToken();
         if (token) await registerPushToken(token, Platform.OS);
       } catch (e) {

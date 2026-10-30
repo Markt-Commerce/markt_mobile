@@ -12,6 +12,7 @@ import { getTrendingShops } from "../services/sections/shops";
 import type { ShopLite } from "../services/sections/shops";
 import Avatar from "./Avatar";
 import { useTokens } from "../theme/useTokens";
+import { afterFeedLoads } from "../utils/startupGate";
 
 const AVATAR_SIZE = 48;
 
@@ -23,8 +24,13 @@ export default function ShopStrip() {
 
   useEffect(() => {
     let cancelled = false;
-    getTrendingShops()
+    // Above the feed on screen, but secondary to it: it keeps its loading
+    // state a moment longer so the feed's request goes out first
+    // (utils/startupGate).
+    afterFeedLoads()
+      .then(() => (cancelled ? null : getTrendingShops()))
       .then((res) => {
+        if (!res) return;
         if (!cancelled) setShops(res.shops ?? []);
       })
       .catch(() => {

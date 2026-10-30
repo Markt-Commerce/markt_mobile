@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Share , MapPin } from "lucide-react-native";
+import { ArrowLeft, Share , MapPin, MoreHorizontal } from "lucide-react-native";
+import ContentActionsSheet, { type ContentActionsTarget } from "../../components/ContentActionsSheet";
 import { useLocalSearchParams } from "expo-router";
 import { getSellerProducts } from "../../services/sections/product";
 import {
@@ -83,6 +84,7 @@ export default function Shop() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"products" | "posts">("products");
+  const [actionsTarget, setActionsTarget] = useState<ContentActionsTarget | null>(null);
   const { show } = useToast();
   const { user } = useUser();
   const { resolvedTheme } = useTheme();
@@ -201,9 +203,32 @@ export default function Shop() {
           >
             Shop
           </Text>
-          <TouchableOpacity className="p-1">
-            <Share size={24} color={t.textPrimary} />
-          </TouchableOpacity>
+          <View className="flex-row items-center gap-2">
+            <TouchableOpacity className="p-1">
+              <Share size={24} color={t.textPrimary} />
+            </TouchableOpacity>
+            {/* Report and block (App Store Guideline 1.2). The API has no
+                shop report type, so the shop is reported as its owner. */}
+            {shop?.user?.id && !isOwnShop ? (
+              <TouchableOpacity
+                className="p-1"
+                onPress={() =>
+                  setActionsTarget({
+                    type: "user",
+                    id: shop.user.id,
+                    title: shop.shop_name || shop.user.username,
+                    authorId: shop.user.id,
+                    authorName: shop.shop_name || shop.user.username,
+                  })
+                }
+                accessibilityRole="button"
+                accessibilityLabel="More options"
+                hitSlop={8}
+              >
+                <MoreHorizontal size={24} color={t.textPrimary} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </View>
 
         {/* Cover image.
@@ -509,6 +534,11 @@ export default function Shop() {
         />
       ) : null}
         <CartFab />
+      <ContentActionsSheet
+        target={actionsTarget}
+        onClose={() => setActionsTarget(null)}
+        onBlocked={() => goBack()}
+      />
     </SafeAreaView>
   );
 }

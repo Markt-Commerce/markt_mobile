@@ -1,4 +1,5 @@
 import { request, BASE_URL } from "../api";
+import { emitNichesChanged } from "../../utils/nicheEvents";
 import {
   Niches,
   NichesResponse,
@@ -10,6 +11,7 @@ import {
   UpdateNicheRequest,
 } from "../../models/niches";
 import { CreatePostRequest } from "../../models/post";
+import { assertCleanContent } from "../../utils/contentFilter";
 
 /**
  * GET /socials/niches — discover communities (NICHES_API §1.1).
@@ -58,6 +60,7 @@ export async function canPostInNiche(nicheId: string): Promise<NicheCanPostRespo
 }
 
 export async function createNiche(data: CreateNicheRequest): Promise<void> {
+  assertCleanContent(data.name, data.description);
   await request<void>(`${BASE_URL}/socials/niches`, {
     method: "POST",
     body: JSON.stringify(data),
@@ -74,6 +77,7 @@ export async function joinNiche(niche_id: string): Promise<void> {
       "Content-Type": "application/json",
     },
   });
+  emitNichesChanged();
 }
 
 export async function leaveNiche(niche_id: string): Promise<void> {
@@ -83,6 +87,7 @@ export async function leaveNiche(niche_id: string): Promise<void> {
       "Content-Type": "application/json",
     },
   });
+  emitNichesChanged();
 }
 
 export async function getNichePosts(niche_id: string, page = 1, perPage = 10): Promise<NichePostsResponse> {
@@ -94,6 +99,7 @@ export async function getNichePosts(niche_id: string, page = 1, perPage = 10): P
 }
 
 export async function createNichePost(niche_id: string, data: CreatePostRequest): Promise<void> {
+  assertCleanContent(data.caption, ...(data.tags ?? []));
   await request<void>(`${BASE_URL}/socials/niches/${niche_id}/posts`, {
     method: "POST",
     body: JSON.stringify(data),

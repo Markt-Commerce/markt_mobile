@@ -31,6 +31,7 @@ import { useTokens } from "../../theme/useTokens";
 import { defaultProfilePicture } from "../../models/defaults";
 import Avatar from "../../components/Avatar";
 import { formatDate, hasPassed } from "../../utils/datetime";
+import ProcurementPanel from "../../components/business/ProcurementPanel";
 
 const { width } = Dimensions.get("window");
 
@@ -69,7 +70,7 @@ export default function BuyerRequestDetails() {
   const [requestDetails, setRequestDetails] = useState<Request>();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const { role, user } = useUser();
+  const { role, user, profile } = useUser();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const t = useTokens();
@@ -108,7 +109,10 @@ export default function BuyerRequestDetails() {
   const statusLabel =
     statusRaw === "OPEN" && isExpired ? "EXPIRED" : statusRaw;
   const isOpen = statusLabel === "OPEN";
-  const showMessageBar = role === "seller" && !isOwnRequest && !!requestDetails;
+  // A procurement request is answered from business mode, where any account
+  // that can sell may message the buyer, whatever its current role.
+  const canSellHere = role === "seller" || (!!requestDetails?.is_business && !!profile?.is_seller);
+  const showMessageBar = canSellHere && !isOwnRequest && !!requestDetails;
 
   const Header = (
     <View
@@ -358,6 +362,10 @@ export default function BuyerRequestDetails() {
             {requestDetails.description || "No description provided."}
           </Text>
         </View>
+
+        {/* Markt Business: procurement details and offers. Renders nothing
+            for an ordinary consumer request. */}
+        <ProcurementPanel request={requestDetails} isOwner={isOwnRequest} isOpen={isOpen} onChanged={fetchData} />
 
         {/* Photos */}
         {imageUrls.length > 0 && (

@@ -27,8 +27,10 @@ import Button from "../../components/button";
 import RoleToggle from "../../components/auth/RoleToggle";
 import { Check, Circle } from "lucide-react-native";
 import { useTokens } from "../../theme/useTokens";
+import { useAndroidKeyboardPadding } from "../../hooks/useKeyboardOverlap";
 import * as haptics from "../../utils/haptics";
 import BackButton from "../../components/BackButton";
+import TermsNotice from "../../components/auth/TermsNotice";
 
 // --- Validation schema ---
 // No "confirm password". The field exists to catch a typo you cannot see —
@@ -55,6 +57,8 @@ export default function SignupScreen() {
   const { regData, setRegData } = useRegData();
   const { show } = useToast();
   const t = useTokens();
+  // The KeyboardAvoidingView below only acts on iOS; this is Android's share.
+  const androidKeyboardPad = useAndroidKeyboardPadding();
   const iconColor = t.textPrimary;
   const [submitting, setSubmitting] = React.useState(false);
   const mutedIconColor = t.textSecondary;
@@ -137,7 +141,7 @@ export default function SignupScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: androidKeyboardPad }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -248,6 +252,8 @@ export default function SignupScreen() {
                 loading={submitting}
                 variant="primary"
               />
+
+              <TermsNotice className="mt-3" />
 
               {/* Alt nav */}
               <TouchableOpacity 

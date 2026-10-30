@@ -1,11 +1,12 @@
 // app/product/[id].tsx
-import React, { useEffect, useState, useRef } from "react";
-import { View, Text, Image, ActivityIndicator, TouchableOpacity, ImageBackground, Pressable, FlatList, Dimensions } from "react-native";
+import React, { useCallback, useEffect, useState, useRef } from "react";
+import { View, Text, Image, ActivityIndicator, TouchableOpacity, ImageBackground, Pressable, FlatList, Dimensions, KeyboardAvoidingView, Platform, TextInput } from "react-native";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useBackTo } from "../../utils/goBack";
 import { getProductById, trackProductView } from "../../services/sections/product";
 import { ProductDetail } from "../../models/products";
-import { ArrowLeft, ShoppingBag, ArrowBigDown, MessageCircle, ShoppingCart, MapPin } from "lucide-react-native";
+import { ArrowLeft, ShoppingBag, ArrowBigDown, MessageCircle, ShoppingCart, MapPin, MoreHorizontal } from "lucide-react-native";
+import ContentActionsSheet, { type ContentActionsTarget } from "../../components/ContentActionsSheet";
 import { addToCart } from "../../services/sections/cart";
 import { useShopServiceable } from "../../hooks/useShopServiceable";
 import { getRecommendedProducts } from "../../services/sections/feed";
@@ -19,12 +20,15 @@ import { isOwnProductListing } from "../../utils/chatGuards";
 import { normalizeUri, resolveMediaUri } from "../../utils/imageUri";
 import Avatar from "../../components/Avatar";
 import { useTokens } from "../../theme/useTokens";
+import { useKeyboardOverlap, useAndroidKeyboardPadding } from "../../hooks/useKeyboardOverlap";
 import CartFab from "../../components/CartFab";
 import { StarRating } from "../../components/StarRating";
 import ProductReviews from "../../components/ProductReviews";
 import { runMessageSellerFlow } from "../../utils/messageSellerFlow";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
+import { promptSignUp } from "../../utils/authNavigation";
 import { MediaViewerModal } from "../../components/postMedia";
+import { maskObjectionable } from "../../utils/contentFilter";
 
 export default function ProductDetails() {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -60,6 +64,36 @@ export default function ProductDetails() {
   const { show } = useToast();
   const t = useTokens();
 
+  // The review box lives inside this list's header, partway down a long
+  // page, so it opened under the keyboard with nothing to bring it back.
+  // KeyboardAvoidingView shrinks the list on iOS and the padding makes room
+  // on Android, but neither scrolls, so the box is scrolled clear here once
+  // the keyboard's height is known.
+  const listRef = useRef<FlatList<Product>>(null);
+  const scrollYRef = useRef(0);
+  const reviewInputRef = useRef<TextInput | null>(null);
+  const keyboardOverlap = useKeyboardOverlap();
+  const androidKeyboardPad = useAndroidKeyboardPadding();
+
+  const revealReviewInput = useCallback(() => {
+    const input = reviewInputRef.current;
+    if (!input || keyboardOverlap <= 0) return;
+    const keyboardTop = Dimensions.get("window").height - keyboardOverlap;
+    input.measureInWindow((_x, y, _w, height) => {
+      const hidden = y + height + 16 - keyboardTop;
+      if (hidden > 0) {
+        listRef.current?.scrollToOffset({
+          offset: scrollYRef.current + hidden,
+          animated: true,
+        });
+      }
+    });
+  }, [keyboardOverlap]);
+
+  useEffect(() => {
+    revealReviewInput();
+  }, [revealReviewInput]);
+
   const toggleDetail = (key: string) => {
     setOpenDetails((prev) => ({ ...prev, [key]: !prev[key] }));
   };
@@ -81,6 +115,9 @@ export default function ProductDetails() {
       setPage((p) => p + 1);
     }
     catch (err) {
+      // Similar products are extra. If the endpoint wants an account, a guest
+      // should just not see the strip, not an error about it.
+      if (!user) return;
       show({
         variant: "error",
         title: "Error loading products",
@@ -107,6 +144,11 @@ export default function ProductDetails() {
 }
 
 const addProductToCart = async (product:ProductDetail)=>{
+  // Reachable from "Browse first" without an account.
+  if (!user) {
+    promptSignUp();
+    return;
+  }
   // Stop a basket that can never be checked out. Browsing stays open --
   // Markt is not only a delivery app, and hiding out-of-area shops would gut
   // the social half -- but the cart action is where the dead end begins.
@@ -159,6 +201,9 @@ const addProductToCart = async (product:ProductDetail)=>{
     }, 500);
     return () => clearTimeout(t);
   }, [id]);
+
+  // Declared before the early return so the hook order never changes.
+  const [actionsTarget, setActionsTarget] = useState<ContentActionsTarget | null>(null);
 
   if (!product) return <ActivityIndicator size="large" />;
 
@@ -225,7 +270,12 @@ const addProductToCart = async (product:ProductDetail)=>{
 
   return (
   <SafeAreaView className="flex-1 bg-surface-page" edges={["top", "left", "right", "bottom"]}>
+    <KeyboardAvoidingView
+      className="flex-1"
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
     <FlatList
+      ref={listRef}
       data={similarProducts}
       keyExtractor={(item) => item.id.toString()}
       ListHeaderComponent={
@@ -237,9 +287,32 @@ const addProductToCart = async (product:ProductDetail)=>{
           <TouchableOpacity onPress={() => goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <ArrowLeft color={t.textPrimary} size={24} />
           </TouchableOpacity>
-          {role == "buyer" && <TouchableOpacity className="p-2" onPress={()=> router.navigate("/cart")}>
-            <ShoppingBag color={t.textPrimary} size={24} />
-          </TouchableOpacity>}
+          <View className="flex-row items-center">
+            {/* `role` defaults to buyer when signed out; a guest has no cart. */}
+            {!!user && role == "buyer" && <TouchableOpacity className="p-2" onPress={()=> router.navigate("/cart")}>
+              <ShoppingBag color={t.textPrimary} size={24} />
+            </TouchableOpacity>}
+            {/* Report and block (App Store Guideline 1.2). */}
+            {!isOwnProduct && (
+              <TouchableOpacity
+                className="p-2"
+                onPress={() =>
+                  setActionsTarget({
+                    type: "product",
+                    id: product.id,
+                    title: product.name,
+                    authorId: sellerUserId ? String(sellerUserId) : undefined,
+                    authorName: product.seller?.shop_name ?? product.seller_user?.username,
+                  })
+                }
+                accessibilityRole="button"
+                accessibilityLabel="More options"
+                hitSlop={8}
+              >
+                <MoreHorizontal color={t.textPrimary} size={24} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Image Carousel */}
@@ -349,7 +422,7 @@ const addProductToCart = async (product:ProductDetail)=>{
 
         {/* Product Info */}
         <View className="px-6">
-          <Text className="text-2xl font-bold text-text-primary">{product.name}</Text>
+          <Text className="text-2xl font-bold text-text-primary">{maskObjectionable(product.name)}</Text>
           <Text className="text-base mt-1 text-text-secondary">sold by {product.seller.shop_name}</Text>
           {/* Where the shop actually is. A buyer deciding whether to order
               from somewhere two streets away should not have to guess, and it
@@ -416,7 +489,7 @@ const addProductToCart = async (product:ProductDetail)=>{
             </Pressable>
             {openDetails.details && (
               <Text className="text-sm pb-5 leading-6 text-text-secondary">
-                {product.description}
+                {maskObjectionable(product.description)}
               </Text>
             )}
           </View>
@@ -456,6 +529,12 @@ const addProductToCart = async (product:ProductDetail)=>{
           <ProductReviews
             productId={String(id)}
             onChanged={() => fetchProduct(String(id))}
+            onComposerFocusChange={(input) => {
+              reviewInputRef.current = input;
+              // Already open (moving back into the box): no height change is
+              // coming to trigger the effect, so check now.
+              if (input) revealReviewInput();
+            }}
           />
 
           <View className="flex-row justify-end pb-10 pt-6">
@@ -536,7 +615,15 @@ const addProductToCart = async (product:ProductDetail)=>{
 }
       numColumns={2}
       columnWrapperStyle={{ justifyContent: "space-between", paddingHorizontal: 4 }}
-      contentContainerStyle={{ paddingBottom: 20 }}
+      contentContainerStyle={{ paddingBottom: 20 + androidKeyboardPad }}
+      onScroll={(e) => {
+        scrollYRef.current = e.nativeEvent.contentOffset.y;
+      }}
+      scrollEventThrottle={16}
+      // "handled" so the first tap on Submit sends the review instead of only
+      // dismissing the keyboard.
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
       onEndReached={getOtherProducts}
       onEndReachedThreshold={0.5}
       ListFooterComponent={
@@ -557,10 +644,17 @@ const addProductToCart = async (product:ProductDetail)=>{
         ) : null
       }
     />
+    </KeyboardAvoidingView>
 
     {/* The way back to the basket from a screen with no tab bar, and the
         acknowledgement that the thing you just added went somewhere. */}
     <CartFab />
+    <ContentActionsSheet
+      target={actionsTarget}
+      onClose={() => setActionsTarget(null)}
+      // Nothing of theirs should still be on screen after blocking them.
+      onBlocked={() => goBack()}
+    />
   </SafeAreaView>
 );
 

@@ -17,6 +17,7 @@ import { useTokens } from "../../theme/useTokens";
 import { useToast } from "../../components/ToastProvider";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import { listBlockedUsers, unblockUser, type BlockedUser } from "../../services/sections/moderation";
+import { markUnblocked } from "../../hooks/useModerationFilter";
 
 export default function BlockedAccountsScreen() {
   const router = useRouter();
@@ -61,6 +62,7 @@ export default function BlockedAccountsScreen() {
     setUsers((prev) => prev.filter((u) => u.user_id !== user.user_id));
     try {
       await unblockUser(user.user_id);
+      markUnblocked(user.user_id);
       show({
         variant: "success",
         title: `Unblocked ${user.username}`,

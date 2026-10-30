@@ -1,7 +1,11 @@
 //for  buyer requests
 // /models/request.ts
 
-export interface CreateRequestPayload {
+import type { ProcurementFields } from "./business";
+
+// Markt Business procurement details ride on the same request; a business
+// account's request is a procurement request (is_business is set server-side).
+export interface CreateRequestPayload extends Omit<ProcurementFields, "is_business"> {
     title: string;
     metadata?: Record<string, any>;
     category_ids?: number[];
@@ -10,6 +14,21 @@ export interface CreateRequestPayload {
     description?: string;
     budget?: number;
   }
+
+/** A seller's offer on a request, as GET /requests/<id> returns it. */
+export interface RequestOffer {
+  id: number;
+  request_id: string;
+  seller_id: number;
+  seller?: { id: number; shop_name?: string; profile_picture_url?: string; verification_status?: string };
+  product_id?: string | null;
+  price: number;
+  message?: string | null;
+  /** Procurement offers: how much of the requested quantity, in its unit. */
+  proposed_quantity?: number | null;
+  status: "PENDING" | "ACCEPTED" | "REJECTED" | "WITHDRAWN" | string;
+  created_at: string;
+}
   
   export interface RequestCategory {
     is_active?: boolean;
@@ -51,7 +70,7 @@ export interface CreateRequestPayload {
   }
   
 
-  export type Request = {
+  export type Request = ProcurementFields & {
   id: string;
   title: string;
   description: string;

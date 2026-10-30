@@ -12,6 +12,7 @@ import Button from '../../components/button';
 import { useToast } from '../../components/ToastProvider';
 import { sendPasswordResetEmail, resetPassword } from '../../services/sections/auth';
 import { useTokens } from "../../theme/useTokens";
+import { useAndroidKeyboardPadding } from "../../hooks/useKeyboardOverlap";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import BackButton from "../../components/BackButton";
 
@@ -34,6 +35,8 @@ const ForgotPasswordScreen = () => {
   const router = useRouter();
   const { show } = useToast();
   const t = useTokens();
+  // The KeyboardAvoidingView below only acts on iOS; this is Android's share.
+  const androidKeyboardPad = useAndroidKeyboardPadding();
   const iconColor = t.textPrimary;
   
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -127,7 +130,7 @@ const ForgotPasswordScreen = () => {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: androidKeyboardPad }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >

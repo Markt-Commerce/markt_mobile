@@ -8,6 +8,7 @@ import { getNichePosts, joinNiche, leaveNiche, getMyNiches, getNicheById, canPos
 import { NichePost, Niches } from "../../models/niches";
 import { useToast } from "../../components/ToastProvider";
 import PostDisplayComponent from "../../components/PostDisplayComponent";
+import { useModerationFilter } from "../../hooks/useModerationFilter";
 import ContentActionsSheet, {
   type ContentActionsTarget,
 } from "../../components/ContentActionsSheet";
@@ -40,6 +41,16 @@ export default function NicheDetailScreen() {
   const { user } = useUser();
 
   const [posts, setPosts] = useState<NichePost[]>([]);
+  // Blocks and reports made anywhere else in the app apply here too.
+  const moderation = useModerationFilter();
+  const visiblePosts = useMemo(
+    () =>
+      posts.filter(
+        (p) => !moderation.isBlocked(p.post?.user?.id) && !moderation.isReported("post", p.post?.id)
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [posts, moderation.version]
+  );
   const [niche, setNiche] = useState<Niches | null>(null);
   const [loading, setLoading] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
@@ -429,7 +440,7 @@ export default function NicheDetailScreen() {
 
         {/* Posts List */}
         <FlatList
-          data={posts}
+          data={visiblePosts}
           keyExtractor={(item) => String(item.id)}
           renderItem={renderPost}
           onEndReached={handleEndReached}

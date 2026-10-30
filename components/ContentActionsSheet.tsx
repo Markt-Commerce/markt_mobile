@@ -14,7 +14,6 @@ import React, { useCallback, useMemo, useRef, useState, useEffect } from "react"
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   ActivityIndicator,
   ScrollView,
@@ -22,6 +21,7 @@ import {
 } from "react-native";
 import BottomSheet, {
   BottomSheetBackdrop,
+  BottomSheetTextInput,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import {
@@ -33,6 +33,7 @@ import {
   Send,
   UserMinus,
 } from "lucide-react-native";
+import { cssInterop } from "nativewind";
 import { useTokens } from "../theme/useTokens";
 import { useToast } from "./ToastProvider";
 import {
@@ -42,14 +43,23 @@ import {
   type ReportReason,
   type ReportableType,
 } from "../services/sections/moderation";
-import { saveItem, unsaveItem, type SavedType } from "../services/sections/saved";
+import { saveItem, unsaveItem } from "../services/sections/saved";
 import { friendlyErrorMessage } from "../utils/errorMessages";
 import { confirmDestructive } from "../utils/confirm";
+import { promptSignUp } from "../utils/authNavigation";
+import { useUser } from "../hooks/userContextProvider";
+import { markBlocked, markReported } from "../hooks/useModerationFilter";
+
+// NativeWind only maps className -> style on components it knows about, and
+// the sheet's input is a third-party wrapper, so without this its styling is
+// silently dropped.
+cssInterop(BottomSheetTextInput, { className: "style" });
 
 type Step = "actions" | "reasons" | "details" | "done";
 
 export interface ContentActionsTarget {
-  type: SavedType;
+  /** Save and Share only apply to posts and products. */
+  type: ReportableType;
   id: string;
   /** Shown in copy so the user knows what they're acting on. */
   title?: string;
@@ -64,16 +74,17 @@ export interface ContentActionsTarget {
 
 interface Props {
   target: ContentActionsTarget | null;
-  saved: boolean;
   onClose: () => void;
-  onSavedChange: (saved: boolean) => void;
+  /** Omit both on screens that don't track saved state; Save is then hidden. */
+  saved?: boolean;
+  onSavedChange?: (saved: boolean) => void;
   /** Lets the feed drop the item once its author is blocked. */
   onBlocked?: (userId: string) => void;
 }
 
 export default function ContentActionsSheet({
   target,
-  saved,
+  saved = false,
   onClose,
   onSavedChange,
   onBlocked,
@@ -81,6 +92,11 @@ export default function ContentActionsSheet({
   const sheetRef = useRef<BottomSheet>(null);
   const t = useTokens();
   const { show } = useToast();
+  const { user } = useUser();
+
+  const isListing = target?.type === "post" || target?.type === "product";
+  const canSave = isListing && !!onSavedChange;
+  const canShare = isListing;
 
   const [step, setStep] = useState<Step>("actions");
   const [reason, setReason] = useState<ReportReason | null>(null);
@@ -127,14 +143,26 @@ export default function ContentActionsSheet({
     onClose();
   };
 
+  // Reporting and blocking both need an account. A guest from "Browse first"
+  // gets the invitation rather than a request the server will refuse.
+  const requireAccount = (then: () => void) => () => {
+    if (!user) {
+      close();
+      promptSignUp("Create a free account to report content or block someone.");
+      return;
+    }
+    then();
+  };
+
   const handleToggleSave = async () => {
-    if (!target || busy) return;
+    if (!target || busy || !onSavedChange || !isListing) return;
+    const type = target.type as "post" | "product";
     const next = !saved;
     onSavedChange(next); // optimistic — the toggle should feel instant
     setBusy(true);
     try {
-      if (next) await saveItem(target.type, target.id);
-      else await unsaveItem(target.type, target.id);
+      if (next) await saveItem(type, target.id);
+      else await unsaveItem(type, target.id);
       close();
       show({
         variant: "success",
@@ -142,7 +170,7 @@ export default function ContentActionsSheet({
         message: next ? "Find it later under Saved." : "No longer in your saved items.",
       });
     } catch (e) {
-      onSavedChange(!next);
+      onSavedChange?.(!next);
       show({
         variant: "error",
         title: next ? "Couldn't save that" : "Couldn't remove that",
@@ -170,12 +198,8 @@ export default function ContentActionsSheet({
     if (!target || !reason || busy) return;
     setBusy(true);
     try {
-      const res = await reportContent(
-        target.type as ReportableType,
-        target.id,
-        reason,
-        details
-      );
+      const res = await reportContent(target.type, target.id, reason, details);
+      markReported(target.type, target.id);
       setStep("done");
       if (res.already_reported) {
         show({
@@ -211,6 +235,16 @@ export default function ContentActionsSheet({
     setBusy(true);
     try {
       await blockUser(target.authorId);
+      markBlocked(target.authorId);
+      // Guideline 1.2: a block must also tell us. The server sends no alert of
+      // its own, so the block files a user report into the moderation queue
+      // the team already works. Best effort: the block itself has happened.
+      reportContent(
+        "user",
+        target.authorId,
+        "other",
+        `Blocked by user from ${target.type} ${target.id}.`
+      ).catch(() => {});
       setBlockedAuthor(true);
       onBlocked?.(target.authorId);
       show({
@@ -299,44 +333,64 @@ export default function ContentActionsSheet({
       backdropComponent={renderBackdrop}
       backgroundStyle={{ backgroundColor: t.surfaceRaised }}
       handleIndicatorStyle={{ backgroundColor: t.borderStrong }}
+      // The report's "Anything to add?" step is the only text field here, and
+      // a plain TextInput is invisible to the sheet's keyboard tracking, so
+      // the box and the Send button sat under the keyboard. The sheet lifts
+      // itself instead: that step is at 68%, so there is room to move, which
+      // is what InputSheet's comment says this library lacks at 90%.
+      // adjustResize because Android is edge-to-edge and no longer resizes
+      // the window for the IME on its own.
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
     >
       <BottomSheetView className="flex-1">
         {step === "actions" && (
           <>
             <Header title={target.title ? target.title : "Options"} />
-            <Row
-              icon={
-                saved ? (
-                  <BookmarkCheck size={20} color={t.primaryText} />
-                ) : (
-                  <Bookmark size={20} color={iconColor} />
-                )
-              }
-              label={saved ? "Saved" : "Save"}
-              caption={saved ? "Tap to remove from your saved items" : "Keep this for later"}
-              onPress={handleToggleSave}
-              a11y={saved ? "Remove from saved" : "Save for later"}
-            />
-            <Row
-              icon={<Send size={20} color={iconColor} />}
-              label="Share"
-              caption="Send to a friend"
-              onPress={handleShare}
-            />
-            <Row
-              icon={<Flag size={20} color={t.primaryText} />}
-              label="Report"
-              caption="Tell us what's wrong with this"
-              onPress={() => setStep("reasons")}
-              danger
-              last={!target.authorId || target.isOwn}
-            />
+            {canSave ? (
+              <Row
+                icon={
+                  saved ? (
+                    <BookmarkCheck size={20} color={t.primaryText} />
+                  ) : (
+                    <Bookmark size={20} color={iconColor} />
+                  )
+                }
+                label={saved ? "Saved" : "Save"}
+                caption={saved ? "Tap to remove from your saved items" : "Keep this for later"}
+                onPress={handleToggleSave}
+                a11y={saved ? "Remove from saved" : "Save for later"}
+              />
+            ) : null}
+            {canShare ? (
+              <Row
+                icon={<Send size={20} color={iconColor} />}
+                label="Share"
+                caption="Send to a friend"
+                onPress={handleShare}
+              />
+            ) : null}
+            {!target.isOwn ? (
+              <Row
+                icon={<Flag size={20} color={t.primaryText} />}
+                label={target.type === "user" ? `Report ${target.authorName ?? "this account"}` : "Report"}
+                caption={
+                  target.type === "user"
+                    ? "Tell us what this person is doing wrong"
+                    : "Tell us what's wrong with this"
+                }
+                onPress={requireAccount(() => setStep("reasons"))}
+                danger
+                last={!target.authorId}
+              />
+            ) : null}
             {target.authorId && !target.isOwn ? (
               <Row
                 icon={<UserMinus size={20} color={t.primaryText} />}
                 label={`Block ${target.authorName ?? "this person"}`}
                 caption="You'll stop seeing anything they post"
-                onPress={handleBlock}
+                onPress={requireAccount(handleBlock)}
                 danger
                 last
               />
@@ -388,7 +442,7 @@ export default function ContentActionsSheet({
               onBack={() => setStep("reasons")}
             />
             <View className="px-5 pt-4">
-              <TextInput
+              <BottomSheetTextInput
                 value={details}
                 onChangeText={setDetails}
                 multiline

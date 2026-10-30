@@ -2,6 +2,7 @@
 import { request, BASE_URL } from "../api";
 import { CreateProductRequest, UpdateProductRequest, ProductResponse, Product, ProductDetail } from "../../models/products";
 import { emitBadgeChanged } from "../../utils/badgeEvents";
+import { assertCleanContent } from "../../utils/contentFilter";
 import { ApiResponse } from "../../models/auth";
 import { Pagination } from "../../models/orders";
 
@@ -9,6 +10,7 @@ import { Pagination } from "../../models/orders";
  * Create a new product (seller only)
  */
 export async function createProduct(payload: CreateProductRequest): Promise<ProductResponse> {
+  assertCleanContent(payload.name, payload.description);
   // Trailing slash: `/products` 308-redirects to cleartext http, which release
   // Android blocks — and a redirected POST can drop its body anyway.
   const res = await request<ApiResponse<ProductResponse>>(`${BASE_URL}/products/`, {
@@ -33,6 +35,7 @@ export async function updateProduct(
   productId: string,
   payload: UpdateProductRequest
 ): Promise<ProductResponse> {
+  assertCleanContent(payload.name, payload.description);
   const res = await request<ApiResponse<ProductResponse>>(
     `${BASE_URL}/products/${productId}`,
     { method: "PUT", body: JSON.stringify(payload) }

@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import {View,Text,ScrollView,FlatList,ActivityIndicator,TouchableOpacity,TextInput,Image, KeyboardAvoidingView, Share, Keyboard, Platform} from "react-native";
-import { ArrowLeft, SendHorizonal } from "lucide-react-native";
+import { ArrowLeft, MoreHorizontal, SendHorizonal } from "lucide-react-native";
+import ContentActionsSheet, { type ContentActionsTarget } from "../../components/ContentActionsSheet";
+import { useModerationFilter } from "../../hooks/useModerationFilter";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useBackTo } from "../../utils/goBack";
 import { commentOnPost, getPostById, getPostComments, likePost } from "../../services/sections/post";
-import { CommentItem, CommentResponse, PostDetails } from "../../models/post";
+import { CommentItem, CommentResponse, PostDetails, type TaggedProduct } from "../../models/post";
 import { useToast } from "../../components/ToastProvider";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { parseDate } from "../../utils/parseDate";
@@ -15,6 +17,7 @@ import Avatar from "../../components/Avatar";
 import type { UserProfile } from "../../models/profile";
 import { useTheme } from "../../components/themeProvider";
 import { useTokens } from "../../theme/useTokens";
+import { useAndroidKeyboardPadding } from "../../hooks/useKeyboardOverlap";
 import CartFab from "../../components/CartFab";
 import { getProductById } from "../../services/sections/product";
 import { addToCart } from "../../services/sections/cart";
@@ -26,6 +29,9 @@ import { PostMediaGrid, mediaTypeOf, type MediaItem } from "../../components/pos
 import PostActionBar from "../../components/PostActionBar";
 import { saveItem, unsaveItem } from "../../services/sections/saved";
 import { parseServerDate } from "../../utils/datetime";
+import { maskObjectionable } from "../../utils/contentFilter";
+import { promptSignUp } from "../../utils/authNavigation";
+import { friendlyErrorMessage } from "../../utils/errorMessages";
 
 
 
@@ -47,9 +53,17 @@ function sameCommentGroup(a?: CommentItem, b?: CommentItem) {
 }
 
 // Helper component for comment rendering
-const SingleCommentComponent = React.memo(({ comment, isDark, grouped = false }: { comment: CommentItem, isDark: boolean, grouped?: boolean }) => {
+const SingleCommentComponent = React.memo(({ comment, isDark, grouped = false, onLongPress }: { comment: CommentItem, isDark: boolean, grouped?: boolean, onLongPress?: (comment: CommentItem) => void }) => {
   return (
-    <View className={`flex w-full flex-row items-start justify-start gap-3 px-4 ${grouped ? "pt-0.5 pb-1" : "pt-3 pb-1"}`}>
+    // Long-press to report the comment or block its author (Guideline 1.2).
+    <TouchableOpacity
+      activeOpacity={0.7}
+      delayLongPress={350}
+      onLongPress={onLongPress ? () => onLongPress(comment) : undefined}
+      disabled={!onLongPress}
+      accessibilityHint={onLongPress ? "Long press to report or block" : undefined}
+      className={`flex w-full flex-row items-start justify-start gap-3 px-4 ${grouped ? "pt-0.5 pb-1" : "pt-3 pb-1"}`}
+    >
       {grouped ? (
         // Keeps the text aligned under the run's first comment.
         <View style={{ width: 40 }} />
@@ -72,10 +86,10 @@ const SingleCommentComponent = React.memo(({ comment, isDark, grouped = false }:
           </View>
         )}
         <Text className="text-sm font-normal leading-normal text-text-primary">
-          {comment.content}
+          {maskObjectionable(comment.content)}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 });
 
@@ -102,13 +116,20 @@ export default function PostDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { show } = useToast();
   const { user } = useUser();
+  const moderation = useModerationFilter();
+  const [actionsTarget, setActionsTarget] = useState<ContentActionsTarget | null>(null);
+  const isOwnPost = !!user?.user_id && post?.user?.id === user.user_id;
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [sponsoredProduct, setSponsoredProduct] = useState<ProductDetail | null>(null);
-  const [addingToCart, setAddingToCart] = useState(false);
+  const [taggedProducts, setTaggedProducts] = useState<TaggedProduct[]>([]);
+  // Which card's "Add to cart" is in flight, so only that one shows busy.
+  const [addingId, setAddingId] = useState<string | null>(null);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const t = useTokens();
   const insets = useSafeAreaInsets();
+  // The KeyboardAvoidingView only acts on iOS; this lifts the composer on
+  // Android. The SafeAreaView pads the top edge only, so nothing to subtract.
+  const androidKeyboardPad = useAndroidKeyboardPadding(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   useEffect(() => {
@@ -189,36 +210,65 @@ export default function PostDetailsScreen() {
     if (id) FetchPost(id);
   }, [id]);
 
-  // Resolve the attached ("sponsored") product — the post only carries product_id(s).
+  // Every tagged product, in the order they were tagged. The post carries
+  // each card itself (name, price, image, availability), so opening a post
+  // costs no request per tag. A deleted product comes back as a null card and
+  // is left out. The fetch below only runs against a server too old to send
+  // cards, and keeps whichever products still load.
   useEffect(() => {
-    const productId = post?.products?.[0]?.product_id;
-    if (!productId) {
-      setSponsoredProduct(null);
+    const tags = post?.products ?? [];
+    if (tags.length === 0) {
+      setTaggedProducts([]);
+      return;
+    }
+    if (tags.every((tag) => tag.product !== undefined)) {
+      setTaggedProducts(
+        tags.map((tag) => tag.product).filter((p): p is TaggedProduct => !!p)
+      );
       return;
     }
     let cancelled = false;
     (async () => {
-      try {
-        const detail = await getProductById(productId);
-        if (!cancelled) setSponsoredProduct(detail);
-      } catch (err) {
-        if (!cancelled) logger.error("Failed to load sponsored product:", err);
-      }
+      // Each request settles on its own, so one missing product does not
+      // hide the others.
+      const details = await Promise.all(
+        tags.map((tag) =>
+          getProductById(tag.product_id).catch((err): ProductDetail | null => {
+            logger.error("Failed to load tagged product:", err);
+            return null;
+          })
+        )
+      );
+      if (cancelled) return;
+      setTaggedProducts(
+        details
+          .filter((detail): detail is ProductDetail => !!detail)
+          .map((detail) => ({
+            id: detail.id,
+            name: detail.name,
+            price: detail.price,
+            image_url: resolveProductImageUri(detail),
+          }))
+      );
     })();
     return () => {
       cancelled = true;
     };
   }, [post?.products]);
 
-  const handleAddSponsoredToCart = React.useCallback(async () => {
-    if (!sponsoredProduct || addingToCart) return;
-    setAddingToCart(true);
+  const handleAddTaggedToCart = React.useCallback(async (product: TaggedProduct) => {
+    if (!user) {
+      promptSignUp();
+      return;
+    }
+    if (addingId) return;
+    setAddingId(product.id);
     try {
-      await addToCart({ product_id: sponsoredProduct.id, variant_id: 0, quantity: 1 });
+      await addToCart({ product_id: product.id, variant_id: 0, quantity: 1 });
       show({
         variant: "success",
         title: "Added to cart",
-        message: `${sponsoredProduct.name} has been added to your cart.`,
+        message: `${product.name} has been added to your cart.`,
       });
     } catch {
       show({
@@ -227,9 +277,9 @@ export default function PostDetailsScreen() {
         message: "Please sign in as a buyer and try again.",
       });
     } finally {
-      setAddingToCart(false);
+      setAddingId(null);
     }
-  }, [sponsoredProduct, addingToCart, show]);
+  }, [addingId, show, user]);
 
   useEffect(() => {
     getUserProfile()
@@ -261,7 +311,7 @@ export default function PostDetailsScreen() {
       show({
         variant: "error",
         title: "Error adding comment",
-        message: "There was an issue adding your comment.",
+        message: friendlyErrorMessage(error, "There was an issue adding your comment."),
       });
     } finally {
       postingCommentRef.current = false;
@@ -360,9 +410,31 @@ export default function PostDetailsScreen() {
         >
           <ArrowLeft size={24} color={t.textPrimary} />
         </TouchableOpacity>
-        <Text className="text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12 text-text-primary">
+        <Text className="text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center text-text-primary">
           Post
         </Text>
+        {/* Report and block (App Store Guideline 1.2). An empty box of the
+            same size on your own post keeps the title centred. */}
+        {isOwnPost || !user ? (
+          <View className="size-12" />
+        ) : (
+          <TouchableOpacity
+            className="flex size-12 shrink-0 items-center justify-center"
+            onPress={() =>
+              setActionsTarget({
+                type: "post",
+                id: post.id,
+                title: post.caption?.trim() ? post.caption.trim().slice(0, 60) : "This post",
+                authorId: post.user?.id,
+                authorName: post.user?.username,
+              })
+            }
+            accessibilityRole="button"
+            accessibilityLabel="More options"
+          >
+            <MoreHorizontal size={24} color={t.textPrimary} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Tappable, as it is in the feed. The author here was static, so opening
@@ -385,7 +457,7 @@ export default function PostDetailsScreen() {
 
       {/* Caption */}
       <Text className="text-base font-normal leading-normal pb-3 pt-1 px-4 text-text-primary">
-        {post.caption}
+        {maskObjectionable(post.caption)}
       </Text>
 
       {/* Media — Instagram-style grid (max 5), tap any tile for fullscreen */}
@@ -396,73 +468,94 @@ export default function PostDetailsScreen() {
       )}
 
 
-      {/* Attached product — resolved from the post's product_id */}
-      {sponsoredProduct && (
-        <TouchableOpacity
-          className="p-4"
-          activeOpacity={0.8}
-          onPress={() => router.push(`/productDetails/${sponsoredProduct.id}`)}
-        >
-        <View className="flex items-stretch justify-between gap-4 rounded flex-row">
-          <View className="flex flex-[2_2_0px] flex-col gap-4">
-            <View className="flex flex-col gap-1">
-              <Text className="text-sm font-normal leading-normal text-text-secondary">
-                Featured product
-              </Text>
-              <Text
-                numberOfLines={2}
-                className="text-base font-bold leading-tight text-text-primary"
+      {/* Tagged products, one card each, in tagging order */}
+      {taggedProducts.length > 0 && (
+        <View className="px-4 pt-4 gap-4">
+          <Text className="text-sm font-normal leading-normal text-text-secondary">
+            {taggedProducts.length === 1
+              ? "Featured product"
+              : `Featured products (${taggedProducts.length})`}
+          </Text>
+          {taggedProducts.map((product) => {
+            const adding = addingId === product.id;
+            const imageUri = resolveProductImageUri(product);
+            return (
+              <TouchableOpacity
+                key={product.id}
+                activeOpacity={0.8}
+                onPress={() => router.push(`/productDetails/${product.id}`)}
               >
-                {sponsoredProduct.name}
-              </Text>
-              <Text className="text-sm font-normal leading-normal text-text-secondary">
-                {formatNaira(sponsoredProduct.price)}
-              </Text>
-            </View>
-            <TouchableOpacity
-              disabled={addingToCart}
-              className={`flex min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded h-8 px-4 flex-row-reverse w-fit ${addingToCart ? "opacity-60" : ""} bg-surface-sunken`}
-              onPress={handleAddSponsoredToCart}
-              accessibilityRole="button"
-              accessibilityLabel={`Add ${sponsoredProduct.name} to cart`}
-            >
-              {addingToCart ? (
-                <ActivityIndicator size="small" color={t.textPrimary} />
-              ) : (
-                <Text className="text-sm font-medium leading-normal truncate text-text-primary">
-                  Add to Cart
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-          {resolveProductImageUri(sponsoredProduct) ? (
-            <Image
-              source={{ uri: resolveProductImageUri(sponsoredProduct)! }}
-              className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded flex-1"
-            />
-          ) : (
-            <View className="flex-1 aspect-video rounded bg-surface-sunken" />
-          )}
+                <View className="flex items-stretch justify-between gap-4 rounded flex-row">
+                  <View className="flex flex-[2_2_0px] flex-col gap-4">
+                    <View className="flex flex-col gap-1">
+                      <Text
+                        numberOfLines={2}
+                        className="text-base font-bold leading-tight text-text-primary"
+                      >
+                        {product.name}
+                      </Text>
+                      <Text className="text-sm font-normal leading-normal text-text-secondary">
+                        {formatNaira(product.price)}
+                      </Text>
+                    </View>
+                    {/* A tag can outlive its stock; the card says so instead
+                        of offering a cart button that would only fail. */}
+                    {product.is_available === false ? (
+                      <Text className="text-sm font-medium leading-normal text-text-muted">
+                        Currently unavailable
+                      </Text>
+                    ) : (
+                      <TouchableOpacity
+                        disabled={!!addingId}
+                        className={`flex min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded h-8 px-4 flex-row-reverse w-fit ${adding ? "opacity-60" : ""} bg-surface-sunken`}
+                        onPress={() => handleAddTaggedToCart(product)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Add ${product.name} to cart`}
+                      >
+                        {adding ? (
+                          <ActivityIndicator size="small" color={t.textPrimary} />
+                        ) : (
+                          <Text className="text-sm font-medium leading-normal truncate text-text-primary">
+                            Add to Cart
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  {imageUri ? (
+                    <Image
+                      source={{ uri: imageUri }}
+                      className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded flex-1"
+                    />
+                  ) : (
+                    <View className="flex-1 aspect-video rounded bg-surface-sunken" />
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </View>
-      </TouchableOpacity>
       )}
 
       <View className="mx-4 pt-2 border-t border-border-strong">
         <Text className="text-sm mb-1 text-text-secondary">
           {parseDate(post.created_at)}
         </Text>
-        <PostActionBar
-          likeCount={likeCount}
-          commentCount={post.comment_count}
-          views={post.views_count ?? post.view_count ?? post.views}
-          liked={likedByMe}
-          saved={saved}
-          disabled={isLiking}
-          onLike={handleLike}
-          onComment={() => commentInputRef.current?.focus()}
-          onSave={handleSave}
-          onShare={handleShare}
-        />
+        {/* View-only for guests: no like, comment, save or share. */}
+        {user ? (
+          <PostActionBar
+            likeCount={likeCount}
+            commentCount={post.comment_count}
+            views={post.views_count ?? post.view_count ?? post.views}
+            liked={likedByMe}
+            saved={saved}
+            disabled={isLiking}
+            onLike={handleLike}
+            onComment={() => commentInputRef.current?.focus()}
+            onSave={handleSave}
+            onShare={handleShare}
+          />
+        ) : null}
       </View>
 
       {/* Comments Header */}
@@ -478,17 +571,46 @@ export default function PostDetailsScreen() {
       likedByMe,
       isLiking,
       saved,
-      sponsoredProduct,
-      addingToCart,
+      taggedProducts,
+      addingId,
       profile,
       isDark,
       t,
       router,
+      isOwnPost,
+      user,
       handleLike,
       handleSave,
       handleShare,
-      handleAddSponsoredToCart,
+      handleAddTaggedToCart,
     ],
+  );
+
+  // A blocked person's comments go the moment the block lands, and a reported
+  // comment goes for the person who reported it.
+  const visibleComments = React.useMemo(
+    () =>
+      comments.filter(
+        (c) => !moderation.isBlocked(c.user?.id) && !moderation.isReported("comment", c.id)
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [comments, moderation.version],
+  );
+
+  const openCommentActions = React.useCallback(
+    (comment: CommentItem) => {
+      if (!user) return;
+      const isOwn = !!user?.user_id && comment.user?.id === user.user_id;
+      if (isOwn) return;
+      setActionsTarget({
+        type: "comment",
+        id: String(comment.id),
+        title: comment.content?.trim() ? comment.content.trim().slice(0, 60) : "This comment",
+        authorId: comment.user?.id,
+        authorName: comment.user?.username,
+      });
+    },
+    [user?.user_id],
   );
 
   const renderCommentItem = React.useCallback(
@@ -496,10 +618,11 @@ export default function PostDetailsScreen() {
       <SingleCommentComponent
         comment={item}
         isDark={isDark}
-        grouped={sameCommentGroup(comments[index - 1], item)}
+        grouped={sameCommentGroup(visibleComments[index - 1], item)}
+        onLongPress={openCommentActions}
       />
     ),
-    [isDark, comments],
+    [isDark, visibleComments, openCommentActions],
   );
 
   // An element for the same reason as the header: a fresh function identity is
@@ -536,7 +659,7 @@ export default function PostDetailsScreen() {
       >
         <View className="relative flex-1 flex-col justify-between" style={{ backgroundColor: t.surfacePage }}>
           <FlatList
-          data={comments}
+          data={visibleComments}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderCommentItem}
           ListHeaderComponent={listHeader}
@@ -549,7 +672,25 @@ export default function PostDetailsScreen() {
           contentContainerStyle={{ flexGrow: 1 }}
         />
 
-          <View style={{ paddingBottom: keyboardVisible ? 0 : insets.bottom }}>
+          {/* Guests from "Browse first" can read a post and its comments,
+              but joining the conversation needs an account. */}
+          {!user ? (
+            <View
+              className="px-4 pt-3 border-t bg-surface-raised border-border"
+              style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+            >
+              <TouchableOpacity
+                onPress={() => promptSignUp("Create a free account to comment, like and save posts.")}
+                accessibilityRole="button"
+                className="h-11 rounded items-center justify-center bg-surface-sunken"
+              >
+                <Text className="text-sm font-semibold text-text-secondary">
+                  Sign up to join the conversation
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+          <View style={{ paddingBottom: keyboardVisible ? androidKeyboardPad : insets.bottom }}>
             <View className="px-4 py-2 border-t bg-surface-raised border-border">
               <View className="flex-row items-center gap-3">
                 <Avatar uri={myAvatarUri} name={myDisplayName} size={40} />
@@ -591,9 +732,19 @@ export default function PostDetailsScreen() {
               </View>
             </View>
           </View>
+          )}
         </View>
       </KeyboardAvoidingView>
       <CartFab />
+      <ContentActionsSheet
+        target={actionsTarget}
+        onClose={() => setActionsTarget(null)}
+        onBlocked={(blockedId) => {
+          // Blocking the post's author leaves nothing here worth staying for;
+          // blocking a commenter just drops their comments.
+          if (blockedId === post.user?.id) goBack();
+        }}
+      />
     </SafeAreaView>
   );
 }

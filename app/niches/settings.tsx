@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from "react-native";
+import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Camera, Image as ImageIcon, Save } from "lucide-react-native";
 import ScreenHeader from "../../components/ScreenHeader";
 import { SettingsSection, SettingsSwitchRow } from "../../components/SettingsList";
@@ -12,12 +12,18 @@ import { getMyNiches, getNicheById, updateNiche } from "../../services/sections/
 import { attemptMultipleUpload } from "../../services/sections/media";
 import type { Niches, NicheVisibility, UpdateNicheRequest } from "../../models/niches";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
+import { useKeyboardOverlap, keyboardScrollPadding } from "../../hooks/useKeyboardOverlap";
 
 export default function NicheSettingsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { show } = useToast();
   const t = useTokens();
+  const insets = useSafeAreaInsets();
+  // Tags and rules are the last fields on the page, both under the keyboard.
+  // KeyboardAvoidingView covers iOS; Android is edge-to-edge and no longer
+  // resizes for the keyboard, so the padding makes room there.
+  const keyboardOverlap = useKeyboardOverlap();
   const [niche, setNiche] = useState<Niches | null>(null);
   const [ownerChecked, setOwnerChecked] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -122,7 +128,17 @@ export default function NicheSettingsScreen() {
         title="Community settings"
         fallback={id ? `/niches/${id}` : "/myniches"}
       />
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+      <ScrollView
+        contentContainerStyle={{
+          paddingBottom: keyboardScrollPadding(keyboardOverlap, insets.bottom, 40),
+        }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+      >
         <SettingsSection title="Community identity">
           <View className="p-4">
             <Text className={`text-xs font-bold uppercase tracking-[2px] mb-2 ${muted}`}>Name</Text>
@@ -155,6 +171,7 @@ export default function NicheSettingsScreen() {
         </SettingsSection>
         <TouchableOpacity disabled={saving} onPress={() => save()} className="mx-4 mt-6 h-12 rounded bg-primary-fill flex-row items-center justify-center"><Save size={18} color={t.textOnPrimary} /><Text className="text-text-on-primary font-bold ml-2">{saving ? "Saving…" : "Save changes"}</Text></TouchableOpacity>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

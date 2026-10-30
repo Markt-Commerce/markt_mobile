@@ -25,6 +25,13 @@ const AUTH_TOKEN_KEY = "markt_auth_token";
 /** The AsyncStorage key the token used to live under, for the one-time move. */
 const LEGACY_AUTH_TOKEN_KEY = "@markt_auth_token";
 const USER_SESSION_KEY = "user_session";
+/**
+ * The last profile the server sent, so the header, role and tab bar render on
+ * the first frame of a cold start instead of after a round trip. Same footing
+ * as the session blob: a display cache with no credential in it (no token, no
+ * bank details), stored with the user id it belongs to and cleared on sign-out.
+ */
+const PROFILE_CACHE_KEY = "user_profile_cache";
 
 const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days per guide
 
@@ -109,6 +116,35 @@ export async function clearUserSession(): Promise<void> {
   // never reuse them (the backend would replay the previous account's orders).
   clearAllIdempotencyKeys();
   await AsyncStorage.removeItem(USER_SESSION_KEY);
+  // The profile cache goes with the session, so the next person to sign in
+  // on this device never sees the previous one's name or address.
+  await AsyncStorage.removeItem(PROFILE_CACHE_KEY);
+}
+
+type CachedProfile<T> = { userId: string; profile: T };
+
+/** The cached profile, only if it belongs to `userId`. */
+export async function getCachedProfile<T>(userId: string): Promise<T | null> {
+  try {
+    const raw = await AsyncStorage.getItem(PROFILE_CACHE_KEY);
+    if (!raw) return null;
+    const cached: CachedProfile<T> = JSON.parse(raw);
+    return cached?.userId === userId ? cached.profile : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function setCachedProfile<T>(userId: string, profile: T): Promise<void> {
+  try {
+    await AsyncStorage.setItem(
+      PROFILE_CACHE_KEY,
+      JSON.stringify({ userId, profile } as CachedProfile<T>)
+    );
+  } catch {
+    // A cache that cannot be written just means the next start waits for
+    // the network, as it always used to.
+  }
 }
 
 export async function getStoredUser(): Promise<StoredSession | null> {

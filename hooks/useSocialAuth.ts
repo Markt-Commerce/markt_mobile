@@ -37,6 +37,23 @@ export type SocialAuthState = {
 const GENERIC =
   "We couldn't complete that sign-in. Please try again in a moment.";
 
+/**
+ * The generic message plus a short reference, e.g. "(ref: DEVELOPER_ERROR)"
+ * or "(ref: 500 OAUTH_INVALID)".
+ *
+ * `logger.error` only reaches the device console, which nobody can see on a
+ * Play Store build, so a failed sign-in used to leave no trace at all: the
+ * report was just "it says it can't sign in". The reference is what tells a
+ * native problem (an unregistered signing key comes back as DEVELOPER_ERROR)
+ * apart from a server one.
+ */
+function genericWithRef(e: any): string {
+  const parts = [e?.status, e?.data?.errors?.code ?? e?.errors?.code ?? e?.code]
+    .filter((p) => p != null && p !== "")
+    .map(String);
+  return parts.length ? `${GENERIC} (ref: ${parts.join(" ")})` : GENERIC;
+}
+
 /** null when the native module isn't in this binary. */
 function googleModule() {
   return requireOptional("google-signin", () =>
@@ -79,7 +96,11 @@ export function useSocialAuth(onSuccess: (user: any, isNew: boolean) => void) {
       } catch (e: any) {
         if (e instanceof AccountExistsError) return fail(e.message, true);
         if (e?.status === 503) {
-          return fail("Social sign-in isn't available right now. You can continue with email.");
+          // OAUTH_NOT_CONFIGURED: the server has no client ids to check the
+          // token against (GOOGLE_*_CLIENT_ID unset in its environment).
+          return fail(
+            "Social sign-in isn't available right now. You can continue with email. (ref: 503)"
+          );
         }
         if (e?.status === 401) {
           return fail("That sign-in couldn't be verified. Please try again.");
@@ -89,7 +110,7 @@ export function useSocialAuth(onSuccess: (user: any, isNew: boolean) => void) {
           return fail("You appear to be offline. Check your connection and try again.");
         }
         logger.error("oauth exchange failed", e);
-        fail(GENERIC);
+        fail(genericWithRef(e));
       }
     },
     [onSuccess, fail]
@@ -135,7 +156,7 @@ export function useSocialAuth(onSuccess: (user: any, isNew: boolean) => void) {
         return fail("Google Play services aren't available on this device. You can continue with email.");
       }
       logger.error("google sign-in failed", e);
-      fail(GENERIC);
+      fail(genericWithRef(e));
     }
   }, [finish, fail]);
 
@@ -191,7 +212,7 @@ export function useSocialAuth(onSuccess: (user: any, isNew: boolean) => void) {
         return setState({ busy: null, error: null, needsPasswordLink: false });
       }
       logger.error("apple sign-in failed", e);
-      fail(GENERIC);
+      fail(genericWithRef(e));
     }
   }, [finish, fail]);
 

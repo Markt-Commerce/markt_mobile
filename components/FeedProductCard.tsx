@@ -24,6 +24,7 @@ import { formatPrice } from "../utils/money";
 import { discountPercent } from "./Price";
 import { tierColor } from "../theme/tierColors";
 import { parseServerDate } from "../utils/datetime";
+import { maskObjectionable } from "../utils/contentFilter";
 
 interface Props {
   product: FeedProduct;
@@ -167,7 +168,7 @@ function FeedProductCard({ product, onMessageSeller, onOpenActions }: Props) {
             <View className="flex-row items-start gap-2 mb-1.5">
               <Tag size={17} color={t.dangerText} strokeWidth={2.2} />
               <Text className="flex-1 text-[16px] leading-5 font-semibold text-text-primary" numberOfLines={2}>
-                {product.name}
+                {maskObjectionable(product.name)}
               </Text>
             </View>
             <View

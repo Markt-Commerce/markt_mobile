@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -15,6 +16,8 @@ import {
   type BrowseLocation,
 } from "../services/sections/location";
 import { logger } from "../utils/logger";
+import { afterFeedLoads } from "../utils/startupGate";
+import { useUser } from "./userContextProvider";
 
 /**
  * The browse location, app-wide.
@@ -70,6 +73,10 @@ export function BrowseLocationProvider({ children }: { children: ReactNode }) {
         // Then reconcile with the server, which is authoritative for a
         // signed-in user who set their location on another device.
         try {
+          // The cached value above already drives the header; this check can
+          // wait for the feed (utils/startupGate) rather than compete with it.
+          await afterFeedLoads();
+          if (!alive) return;
           const remote = await getBrowseLocation(gid);
           if (alive && remote?.latitude != null) {
             setLocal(remote);
@@ -90,6 +97,42 @@ export function BrowseLocationProvider({ children }: { children: ReactNode }) {
       alive = false;
     };
   }, []);
+
+  // The restore above runs once, at launch -- usually before anyone has signed
+  // in, so it can only see the guest's choice. A user who then signs in kept
+  // that (or "Set your location") until the next launch, even though their
+  // own location was on the server. Re-read it whenever the signed-in user
+  // changes; the server answers with the user's location over the guest's.
+  const { user } = useUser();
+  const userId = user?.user_id ?? null;
+  const syncedUserId = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    if (loading || !guestId) return;
+    if (syncedUserId.current === undefined) {
+      // Launch: the restore effect already fetched for whoever this is.
+      syncedUserId.current = userId;
+      return;
+    }
+    if (!userId || syncedUserId.current === userId) {
+      syncedUserId.current = userId;
+      return;
+    }
+    syncedUserId.current = userId;
+    let alive = true;
+    getBrowseLocation(guestId)
+      .then(async (remote) => {
+        if (alive && remote?.latitude != null) {
+          setLocal(remote);
+          await AsyncStorage.setItem(LOCATION_KEY, JSON.stringify(remote));
+        }
+      })
+      .catch(() => {
+        // Nothing stored for this user yet: keep what is on screen.
+      });
+    return () => {
+      alive = false;
+    };
+  }, [userId, guestId, loading]);
 
   const setLocation = useCallback(
     async (loc: BrowseLocation) => {

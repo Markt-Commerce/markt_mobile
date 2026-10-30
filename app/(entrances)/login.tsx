@@ -23,8 +23,10 @@ import { useToast } from "../../components/ToastProvider";
 import { navigateToAppHome, navigateToOnboardingStep } from "../../utils/authNavigation";
 import { getUserProfile } from "../../services/sections/profile";
 import { useTokens } from "../../theme/useTokens";
+import { useAndroidKeyboardPadding } from "../../hooks/useKeyboardOverlap";
 import { friendlyErrorMessage } from "../../utils/errorMessages";
 import BackButton from "../../components/BackButton";
+import TermsNotice from "../../components/auth/TermsNotice";
 
 const schema = z.object({
   email: z.string().min(1, "Email is required"),
@@ -37,6 +39,8 @@ export default function LoginScreen() {
   const { setRegData } = useRegData();
   const { show } = useToast();
   const t = useTokens();
+  // The KeyboardAvoidingView below only acts on iOS; this is Android's share.
+  const androidKeyboardPad = useAndroidKeyboardPadding();
   const iconColor = t.textPrimary;
 
   const [isLoading, setIsLoading] = React.useState(false);
@@ -152,7 +156,7 @@ export default function LoginScreen() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: androidKeyboardPad }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -229,6 +233,8 @@ export default function LoginScreen() {
                 text="Sign in"
                 variant="conversion"
               />
+
+              <TermsNotice className="mt-3" />
 
               {/* Sign up */}
               <View className="mt-8 items-center">

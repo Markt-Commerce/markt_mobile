@@ -11,7 +11,7 @@
  * optimistically and surfaces the server's own sentence if the gate rejects it —
  * that message is written for the buyer and says exactly what's missing.
  */
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, TouchableOpacity, TextInput, ActivityIndicator } from "react-native";
 import { ThumbsUp, Pencil, Trash2, X } from "lucide-react-native";
 import Avatar from "./Avatar";
@@ -35,6 +35,12 @@ type Props = {
   productId: string;
   /** Bubbles up so the page header can refresh its average. */
   onChanged?: () => void;
+  /**
+   * The review box, while it has focus; null once it loses it. This
+   * component sits inside the page's list, so only the page can scroll the
+   * box clear of the keyboard.
+   */
+  onComposerFocusChange?: (input: TextInput | null) => void;
 };
 
 function relativeDate(iso?: string) {
@@ -49,7 +55,8 @@ function relativeDate(iso?: string) {
   return `${Math.floor(days / 365)}y ago`;
 }
 
-export default function ProductReviews({ productId, onChanged }: Props) {
+export default function ProductReviews({ productId, onChanged, onComposerFocusChange }: Props) {
+  const composerInputRef = useRef<TextInput>(null);
   const t = useTokens();
   const { show } = useToast();
   const { user } = useUser();
@@ -231,6 +238,9 @@ export default function ProductReviews({ productId, onChanged }: Props) {
           <StarRatingInput value={rating} onChange={setRating} />
 
           <TextInput
+            ref={composerInputRef}
+            onFocus={() => onComposerFocusChange?.(composerInputRef.current)}
+            onBlur={() => onComposerFocusChange?.(null)}
             value={content}
             onChangeText={setContent}
             placeholder="What should other buyers know?"

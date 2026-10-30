@@ -1,3 +1,4 @@
+import { Alert } from "react-native";
 import { router } from "expo-router";
 
 /**
@@ -14,6 +15,19 @@ export function navigateToAppHome() {
 /** Land on the guest landing screen (logout / session expired). */
 export function navigateToGuestHome() {
   router.replace("/introduction");
+}
+
+/**
+ * A guest reached for something that needs an account.
+ *
+ * Asked, never forced: they stay where they are unless they choose to sign
+ * up, so browsing without an account keeps working.
+ */
+export function promptSignUp(message = "Create a free account to buy, chat with sellers, and save what you like.") {
+  Alert.alert("Create an account", message, [
+    { text: "Not now", style: "cancel" },
+    { text: "Sign up", onPress: () => router.push("/(entrances)/signup") },
+  ]);
 }
 
 /**
