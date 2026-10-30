@@ -15,6 +15,8 @@ export interface Order {
   seller_id?: number;
   cart_id: number;
   created_at: string;
+  /** Placed by a Markt Business account (stamped when ordered). */
+  is_business?: boolean;
   shipping_address?: Record<string, any>;
   items?: OrderItem[];
   buyer?: {

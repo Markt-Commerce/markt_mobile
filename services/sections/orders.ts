@@ -3,10 +3,16 @@ import { emitBadgeChanged } from "../../utils/badgeEvents";
 import { Order, OrderItem, CreateOrderPayload, PayOrderPayload, UpdateOrderItemPayload, Pagination, SellerOrderItem, OrderTracking, DeliveryWaitChoiceResponse, OrderCancelResponse, PodCode } from "../../models/orders";
 
 // Get buyer orders
-export async function getBuyerOrders(page = 1, per_page = 10): Promise<Order[]> {
+export async function getBuyerOrders(
+  page = 1,
+  per_page = 10,
+  opts: { isBusiness?: boolean } = {}
+): Promise<Order[]> {
     // Trailing slash before the query: `/orders` 308-redirects to cleartext
     // `http://.../orders/`, which release Android APKs block.
-    const res = await request<Order[]>(`${BASE_URL}/orders/?page=${page}&per_page=${per_page}`, {
+    // isBusiness: true for Markt Business orders only, false for consumer only.
+    const business = opts.isBusiness === undefined ? "" : `&is_business=${opts.isBusiness}`;
+    const res = await request<Order[]>(`${BASE_URL}/orders/?page=${page}&per_page=${per_page}${business}`, {
       method: "GET",
     });
     return res;
