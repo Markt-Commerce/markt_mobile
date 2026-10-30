@@ -25,9 +25,11 @@ import {
   RefreshCw,
   X,
   LayoutDashboard,
+  Building2,
 } from "lucide-react-native";
 import Avatar from "./Avatar";
 import { useUser } from "../hooks/userContextProvider";
+import { useBusiness, useEnterBusiness } from "../hooks/businessContext";
 import { switchUserRole } from "../services/sections/auth";
 import { setUserSession } from "../services/authStorage";
 import { useToast } from "./ToastProvider";
@@ -77,6 +79,8 @@ export default function NavDrawer({
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const t = useTokens();
+  const { config: businessConfig } = useBusiness();
+  const enterBusiness = useEnterBusiness();
   const slideAnim = React.useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const overlayOpacity = React.useRef(new Animated.Value(0)).current;
 
@@ -271,6 +275,17 @@ export default function NavDrawer({
             <Row icon={User} label="Profile" onPress={() => nav("/(tabs)/profile")} isDark={isDark} />
             {role === "seller" && (
               <Row icon={LayoutDashboard} label="Dashboard" onPress={() => nav("/(tabs)/sellerDashboard")} isDark={isDark} />
+            )}
+            {businessConfig.features.enabled && (
+              <Row
+                icon={Building2}
+                label="Markt Business"
+                onPress={() => {
+                  onClose();
+                  void enterBusiness();
+                }}
+                isDark={isDark}
+              />
             )}
             <Row icon={Users} label="Niches" onPress={() => nav("/myniches")} isDark={isDark} />
             <Row icon={Settings} label="Settings" onPress={() => nav("/(settings)/settingsProfileScreen")} isDark={isDark} />

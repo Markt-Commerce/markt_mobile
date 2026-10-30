@@ -26,6 +26,7 @@ import { BrowseLocationProvider } from "../hooks/browseLocationContext";
 import CelebrationOverlay from "../components/gamification/CelebrationOverlay";
 import { CartProvider } from "../hooks/cartContext";
 import { NotificationsProvider } from "../hooks/notificationsContext";
+import { BusinessProvider } from "../hooks/businessContext";
 
 // Single app-wide query client. Created once at module scope so it survives
 // re-renders and Fast Refresh. Powers the tanstack-query hooks (useAuth,
@@ -57,9 +58,11 @@ export default function RootLayout() {
                 <NotificationsBootstrap />
                 <NotificationsProvider>
                   <CartProvider>
-                    <RegisterProvider value={{ regData, setRegData }}>
-                      <AppStack />
-                    </RegisterProvider>
+                    <BusinessProvider>
+                      <RegisterProvider value={{ regData, setRegData }}>
+                        <AppStack />
+                      </RegisterProvider>
+                    </BusinessProvider>
                   </CartProvider>
                 </NotificationsProvider>
               </UserProvider>
@@ -145,6 +148,8 @@ export function AppStack() {
           out for that beat is worse than the beat itself. */}
       <Stack.Protected guard={isLoggedIn && needsEmailVerification !== true}>
         <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+        {/* Markt Business: same account, same guard. */}
+        <Stack.Screen name="business" />
       </Stack.Protected>
 
       {/* Profile completion sits OUTSIDE both guards on purpose.
