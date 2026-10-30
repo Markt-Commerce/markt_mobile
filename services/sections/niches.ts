@@ -1,4 +1,5 @@
 import { request, BASE_URL } from "../api";
+import { emitNichesChanged } from "../../utils/nicheEvents";
 import {
   Niches,
   NichesResponse,
@@ -76,6 +77,7 @@ export async function joinNiche(niche_id: string): Promise<void> {
       "Content-Type": "application/json",
     },
   });
+  emitNichesChanged();
 }
 
 export async function leaveNiche(niche_id: string): Promise<void> {
@@ -85,6 +87,7 @@ export async function leaveNiche(niche_id: string): Promise<void> {
       "Content-Type": "application/json",
     },
   });
+  emitNichesChanged();
 }
 
 export async function getNichePosts(niche_id: string, page = 1, perPage = 10): Promise<NichePostsResponse> {

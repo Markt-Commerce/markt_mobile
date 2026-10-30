@@ -83,6 +83,17 @@ import { discountAmountFor } from "../../models/chat";
 import { isActiveOrder, isPastOrder } from "../../utils/orderStatus";
 import { onBadgeChanged } from "../../utils/badgeEvents";
 
+/**
+ * "One rider can collect both" -- off until checkout can honour it.
+ *
+ * The combined quote is price-only (the server keeps no quote rows for it),
+ * and each shop's card still checks out with its own solo quote, so with the
+ * toggle on the cards showed a combined share while the buyer was charged the
+ * full solo fee. Turn this on once checkout can take a combined-quote share
+ * and dispatch one rider for the orders together.
+ */
+const COMBINED_CHECKOUT_LIVE = false;
+
 type TabId = "cart" | "ongoing" | "completed";
 
 const formatMoney = (n?: number | string) => {
@@ -220,7 +231,7 @@ function MyCartTab() {
     const sellerIds = groups
       .map((g) => g.seller_id)
       .filter((id): id is number => id != null);
-    if (sellerIds.length < 2 || !address) {
+    if (!COMBINED_CHECKOUT_LIVE || sellerIds.length < 2 || !address) {
       setCombined(null);
       setCombineOptIn(false);
       return;
@@ -488,7 +499,7 @@ function MyCartTab() {
             group={g}
             deliveringTo={address?.label || address?.formatted_address || null}
             deliveryFee={
-              combineOptIn && combined?.available
+              COMBINED_CHECKOUT_LIVE && combineOptIn && combined?.available
                 ? (combined.shares.find((s) => s.seller_id === g.seller_id)
                     ?.charged_minor ?? 0) / 100
                 : g.seller_id != null && groupQuotes[g.seller_id]?.quote

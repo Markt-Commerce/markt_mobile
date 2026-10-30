@@ -41,6 +41,7 @@ import { useTokens } from "../../theme/useTokens";
 import { saveItem, unsaveItem } from "../../services/sections/saved";
 import { afterFeedLoads } from "../../utils/startupGate";
 import { useModerationFilter } from "../../hooks/useModerationFilter";
+import { onNichesChanged } from "../../utils/nicheEvents";
 
 // Early launch: only the main feed is live. Discover/Trending/Following are
 // hidden until their backend pipelines are ready — restore entries here to bring
@@ -326,8 +327,17 @@ export default function FeedScreen() {
   // Home is the tab users bounce back to constantly. Refetching the niche
   // chips on literally every focus was a request per return trip for data
   // that changes rarely; a short TTL keeps them fresh without the churn.
-  // fetchMyNiches is still called directly after creating a niche.
+  // fetchMyNiches is still called directly after creating a niche, and the
+  // TTL is dropped when the user joins or leaves one (utils/nicheEvents).
   const sideDataFetchedAt = useRef(0);
+  // ...except right after a join or leave: then the next visit refetches.
+  useEffect(
+    () =>
+      onNichesChanged(() => {
+        sideDataFetchedAt.current = 0;
+      }),
+    []
+  );
   useFocusEffect(
     useCallback(() => {
       if (Date.now() - sideDataFetchedAt.current < SIDE_DATA_TTL_MS) return;

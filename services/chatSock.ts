@@ -11,6 +11,7 @@ import {
 } from "../models/chat";
 import { getAuthToken } from "./authStorage";
 import { CHAT_SOCKET_URL } from "./config";
+import { sendMessageREST } from "./sections/chat";
 import logger from "../utils/logger";
 
 const CHAT_NAMESPACE = "/chat";
@@ -46,6 +47,8 @@ export type MessageReactionStatsEvent = {
 class ChatSocket {
   private socket: Socket | null = null;
   private connected = false;
+  /** The token this socket authenticated with; a different user needs a new socket. */
+  private socketToken: string | null = null;
 
   // listeners
   private messageListeners = new Set<Listener<ChatMessage>>();
@@ -63,13 +66,26 @@ class ChatSocket {
 
   // ===== Connection =====
   async connect() {
-    if (this.socket) return;
-
     // RN doesn't persist cookies like a browser, so REST auth uses a Bearer token
     // (see services/api.ts). Attach the same token to the socket handshake so the
     // server can authenticate the connection. We send it both as an `auth` payload
     // and an Authorization header to cover either middleware style.
     const token = await getAuthToken();
+
+    if (this.socket) {
+      // Signed in as someone else since this socket was made: it still carries
+      // the old identity, so start again rather than reuse it.
+      if (token !== this.socketToken) {
+        this.disconnect();
+      } else {
+        // An existing socket is not necessarily a live one. socket.io does not
+        // retry after a server-side disconnect, so returning here used to
+        // leave the chat silently offline until the app was restarted.
+        if (!this.socket.connected) this.socket.connect();
+        return;
+      }
+    }
+    this.socketToken = token;
 
     this.socket = io(SOCKET_URL, {
       transports: ["websocket", "polling"],
@@ -178,6 +194,7 @@ class ChatSocket {
   disconnect() {
     this.socket?.disconnect();
     this.socket = null;
+    this.socketToken = null;
     this.connected = false;
     this.emitStatus("disconnected");
   }
@@ -253,8 +270,23 @@ class ChatSocket {
         setTimeout(() => { if (!resolved) resolve(false); }, 9000);
       });
     } else {
-      await this.queue({ event: "message", payload });
-      return false;
+      // Not connected: send over HTTP instead of parking it in the offline
+      // queue. The queue only flushes on a later connect, so a socket that
+      // never came up meant the message showed in the thread but was never
+      // saved -- the other person never got it. The REST endpoint saves it and
+      // the server broadcasts it to the room like a socket send would.
+      try {
+        await sendMessageREST(room_id, {
+          content,
+          message_type,
+          message_data: message_data ?? undefined,
+        });
+        return true;
+      } catch (e) {
+        logger.warn("[chat] REST fallback failed, queueing:", e);
+        await this.queue({ event: "message", payload });
+        return false;
+      }
     }
     return true;
   }
