@@ -10,6 +10,8 @@
       },
       "node": "24.15.0",
       "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.marktcommerce.com/api/v1",
+        "EXPO_PUBLIC_SOCKET_URL": "https://api.marktcommerce.com",
         "DEBUG": "nativewind,react-native-css-interop",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "133653295470-34aeeb89r7ck1e54csjn2uf5vemf4rk4.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "133653295470-rj05ptsdt858d765d0c6rtivemqcf06b.apps.googleusercontent.com"
@@ -20,6 +22,8 @@
         "gradleCommand": ":app:assembleRelease"
       },
       "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.marktcommerce.com/api/v1",
+        "EXPO_PUBLIC_SOCKET_URL": "https://api.marktcommerce.com",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "133653295470-34aeeb89r7ck1e54csjn2uf5vemf4rk4.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "133653295470-rj05ptsdt858d765d0c6rtivemqcf06b.apps.googleusercontent.com"
       }
@@ -27,6 +31,8 @@
     "preview3": {
       "developmentClient": true,
       "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.marktcommerce.com/api/v1",
+        "EXPO_PUBLIC_SOCKET_URL": "https://api.marktcommerce.com",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "133653295470-34aeeb89r7ck1e54csjn2uf5vemf4rk4.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "133653295470-rj05ptsdt858d765d0c6rtivemqcf06b.apps.googleusercontent.com"
       }
@@ -34,6 +40,8 @@
     "preview4": {
       "distribution": "internal",
       "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.marktcommerce.com/api/v1",
+        "EXPO_PUBLIC_SOCKET_URL": "https://api.marktcommerce.com",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "133653295470-34aeeb89r7ck1e54csjn2uf5vemf4rk4.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "133653295470-rj05ptsdt858d765d0c6rtivemqcf06b.apps.googleusercontent.com"
       }
@@ -42,12 +50,14 @@
       "node": "24.15.0",
       "autoIncrement": true,
       "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.marktcommerce.com/api/v1",
+        "EXPO_PUBLIC_SOCKET_URL": "https://api.marktcommerce.com",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "133653295470-34aeeb89r7ck1e54csjn2uf5vemf4rk4.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "133653295470-rj05ptsdt858d765d0c6rtivemqcf06b.apps.googleusercontent.com"
       }
     }
   },
-   "submit": {
+  "submit": {
     "production": {
       "android": {
         "track": "internal"
