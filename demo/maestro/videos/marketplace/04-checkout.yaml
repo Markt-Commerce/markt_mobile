@@ -1,0 +1,31 @@
+# Beat 4 -- "Delivery fee upfront. Pay in seconds." Add to cart, pick the saved
+# hostel address (the real distance quote appears), pay from the Markt wallet.
+appId: com.marktcommerce.markt
+---
+- tapOn: "Add to Cart"
+- extendedWaitUntil:
+    visible: "Open cart.*"
+    timeout: 10000
+# The header cart icon (unlabelled, fixed position) -- steadier than the
+# floating cart button, which animates in and swallows an early tap.
+- tapOn:
+    point: "82%, 10%"
+- extendedWaitUntil:
+    visible: "Change delivery address"
+    timeout: 10000
+- tapOn: "Change delivery address"
+- tapOn: "Hostel, Room B12.*"
+- extendedWaitUntil:
+    visible: "Service fee"
+    timeout: 15000
+- waitForAnimationToEnd
+- tapOn: "Checkout"
+- extendedWaitUntil:
+    visible: "Markt wallet.*"
+    timeout: 15000
+- tapOn: "Markt wallet.*"
+- tapOn: "Proceed"
+- extendedWaitUntil:
+    visible: "Payment successful"
+    timeout: 20000
+- waitForAnimationToEnd

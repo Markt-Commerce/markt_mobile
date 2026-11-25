@@ -1,0 +1,22 @@
+# Share the ride, take 2 (after 02-settled.pre.sh closed the run): the
+# delivery fee came down, and the difference is already in the wallet.
+appId: com.marktcommerce.markt
+---
+- tapOn: ".*Ofada Rice.*"
+- extendedWaitUntil:
+    visible: "Order #.*"
+    timeout: 15000
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      text: "Delivery"
+    direction: DOWN
+- waitForAnimationToEnd
+- runFlow: ../../shared/go-back.yaml
+- tapOn: "Open menu"
+- tapOn: "Settings"
+- tapOn: "Wallet"
+- extendedWaitUntil:
+    visible: "Shared delivery came out cheaper than quoted"
+    timeout: 15000
+- waitForAnimationToEnd

@@ -1,0 +1,9 @@
+appId: com.marktcommerce.markt
+---
+- runFlow: ../../shared/login.yaml
+- tapOn:
+    text: "View adasankara's profile.*New Ankara drop.*"
+    point: "40%, 86%"
+- extendedWaitUntil:
+    visible: "Add to Cart"
+    timeout: 15000

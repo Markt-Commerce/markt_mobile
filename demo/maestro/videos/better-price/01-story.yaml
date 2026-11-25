@@ -1,0 +1,46 @@
+# Better price: Ada offers 10% in chat, Temi accepts, and it comes off at
+# checkout. One take; the edit cuts it into beats. The offer is seeded
+# (seed_demo_stories.ensure_discount_offer) so it is waiting in the thread.
+appId: com.marktcommerce.markt
+---
+- waitForAnimationToEnd
+- tapOn:
+    text: "Chat.*"
+    retryTapIfNoChange: true
+- tapOn: "adasankara, .*"
+- extendedWaitUntil:
+    visible: "No thanks"
+    timeout: 15000
+- waitForAnimationToEnd
+- tapOn: "Accept"
+- waitForAnimationToEnd
+- tapOn: "Add to Cart"
+- waitForAnimationToEnd
+# The "added to cart" toast sits over the tab bar; let it go first.
+- extendedWaitUntil:
+    notVisible: ".*added to cart.*"
+    timeout: 10000
+    optional: true
+- runFlow: ../../shared/go-back.yaml
+- tapOn:
+    text: "Orders.*"
+    retryTapIfNoChange: true
+- tapOn: "My Cart"
+- tapOn: "Change delivery address"
+- tapOn: "Hostel, Room B12.*"
+- extendedWaitUntil:
+    visible: ".*offered in chat.*"
+    timeout: 15000
+- waitForAnimationToEnd
+- tapOn: ".*offered in chat.*"
+- waitForAnimationToEnd
+- tapOn: "Checkout"
+- extendedWaitUntil:
+    visible: "Markt wallet.*"
+    timeout: 15000
+- tapOn: "Markt wallet.*"
+- tapOn: "Proceed"
+- extendedWaitUntil:
+    visible: "Payment successful"
+    timeout: 20000
+- waitForAnimationToEnd

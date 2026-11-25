@@ -1,0 +1,21 @@
+# Beat 3 -- "Talk to the seller first." Message Seller opens Ada's thread:
+# size asked, delivery to the hall confirmed. Temi sends the last word.
+#
+# The thread is seeded rather than played out live: on the local stack the
+# chat socket does not connect reliably, and a reply that depends on it would
+# make the take flaky. A message Temi sends shows immediately either way.
+appId: com.marktcommerce.markt
+---
+- tapOn: "Message Seller"
+- extendedWaitUntil:
+    visible: "Definitely.*"
+    timeout: 15000
+- waitForAnimationToEnd
+- tapOn: "Type a message.*"
+- inputText: "Perfect, ordering now"
+- tapOn: "Send message"
+- hideKeyboard
+- extendedWaitUntil:
+    visible: "Perfect, ordering now"
+    timeout: 10000
+- waitForAnimationToEnd

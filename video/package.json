@@ -1,0 +1,21 @@
+{
+  "name": "markt-product-video",
+  "private": true,
+  "description": "Markt product video: Remotion compositions over simulator recordings (see ../VIDEO_PIPELINE.md)",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "scripts/render.sh",
+    "loudnorm": "scripts/loudnorm.sh",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.534",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.534"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.4",
+    "typescript": "~5.9.3"
+  }
+}

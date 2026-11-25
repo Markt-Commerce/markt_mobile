@@ -1,0 +1,41 @@
+# Smoke pass: every screen the video needs loads against the local backend
+# with seeded data. Screenshots: Maestro's debug folder for the run (printed
+# at the end), under takeScreenshot/out/.
+appId: com.marktcommerce.markt
+---
+- runFlow: shared/login.yaml
+- takeScreenshot: out/smoke-01-feed
+- tapOn:
+    text: "View adasankara's profile.*New Ankara drop.*"
+    point: "40%, 86%"
+- extendedWaitUntil:
+    visible: "Message Seller"
+    timeout: 15000
+- takeScreenshot: out/smoke-02-product
+- runFlow: shared/go-back.yaml
+- tapOn: "Chat.*"
+- extendedWaitUntil:
+    visible: "adasankara, .*"
+    timeout: 15000
+- takeScreenshot: out/smoke-03-inbox
+- tapOn: "adasankara, .*"
+- extendedWaitUntil:
+    visible: "Definitely.*"
+    timeout: 15000
+- takeScreenshot: out/smoke-04-chat
+- runFlow: shared/go-back.yaml
+- tapOn: "Orders.*"
+- tapOn: "Ongoing"
+- extendedWaitUntil:
+    visible: ".*Power Bank.*"
+    timeout: 15000
+- takeScreenshot: out/smoke-05-orders
+- tapOn: ".*Power Bank.*"
+- extendedWaitUntil:
+    visible: "Order #.*"
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      text: "Kunle Adebayo"
+    direction: DOWN
+- takeScreenshot: out/smoke-06-tracking
