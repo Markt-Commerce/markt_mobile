@@ -22,15 +22,15 @@ npx expo start --tunnel
 
 Backend endpoints are configured via `EXPO_PUBLIC_*` environment variables, which Expo
 inlines at build time. Copy `.env.example` to `.env` and set them per environment. When
-unset, the app falls back to the **test** backend (see `services/config.ts`).
+unset, the app falls back to the **production** backend (see `services/config.ts`).
 
-| Variable | Purpose | Test default |
+| Variable | Purpose | Default (production) |
 |----------|---------|--------------|
-| `EXPO_PUBLIC_API_URL` | REST API base (includes `/api/v1`) | `https://test.api.marktcommerce.com/api/v1` |
-| `EXPO_PUBLIC_SOCKET_URL` | Socket.IO host (namespace appended in `config.ts`) | `https://test.api.marktcommerce.com` |
+| `EXPO_PUBLIC_API_URL` | REST API base (includes `/api/v1`) | `https://api.marktcommerce.com/api/v1` |
+| `EXPO_PUBLIC_SOCKET_URL` | Socket.IO host (namespace appended in `config.ts`) | `https://api.marktcommerce.com` |
 
-> For production builds, set these to the production hosts (e.g. via the EAS build
-> profile in `eas.json` or a production `.env`). `.env` is git‑ignored; `.env.example`
+> To point a build at the test backend (`https://test.api.marktcommerce.com`), set these
+> in `.env` or the EAS build profile in `eas.json`. `.env` is git‑ignored; `.env.example`
 > is the tracked template.
 
 ## Scripts
