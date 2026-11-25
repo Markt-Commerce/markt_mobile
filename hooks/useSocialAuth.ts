@@ -103,7 +103,13 @@ export function useSocialAuth(onSuccess: (user: any, isNew: boolean) => void) {
           );
         }
         if (e?.status === 401) {
-          return fail("That sign-in couldn't be verified. Please try again.");
+          // Keep the server's code (OAUTH_BAD_AUDIENCE, OAUTH_EXPIRED, ...):
+          // a client id mismatch on the server and a stale token look
+          // identical to the user, and only the code tells them apart.
+          const code = e?.data?.errors?.code ?? e?.errors?.code;
+          return fail(
+            `That sign-in couldn't be verified. Please try again.${code ? ` (ref: ${code})` : ""}`
+          );
         }
         // No network, DNS failure, server down.
         if (!e?.status) {
